@@ -5,33 +5,60 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: 1. Copiar código do repositório
-      uses: actions/checkout@v4
+      - name: Copiar código do repositório
+        uses: actions/checkout@v4
 
-    - name: 2. Configurar JDK 17
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
 
-    - name: 3. Configurar Android SDK
-      uses: android-actions/setup-android@v3
+      - name: Configurar Android SDK e Gradle
+        shell: bash
+        run: |
+          set -euo pipefail
+          tool_root="$RUNNER_TEMP/apk-tools"
+          mkdir -p "$tool_root/android-sdk/cmdline-tools"
+          curl -fsSL https://dl.google.com/android/repository/commandlinetools-linux-16111833_latest.zip -o "$tool_root/android-tools.zip"
+          echo "e025545c62a8e64c7559119566a569fb1dec5f60  $tool_root/android-tools.zip" | sha1sum -c -
+          unzip -q "$tool_root/android-tools.zip" -d "$tool_root/android-sdk/cmdline-tools"
+          mv "$tool_root/android-sdk/cmdline-tools/cmdline-tools" "$tool_root/android-sdk/cmdline-tools/latest"
+          export ANDROID_HOME="$tool_root/android-sdk"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" 'platform-tools' 'platforms;android-34' 'build-tools;34.0.0'
+          curl -fsSL https://downloads.gradle.org/distributions/gradle-8.7-bin.zip -o "$tool_root/gradle.zip"
+          echo "544c35d6bd849ae8a5ed0bcea39ba677dc40f49df7d1835561582da2009b961d  $tool_root/gradle.zip" | sha256sum -c -
+          unzip -q "$tool_root/gradle.zip" -d "$tool_root"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "$tool_root/gradle-8.7/bin" >> "$GITHUB_PATH"
 
-    - name: 4. Configurar Gradle 8.5 Exato (Evita erro de Wrapper ausente)
-      uses: gradle/actions/setup-gradle@v3
-      with:
-        gradle-version: '8.5'
+      - name: Compilar Debug APK com Gradle
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/android.init.gradle" <<'INIT'
+          beforeSettings { settings ->
+              settings.pluginManagement.resolutionStrategy.eachPlugin {
+                  if (requested.id.id == "com.android.application" && requested.version == null) useVersion("8.5.2")
+                  if (requested.id.id == "org.jetbrains.kotlin.android" && requested.version == null) useVersion("1.9.24")
+              }
+          }
+          INIT
+          gradle -I "$RUNNER_TEMP/android.init.gradle" -Pandroid.useAndroidX=true --no-daemon --max-workers=2 :app:assembleDebug
+          "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --verbose app/build/outputs/apk/debug/app-debug.apk
 
-    - name: 5. Compilar Debug APK com Gradle
-      run: gradle assembleDebug --stacktrace
-
-    - name: 6. Salvar o APK gerado para download
-      uses: actions/upload-artifact@v4
-      with:
-        name: TCL-xCloud-App-Debug
-        path: app/build/outputs/apk/debug/app-debug.apk
+      - name: Salvar o APK gerado para download
+        uses: actions/upload-artifact@v4
+        with:
+          name: TCL-xCloud-App-Debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

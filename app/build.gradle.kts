@@ -16,10 +16,9 @@ android {
         versionName = "0.1.0-alpha"
     }
 
-    buildTypes {
+       buildTypes {
         release {
-            isMinifyEnabled = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            isMinifyEnabled = false
         }
     }
 

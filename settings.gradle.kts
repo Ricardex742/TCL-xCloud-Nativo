@@ -10,10 +10,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url = java.net.URI("https://maven.pkg.github.com/stream-io/stream-webrtc-android") } // Repositório LibWebRTC
-        maven { url = java.net.URI("https://jitpack.io") }
     }
 }
 
-rootProject.name = "TCL-xCloud-Native"
+rootProject.name = "TCL-xCloud-Nativo"
 include(":app")

@@ -1,8 +1,8 @@
 package com.xcloud.tclnative.ui
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
-import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
@@ -12,13 +12,19 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
+import com.xcloud.tclnative.auth.XCloudSession
 import com.xcloud.tclnative.auth.XalAuthenticator
 import com.xcloud.tclnative.renderer.AiPqSurfaceRenderer
+import com.xcloud.tclnative.signaling.XCloudSignalingClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -26,10 +32,12 @@ import kotlinx.coroutines.launch
 
 class MainActivity : Activity() {
 
+    private lateinit var rootLayout: FrameLayout
     private lateinit var surfaceRenderer: AiPqSurfaceRenderer
     private lateinit var hudTextView: TextView
     private lateinit var controlPanel: LinearLayout
     private lateinit var authenticator: XalAuthenticator
+    private var currentSession: XCloudSession? = null
     private val mainScope = CoroutineScope(Dispatchers.Main + Job())
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,11 +46,11 @@ class MainActivity : Activity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         authenticator = XalAuthenticator(this)
 
-        val rootLayout = FrameLayout(this).apply {
+        rootLayout = FrameLayout(this).apply {
             setBackgroundColor(Color.BLACK)
         }
 
-        // 1. Camada de Vídeo Nativa (Hardware Overlay 1080p -> 4K AiPQ na TV / Low-Latency no Android 10)
+        // 1. Camada de Vídeo Nativa (Hardware Overlay 1080p -> 4K AiPQ na TCL P755 / Low-Latency no Snapdragon)
         surfaceRenderer = AiPqSurfaceRenderer(this)
         rootLayout.addView(
             surfaceRenderer,
@@ -59,7 +67,7 @@ class MainActivity : Activity() {
             text = "xCloud Native [Android $androidVer | SoC: $socModel] | Decodificador H.264 Ativo | Status: Desconectado"
             setTextColor(Color.GREEN)
             textSize = 13f
-            setBackgroundColor(Color.argb(180, 0, 0, 0))
+            setBackgroundColor(Color.argb(190, 0, 0, 0))
             setPadding(24, 12, 24, 12)
         }
 
@@ -73,42 +81,13 @@ class MainActivity : Activity() {
         }
         rootLayout.addView(hudTextView, hudParams)
 
-        // 3. Painel Central de Login (Compatível com Toque no Celular e Controle na TCL P755)
+        // 3. Painel Central Dinâmico
         controlPanel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setBackgroundColor(Color.argb(210, 20, 20, 20))
-            setPadding(48, 48, 48, 48)
+            setBackgroundColor(Color.argb(225, 18, 18, 18))
+            setPadding(48, 36, 48, 36)
         }
-
-        val titleView = TextView(this).apply {
-            text = "XBOX CLOUD GAMING - MOTOR NATIVO"
-            setTextColor(Color.WHITE)
-            textSize = 18f
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 24)
-        }
-        controlPanel.addView(titleView)
-
-        val btnOpenBrowser = Button(this).apply {
-            text = "1. Abrir Login Microsoft (Navegador)"
-            isFocusable = true
-            isFocusableInTouchMode = true
-            setOnClickListener {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(XalAuthenticator.getAuthorizationUrl()))
-                startActivity(intent)
-            }
-        }
-        controlPanel.addView(btnOpenBrowser)
-
-        val btnPasteToken = Button(this).apply {
-            text = "2. Inserir URL/Token de Autenticação"
-            isFocusable = true
-            setOnClickListener {
-                showTokenInputDialog()
-            }
-        }
-        controlPanel.addView(btnPasteToken)
 
         val panelParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -120,10 +99,95 @@ class MainActivity : Activity() {
 
         setContentView(rootLayout)
 
-        // Se já tiver um token salvo anteriormente, autentica sozinho ao abrir!
-        authenticator.getSavedRpsTicket()?.let { savedTicket ->
+        // Verifica se já existe login salvo
+        val savedTicket = authenticator.getSavedRpsTicket()
+        if (savedTicket != null) {
             connectToXboxCloud(savedTicket)
+        } else {
+            renderLoginMenu()
         }
+    }
+
+    private fun renderLoginMenu() {
+        controlPanel.removeAllViews()
+
+        val titleView = TextView(this).apply {
+            text = "XBOX CLOUD GAMING - MOTOR NATIVO"
+            setTextColor(Color.WHITE)
+            textSize = 18f
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 24)
+        }
+        controlPanel.addView(titleView)
+
+        // Botão Novo: Faz login e captura o Token 100% sozinho!
+        val btnAutoLogin = Button(this).apply {
+            text = "1. Fazer Login Automático Microsoft (Recomendado)"
+            isFocusable = true
+            isFocusableInTouchMode = true
+            setOnClickListener {
+                openAutoCaptureLoginWebView()
+            }
+        }
+        controlPanel.addView(btnAutoLogin)
+
+        val btnPasteToken = Button(this).apply {
+            text = "2. Colar URL/Token Manualmente (Para TV)"
+            isFocusable = true
+            setOnClickListener {
+                showTokenInputDialog()
+            }
+        }
+        controlPanel.addView(btnPasteToken)
+    }
+
+    /**
+     * Abre uma janela temporária apenas para capturar o token da Microsoft automaticamente
+     * e depois a destrói completamente da memória RAM!
+     */
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun openAutoCaptureLoginWebView() {
+        val dialog = AlertDialog.Builder(this).create()
+        val loginWebView = WebView(this).apply {
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                    val url = request?.url?.toString() ?: return false
+                    if (url.contains("access_token=")) {
+                        val token = extractAccessToken(url)
+                        // Destrói o WebView imediatamente para liberar 100% da RAM
+                        view?.destroy()
+                        dialog.dismiss()
+                        connectToXboxCloud(token)
+                        return true
+                    }
+                    return false
+                }
+
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    super.onPageFinished(view, url)
+                    if (url != null && url.contains("access_token=")) {
+                        val token = extractAccessToken(url)
+                        view?.destroy()
+                        dialog.dismiss()
+                        connectToXboxCloud(token)
+                    }
+                }
+            }
+            loadUrl(XalAuthenticator.getAuthorizationUrl())
+        }
+
+        // Necessário para o teclado do celular abrir dentro do AlertDialog
+        val container = FrameLayout(this).apply {
+            addView(loginWebView, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            ))
+        }
+        dialog.setView(container)
+        dialog.show()
+        dialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
     }
 
     private fun showTokenInputDialog() {
@@ -151,7 +215,6 @@ class MainActivity : Activity() {
     }
 
     private fun extractAccessToken(input: String): String {
-        // Se o usuário colou a URL inteira de redirecionamento, extrai apenas o access_token
         if (input.contains("access_token=")) {
             val afterToken = input.substringAfter("access_token=")
             val rawToken = afterToken.substringBefore("&")
@@ -167,13 +230,77 @@ class MainActivity : Activity() {
         mainScope.launch {
             val result = authenticator.authenticateToXCloud(rpsTicket)
             result.onSuccess { session ->
-                hudTextView.text = "CONECTADO! Servidor: ${session.baseUri} | UHS: ${session.userHash} | AiPQ Ready"
+                currentSession = session
+                hudTextView.text = "CONECTADO! Região: ${session.baseUri.replace("https://", "")} | AiPQ 4K & Low-Latency Prontos"
                 hudTextView.setTextColor(Color.GREEN)
-                // Esconde o painel de login para liberar a tela de vídeo/catálogo
-                controlPanel.visibility = View.GONE
+                renderGameDashboard(session)
             }.onFailure { err ->
                 hudTextView.text = "Falha na autenticação: ${err.message}"
                 hudTextView.setTextColor(Color.RED)
+                renderLoginMenu()
+            }
+        }
+    }
+
+    /**
+     * Exibe o Painel de Jogos do xCloud após o login ser concluído com sucesso!
+     */
+    private fun renderGameDashboard(session: XCloudSession) {
+        controlPanel.removeAllViews()
+        val signaling = XCloudSignalingClient(session)
+
+        val header = TextView(this).apply {
+            text = "CATÁLOGO RÁPIDO XCLOUD (SERVIDOR BRASIL)"
+            setTextColor(Color.GREEN)
+            textSize = 16f
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 16)
+        }
+        controlPanel.addView(header)
+
+        val scroll = ScrollView(this)
+        val gamesListLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+
+        for (game in signaling.getQuickLaunchGames()) {
+            val btnGame = Button(this).apply {
+                text = "▶ Iniciar: ${game.name}"
+                isFocusable = true
+                setOnClickListener {
+                    launchCloudGame(signaling, game.titleId, game.name)
+                }
+            }
+            gamesListLayout.addView(btnGame)
+        }
+
+        val btnLogout = Button(this).apply {
+            text = "Sair da Conta / Trocar Usuário"
+            setOnClickListener {
+                authenticator.saveRpsTicket("")
+                renderLoginMenu()
+            }
+        }
+        gamesListLayout.addView(btnLogout)
+
+        scroll.addView(gamesListLayout)
+        controlPanel.addView(scroll, LinearLayout.LayoutParams(750, 420))
+    }
+
+    private fun launchCloudGame(signaling: XCloudSignalingClient, titleId: String, gameName: String) {
+        hudTextView.text = "Alocando Xbox Series X para [$gameName] com H.264 Baseline (Zero B-Frames)..."
+        hudTextView.setTextColor(Color.CYAN)
+        controlPanel.visibility = View.GONE
+
+        mainScope.launch {
+            val res = signaling.startGameSession(titleId)
+            res.onSuccess { statusMsg ->
+                hudTextView.text = "STREAM ATIVO: $statusMsg | Renderizador Nativo 1080p->4K"
+                hudTextView.setTextColor(Color.GREEN)
+            }.onFailure { err ->
+                hudTextView.text = "Aviso de Sessão: ${err.message}"
+                hudTextView.setTextColor(Color.YELLOW)
+                controlPanel.visibility = View.VISIBLE
             }
         }
     }
@@ -183,6 +310,11 @@ class MainActivity : Activity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        // Se apertar o botão Voltar enquanto o painel estiver oculto, reabre o menu de jogos
+        if (keyCode == KeyEvent.KEYCODE_BACK && controlPanel.visibility == View.GONE) {
+            controlPanel.visibility = View.VISIBLE
+            return true
+        }
         return super.onKeyDown(keyCode, event)
     }
 }

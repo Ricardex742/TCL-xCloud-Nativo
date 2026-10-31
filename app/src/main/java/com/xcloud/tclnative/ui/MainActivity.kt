@@ -25,6 +25,7 @@ import com.xcloud.tclnative.auth.XCloudSession
 import com.xcloud.tclnative.auth.XalAuthenticator
 import com.xcloud.tclnative.renderer.AiPqSurfaceRenderer
 import com.xcloud.tclnative.signaling.XCloudSignalingClient
+import com.xcloud.tclnative.webrtc.XCloudWebRtcClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -37,7 +38,7 @@ class MainActivity : Activity() {
     private lateinit var hudTextView: TextView
     private lateinit var controlPanel: LinearLayout
     private lateinit var authenticator: XalAuthenticator
-    private var currentSession: XCloudSession? = null
+    private var webrtcClient: XCloudWebRtcClient? = null
     private val mainScope = CoroutineScope(Dispatchers.Main + Job())
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,7 +51,7 @@ class MainActivity : Activity() {
             setBackgroundColor(Color.BLACK)
         }
 
-        // 1. Camada de Vídeo Nativa (Hardware Overlay 1080p -> 4K AiPQ na TCL P755 / Low-Latency no Snapdragon)
+        // 1. Camada de Vídeo Nativa (SurfaceViewRenderer + AiPQ 4K Hardware Scaler)
         surfaceRenderer = AiPqSurfaceRenderer(this)
         rootLayout.addView(
             surfaceRenderer,
@@ -64,11 +65,11 @@ class MainActivity : Activity() {
         val androidVer = Build.VERSION.RELEASE
         val socModel = Build.HARDWARE
         hudTextView = TextView(this).apply {
-            text = "xCloud Native [Android $androidVer | SoC: $socModel] | Decodificador H.264 Ativo | Status: Desconectado"
+            text = "xCloud Native [Android $androidVer | SoC: $socModel] | Decodificador H.264 Ativo"
             setTextColor(Color.GREEN)
-            textSize = 13f
-            setBackgroundColor(Color.argb(190, 0, 0, 0))
-            setPadding(24, 12, 24, 12)
+            textSize = 12f
+            setBackgroundColor(Color.argb(170, 0, 0, 0))
+            setPadding(20, 8, 20, 8)
         }
 
         val hudParams = FrameLayout.LayoutParams(
@@ -76,8 +77,8 @@ class MainActivity : Activity() {
             FrameLayout.LayoutParams.WRAP_CONTENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            topMargin = 24
-            marginStart = 24
+            topMargin = 16
+            marginStart = 16
         }
         rootLayout.addView(hudTextView, hudParams)
 
@@ -99,9 +100,8 @@ class MainActivity : Activity() {
 
         setContentView(rootLayout)
 
-        // Verifica se já existe login salvo
         val savedTicket = authenticator.getSavedRpsTicket()
-        if (savedTicket != null) {
+        if (!savedTicket.isNullOrEmpty()) {
             connectToXboxCloud(savedTicket)
         } else {
             renderLoginMenu()
@@ -110,6 +110,7 @@ class MainActivity : Activity() {
 
     private fun renderLoginMenu() {
         controlPanel.removeAllViews()
+        controlPanel.visibility = View.VISIBLE
 
         val titleView = TextView(this).apply {
             text = "XBOX CLOUD GAMING - MOTOR NATIVO"
@@ -120,7 +121,6 @@ class MainActivity : Activity() {
         }
         controlPanel.addView(titleView)
 
-        // Botão Novo: Faz login e captura o Token 100% sozinho!
         val btnAutoLogin = Button(this).apply {
             text = "1. Fazer Login Automático Microsoft (Recomendado)"
             isFocusable = true
@@ -141,10 +141,6 @@ class MainActivity : Activity() {
         controlPanel.addView(btnPasteToken)
     }
 
-    /**
-     * Abre uma janela temporária apenas para capturar o token da Microsoft automaticamente
-     * e depois a destrói completamente da memória RAM!
-     */
     @SuppressLint("SetJavaScriptEnabled")
     private fun openAutoCaptureLoginWebView() {
         val dialog = AlertDialog.Builder(this).create()
@@ -156,7 +152,6 @@ class MainActivity : Activity() {
                     val url = request?.url?.toString() ?: return false
                     if (url.contains("access_token=")) {
                         val token = extractAccessToken(url)
-                        // Destrói o WebView imediatamente para liberar 100% da RAM
                         view?.destroy()
                         dialog.dismiss()
                         connectToXboxCloud(token)
@@ -178,7 +173,6 @@ class MainActivity : Activity() {
             loadUrl(XalAuthenticator.getAuthorizationUrl())
         }
 
-        // Necessário para o teclado do celular abrir dentro do AlertDialog
         val container = FrameLayout(this).apply {
             addView(loginWebView, FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -198,16 +192,13 @@ class MainActivity : Activity() {
 
         AlertDialog.Builder(this)
             .setTitle("Vincular Conta Xbox Live")
-            .setMessage("Após logar no navegador, copie o endereço completo da página em branco final e cole abaixo:")
+            .setMessage("Após fazer login no navegador, copie o endereço completo da página em branco final e cole abaixo:")
             .setView(inputEdit)
             .setPositiveButton("Conectar ao xCloud") { _, _ ->
                 val rawInput = inputEdit.text.toString().trim()
                 val token = extractAccessToken(rawInput)
                 if (token.isNotEmpty()) {
                     connectToXboxCloud(token)
-                } else {
-                    hudTextView.text = "Erro: Token inválido ou vazio."
-                    hudTextView.setTextColor(Color.RED)
                 }
             }
             .setNegativeButton("Cancelar", null)
@@ -224,14 +215,13 @@ class MainActivity : Activity() {
     }
 
     private fun connectToXboxCloud(rpsTicket: String) {
-        hudTextView.text = "Autenticando na Xbox Live e buscando servidor xCloud Brasil..."
+        hudTextView.text = "Autenticando na Xbox Live e buscando catálogo oficial do Brasil..."
         hudTextView.setTextColor(Color.YELLOW)
 
         mainScope.launch {
             val result = authenticator.authenticateToXCloud(rpsTicket)
             result.onSuccess { session ->
-                currentSession = session
-                hudTextView.text = "CONECTADO! Região: ${session.baseUri.replace("https://", "")} | AiPQ 4K & Low-Latency Prontos"
+                hudTextView.text = "CONECTADO! Região: ${session.baseUri.replace("https://", "")} | Carregando Jogos..."
                 hudTextView.setTextColor(Color.GREEN)
                 renderGameDashboard(session)
             }.onFailure { err ->
@@ -242,64 +232,91 @@ class MainActivity : Activity() {
         }
     }
 
-    /**
-     * Exibe o Painel de Jogos do xCloud após o login ser concluído com sucesso!
-     */
     private fun renderGameDashboard(session: XCloudSession) {
-        controlPanel.removeAllViews()
         val signaling = XCloudSignalingClient(session)
 
-        val header = TextView(this).apply {
-            text = "CATÁLOGO RÁPIDO XCLOUD (SERVIDOR BRASIL)"
-            setTextColor(Color.GREEN)
-            textSize = 16f
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 16)
-        }
-        controlPanel.addView(header)
+        mainScope.launch {
+            val games = signaling.fetchCatalogGames()
+            controlPanel.removeAllViews()
+            controlPanel.visibility = View.VISIBLE
 
-        val scroll = ScrollView(this)
-        val gamesListLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-        }
+            val header = TextView(this@MainActivity).apply {
+                text = "CATÁLOGO OFICIAL XCLOUD (${games.size} TÍTULOS DISPONÍVEIS)"
+                setTextColor(Color.GREEN)
+                textSize = 15f
+                gravity = Gravity.CENTER
+                setPadding(0, 0, 0, 16)
+            }
+            controlPanel.addView(header)
 
-        for (game in signaling.getQuickLaunchGames()) {
-            val btnGame = Button(this).apply {
-                text = "▶ Iniciar: ${game.name}"
-                isFocusable = true
+            val scroll = ScrollView(this@MainActivity)
+            val gamesListLayout = LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.VERTICAL
+            }
+
+            for (game in games) {
+                val btnGame = Button(this@MainActivity).apply {
+                    text = "▶ ${game.name}"
+                    isFocusable = true
+                    setOnClickListener {
+                        launchCloudGame(signaling, game.titleId, game.name)
+                    }
+                }
+                gamesListLayout.addView(btnGame)
+            }
+
+            val btnLogout = Button(this@MainActivity).apply {
+                text = "Sair da Conta / Trocar Utilizador"
                 setOnClickListener {
-                    launchCloudGame(signaling, game.titleId, game.name)
+                    authenticator.saveRpsTicket("")
+                    renderLoginMenu()
                 }
             }
-            gamesListLayout.addView(btnGame)
-        }
+            gamesListLayout.addView(btnLogout)
 
-        val btnLogout = Button(this).apply {
-            text = "Sair da Conta / Trocar Usuário"
-            setOnClickListener {
-                authenticator.saveRpsTicket("")
-                renderLoginMenu()
-            }
+            scroll.addView(gamesListLayout)
+            controlPanel.addView(scroll, LinearLayout.LayoutParams(820, 440))
+            hudTextView.text = "Catálogo Carregado (${games.size} jogos) | Pronto para iniciar Stream H.264!"
         }
-        gamesListLayout.addView(btnLogout)
-
-        scroll.addView(gamesListLayout)
-        controlPanel.addView(scroll, LinearLayout.LayoutParams(750, 420))
     }
 
     private fun launchCloudGame(signaling: XCloudSignalingClient, titleId: String, gameName: String) {
-        hudTextView.text = "Alocando Xbox Series X para [$gameName] com H.264 Baseline (Zero B-Frames)..."
-        hudTextView.setTextColor(Color.CYAN)
         controlPanel.visibility = View.GONE
+        hudTextView.text = "Alocando Xbox Series X para [$gameName]..."
+        hudTextView.setTextColor(Color.CYAN)
+
+        webrtcClient?.close()
+        val rtc = XCloudWebRtcClient(
+            context = this,
+            eglBase = surfaceRenderer.eglBase,
+            onVideoTrackReady = { videoTrack ->
+                surfaceRenderer.attachVideoTrack(videoTrack)
+                runOnUiThread {
+                    hudTextView.text = "VÍDEO H.264 RECEBIDO [$gameName] | Renderizador Nativo Ativo!"
+                    hudTextView.setTextColor(Color.GREEN)
+                }
+            },
+            onConnectionStateChanged = { iceState ->
+                runOnUiThread {
+                    hudTextView.text = "WebRTC ICE: $iceState | Jogo: $gameName"
+                }
+            }
+        )
+        webrtcClient = rtc
 
         mainScope.launch {
-            val res = signaling.startGameSession(titleId)
+            val res = signaling.startAndConnectWebRtcSession(titleId, rtc) { progressMsg ->
+                runOnUiThread {
+                    hudTextView.text = progressMsg
+                    hudTextView.setTextColor(Color.YELLOW)
+                }
+            }
             res.onSuccess { statusMsg ->
-                hudTextView.text = "STREAM ATIVO: $statusMsg | Renderizador Nativo 1080p->4K"
+                hudTextView.text = statusMsg
                 hudTextView.setTextColor(Color.GREEN)
             }.onFailure { err ->
                 hudTextView.text = "Aviso de Sessão: ${err.message}"
-                hudTextView.setTextColor(Color.YELLOW)
+                hudTextView.setTextColor(Color.RED)
                 controlPanel.visibility = View.VISIBLE
             }
         }
@@ -310,11 +327,16 @@ class MainActivity : Activity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        // Se apertar o botão Voltar enquanto o painel estiver oculto, reabre o menu de jogos
         if (keyCode == KeyEvent.KEYCODE_BACK && controlPanel.visibility == View.GONE) {
             controlPanel.visibility = View.VISIBLE
             return true
         }
         return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onDestroy() {
+        webrtcClient?.close()
+        surfaceRenderer.release()
+        super.onDestroy()
     }
 }

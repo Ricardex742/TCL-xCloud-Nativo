@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.xcloud.tclnative">
+
+    <!-- Permissões críticas para Streaming de Baixa Latência -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_state" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Declaração para rodar nativamente na interface da Google TV (TCL P755) -->
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="true" />
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.gamepad"
+        android:required="false" />
+
+    <!--
+      TRUQUE DE ARQUITETURA TCL P755:
+      Não declaramos android:appCategory="game" nem android:isGame="true".
+      Isso faz o Google TV tratar o app como um reprodutor de mídia dedicado,
+      destravando 100% do motor de Upscaling AiPQ 4K e filtros de Super Resolução,
+      enquanto nós desligamos o buffer manualmente via código no MediaCodec!
+    -->
+    <application
+        android:allowBackup="true"
+        android:label="xCloud TCL 4K"
+        android:supportsRtl="true"
+        android:hardwareAccelerated="true"
+        android:largeHeap="false"
+        android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+
+        <activity
+            android:name=".ui.MainActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize"
+            android:exported="true"
+            android:screenOrientation="landscape">
+            
+            <!-- Faz o app aparecer tanto na tela inicial do Google TV quanto na gaveta comum -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>

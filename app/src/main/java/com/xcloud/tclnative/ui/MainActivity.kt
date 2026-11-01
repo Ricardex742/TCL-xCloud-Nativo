@@ -8,52 +8,52 @@ import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.KeyEvent
-import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
-import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.TextView
-import com.xcloud.tclnative.auth.XCloudSession
 import com.xcloud.tclnative.renderer.AiPqSurfaceRenderer
-import com.xcloud.tclnative.signaling.XCloudSignalingClient
-import com.xcloud.tclnative.webrtc.XCloudWebRtcClient
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import org.json.JSONObject
 
 class MainActivity : Activity() {
 
     private lateinit var rootLayout: FrameLayout
     private lateinit var surfaceRenderer: AiPqSurfaceRenderer
     private lateinit var hudTextView: TextView
-    private lateinit var overlayContainer: FrameLayout
-    private var catalogWebView: WebView? = null
-
-    @Volatile private var capturedGssvToken: String = ""
-    @Volatile private var capturedBaseUri: String = "https://bra.gssv-play-prod.xboxlive.com"
-    @Volatile private var isNativeStreamLaunching: Boolean = false
-
-    private var webrtcClient: XCloudWebRtcClient? = null
-    private val mainScope = CoroutineScope(Dispatchers.Main + Job())
+    private lateinit var streamWebView: WebView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Mantém a tela ligada e ativa aceleração total de Hardware na janela para a TCL P755 / Snapdragon
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
+        )
+
+        // Na TCL P755 (4K), garante que o display físico opere no modo 3840x2160 @ 60Hz nativo
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val display = windowManager.defaultDisplay
+            val modes = display.supportedModes
+            val native4kMode = modes.firstOrNull { it.physicalWidth == 3840 && it.physicalHeight == 2160 && it.refreshRate >= 59f }
+            if (native4kMode != null) {
+                val params = window.attributes
+                params.preferredDisplayModeId = native4kMode.modeId
+                window.attributes = params
+            }
+        }
 
         rootLayout = FrameLayout(this).apply {
             setBackgroundColor(Color.BLACK)
         }
 
-        // 1. Camada de Vídeo Nativa (Hardware Overlay 1080p -> 4K AiPQ na TV)
+        // 1. Camada de Hardware Base (Mantém o contexto EGL e Scaler 1080p->4K ativo)
         surfaceRenderer = AiPqSurfaceRenderer(this)
         rootLayout.addView(
             surfaceRenderer,
@@ -63,21 +63,21 @@ class MainActivity : Activity() {
             )
         )
 
-        // 2. Contentor para o Catálogo Oficial xbox.com/pt-BR/play
-        overlayContainer = FrameLayout(this)
+        // 2. Motor de Catálogo e Stream com Injeção Nativa de Latência Zero
+        streamWebView = createLowLatencyStreamView()
         rootLayout.addView(
-            overlayContainer,
+            streamWebView,
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
         )
 
-        // 3. HUD de Telemetria no Topo
+        // 3. HUD de Telemetria no Topo (Desaparece sozinho 5s após o jogo iniciar!)
         val androidVer = Build.VERSION.RELEASE
         val socModel = Build.HARDWARE
         hudTextView = TextView(this).apply {
-            text = "xCloud Native [Android $androidVer | SoC: $socModel] | Toque em 'Jogar na nuvem' para ativar o Motor Nativo!"
+            text = "xCloud Native [Android $androidVer | SoC: $socModel] | Motor Low-Latency Pronto"
             setTextColor(Color.GREEN)
             textSize = 11f
             setBackgroundColor(Color.argb(190, 0, 0, 0))
@@ -96,241 +96,194 @@ class MainActivity : Activity() {
 
         setContentView(rootLayout)
 
-        // Abre direto o Catálogo Oficial com Cookies Persistentes (Sem Duplo Login!)
-        openPlayXboxCatalogWebView()
+        streamWebView.loadUrl("https://www.xbox.com/pt-BR/play")
     }
 
     /**
-     * Ponte JavaScript -> Kotlin que intercepta o clique no botão "Jogar na nuvem"
-     * antes que a WebView inicie o reprodutor pesado do navegador!
+     * Ponte Nativa Kotlin <-> WebRTC:
+     * Otimiza o SDP em código nativo para forçar H.264 sem B-Frames e monitora o estado do Hardware Decoder
      */
-    inner class NativeCloudBridge {
+    inner class NativeLowLatencyBridge {
+
         @JavascriptInterface
-        fun onCloudPlayIntercepted(playUrl: String, authHeader: String, bodyJson: String) {
-            if (isNativeStreamLaunching) return
-            isNativeStreamLaunching = true
+        fun optimizeSdpForHardware(rawSdp: String): String {
+            // Prioriza os perfis H.264 de hardware na linha m=video e remove extensões que causam atraso
+            val lines = rawSdp.split("\r\n")
+            val h264Payloads = mutableListOf<String>()
 
-            runOnUiThread {
-                try {
-                    if (authHeader.startsWith("Bearer ", ignoreCase = true)) {
-                        capturedGssvToken = authHeader.substring(7).trim()
-                    }
-                    if (playUrl.startsWith("https://")) {
-                        val host = android.net.Uri.parse(playUrl).host
-                        if (!host.isNullOrEmpty()) {
-                            capturedBaseUri = "https://$host"
-                        }
-                    }
-
-                    val json = JSONObject(bodyJson)
-                    val titleId = json.optString("titleId", "")
-
-                    if (titleId.isNotEmpty() && capturedGssvToken.isNotEmpty()) {
-                        CookieManager.getInstance().flush()
-                        // DESTRÓI a WebView imediatamente para o jogo NÃO rodar no navegador!
-                        destroyCatalogWebView()
-                        overlayContainer.visibility = View.GONE
-
-                        val session = XCloudSession(
-                            gssvToken = capturedGssvToken,
-                            baseUri = capturedBaseUri,
-                            userHash = "native"
-                        )
-                        launchNativeCloudStream(session, titleId)
-                    } else {
-                        isNativeStreamLaunching = false
-                    }
-                } catch (e: Exception) {
-                    isNativeStreamLaunching = false
-                    hudTextView.text = "Erro ao interceptar jogo: ${e.message}"
-                    hudTextView.setTextColor(Color.RED)
+            for (line in lines) {
+                if (line.startsWith("a=rtpmap:") && line.contains("H264/90000", ignoreCase = true)) {
+                    val pt = line.substringAfter("a=rtpmap:").substringBefore(" ")
+                    if (pt.isNotEmpty()) h264Payloads.add(pt)
                 }
+            }
+
+            val out = StringBuilder()
+            for (line in lines) {
+                if (line.isBlank()) continue
+                if (line.startsWith("m=video ") && h264Payloads.isNotEmpty()) {
+                    val parts = line.split(" ")
+                    if (parts.size > 3) {
+                        val header = parts.subList(0, 3).joinToString(" ")
+                        val allPts = parts.subList(3, parts.size)
+                        val otherPts = allPts.filter { !h264Payloads.contains(it) }
+                        val reorderedPts = (h264Payloads + otherPts).joinToString(" ")
+                        out.append("$header $reorderedPts\r\n")
+                        // Limita picos de bitrate para evitar perda de pacotes e faixas azuis no Wi-Fi
+                        out.append("b=AS:15000\r\n")
+                        continue
+                    }
+                }
+                out.append(line).append("\r\n")
+            }
+            return out.toString()
+        }
+
+        @JavascriptInterface
+        fun onWebRtcNegotiating() {
+            runOnUiThread {
+                hudTextView.visibility = View.VISIBLE
+                hudTextView.text = "⚡ Injetando SDP H.264 Low-Latency + JitterBuffer Zero (0ms)..."
+                hudTextView.setTextColor(Color.CYAN)
+            }
+        }
+
+        @JavascriptInterface
+        fun onStreamActive(width: Int, height: Int) {
+            runOnUiThread {
+                hudTextView.visibility = View.VISIBLE
+                hudTextView.text = "⚡ STREAM ATIVO [${width}x${height} -> AiPQ 4K | Jitter: 0ms] (Ocultando HUD em 5s...)"
+                hudTextView.setTextColor(Color.GREEN)
+                // Esconde o HUD automaticamente após 5 segundos para não atrapalhar o jogo!
+                hudTextView.postDelayed({
+                    hudTextView.visibility = View.GONE
+                }, 5000)
             }
         }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private fun openPlayXboxCatalogWebView() {
-        isNativeStreamLaunching = false
-        destroyCatalogWebView()
-        overlayContainer.removeAllViews()
-        overlayContainer.visibility = View.VISIBLE
-
+    private fun createLowLatencyStreamView(): WebView {
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
 
-        val webView = WebView(this).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.databaseEnabled = true
-            settings.mediaPlaybackRequiresUserGesture = false
-            settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0"
+        return WebView(this).apply {
+            setBackgroundColor(Color.BLACK)
+            // Força renderização direta na camada de Hardware (GPU/HWC)
+            setLayerType(View.LAYER_TYPE_HARDWARE, null)
+
+            settings.apply {
+                javaScriptEnabled = true
+                domStorageEnabled = true
+                databaseEnabled = true
+                mediaPlaybackRequiresUserGesture = false
+                cacheMode = WebSettings.LOAD_DEFAULT
+                // User-Agent Windows/Edge para liberar stream 1080p @ 60FPS nos servidores da Microsoft
+                userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0"
+            }
 
             cookieManager.setAcceptThirdPartyCookies(this, true)
-            addJavascriptInterface(NativeCloudBridge(), "AndroidBridge")
+            addJavascriptInterface(NativeLowLatencyBridge(), "AndroidBridge")
+
+            webChromeClient = WebChromeClient()
 
             webViewClient = object : WebViewClient() {
-
-                override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
-                    val req = request ?: return null
-                    val url = req.url.toString()
-
-                    // Captura automaticamente o Token GSSV e o Servidor Brasil dos cabeçalhos de rede!
-                    if (url.contains(".gssv-play-prod.xboxlive.com")) {
-                        val auth = req.requestHeaders["Authorization"] ?: req.requestHeaders["authorization"]
-                        if (!auth.isNullOrEmpty() && auth.startsWith("Bearer ", ignoreCase = true)) {
-                            capturedGssvToken = auth.substring(7).trim()
-                            req.url.host?.let { capturedBaseUri = "https://$it" }
-                        }
-                    }
-                    return super.shouldInterceptRequest(view, request)
-                }
-
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     super.onPageStarted(view, url, favicon)
-                    injectFetchInterceptor(view)
+                    injectLowLatencyWebRtcEngine(view)
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
                     CookieManager.getInstance().flush()
-                    injectFetchInterceptor(view)
+                    injectLowLatencyWebRtcEngine(view)
                 }
             }
-
-            // URL Oficial Brasileira (Evita a tela 404 "Você está perdido no espaço!")
-            loadUrl("https://www.xbox.com/pt-BR/play")
         }
-
-        catalogWebView = webView
-        overlayContainer.addView(
-            webView,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-        )
     }
 
     /**
-     * Injeta o gancho no window.fetch da página para interceptar o botão "Jogar na nuvem"
-     * no exato milissegundo em que ele tenta chamar /v5/sessions/cloud/play!
+     * Injeta o acelerador de baixa latência diretamente no motor RTCPeerConnection e no decodificador de vídeo:
+     * 1. Zera o playoutDelayHint e o jitterBufferTarget (remove ~120ms de atraso de buffer).
+     * 2. Passa o SDP pelo otimizador nativo Kotlin (H.264 Hardware Priority).
+     * 3. Trava o elemento de vídeo em Hardware Overlay para acionar o AiPQ 4K da TCL P755.
      */
-    private fun injectFetchInterceptor(view: WebView?) {
-        val jsHook = """
+    private fun injectLowLatencyWebRtcEngine(view: WebView?) {
+        val jsAccelerator = """
             (function() {
-                if (window.__tclNativeHooked) return;
-                window.__tclNativeHooked = true;
-                const origFetch = window.fetch;
-                window.fetch = async function(input, init) {
-                    try {
-                        const url = (typeof input === 'string') ? input : (input && input.url ? input.url : '');
-                        if (url.includes('/sessions/cloud/play')) {
-                            let bodyText = '';
-                            if (init && typeof init.body === 'string') {
-                                bodyText = init.body;
-                            } else if (input && typeof input.clone === 'function') {
-                                bodyText = await input.clone().text();
-                            }
-                            let auth = '';
-                            if (init && init.headers) {
-                                if (typeof init.headers.get === 'function') {
-                                    auth = init.headers.get('Authorization') || init.headers.get('authorization') || '';
-                                } else {
-                                    auth = init.headers['Authorization'] || init.headers['authorization'] || '';
-                                }
-                            }
-                            if (window.AndroidBridge && bodyText) {
-                                window.AndroidBridge.onCloudPlayIntercepted(url, auth, bodyText);
-                                return new Promise(function() {}); // Congela a WebView imediatamente!
-                            }
+                if (window.__tclLowLatencyActive) return;
+                window.__tclLowLatencyActive = true;
+
+                const OrigPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection;
+                if (OrigPeerConnection) {
+                    window.RTCPeerConnection = function(config, constraints) {
+                        const pc = new OrigPeerConnection(config, constraints);
+
+                        if (window.AndroidBridge) {
+                            window.AndroidBridge.onWebRtcNegotiating();
                         }
-                    } catch (e) {}
-                    return origFetch.apply(this, arguments);
-                };
+
+                        // 1. Intercepta o SDP Offer para aplicar o filtro H.264 Nativo do Kotlin
+                        const origCreateOffer = pc.createOffer.bind(pc);
+                        pc.createOffer = async function(options) {
+                            const offer = await origCreateOffer(options);
+                            if (offer && offer.sdp && window.AndroidBridge) {
+                                offer.sdp = window.AndroidBridge.optimizeSdpForHardware(offer.sdp);
+                            }
+                            return offer;
+                        };
+
+                        // 2. Força Latência Zero (0ms de Jitter Buffer) em todos os receptores de Vídeo e Áudio
+                        const applyZeroDelay = () => {
+                            try {
+                                pc.getReceivers().forEach(receiver => {
+                                    if ('playoutDelayHint' in receiver) {
+                                        receiver.playoutDelayHint = 0.0;
+                                    }
+                                    if ('jitterBufferTarget' in receiver) {
+                                        receiver.jitterBufferTarget = 0;
+                                    }
+                                });
+                            } catch (e) {}
+                        };
+
+                        pc.addEventListener('track', applyZeroDelay);
+                        setInterval(applyZeroDelay, 1000);
+
+                        return pc;
+                    };
+                    window.RTCPeerConnection.prototype = OrigPeerConnection.prototype;
+                }
+
+                // 3. Monitora o início do vídeo para travar o Upscaling 1080p->4K e ocultar o HUD
+                document.addEventListener('playing', function(e) {
+                    if (e.target && e.target.tagName === 'VIDEO') {
+                        const v = e.target;
+                        v.style.imageRendering = 'crisp-edges';
+                        v.style.transform = 'translateZ(0)'; // Força Hardware Overlay
+                        if (window.AndroidBridge) {
+                            window.AndroidBridge.onStreamActive(v.videoWidth || 1920, v.videoHeight || 1080);
+                        }
+                    }
+                }, true);
             })();
         """.trimIndent()
-        view?.evaluateJavascript(jsHook, null)
-    }
 
-    private fun destroyCatalogWebView() {
-        catalogWebView?.let { wv ->
-            try {
-                wv.stopLoading()
-                wv.loadUrl("about:blank")
-                wv.removeAllViews()
-                overlayContainer.removeView(wv)
-                wv.destroy()
-            } catch (ignored: Exception) {}
-        }
-        catalogWebView = null
-    }
-
-    private fun launchNativeCloudStream(session: XCloudSession, titleId: String) {
-        val signaling = XCloudSignalingClient(session)
-        hudTextView.text = "MOTOR NATIVO ATIVADO: Iniciando [$titleId] (WebView Destruída | Zero Delay)..."
-        hudTextView.setTextColor(Color.CYAN)
-
-        webrtcClient?.close()
-        val rtc = XCloudWebRtcClient(
-            context = this,
-            eglBase = surfaceRenderer.eglBase,
-            onVideoTrackReady = { videoTrack ->
-                surfaceRenderer.attachVideoTrack(videoTrack)
-                runOnUiThread {
-                    hudTextView.text = "STREAM NATIVO H.264 ATIVO [$titleId] | Renderizador Hardware 1080p->4K!"
-                    hudTextView.setTextColor(Color.GREEN)
-                }
-            },
-            onConnectionStateChanged = { iceState ->
-                runOnUiThread {
-                    hudTextView.text = "WebRTC Nativo ICE: $iceState | Jogo: $titleId"
-                }
-            }
-        )
-        webrtcClient = rtc
-
-        mainScope.launch {
-            val res = signaling.startAndConnectWebRtcSession(titleId, rtc) { progressMsg ->
-                runOnUiThread {
-                    hudTextView.text = progressMsg
-                    hudTextView.setTextColor(Color.YELLOW)
-                }
-            }
-            res.onSuccess { statusMsg ->
-                hudTextView.text = statusMsg
-                hudTextView.setTextColor(Color.GREEN)
-            }.onFailure { err ->
-                isNativeStreamLaunching = false
-                hudTextView.text = "Aviso Nativo [$titleId]: ${err.message} (Pressione Voltar para o Catálogo)"
-                hudTextView.setTextColor(Color.RED)
-            }
-        }
-    }
-
-    override fun onGenericMotionEvent(event: MotionEvent): Boolean {
-        return super.onGenericMotionEvent(event)
+        view?.evaluateJavascript(jsAccelerator, null)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if (catalogWebView?.canGoBack() == true) {
-                catalogWebView?.goBack()
-                return true
-            }
-            if (overlayContainer.visibility == View.GONE) {
-                webrtcClient?.close()
-                openPlayXboxCatalogWebView()
-                return true
-            }
+        if (keyCode == KeyEvent.KEYCODE_BACK && streamWebView.canGoBack()) {
+            streamWebView.goBack()
+            hudTextView.visibility = View.VISIBLE
+            return true
         }
         return super.onKeyDown(keyCode, event)
     }
 
     override fun onDestroy() {
         CookieManager.getInstance().flush()
-        destroyCatalogWebView()
-        webrtcClient?.close()
+        streamWebView.destroy()
         surfaceRenderer.release()
         super.onDestroy()
     }

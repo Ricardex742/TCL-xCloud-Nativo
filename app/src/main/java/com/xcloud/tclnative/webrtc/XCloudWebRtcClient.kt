@@ -89,6 +89,7 @@ class XCloudWebRtcClient(
                     val cleanedCandSdp = candidate.sdp
                         .replace(Regex(" network-id \\d+"), "")
                         .replace(Regex(" network-cost \\d+"), "")
+                        .replace(Regex(" generation \\d+"), " generation 0")
                     gatheredCandidates.add(
                         IceCandidate(candidate.sdpMid, candidate.sdpMLineIndex, cleanedCandSdp)
                     )
@@ -114,13 +115,11 @@ class XCloudWebRtcClient(
 
         this.peerConnection = pc
 
-        // 1. Transceivers de Vídeo e Áudio
         val recvOnlyInit = RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.RECV_ONLY)
         val sendRecvInit = RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.SEND_RECV)
         pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, sendRecvInit)
         pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, recvOnlyInit)
 
-        // 2. DataChannels oficiais do xCloud
         controlChannel = pc.createDataChannel("control", DataChannel.Init().apply {
             ordered = true
             protocol = "controlV1"
@@ -153,10 +152,6 @@ class XCloudWebRtcClient(
 
         val offer = offerDeferred.await()
 
-        // Reordena o H.264 para o topo do SDP antes de aplicar e enviar à Microsoft!
-        val h264OptimizedSdp = prioritizeH264InSdp(offer.description)
-        val modifiedOffer = SessionDescription(SessionDescription.Type.OFFER, h264OptimizedSdp)
-
         val setLocalDeferred = CompletableDeferred<Unit>()
         pc.setLocalDescription(object : SdpObserver {
             override fun onCreateSuccess(sdp: SessionDescription?) {}
@@ -165,30 +160,23 @@ class XCloudWebRtcClient(
             }
             override fun onCreateFailure(error: String?) {}
             override fun onSetFailure(error: String?) {
-                // Se o Android reclamar do SDP modificado localmente, aplica o original localmente e envia o limpo para o Xbox
-                pc.setLocalDescription(object : SdpObserver {
-                    override fun onCreateSuccess(p0: SessionDescription?) {}
-                    override fun onSetSuccess() { setLocalDeferred.complete(Unit) }
-                    override fun onCreateFailure(p0: String?) {}
-                    override fun onSetFailure(p0: String?) { setLocalDeferred.complete(Unit) }
-                }, offer)
+                setLocalDeferred.completeExceptionally(Exception("Erro setLocalDescription: $error"))
             }
-        }, modifiedOffer)
+        }, offer)
 
         setLocalDeferred.await()
 
-        withTimeoutOrNull(1200) {
+        withTimeoutOrNull(1500) {
             iceGatheringComplete.await()
         }
 
-        return Pair(h264OptimizedSdp, gatheredCandidates.toList())
+        // Usa o SDP final com os candidatos reunidos, limpando extensões incompatíveis com o Xbox
+        val fullLocalSdp = pc.localDescription?.description ?: offer.description
+        val cleanXboxSdp = sanitizeAndPrioritizeH264(fullLocalSdp)
+        return Pair(cleanXboxSdp, gatheredCandidates.toList())
     }
 
-    /**
-     * Move os Payload Types do H.264 para o início da linha m=video e remove tags incompatíveis.
-     * Essencial para o servidor Xbox aceitar o POST /sdp sem dar HTTP 400!
-     */
-    private fun prioritizeH264InSdp(rawSdp: String): String {
+    private fun sanitizeAndPrioritizeH264(rawSdp: String): String {
         val lines = rawSdp.split("\r\n")
         val h264Payloads = mutableListOf<String>()
 
@@ -203,6 +191,19 @@ class XCloudWebRtcClient(
         for (line in lines) {
             if (line.isBlank()) continue
             if (line.startsWith("a=extmap-allow-mixed")) continue
+
+            // Filtra candidatos IPv6 ou limpa tags proprietárias do Android nos candidatos IPv4
+            if (line.startsWith("a=candidate:")) {
+                val parts = line.split(" ")
+                if (parts.size >= 5 && parts[4].contains(":")) {
+                    continue // Ignora IPv6 local que dá HTTP 400 no xCloud
+                }
+                val cleanCand = line
+                    .replace(Regex(" network-id \\d+"), "")
+                    .replace(Regex(" network-cost \\d+"), "")
+                out.append(cleanCand).append("\r\n")
+                continue
+            }
 
             if (line.startsWith("m=video ") && h264Payloads.isNotEmpty()) {
                 val parts = line.split(" ")

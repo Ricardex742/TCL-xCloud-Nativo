@@ -45,7 +45,7 @@ class XCloudSignalingClient(private val session: XCloudSession) {
                 if (resp.isSuccessful) {
                     val bodyStr = resp.body?.string() ?: "{}"
                     val results = JSONObject(bodyStr).optJSONArray("results") ?: JSONArray()
-                    val limit = minOf(results.length(), 40)
+                    val limit = minOf(results.length(), 60)
                     for (i in 0 until limit) {
                         val item = results.getJSONObject(i)
                         val titleId = item.optString("titleId", "")
@@ -75,7 +75,7 @@ class XCloudSignalingClient(private val session: XCloudSession) {
                 })
                 put("dev", JSONObject().apply {
                     put("hw", JSONObject().put("make", "Microsoft").put("model", "Surface Pro"))
-                    put("os", JSONObject().put("name", "android").put("ver", "12.0"))
+                    put("os", JSONObject().put("name", "windows").put("ver", "10.0"))
                     put("displayInfo", JSONObject().apply {
                         put("dimensions", JSONObject().put("widthInPixels", 1920).put("heightInPixels", 1080))
                         put("pixelDensity", JSONObject().put("dpiX", 1).put("dpiY", 1))
@@ -94,7 +94,7 @@ class XCloudSignalingClient(private val session: XCloudSession) {
                     put("useIceConnection", false)
                     put("timezoneOffsetMinutes", -180)
                     put("sdkType", "web")
-                    put("osName", "android")
+                    put("osName", "windows")
                 })
                 put("serverId", "")
                 put("fallbackRegionNames", JSONArray())
@@ -142,12 +142,11 @@ class XCloudSignalingClient(private val session: XCloudSession) {
                 throw Exception("Estado inesperado da consola: $state")
             }
 
-            // 2. Gera o SDP Offer com a ordem corrigida (Audio -> Video -> Data)
+            // 2. Gera o SDP Offer com H.264 no topo
             onProgress("ReadyToConnect! Enviando SDP Offer H.264...")
             val (localOfferSdp, localCandidates) = webrtcClient.createOfferSdp()
 
-            // Payload 1: Configuração Padrão xCloud Web
-            val sdpPayloadPrimary = JSONObject().apply {
+            val sdpPayloadV1 = JSONObject().apply {
                 put("messageType", "offer")
                 put("sdp", localOfferSdp)
                 put("configuration", JSONObject().apply {
@@ -165,8 +164,7 @@ class XCloudSignalingClient(private val session: XCloudSession) {
                 })
             }
 
-            // Payload 2 (Fallback se o servidor exigir input maxVersion 3 sem chatConfiguration)
-            val sdpPayloadFallback = JSONObject().apply {
+            val sdpPayloadV2 = JSONObject().apply {
                 put("messageType", "offer")
                 put("sdp", localOfferSdp)
                 put("configuration", JSONObject().apply {
@@ -180,7 +178,7 @@ class XCloudSignalingClient(private val session: XCloudSession) {
             var sdpSentOk = false
             var lastSdpError = ""
 
-            for (payload in listOf(sdpPayloadPrimary, sdpPayloadFallback)) {
+            for (payload in listOf(sdpPayloadV1, sdpPayloadV2)) {
                 val sdpPostReq = Request.Builder()
                     .url("${session.baseUri}/$sessionPath/sdp")
                     .addHeader("Authorization", "Bearer ${session.gssvToken}")
@@ -192,7 +190,7 @@ class XCloudSignalingClient(private val session: XCloudSession) {
                     if (resp.isSuccessful) {
                         sdpSentOk = true
                     } else {
-                        val errBody = resp.body?.string()?.take(120) ?: ""
+                        val errBody = resp.body?.string()?.take(140) ?: ""
                         lastSdpError = "HTTP ${resp.code} ($errBody)"
                     }
                 }
@@ -238,7 +236,7 @@ class XCloudSignalingClient(private val session: XCloudSession) {
                 throw Exception("Timeout a aguardar SDP Answer da Xbox")
             }
 
-            // 4. Envia os candidatos ICE locais (Suporta formato array e individual)
+            // 4. Envia os candidatos ICE locais
             onProgress("SDP Answer Recebido! Abrindo túnel UDP (ICE)...")
             val candsArray = JSONArray()
             for (c in localCandidates) {
@@ -268,7 +266,6 @@ class XCloudSignalingClient(private val session: XCloudSession) {
 
             httpClient.newCall(icePostReq).execute().use { resp ->
                 if (!resp.isSuccessful && localCandidates.isNotEmpty()) {
-                    // Fallback para envio unitário caso o endpoint use schema single candidate
                     val firstCand = localCandidates.first()
                     val singlePayload = JSONObject().apply {
                         put("messageType", "iceCandidate")
@@ -329,7 +326,7 @@ class XCloudSignalingClient(private val session: XCloudSession) {
 
             webrtcClient.applyRemoteAnswerAndCandidates(remoteAnswerSdp, remoteCandidates)
 
-            Result.success("STREAM CONECTADO! ($sessionPath)")
+            Result.success("STREAM CONECTADO! Aguardando primeiro quadro H.264 ($sessionPath)")
         } catch (e: Exception) {
             Result.failure(e)
         }

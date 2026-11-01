@@ -55,6 +55,7 @@ jobs:
           gradle.beforeProject { project ->
               if (project.path == ":app") {
                   project.plugins.withId("com.android.application") {
+                      project.dependencies.add("implementation", "com.google.zxing:core:3.5.3")
                       project.extensions.getByName("androidComponents").finalizeDsl { androidDsl ->
                           androidDsl.defaultConfig.minSdk = 29
                           androidDsl.lint.checkOnly.addAll(["NewApi", "InlinedApi"])

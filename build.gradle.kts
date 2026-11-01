@@ -9,18 +9,15 @@ android {
 
     defaultConfig {
         applicationId = "com.xcloud.tclnative"
-        // MUDANÇA CRÍTICA: minSdk = 24 libera instalação no Android 7, 8, 9, 10 (API 29)
-        // mantendo 100% dos recursos de Android 11/12/14 quando rodar na TCL P755!
         minSdk = 24
         targetSdk = 34
-        versionCode = 2
-        versionName = "0.2.0-alpha"
+        versionCode = 3
+        versionName = "0.3.0-qr-play"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            isMinifyEnabled = false
         }
     }
 
@@ -41,4 +38,6 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("io.getstream:stream-webrtc-android:1.1.1")
+    // Gerador nativo de QR Code (ZXing Core - super leve)
+    implementation("com.google.zxing:core:3.5.3")
 }

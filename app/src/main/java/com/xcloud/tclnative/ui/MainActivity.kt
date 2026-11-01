@@ -2,9 +2,8 @@ package com.xcloud.tclnative.ui
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Color
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
@@ -12,16 +11,15 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Button
 import android.widget.FrameLayout
-import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import com.xcloud.tclnative.auth.XCloudSession
-import com.xcloud.tclnative.auth.XalAuthenticator
 import com.xcloud.tclnative.renderer.AiPqSurfaceRenderer
 import com.xcloud.tclnative.signaling.XCloudSignalingClient
 import com.xcloud.tclnative.webrtc.XCloudWebRtcClient
@@ -29,6 +27,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 class MainActivity : Activity() {
 
@@ -38,17 +37,17 @@ class MainActivity : Activity() {
     private lateinit var overlayContainer: FrameLayout
     private var catalogWebView: WebView? = null
 
-    private lateinit var authenticator: XalAuthenticator
-    private var currentSession: XCloudSession? = null
+    @Volatile private var capturedGssvToken: String = ""
+    @Volatile private var capturedBaseUri: String = "https://bra.gssv-play-prod.xboxlive.com"
+    @Volatile private var isNativeStreamLaunching: Boolean = false
+
     private var webrtcClient: XCloudWebRtcClient? = null
     private val mainScope = CoroutineScope(Dispatchers.Main + Job())
-    private var qrPollingJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        authenticator = XalAuthenticator(this)
 
         rootLayout = FrameLayout(this).apply {
             setBackgroundColor(Color.BLACK)
@@ -64,7 +63,7 @@ class MainActivity : Activity() {
             )
         )
 
-        // 2. Contentor para a Tela de QR Code ou Catálogo play.xbox.com
+        // 2. Contentor para o Catálogo Oficial xbox.com/pt-BR/play
         overlayContainer = FrameLayout(this)
         rootLayout.addView(
             overlayContainer,
@@ -78,10 +77,10 @@ class MainActivity : Activity() {
         val androidVer = Build.VERSION.RELEASE
         val socModel = Build.HARDWARE
         hudTextView = TextView(this).apply {
-            text = "xCloud Native [Android $androidVer | SoC: $socModel] | AiPQ 4K & Low-Latency"
+            text = "xCloud Native [Android $androidVer | SoC: $socModel] | Toque em 'Jogar na nuvem' para ativar o Motor Nativo!"
             setTextColor(Color.GREEN)
             textSize = 11f
-            setBackgroundColor(Color.argb(180, 0, 0, 0))
+            setBackgroundColor(Color.argb(190, 0, 0, 0))
             setPadding(18, 6, 18, 6)
         }
 
@@ -97,183 +96,110 @@ class MainActivity : Activity() {
 
         setContentView(rootLayout)
 
-        // Se já tiver login salvo, conecta direto; senão, inicia o Login por QR Code!
-        val savedTicket = authenticator.getSavedRpsTicket()
-        if (!savedTicket.isNullOrEmpty()) {
-            authenticateAndOpenPlayXboxCatalog(savedTicket)
-        } else {
-            startQrCodeLoginFlow()
-        }
+        // Abre direto o Catálogo Oficial com Cookies Persistentes (Sem Duplo Login!)
+        openPlayXboxCatalogWebView()
     }
 
     /**
-     * Exibe o QR Code Oficial na tela (Estilo Xbox / Smart TV) e aguarda aprovação automática
+     * Ponte JavaScript -> Kotlin que intercepta o clique no botão "Jogar na nuvem"
+     * antes que a WebView inicie o reprodutor pesado do navegador!
      */
-    private fun startQrCodeLoginFlow() {
-        qrPollingJob?.cancel()
-        destroyCatalogWebView()
-        overlayContainer.removeAllViews()
-        overlayContainer.visibility = View.VISIBLE
+    inner class NativeCloudBridge {
+        @JavascriptInterface
+        fun onCloudPlayIntercepted(playUrl: String, authHeader: String, bodyJson: String) {
+            if (isNativeStreamLaunching) return
+            isNativeStreamLaunching = true
 
-        val qrPanel = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            setBackgroundColor(Color.argb(240, 15, 15, 20))
-            setPadding(48, 36, 48, 36)
-        }
+            runOnUiThread {
+                try {
+                    if (authHeader.startsWith("Bearer ", ignoreCase = true)) {
+                        capturedGssvToken = authHeader.substring(7).trim()
+                    }
+                    if (playUrl.startsWith("https://")) {
+                        val host = android.net.Uri.parse(playUrl).host
+                        if (!host.isNullOrEmpty()) {
+                            capturedBaseUri = "https://$host"
+                        }
+                    }
 
-        val qrImageView = ImageView(this).apply {
-            setPadding(16, 16, 16, 16)
-            setBackgroundColor(Color.WHITE)
-        }
-        qrPanel.addView(qrImageView, LinearLayout.LayoutParams(420, 420))
+                    val json = JSONObject(bodyJson)
+                    val titleId = json.optString("titleId", "")
 
-        val infoColumn = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(48, 0, 0, 0)
-        }
+                    if (titleId.isNotEmpty() && capturedGssvToken.isNotEmpty()) {
+                        CookieManager.getInstance().flush()
+                        // DESTRÓI a WebView imediatamente para o jogo NÃO rodar no navegador!
+                        destroyCatalogWebView()
+                        overlayContainer.visibility = View.GONE
 
-        val titleText = TextView(this).apply {
-            text = "ENTRAR COM QR CODE XBOX"
-            setTextColor(Color.WHITE)
-            textSize = 20f
-        }
-        infoColumn.addView(titleText)
-
-        val stepsText = TextView(this).apply {
-            text = "Gerando código oficial na Microsoft..."
-            setTextColor(Color.LTGRAY)
-            textSize = 14f
-            setPadding(0, 12, 0, 12)
-        }
-        infoColumn.addView(stepsText)
-
-        val codeText = TextView(this).apply {
-            text = "--------"
-            setTextColor(Color.GREEN)
-            textSize = 28f
-            setPadding(0, 4, 0, 16)
-        }
-        infoColumn.addView(codeText)
-
-        val btnOpenOnThisPhone = Button(this).apply {
-            text = "Aprovar Neste Celular (Abrir Link Direto)"
-            visibility = View.GONE
-        }
-        infoColumn.addView(btnOpenOnThisPhone)
-
-        val btnRefreshQr = Button(this).apply {
-            text = "Gerar Novo QR Code"
-            setOnClickListener { startQrCodeLoginFlow() }
-        }
-        infoColumn.addView(btnRefreshQr)
-
-        qrPanel.addView(infoColumn)
-        overlayContainer.addView(
-            qrPanel,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-        )
-
-        qrPollingJob = mainScope.launch {
-            hudTextView.text = "Solicitando QR Code OAuth2 na Microsoft..."
-            val qrRes = authenticator.requestDeviceCodeQr()
-            qrRes.onSuccess { info ->
-                qrImageView.setImageBitmap(info.qrBitmap)
-                stepsText.text = "1. Escaneie o QR Code com a câmera do celular\n   ou acesse: microsoft.com/link\n2. Digite o código abaixo:"
-                codeText.text = info.userCode
-
-                btnOpenOnThisPhone.visibility = View.VISIBLE
-                btnOpenOnThisPhone.setOnClickListener {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(info.verificationUriComplete))
-                    startActivity(intent)
-                }
-
-                hudTextView.text = "Aguardando aprovação do QR Code [${info.userCode}]..."
-                hudTextView.setTextColor(Color.YELLOW)
-
-                val pollRes = authenticator.pollForDeviceCodeLogin(info)
-                pollRes.onSuccess { rpsTicket ->
-                    hudTextView.text = "QR Code Aprovado! Conectando ao xCloud Brasil..."
-                    hudTextView.setTextColor(Color.GREEN)
-                    authenticateAndOpenPlayXboxCatalog(rpsTicket)
-                }.onFailure { err ->
-                    stepsText.text = "Aviso: ${err.message}"
-                    hudTextView.text = "QR Code expirado. Clique em Gerar Novo QR Code."
+                        val session = XCloudSession(
+                            gssvToken = capturedGssvToken,
+                            baseUri = capturedBaseUri,
+                            userHash = "native"
+                        )
+                        launchNativeCloudStream(session, titleId)
+                    } else {
+                        isNativeStreamLaunching = false
+                    }
+                } catch (e: Exception) {
+                    isNativeStreamLaunching = false
+                    hudTextView.text = "Erro ao interceptar jogo: ${e.message}"
                     hudTextView.setTextColor(Color.RED)
                 }
-            }.onFailure { err ->
-                stepsText.text = "Falha de rede: ${err.message}"
-                hudTextView.setTextColor(Color.RED)
             }
         }
     }
 
-    private fun authenticateAndOpenPlayXboxCatalog(rpsTicket: String) {
-        hudTextView.text = "Autenticando na Xbox Live e preparando catálogo play.xbox.com..."
-        hudTextView.setTextColor(Color.YELLOW)
-
-        mainScope.launch {
-            val result = authenticator.authenticateToXCloud(rpsTicket)
-            result.onSuccess { session ->
-                currentSession = session
-                hudTextView.text = "Catálogo play.xbox.com Ativo | Ao clicar em JOGAR, o Motor Nativo assumirá!"
-                hudTextView.setTextColor(Color.GREEN)
-                openPlayXboxCatalogWebView(session)
-            }.onFailure { err ->
-                hudTextView.text = "Sessão expirada (${err.message}). Iniciando QR Code..."
-                hudTextView.setTextColor(Color.RED)
-                authenticator.clearSession()
-                startQrCodeLoginFlow()
-            }
-        }
-    }
-
-    /**
-     * Carrega a interface visual oficial https://play.xbox.com, mas INTERCEPTA o clique de lançamento
-     * (/launch/{titleId}) para rodar o jogo no nosso Renderizador Nativo AiPQ 4K (destruindo a WebView)!
-     */
     @SuppressLint("SetJavaScriptEnabled")
-    private fun openPlayXboxCatalogWebView(session: XCloudSession) {
+    private fun openPlayXboxCatalogWebView() {
+        isNativeStreamLaunching = false
         destroyCatalogWebView()
         overlayContainer.removeAllViews()
         overlayContainer.visibility = View.VISIBLE
+
+        val cookieManager = CookieManager.getInstance()
+        cookieManager.setAcceptCookie(true)
 
         val webView = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
+            settings.databaseEnabled = true
             settings.mediaPlaybackRequiresUserGesture = false
-            // User-Agent otimizado para exibir a interface de TV/Desktop do play.xbox.com
             settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0"
 
+            cookieManager.setAcceptThirdPartyCookies(this, true)
+            addJavascriptInterface(NativeCloudBridge(), "AndroidBridge")
+
             webViewClient = object : WebViewClient() {
-                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                    val url = request?.url?.toString() ?: return false
-                    if (interceptPlayXboxLaunchUrl(url, session)) {
-                        return true
+
+                override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
+                    val req = request ?: return null
+                    val url = req.url.toString()
+
+                    // Captura automaticamente o Token GSSV e o Servidor Brasil dos cabeçalhos de rede!
+                    if (url.contains(".gssv-play-prod.xboxlive.com")) {
+                        val auth = req.requestHeaders["Authorization"] ?: req.requestHeaders["authorization"]
+                        if (!auth.isNullOrEmpty() && auth.startsWith("Bearer ", ignoreCase = true)) {
+                            capturedGssvToken = auth.substring(7).trim()
+                            req.url.host?.let { capturedBaseUri = "https://$it" }
+                        }
                     }
-                    return false
+                    return super.shouldInterceptRequest(view, request)
                 }
 
-                override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     super.onPageStarted(view, url, favicon)
-                    if (url != null) {
-                        interceptPlayXboxLaunchUrl(url, session)
-                    }
+                    injectFetchInterceptor(view)
                 }
 
-                override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
-                    super.doUpdateVisitedHistory(view, url, isReload)
-                    // Captura mudanças de rota Single-Page Application (React Router do play.xbox.com)
-                    if (url != null) {
-                        interceptPlayXboxLaunchUrl(url, session)
-                    }
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    super.onPageFinished(view, url)
+                    CookieManager.getInstance().flush()
+                    injectFetchInterceptor(view)
                 }
             }
-            loadUrl("https://play.xbox.com/pt-BR")
+
+            // URL Oficial Brasileira (Evita a tela 404 "Você está perdido no espaço!")
+            loadUrl("https://www.xbox.com/pt-BR/play")
         }
 
         catalogWebView = webView
@@ -287,22 +213,44 @@ class MainActivity : Activity() {
     }
 
     /**
-     * Detecta quando o usuário clica em "Jogar" dentro do play.xbox.com (ex: /launch/FORTNITE ou /launch/9N...)
-     * e transfere imediatamente a execução para o Motor WebRTC Nativo!
+     * Injeta o gancho no window.fetch da página para interceptar o botão "Jogar na nuvem"
+     * no exato milissegundo em que ele tenta chamar /v5/sessions/cloud/play!
      */
-    private fun interceptPlayXboxLaunchUrl(url: String, session: XCloudSession): Boolean {
-        if (url.contains("/launch/", ignoreCase = true)) {
-            val afterLaunch = url.substringAfter("/launch/", "")
-            val extractedTitleId = afterLaunch.substringBefore("/").substringBefore("?").trim()
-            if (extractedTitleId.isNotEmpty()) {
-                // DESTRÓI a WebView do catálogo imediatamente para liberar 100% da RAM (2GB na TCL P755)!
-                destroyCatalogWebView()
-                overlayContainer.visibility = View.GONE
-                launchNativeCloudStream(session, extractedTitleId)
-                return true
-            }
-        }
-        return false
+    private fun injectFetchInterceptor(view: WebView?) {
+        val jsHook = """
+            (function() {
+                if (window.__tclNativeHooked) return;
+                window.__tclNativeHooked = true;
+                const origFetch = window.fetch;
+                window.fetch = async function(input, init) {
+                    try {
+                        const url = (typeof input === 'string') ? input : (input && input.url ? input.url : '');
+                        if (url.includes('/sessions/cloud/play')) {
+                            let bodyText = '';
+                            if (init && typeof init.body === 'string') {
+                                bodyText = init.body;
+                            } else if (input && typeof input.clone === 'function') {
+                                bodyText = await input.clone().text();
+                            }
+                            let auth = '';
+                            if (init && init.headers) {
+                                if (typeof init.headers.get === 'function') {
+                                    auth = init.headers.get('Authorization') || init.headers.get('authorization') || '';
+                                } else {
+                                    auth = init.headers['Authorization'] || init.headers['authorization'] || '';
+                                }
+                            }
+                            if (window.AndroidBridge && bodyText) {
+                                window.AndroidBridge.onCloudPlayIntercepted(url, auth, bodyText);
+                                return new Promise(function() {}); // Congela a WebView imediatamente!
+                            }
+                        }
+                    } catch (e) {}
+                    return origFetch.apply(this, arguments);
+                };
+            })();
+        """.trimIndent()
+        view?.evaluateJavascript(jsHook, null)
     }
 
     private fun destroyCatalogWebView() {
@@ -310,7 +258,6 @@ class MainActivity : Activity() {
             try {
                 wv.stopLoading()
                 wv.loadUrl("about:blank")
-                wv.clearHistory()
                 wv.removeAllViews()
                 overlayContainer.removeView(wv)
                 wv.destroy()
@@ -321,7 +268,7 @@ class MainActivity : Activity() {
 
     private fun launchNativeCloudStream(session: XCloudSession, titleId: String) {
         val signaling = XCloudSignalingClient(session)
-        hudTextView.text = "HANDOFF NATIVO: Iniciando [$titleId] no Motor H.264 AiPQ 4K (WebView Destruída)..."
+        hudTextView.text = "MOTOR NATIVO ATIVADO: Iniciando [$titleId] (WebView Destruída | Zero Delay)..."
         hudTextView.setTextColor(Color.CYAN)
 
         webrtcClient?.close()
@@ -331,13 +278,13 @@ class MainActivity : Activity() {
             onVideoTrackReady = { videoTrack ->
                 surfaceRenderer.attachVideoTrack(videoTrack)
                 runOnUiThread {
-                    hudTextView.text = "STREAM NATIVO ATIVO [$titleId] | 1080p -> AiPQ 4K"
+                    hudTextView.text = "STREAM NATIVO H.264 ATIVO [$titleId] | Renderizador Hardware 1080p->4K!"
                     hudTextView.setTextColor(Color.GREEN)
                 }
             },
             onConnectionStateChanged = { iceState ->
                 runOnUiThread {
-                    hudTextView.text = "WebRTC ICE: $iceState | Jogo: $titleId"
+                    hudTextView.text = "WebRTC Nativo ICE: $iceState | Jogo: $titleId"
                 }
             }
         )
@@ -354,7 +301,8 @@ class MainActivity : Activity() {
                 hudTextView.text = statusMsg
                 hudTextView.setTextColor(Color.GREEN)
             }.onFailure { err ->
-                hudTextView.text = "Erro ao iniciar [$titleId]: ${err.message} (Pressione Voltar para o Catálogo)"
+                isNativeStreamLaunching = false
+                hudTextView.text = "Aviso Nativo [$titleId]: ${err.message} (Pressione Voltar para o Catálogo)"
                 hudTextView.setTextColor(Color.RED)
             }
         }
@@ -365,16 +313,14 @@ class MainActivity : Activity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        // Se apertar Voltar durante o jogo ou erro, recarrega o catálogo play.xbox.com
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (catalogWebView?.canGoBack() == true) {
                 catalogWebView?.goBack()
                 return true
             }
-            val session = currentSession
-            if (overlayContainer.visibility == View.GONE && session != null) {
+            if (overlayContainer.visibility == View.GONE) {
                 webrtcClient?.close()
-                openPlayXboxCatalogWebView(session)
+                openPlayXboxCatalogWebView()
                 return true
             }
         }
@@ -382,7 +328,7 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
-        qrPollingJob?.cancel()
+        CookieManager.getInstance().flush()
         destroyCatalogWebView()
         webrtcClient?.close()
         surfaceRenderer.release()

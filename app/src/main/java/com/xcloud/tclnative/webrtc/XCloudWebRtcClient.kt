@@ -47,7 +47,6 @@ class XCloudWebRtcClient(
                 .createInitializationOptions()
         )
 
-        // Usa o MediaCodec de Hardware do processador (Snapdragon / Realtek TCL P755)
         val decoderFactory = DefaultVideoDecoderFactory(eglBase.eglBaseContext)
         val encoderFactory = DefaultVideoEncoderFactory(eglBase.eglBaseContext, true, true)
 
@@ -58,7 +57,8 @@ class XCloudWebRtcClient(
     }
 
     /**
-     * Cria a conexão WebRTC, os canais exigidos pelo protocolo Xbox e gera o SDP Offer
+     * Cria a conexão WebRTC na ordem exata exigida pelo servidor Xbox Series X:
+     * 1º Áudio (mid:0) -> 2º Vídeo (mid:1) -> 3º DataChannels (mid:2)
      */
     suspend fun createOfferSdp(): Pair<String, List<IceCandidate>> {
         gatheredCandidates.clear()
@@ -66,7 +66,8 @@ class XCloudWebRtcClient(
 
         val rtcConfig = PeerConnection.RTCConfiguration(emptyList()).apply {
             sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
-            continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_ONCE
+            bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE
+            rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE
         }
 
         val pc = factory.createPeerConnection(rtcConfig, object : PeerConnection.Observer {
@@ -89,7 +90,15 @@ class XCloudWebRtcClient(
 
             override fun onIceCandidate(candidate: IceCandidate?) {
                 if (candidate != null) {
-                    gatheredCandidates.add(candidate)
+                    // Filtra apenas candidatos IPv4 válidos e remove extensões proprietárias do Android
+                    if (!candidate.sdp.contains(":")) {
+                        val cleanedCandSdp = candidate.sdp
+                            .replace(Regex(" network-id \\d+"), "")
+                            .replace(Regex(" network-cost \\d+"), "")
+                        gatheredCandidates.add(
+                            IceCandidate(candidate.sdpMid, candidate.sdpMLineIndex, cleanedCandSdp)
+                        )
+                    }
                 }
             }
 
@@ -112,31 +121,38 @@ class XCloudWebRtcClient(
 
         this.peerConnection = pc
 
-        // 1. Canais de Dados obrigatórios do protocolo xCloud
-        inputChannel = pc.createDataChannel("input", DataChannel.Init().apply {
+        // ORDEM CRÍTICA PARA EVITAR HTTP 400 NO XCLOUD:
+        // 1. Primeiro adicionamos Áudio e Vídeo (garante mid:0 e mid:1)
+        val recvOnlyInit = RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.RECV_ONLY)
+        val sendRecvInit = RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.SEND_RECV)
+        pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, sendRecvInit)
+        pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, recvOnlyInit)
+
+        // 2. Depois criamos os DataChannels (garante mid:2 para m=application)
+        chatChannel = pc.createDataChannel("chat", DataChannel.Init().apply {
             ordered = true
-            protocol = "1.0"
+            protocol = "chatV1"
         })
         controlChannel = pc.createDataChannel("control", DataChannel.Init().apply {
             ordered = true
             protocol = "controlV1"
         })
+        inputChannel = pc.createDataChannel("input", DataChannel.Init().apply {
+            ordered = true
+            protocol = "1.0"
+        })
         messageChannel = pc.createDataChannel("message", DataChannel.Init().apply {
             ordered = true
             protocol = "messageV1"
         })
-        chatChannel = pc.createDataChannel("chat", DataChannel.Init().apply {
-            ordered = true
-            protocol = "chatV1"
-        })
 
-        // 2. Transceivers de Vídeo (H.264) e Áudio (Opus) apenas de receção (RECV_ONLY)
-        val recvOnlyInit = RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.RECV_ONLY)
-        pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, recvOnlyInit)
-        pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, recvOnlyInit)
-
-        // 3. Gera o SDP Offer
+        // 3. Gera o SDP Offer puro
         val offerDeferred = CompletableDeferred<SessionDescription>()
+        val constraints = MediaConstraints().apply {
+            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
+            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
+        }
+
         pc.createOffer(object : SdpObserver {
             override fun onCreateSuccess(sdp: SessionDescription?) {
                 if (sdp != null) offerDeferred.complete(sdp)
@@ -147,7 +163,7 @@ class XCloudWebRtcClient(
                 offerDeferred.completeExceptionally(Exception("Erro createOffer: $error"))
             }
             override fun onSetFailure(error: String?) {}
-        }, MediaConstraints())
+        }, constraints)
 
         val offer = offerDeferred.await()
 
@@ -165,18 +181,34 @@ class XCloudWebRtcClient(
 
         setLocalDeferred.await()
 
-        // Aguarda até 2 segundos para recolher todos os candidatos ICE locais
-        withTimeoutOrNull(2000) {
+        withTimeoutOrNull(1200) {
             iceGatheringComplete.await()
         }
 
-        val finalLocalSdp = pc.localDescription?.description ?: offer.description
-        return Pair(finalLocalSdp, gatheredCandidates.toList())
+        // Enviamos o offer.description limpo (sem candidatos sujos embutidos no SDP)
+        val cleanSdp = sanitizeSdpForXbox(offer.description)
+        return Pair(cleanSdp, gatheredCandidates.toList())
     }
 
     /**
-     * Aplica a resposta SDP e os candidatos ICE enviados pelo servidor Xbox Series X da Microsoft
+     * Limpa linhas proprietárias do Android que causam HTTP 400 no WebrtcTransport.dll da Microsoft
      */
+    private fun sanitizeSdpForXbox(rawSdp: String): String {
+        val lines = rawSdp.split("\r\n")
+        val out = StringBuilder()
+        for (line in lines) {
+            if (line.isBlank()) continue
+            // Remove extensões que quebram o parser C++ da consola Xbox Series X
+            if (line.startsWith("a=extmap-allow-mixed")) continue
+            if (line.startsWith("a=msid-semantic:")) {
+                out.append("a=msid-semantic: WMS\r\n")
+                continue
+            }
+            out.append(line).append("\r\n")
+        }
+        return out.toString()
+    }
+
     suspend fun applyRemoteAnswerAndCandidates(answerSdp: String, remoteCandidates: List<IceCandidate>) {
         val pc = peerConnection ?: return
         val setRemoteDeferred = CompletableDeferred<Unit>()
@@ -196,7 +228,9 @@ class XCloudWebRtcClient(
         setRemoteDeferred.await()
 
         for (candidate in remoteCandidates) {
-            pc.addIceCandidate(candidate)
+            try {
+                pc.addIceCandidate(candidate)
+            } catch (ignored: Exception) {}
         }
     }
 

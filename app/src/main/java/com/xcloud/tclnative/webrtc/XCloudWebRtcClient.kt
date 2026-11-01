@@ -56,10 +56,6 @@ class XCloudWebRtcClient(
             .createPeerConnectionFactory()
     }
 
-    /**
-     * Cria a conexão WebRTC na ordem exata exigida pelo servidor Xbox Series X:
-     * 1º Áudio (mid:0) -> 2º Vídeo (mid:1) -> 3º DataChannels (mid:2)
-     */
     suspend fun createOfferSdp(): Pair<String, List<IceCandidate>> {
         gatheredCandidates.clear()
         iceGatheringComplete = CompletableDeferred()
@@ -89,16 +85,13 @@ class XCloudWebRtcClient(
             }
 
             override fun onIceCandidate(candidate: IceCandidate?) {
-                if (candidate != null) {
-                    // Filtra apenas candidatos IPv4 válidos e remove extensões proprietárias do Android
-                    if (!candidate.sdp.contains(":")) {
-                        val cleanedCandSdp = candidate.sdp
-                            .replace(Regex(" network-id \\d+"), "")
-                            .replace(Regex(" network-cost \\d+"), "")
-                        gatheredCandidates.add(
-                            IceCandidate(candidate.sdpMid, candidate.sdpMLineIndex, cleanedCandSdp)
-                        )
-                    }
+                if (candidate != null && !candidate.sdp.contains(":")) {
+                    val cleanedCandSdp = candidate.sdp
+                        .replace(Regex(" network-id \\d+"), "")
+                        .replace(Regex(" network-cost \\d+"), "")
+                    gatheredCandidates.add(
+                        IceCandidate(candidate.sdpMid, candidate.sdpMLineIndex, cleanedCandSdp)
+                    )
                 }
             }
 
@@ -121,18 +114,13 @@ class XCloudWebRtcClient(
 
         this.peerConnection = pc
 
-        // ORDEM CRÍTICA PARA EVITAR HTTP 400 NO XCLOUD:
-        // 1. Primeiro adicionamos Áudio e Vídeo (garante mid:0 e mid:1)
+        // 1. Transceivers de Vídeo e Áudio
         val recvOnlyInit = RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.RECV_ONLY)
         val sendRecvInit = RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.SEND_RECV)
         pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, sendRecvInit)
         pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, recvOnlyInit)
 
-        // 2. Depois criamos os DataChannels (garante mid:2 para m=application)
-        chatChannel = pc.createDataChannel("chat", DataChannel.Init().apply {
-            ordered = true
-            protocol = "chatV1"
-        })
+        // 2. DataChannels oficiais do xCloud
         controlChannel = pc.createDataChannel("control", DataChannel.Init().apply {
             ordered = true
             protocol = "controlV1"
@@ -145,14 +133,12 @@ class XCloudWebRtcClient(
             ordered = true
             protocol = "messageV1"
         })
+        chatChannel = pc.createDataChannel("chat", DataChannel.Init().apply {
+            ordered = true
+            protocol = "chatV1"
+        })
 
-        // 3. Gera o SDP Offer puro
         val offerDeferred = CompletableDeferred<SessionDescription>()
-        val constraints = MediaConstraints().apply {
-            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
-            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
-        }
-
         pc.createOffer(object : SdpObserver {
             override fun onCreateSuccess(sdp: SessionDescription?) {
                 if (sdp != null) offerDeferred.complete(sdp)
@@ -163,9 +149,13 @@ class XCloudWebRtcClient(
                 offerDeferred.completeExceptionally(Exception("Erro createOffer: $error"))
             }
             override fun onSetFailure(error: String?) {}
-        }, constraints)
+        }, MediaConstraints())
 
         val offer = offerDeferred.await()
+
+        // Reordena o H.264 para o topo do SDP antes de aplicar e enviar à Microsoft!
+        val h264OptimizedSdp = prioritizeH264InSdp(offer.description)
+        val modifiedOffer = SessionDescription(SessionDescription.Type.OFFER, h264OptimizedSdp)
 
         val setLocalDeferred = CompletableDeferred<Unit>()
         pc.setLocalDescription(object : SdpObserver {
@@ -175,9 +165,15 @@ class XCloudWebRtcClient(
             }
             override fun onCreateFailure(error: String?) {}
             override fun onSetFailure(error: String?) {
-                setLocalDeferred.completeExceptionally(Exception("Erro setLocalDescription: $error"))
+                // Se o Android reclamar do SDP modificado localmente, aplica o original localmente e envia o limpo para o Xbox
+                pc.setLocalDescription(object : SdpObserver {
+                    override fun onCreateSuccess(p0: SessionDescription?) {}
+                    override fun onSetSuccess() { setLocalDeferred.complete(Unit) }
+                    override fun onCreateFailure(p0: String?) {}
+                    override fun onSetFailure(p0: String?) { setLocalDeferred.complete(Unit) }
+                }, offer)
             }
-        }, offer)
+        }, modifiedOffer)
 
         setLocalDeferred.await()
 
@@ -185,24 +181,39 @@ class XCloudWebRtcClient(
             iceGatheringComplete.await()
         }
 
-        // Enviamos o offer.description limpo (sem candidatos sujos embutidos no SDP)
-        val cleanSdp = sanitizeSdpForXbox(offer.description)
-        return Pair(cleanSdp, gatheredCandidates.toList())
+        return Pair(h264OptimizedSdp, gatheredCandidates.toList())
     }
 
     /**
-     * Limpa linhas proprietárias do Android que causam HTTP 400 no WebrtcTransport.dll da Microsoft
+     * Move os Payload Types do H.264 para o início da linha m=video e remove tags incompatíveis.
+     * Essencial para o servidor Xbox aceitar o POST /sdp sem dar HTTP 400!
      */
-    private fun sanitizeSdpForXbox(rawSdp: String): String {
+    private fun prioritizeH264InSdp(rawSdp: String): String {
         val lines = rawSdp.split("\r\n")
+        val h264Payloads = mutableListOf<String>()
+
+        for (line in lines) {
+            if (line.startsWith("a=rtpmap:") && line.contains("H264/90000", ignoreCase = true)) {
+                val pt = line.substringAfter("a=rtpmap:").substringBefore(" ")
+                if (pt.isNotEmpty()) h264Payloads.add(pt)
+            }
+        }
+
         val out = StringBuilder()
         for (line in lines) {
             if (line.isBlank()) continue
-            // Remove extensões que quebram o parser C++ da consola Xbox Series X
             if (line.startsWith("a=extmap-allow-mixed")) continue
-            if (line.startsWith("a=msid-semantic:")) {
-                out.append("a=msid-semantic: WMS\r\n")
-                continue
+
+            if (line.startsWith("m=video ") && h264Payloads.isNotEmpty()) {
+                val parts = line.split(" ")
+                if (parts.size > 3) {
+                    val header = parts.subList(0, 3).joinToString(" ")
+                    val allPts = parts.subList(3, parts.size)
+                    val otherPts = allPts.filter { !h264Payloads.contains(it) }
+                    val reorderedPts = (h264Payloads + otherPts).joinToString(" ")
+                    out.append("$header $reorderedPts\r\n")
+                    continue
+                }
             }
             out.append(line).append("\r\n")
         }

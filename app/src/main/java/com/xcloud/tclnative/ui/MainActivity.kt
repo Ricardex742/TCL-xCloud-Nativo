@@ -2,58 +2,68 @@ package com.xcloud.tclnative.ui
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.graphics.Bitmap
+import android.app.AlertDialog
+import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
-import android.webkit.CookieManager
-import android.webkit.JavascriptInterface
-import android.webkit.WebChromeClient
-import android.webkit.WebSettings
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
+import com.xcloud.tclnative.auth.XCloudSession
+import com.xcloud.tclnative.auth.XalAuthenticator
 import com.xcloud.tclnative.renderer.AiPqSurfaceRenderer
+import com.xcloud.tclnative.signaling.XCloudSignalingClient
+import com.xcloud.tclnative.webrtc.XCloudWebRtcClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 class MainActivity : Activity() {
 
     private lateinit var rootLayout: FrameLayout
     private lateinit var surfaceRenderer: AiPqSurfaceRenderer
     private lateinit var hudTextView: TextView
-    private lateinit var streamWebView: WebView
+    private lateinit var controlPanel: LinearLayout
+    private lateinit var authenticator: XalAuthenticator
+    private var webrtcClient: XCloudWebRtcClient? = null
+    private val mainScope = CoroutineScope(Dispatchers.Main + Job())
+    private var qrPollingJob: Job? = null
+
+    companion object {
+        private const val OAUTH_AUTHORIZE_URL =
+            "https://login.live.com/oauth20_authorize.srf" +
+                "?client_id=000000004c12ae6f" +
+                "&response_type=token" +
+                "&approval_prompt=auto" +
+                "&scope=service::user.auth.xboxlive.com::MBI_SSL" +
+                "&redirect_uri=https://login.live.com/oauth20_desktop.srf"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Mantém a tela ligada e ativa aceleração total de Hardware na janela para a TCL P755 / Snapdragon
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
-            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
-        )
-
-        // Na TCL P755 (4K), garante que o display físico opere no modo 3840x2160 @ 60Hz nativo
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val display = windowManager.defaultDisplay
-            val modes = display.supportedModes
-            val native4kMode = modes.firstOrNull { it.physicalWidth == 3840 && it.physicalHeight == 2160 && it.refreshRate >= 59f }
-            if (native4kMode != null) {
-                val params = window.attributes
-                params.preferredDisplayModeId = native4kMode.modeId
-                window.attributes = params
-            }
-        }
+        authenticator = XalAuthenticator(this)
 
         rootLayout = FrameLayout(this).apply {
             setBackgroundColor(Color.BLACK)
         }
 
-        // 1. Camada de Hardware Base (Mantém o contexto EGL e Scaler 1080p->4K ativo)
+        // 1. Camada de Vídeo Nativa (SurfaceViewRenderer + AiPQ 4K Hardware Scaler)
         surfaceRenderer = AiPqSurfaceRenderer(this)
         rootLayout.addView(
             surfaceRenderer,
@@ -63,25 +73,15 @@ class MainActivity : Activity() {
             )
         )
 
-        // 2. Motor de Catálogo e Stream com Injeção Nativa de Latência Zero
-        streamWebView = createLowLatencyStreamView()
-        rootLayout.addView(
-            streamWebView,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-        )
-
-        // 3. HUD de Telemetria no Topo (Desaparece sozinho 5s após o jogo iniciar!)
+        // 2. HUD de Telemetria no Topo
         val androidVer = Build.VERSION.RELEASE
         val socModel = Build.HARDWARE
         hudTextView = TextView(this).apply {
-            text = "xCloud Native [Android $androidVer | SoC: $socModel] | Motor Low-Latency Pronto"
+            text = "xCloud Native [Android $androidVer | SoC: $socModel] | Decodificador H.264 Ativo"
             setTextColor(Color.GREEN)
-            textSize = 11f
-            setBackgroundColor(Color.argb(190, 0, 0, 0))
-            setPadding(18, 6, 18, 6)
+            textSize = 12f
+            setBackgroundColor(Color.argb(180, 0, 0, 0))
+            setPadding(20, 8, 20, 8)
         }
 
         val hudParams = FrameLayout.LayoutParams(
@@ -89,201 +89,326 @@ class MainActivity : Activity() {
             FrameLayout.LayoutParams.WRAP_CONTENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            topMargin = 12
-            marginStart = 12
+            topMargin = 16
+            marginStart = 16
         }
         rootLayout.addView(hudTextView, hudParams)
 
+        // 3. Painel Central Nativo (Catálogo e Login)
+        controlPanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setBackgroundColor(Color.argb(230, 18, 18, 22))
+            setPadding(40, 30, 40, 30)
+        }
+
+        val panelParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.CENTER
+        }
+        rootLayout.addView(controlPanel, panelParams)
+
         setContentView(rootLayout)
 
-        streamWebView.loadUrl("https://www.xbox.com/pt-BR/play")
+        val savedTicket = authenticator.getSavedRpsTicket()
+        if (!savedTicket.isNullOrEmpty()) {
+            connectToXboxCloud(savedTicket)
+        } else {
+            renderLoginMenu()
+        }
     }
 
-    /**
-     * Ponte Nativa Kotlin <-> WebRTC:
-     * Otimiza o SDP em código nativo para forçar H.264 sem B-Frames e monitora o estado do Hardware Decoder
-     */
-    inner class NativeLowLatencyBridge {
+    private fun renderLoginMenu() {
+        qrPollingJob?.cancel()
+        controlPanel.removeAllViews()
+        controlPanel.visibility = View.VISIBLE
 
-        @JavascriptInterface
-        fun optimizeSdpForHardware(rawSdp: String): String {
-            // Prioriza os perfis H.264 de hardware na linha m=video e remove extensões que causam atraso
-            val lines = rawSdp.split("\r\n")
-            val h264Payloads = mutableListOf<String>()
-
-            for (line in lines) {
-                if (line.startsWith("a=rtpmap:") && line.contains("H264/90000", ignoreCase = true)) {
-                    val pt = line.substringAfter("a=rtpmap:").substringBefore(" ")
-                    if (pt.isNotEmpty()) h264Payloads.add(pt)
-                }
-            }
-
-            val out = StringBuilder()
-            for (line in lines) {
-                if (line.isBlank()) continue
-                if (line.startsWith("m=video ") && h264Payloads.isNotEmpty()) {
-                    val parts = line.split(" ")
-                    if (parts.size > 3) {
-                        val header = parts.subList(0, 3).joinToString(" ")
-                        val allPts = parts.subList(3, parts.size)
-                        val otherPts = allPts.filter { !h264Payloads.contains(it) }
-                        val reorderedPts = (h264Payloads + otherPts).joinToString(" ")
-                        out.append("$header $reorderedPts\r\n")
-                        // Limita picos de bitrate para evitar perda de pacotes e faixas azuis no Wi-Fi
-                        out.append("b=AS:15000\r\n")
-                        continue
-                    }
-                }
-                out.append(line).append("\r\n")
-            }
-            return out.toString()
+        val titleView = TextView(this).apply {
+            text = "XBOX CLOUD GAMING - CATÁLOGO NATIVO"
+            setTextColor(Color.WHITE)
+            textSize = 18f
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 20)
         }
+        controlPanel.addView(titleView)
 
-        @JavascriptInterface
-        fun onWebRtcNegotiating() {
-            runOnUiThread {
-                hudTextView.visibility = View.VISIBLE
-                hudTextView.text = "⚡ Injetando SDP H.264 Low-Latency + JitterBuffer Zero (0ms)..."
-                hudTextView.setTextColor(Color.CYAN)
+        val btnQrLogin = Button(this).apply {
+            text = "1. Entrar via QR Code Oficial (TV / Celular)"
+            isFocusable = true
+            isFocusableInTouchMode = true
+            setOnClickListener {
+                startQrCodeLoginFlow()
             }
         }
+        controlPanel.addView(btnQrLogin)
 
-        @JavascriptInterface
-        fun onStreamActive(width: Int, height: Int) {
-            runOnUiThread {
-                hudTextView.visibility = View.VISIBLE
-                hudTextView.text = "⚡ STREAM ATIVO [${width}x${height} -> AiPQ 4K | Jitter: 0ms] (Ocultando HUD em 5s...)"
-                hudTextView.setTextColor(Color.GREEN)
-                // Esconde o HUD automaticamente após 5 segundos para não atrapalhar o jogo!
-                hudTextView.postDelayed({
-                    hudTextView.visibility = View.GONE
-                }, 5000)
+        val btnAutoLogin = Button(this).apply {
+            text = "2. Login Direto de 1 Toque (Navegador)"
+            isFocusable = true
+            setOnClickListener {
+                openAutoCaptureLoginWebView()
+            }
+        }
+        controlPanel.addView(btnAutoLogin)
+    }
+
+    private fun startQrCodeLoginFlow() {
+        qrPollingJob?.cancel()
+        controlPanel.removeAllViews()
+        controlPanel.visibility = View.VISIBLE
+
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+
+        val qrImageView = ImageView(this).apply {
+            setPadding(12, 12, 12, 12)
+            setBackgroundColor(Color.WHITE)
+        }
+        row.addView(qrImageView, LinearLayout.LayoutParams(340, 340))
+
+        val col = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(36, 0, 0, 0)
+        }
+
+        val stepsText = TextView(this).apply {
+            text = "Gerando código oficial na Microsoft..."
+            setTextColor(Color.LTGRAY)
+            textSize = 13f
+        }
+        col.addView(stepsText)
+
+        val codeText = TextView(this).apply {
+            text = "--------"
+            setTextColor(Color.GREEN)
+            textSize = 26f
+            setPadding(0, 8, 0, 12)
+        }
+        col.addView(codeText)
+
+        val btnApprovePhone = Button(this).apply {
+            text = "Aprovar Neste Celular"
+            visibility = View.GONE
+        }
+        col.addView(btnApprovePhone)
+
+        val btnBack = Button(this).apply {
+            text = "Voltar"
+            setOnClickListener { renderLoginMenu() }
+        }
+        col.addView(btnBack)
+
+        row.addView(col)
+        controlPanel.addView(row)
+
+        qrPollingJob = mainScope.launch {
+            val qrRes = authenticator.requestDeviceCodeQr()
+            qrRes.onSuccess { info ->
+                qrImageView.setImageBitmap(info.qrBitmap)
+                stepsText.text = "Escaneie o QR Code ou acesse\nmicrosoft.com/link com o código:"
+                codeText.text = info.userCode
+                btnApprovePhone.visibility = View.VISIBLE
+                btnApprovePhone.setOnClickListener {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(info.verificationUriComplete)))
+                }
+                hudTextView.text = "Aguardando aprovação do QR Code [${info.userCode}]..."
+                hudTextView.setTextColor(Color.YELLOW)
+
+                val pollRes = authenticator.pollForDeviceCodeLogin(info)
+                pollRes.onSuccess { rpsTicket ->
+                    connectToXboxCloud(rpsTicket)
+                }.onFailure { err ->
+                    hudTextView.text = "QR Code expirado: ${err.message}"
+                    hudTextView.setTextColor(Color.RED)
+                }
+            }.onFailure { err ->
+                stepsText.text = "Erro ao gerar QR: ${err.message}"
             }
         }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private fun createLowLatencyStreamView(): WebView {
-        val cookieManager = CookieManager.getInstance()
-        cookieManager.setAcceptCookie(true)
-
-        return WebView(this).apply {
-            setBackgroundColor(Color.BLACK)
-            // Força renderização direta na camada de Hardware (GPU/HWC)
-            setLayerType(View.LAYER_TYPE_HARDWARE, null)
-
-            settings.apply {
-                javaScriptEnabled = true
-                domStorageEnabled = true
-                databaseEnabled = true
-                mediaPlaybackRequiresUserGesture = false
-                cacheMode = WebSettings.LOAD_DEFAULT
-                // User-Agent Windows/Edge para liberar stream 1080p @ 60FPS nos servidores da Microsoft
-                userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0"
-            }
-
-            cookieManager.setAcceptThirdPartyCookies(this, true)
-            addJavascriptInterface(NativeLowLatencyBridge(), "AndroidBridge")
-
-            webChromeClient = WebChromeClient()
-
+    private fun openAutoCaptureLoginWebView() {
+        val dialog = AlertDialog.Builder(this).create()
+        val loginWebView = WebView(this).apply {
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
             webViewClient = object : WebViewClient() {
-                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                    super.onPageStarted(view, url, favicon)
-                    injectLowLatencyWebRtcEngine(view)
+                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                    val url = request?.url?.toString() ?: return false
+                    if (url.contains("access_token=")) {
+                        val token = extractAccessToken(url)
+                        view?.destroy()
+                        dialog.dismiss()
+                        connectToXboxCloud(token)
+                        return true
+                    }
+                    return false
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
-                    CookieManager.getInstance().flush()
-                    injectLowLatencyWebRtcEngine(view)
+                    if (url != null && url.contains("access_token=")) {
+                        val token = extractAccessToken(url)
+                        view?.destroy()
+                        dialog.dismiss()
+                        connectToXboxCloud(token)
+                    }
                 }
+            }
+            loadUrl(OAUTH_AUTHORIZE_URL)
+        }
+
+        val container = FrameLayout(this).apply {
+            addView(loginWebView, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            ))
+        }
+        dialog.setView(container)
+        dialog.show()
+        dialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+    }
+
+    private fun extractAccessToken(input: String): String {
+        if (input.contains("access_token=")) {
+            val afterToken = input.substringAfter("access_token=")
+            val rawToken = afterToken.substringBefore("&")
+            return Uri.decode(rawToken)
+        }
+        return input
+    }
+
+    private fun connectToXboxCloud(rpsTicket: String) {
+        hudTextView.text = "Autenticando na Xbox Live e buscando catálogo oficial do Brasil..."
+        hudTextView.setTextColor(Color.YELLOW)
+
+        mainScope.launch {
+            val result = authenticator.authenticateToXCloud(rpsTicket)
+            result.onSuccess { session ->
+                hudTextView.text = "CONECTADO! Região: ${session.baseUri.replace("https://", "")} | Carregando Jogos..."
+                hudTextView.setTextColor(Color.GREEN)
+                renderGameDashboard(session)
+            }.onFailure { err ->
+                hudTextView.text = "Falha na autenticação: ${err.message}"
+                hudTextView.setTextColor(Color.RED)
+                authenticator.clearSession()
+                renderLoginMenu()
             }
         }
     }
 
-    /**
-     * Injeta o acelerador de baixa latência diretamente no motor RTCPeerConnection e no decodificador de vídeo:
-     * 1. Zera o playoutDelayHint e o jitterBufferTarget (remove ~120ms de atraso de buffer).
-     * 2. Passa o SDP pelo otimizador nativo Kotlin (H.264 Hardware Priority).
-     * 3. Trava o elemento de vídeo em Hardware Overlay para acionar o AiPQ 4K da TCL P755.
-     */
-    private fun injectLowLatencyWebRtcEngine(view: WebView?) {
-        val jsAccelerator = """
-            (function() {
-                if (window.__tclLowLatencyActive) return;
-                window.__tclLowLatencyActive = true;
+    private fun renderGameDashboard(session: XCloudSession) {
+        val signaling = XCloudSignalingClient(session)
 
-                const OrigPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection;
-                if (OrigPeerConnection) {
-                    window.RTCPeerConnection = function(config, constraints) {
-                        const pc = new OrigPeerConnection(config, constraints);
+        mainScope.launch {
+            val games = signaling.fetchCatalogGames()
+            controlPanel.removeAllViews()
+            controlPanel.visibility = View.VISIBLE
 
-                        if (window.AndroidBridge) {
-                            window.AndroidBridge.onWebRtcNegotiating();
-                        }
+            val header = TextView(this@MainActivity).apply {
+                text = "CATÁLOGO OFICIAL XCLOUD NATIVO (${games.size} TÍTULOS)"
+                setTextColor(Color.GREEN)
+                textSize = 15f
+                gravity = Gravity.CENTER
+                setPadding(0, 0, 0, 14)
+            }
+            controlPanel.addView(header)
 
-                        // 1. Intercepta o SDP Offer para aplicar o filtro H.264 Nativo do Kotlin
-                        const origCreateOffer = pc.createOffer.bind(pc);
-                        pc.createOffer = async function(options) {
-                            const offer = await origCreateOffer(options);
-                            if (offer && offer.sdp && window.AndroidBridge) {
-                                offer.sdp = window.AndroidBridge.optimizeSdpForHardware(offer.sdp);
-                            }
-                            return offer;
-                        };
+            val scroll = ScrollView(this@MainActivity)
+            val gamesListLayout = LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.VERTICAL
+            }
 
-                        // 2. Força Latência Zero (0ms de Jitter Buffer) em todos os receptores de Vídeo e Áudio
-                        const applyZeroDelay = () => {
-                            try {
-                                pc.getReceivers().forEach(receiver => {
-                                    if ('playoutDelayHint' in receiver) {
-                                        receiver.playoutDelayHint = 0.0;
-                                    }
-                                    if ('jitterBufferTarget' in receiver) {
-                                        receiver.jitterBufferTarget = 0;
-                                    }
-                                });
-                            } catch (e) {}
-                        };
-
-                        pc.addEventListener('track', applyZeroDelay);
-                        setInterval(applyZeroDelay, 1000);
-
-                        return pc;
-                    };
-                    window.RTCPeerConnection.prototype = OrigPeerConnection.prototype;
-                }
-
-                // 3. Monitora o início do vídeo para travar o Upscaling 1080p->4K e ocultar o HUD
-                document.addEventListener('playing', function(e) {
-                    if (e.target && e.target.tagName === 'VIDEO') {
-                        const v = e.target;
-                        v.style.imageRendering = 'crisp-edges';
-                        v.style.transform = 'translateZ(0)'; // Força Hardware Overlay
-                        if (window.AndroidBridge) {
-                            window.AndroidBridge.onStreamActive(v.videoWidth || 1920, v.videoHeight || 1080);
-                        }
+            for (game in games) {
+                val btnGame = Button(this@MainActivity).apply {
+                    text = "▶ ${game.name}"
+                    isFocusable = true
+                    setOnClickListener {
+                        launchCloudGame(signaling, game.titleId, game.name)
                     }
-                }, true);
-            })();
-        """.trimIndent()
+                }
+                gamesListLayout.addView(btnGame)
+            }
 
-        view?.evaluateJavascript(jsAccelerator, null)
+            val btnLogout = Button(this@MainActivity).apply {
+                text = "Trocar Conta / Novo Login"
+                setOnClickListener {
+                    authenticator.clearSession()
+                    renderLoginMenu()
+                }
+            }
+            gamesListLayout.addView(btnLogout)
+
+            scroll.addView(gamesListLayout)
+            controlPanel.addView(scroll, LinearLayout.LayoutParams(820, 440))
+            hudTextView.text = "Catálogo Nativo Carregado (${games.size} jogos) | Toque num jogo para iniciar!"
+        }
+    }
+
+    private fun launchCloudGame(signaling: XCloudSignalingClient, titleId: String, gameName: String) {
+        controlPanel.visibility = View.GONE
+        hudTextView.text = "Alocando Xbox Series X para [$gameName]..."
+        hudTextView.setTextColor(Color.CYAN)
+
+        webrtcClient?.close()
+        val rtc = XCloudWebRtcClient(
+            context = this,
+            eglBase = surfaceRenderer.eglBase,
+            onVideoTrackReady = { videoTrack ->
+                surfaceRenderer.attachVideoTrack(videoTrack)
+                runOnUiThread {
+                    hudTextView.text = "VÍDEO H.264 ATIVO [$gameName] | Renderizador Nativo 1080p->4K!"
+                    hudTextView.setTextColor(Color.GREEN)
+                }
+            },
+            onConnectionStateChanged = { iceState ->
+                runOnUiThread {
+                    hudTextView.text = "WebRTC ICE: $iceState | Jogo: $gameName"
+                }
+            }
+        )
+        webrtcClient = rtc
+
+        mainScope.launch {
+            val res = signaling.startAndConnectWebRtcSession(titleId, rtc) { progressMsg ->
+                runOnUiThread {
+                    hudTextView.text = progressMsg
+                    hudTextView.setTextColor(Color.YELLOW)
+                }
+            }
+            res.onSuccess { statusMsg ->
+                hudTextView.text = statusMsg
+                hudTextView.setTextColor(Color.GREEN)
+            }.onFailure { err ->
+                hudTextView.text = "Aviso de Sessão: ${err.message}"
+                hudTextView.setTextColor(Color.RED)
+                controlPanel.visibility = View.VISIBLE
+            }
+        }
+    }
+
+    override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+        return super.onGenericMotionEvent(event)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_BACK && streamWebView.canGoBack()) {
-            streamWebView.goBack()
-            hudTextView.visibility = View.VISIBLE
+        if (keyCode == KeyEvent.KEYCODE_BACK && controlPanel.visibility == View.GONE) {
+            webrtcClient?.close()
+            controlPanel.visibility = View.VISIBLE
             return true
         }
         return super.onKeyDown(keyCode, event)
     }
 
     override fun onDestroy() {
-        CookieManager.getInstance().flush()
-        streamWebView.destroy()
+        qrPollingJob?.cancel()
+        webrtcClient?.close()
         surfaceRenderer.release()
         super.onDestroy()
     }

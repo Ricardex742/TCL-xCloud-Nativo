@@ -9,11 +9,10 @@ android {
 
     defaultConfig {
         applicationId = "com.xcloud.tclnative"
-        // Android 11 (API 30) é a base da TCL P755 e onde nasce o KEY_LOW_LATENCY nativo
-        minSdk = 30
+        minSdk = 29
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0-alpha"
+        versionCode = 4
+        versionName = "0.4.0-native-fixes"
     }
 
        buildTypes {
@@ -44,4 +43,9 @@ dependencies {
 
     // Motor WebRTC pré-compilado para Android (Suporte H.264 Hardware Decoding)
     implementation("io.getstream:stream-webrtc-android:1.1.1")
+    implementation("com.google.zxing:core:3.5.3")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("org.json:json:20240303")
 }

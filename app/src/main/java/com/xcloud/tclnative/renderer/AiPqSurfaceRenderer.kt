@@ -2,7 +2,6 @@ package com.xcloud.tclnative.renderer
 
 import android.content.Context
 import android.graphics.Color
-import android.util.Log
 import android.widget.FrameLayout
 import org.webrtc.EglBase
 import org.webrtc.RendererCommon
@@ -10,58 +9,66 @@ import org.webrtc.SurfaceViewRenderer
 import org.webrtc.VideoTrack
 
 class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
-
-    companion object {
-        private const val TAG = "AiPqSurfaceRenderer"
-        private const val STREAM_WIDTH = 1920
-        private const val STREAM_HEIGHT = 1080
-    }
-
     val eglBase: EglBase = EglBase.create()
-    val webrtcSurfaceView: SurfaceViewRenderer = SurfaceViewRenderer(context)
-    private var currentVideoTrack: VideoTrack? = null
+    var onFirstFrameRendered: (() -> Unit)? = null
+    var onRenderError: ((Exception) -> Unit)? = null
+    private var currentTrack: VideoTrack? = null
+    private var renderer: SurfaceViewRenderer? = null
+    private var generation = 0
+    private var released = false
 
-    init {
-        setBackgroundColor(Color.BLACK)
-        keepScreenOn = true
+    init { setBackgroundColor(Color.BLACK); keepScreenOn = true }
 
-        // Inicializa o renderizador nativo C++ / OpenGL / Hardware Overlay
-        webrtcSurfaceView.init(eglBase.eglBaseContext, null)
-        webrtcSurfaceView.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT)
-
-        // CRUCIAL PARA A TCL P755 (AiPQ 4K) E DISPOSITIVOS FRACOS:
-        // Ativa o Hardware Scaler do SurfaceFlinger e fixa a geometria base em 1080p
-        webrtcSurfaceView.setEnableHardwareScaler(true)
-        webrtcSurfaceView.holder.setFixedSize(STREAM_WIDTH, STREAM_HEIGHT)
-
-        addView(
-            webrtcSurfaceView,
-            LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
-        )
-        Log.i(TAG, "SurfaceViewRenderer Nativo + Hardware Scaler 1080p->4K inicializado!")
+    /** A new renderer has a new first-frame event for every session, including retries. */
+    fun prepareForSession() {
+        check(!released)
+        detachTrack()
+        generation++
+        renderer?.let { removeView(it); it.release() }
+        val id = generation
+        renderer = SurfaceViewRenderer(context).also { view ->
+            view.init(eglBase.eglBaseContext, object : RendererCommon.RendererEvents {
+                override fun onFirstFrameRendered() {
+                    post { if (!released && generation == id) onFirstFrameRendered?.invoke() }
+                }
+                override fun onFrameResolutionChanged(width: Int, height: Int, rotation: Int) {}
+            })
+            view.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT)
+            view.setEnableHardwareScaler(true)
+            addView(view, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        }
     }
-
-    /**
-     * Liga o fluxo de vídeo H.264 que chega do servidor Xbox Cloud Gaming diretamente ao ecrã
-     */
-    fun attachVideoTrack(videoTrack: VideoTrack) {
+    fun attachVideoTrack(track: VideoTrack) {
+        val id = generation
         post {
-            try {
-                currentVideoTrack?.removeSink(webrtcSurfaceView)
-                currentVideoTrack = videoTrack
-                videoTrack.addSink(webrtcSurfaceView)
-                Log.i(TAG, "VideoTrack H.264 anexado ao Hardware Overlay com sucesso!")
-            } catch (e: Exception) {
-                Log.e(TAG, "Erro ao anexar VideoTrack: ${e.message}", e)
+            if (!released && generation == id) {
+                detachTrack()
+                val sink = renderer ?: return@post
+                try {
+                    track.addSink(sink)
+                    currentTrack = track
+                } catch (e: Exception) { onRenderError?.invoke(e) }
             }
         }
     }
-
+    fun detachTrack() {
+        val sink = renderer
+        if (sink != null) currentTrack?.removeSink(sink)
+        currentTrack = null
+    }
+    fun clearSession() {
+        generation++
+        detachTrack()
+        renderer?.clearImage()
+        onFirstFrameRendered = null
+        onRenderError = null
+    }
     fun release() {
-        try {
-            currentVideoTrack?.removeSink(webrtcSurfaceView)
-            webrtcSurfaceView.release()
-            eglBase.release()
-        } catch (ignored: Exception) {}
+        if (released) return
+        clearSession()
+        released = true
+        renderer?.release()
+        renderer = null
+        eglBase.release()
     }
 }

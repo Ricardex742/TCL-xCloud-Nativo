@@ -55,16 +55,24 @@ jobs:
           gradle.beforeProject { project ->
               if (project.path == ":app") {
                   project.plugins.withId("com.android.application") {
-                      project.dependencies.add("implementation", "com.google.zxing:core:3.5.3")
                       project.extensions.getByName("androidComponents").finalizeDsl { androidDsl ->
-                          androidDsl.defaultConfig.minSdk = 29
                           androidDsl.lint.checkOnly.addAll(["NewApi", "InlinedApi"])
                       }
                   }
               }
           }
           INIT
-          gradle -I "$RUNNER_TEMP/android.init.gradle" -Pandroid.useAndroidX=true --no-daemon --max-workers=2 :app:assembleDebug :app:lintDebug
+          gradle -I "$RUNNER_TEMP/android.init.gradle" -Pandroid.useAndroidX=true --no-daemon --max-workers=2 :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
+          python3 - <<'PYTEST'
+          from pathlib import Path
+          import os, xml.etree.ElementTree as E
+          suites = [E.parse(p).getroot() for p in Path('app/build/test-results/testDebugUnitTest').glob('TEST-*.xml')]
+          totals = {key: sum(int(s.get(key, 0)) for s in suites) for key in ('tests', 'failures', 'errors', 'skipped')}
+          assert totals['tests'] > 0 and totals['failures'] == 0 and totals['errors'] == 0, totals
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write(f"Testes JVM: {totals}\n")
+          print(totals)
+          PYTEST
           "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --verbose app/build/outputs/apk/debug/app-debug.apk
           "$ANDROID_HOME/build-tools/34.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | grep -Fx "sdkVersion:'29'"
 
@@ -74,3 +82,12 @@ jobs:
           name: TCL-xCloud-App-Debug-Android10
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      - name: Salvar resultados dos testes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-client-test-results
+          path: |
+            app/build/test-results/testDebugUnitTest/
+            app/build/reports/lint-results-debug.*

@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
+import org.json.JSONObject
 import org.webrtc.DataChannel
 import org.webrtc.DefaultVideoDecoderFactory
 import org.webrtc.DefaultVideoEncoderFactory
@@ -19,6 +20,7 @@ import org.webrtc.RtpTransceiver
 import org.webrtc.SdpObserver
 import org.webrtc.SessionDescription
 import org.webrtc.VideoTrack
+import java.nio.ByteBuffer
 
 class XCloudWebRtcClient(
     context: Context,
@@ -97,9 +99,11 @@ class XCloudWebRtcClient(
             }
 
             override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {}
+
             override fun onAddStream(stream: MediaStream?) {
                 stream?.videoTracks?.firstOrNull()?.let { onVideoTrackReady(it) }
             }
+
             override fun onRemoveStream(stream: MediaStream?) {}
             override fun onDataChannel(dataChannel: DataChannel?) {}
             override fun onRenegotiationNeeded() {}
@@ -115,29 +119,59 @@ class XCloudWebRtcClient(
 
         this.peerConnection = pc
 
+        // 1. Transceivers de Áudio e Vídeo (RECV_ONLY para stream limpo)
         val recvOnlyInit = RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.RECV_ONLY)
-        val sendRecvInit = RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.SEND_RECV)
-        pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, sendRecvInit)
+        pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, recvOnlyInit)
         pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, recvOnlyInit)
 
+        // 2. DataChannels exigidos pelo servidor Xbox Series X
         controlChannel = pc.createDataChannel("control", DataChannel.Init().apply {
             ordered = true
             protocol = "controlV1"
-        })
+        })?.apply {
+            registerObserver(object : DataChannel.Observer {
+                override fun onBufferedAmountChange(previousAmount: Long) {}
+                override fun onStateChange() {
+                    if (state() == DataChannel.State.OPEN) {
+                        sendXboxControlHandshake()
+                    }
+                }
+                override fun onMessage(buffer: DataChannel.Buffer?) {}
+            })
+        }
+
         inputChannel = pc.createDataChannel("input", DataChannel.Init().apply {
             ordered = true
             protocol = "1.0"
         })
+
         messageChannel = pc.createDataChannel("message", DataChannel.Init().apply {
             ordered = true
             protocol = "messageV1"
-        })
+        })?.apply {
+            registerObserver(object : DataChannel.Observer {
+                override fun onBufferedAmountChange(previousAmount: Long) {}
+                override fun onStateChange() {
+                    if (state() == DataChannel.State.OPEN) {
+                        sendXboxMessageHandshake()
+                    }
+                }
+                override fun onMessage(buffer: DataChannel.Buffer?) {}
+            })
+        }
+
         chatChannel = pc.createDataChannel("chat", DataChannel.Init().apply {
             ordered = true
             protocol = "chatV1"
         })
 
+        // 3. Gera o SDP Offer
         val offerDeferred = CompletableDeferred<SessionDescription>()
+        val constraints = MediaConstraints().apply {
+            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
+            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
+        }
+
         pc.createOffer(object : SdpObserver {
             override fun onCreateSuccess(sdp: SessionDescription?) {
                 if (sdp != null) offerDeferred.complete(sdp)
@@ -148,7 +182,7 @@ class XCloudWebRtcClient(
                 offerDeferred.completeExceptionally(Exception("Erro createOffer: $error"))
             }
             override fun onSetFailure(error: String?) {}
-        }, MediaConstraints())
+        }, constraints)
 
         val offer = offerDeferred.await()
 
@@ -170,10 +204,56 @@ class XCloudWebRtcClient(
             iceGatheringComplete.await()
         }
 
-        // Usa o SDP final com os candidatos reunidos, limpando extensões incompatíveis com o Xbox
-        val fullLocalSdp = pc.localDescription?.description ?: offer.description
-        val cleanXboxSdp = sanitizeAndPrioritizeH264(fullLocalSdp)
-        return Pair(cleanXboxSdp, gatheredCandidates.toList())
+        // Envia o SDP com H.264 priorizado e sem atributos proprietários que geram HTTP 400
+        val cleanSdp = sanitizeAndPrioritizeH264(offer.description)
+        return Pair(cleanSdp, gatheredCandidates.toList())
+    }
+
+    /**
+     * Envia os pacotes de partida no canal 'control' assim que o WebRTC conecta,
+     * solicitando o primeiro quadro de vídeo (Keyframe IDR) da consola Xbox Series X!
+     */
+    private fun sendXboxControlHandshake() {
+        try {
+            val authMsg = JSONObject().apply {
+                put("message", "authorizationRequest")
+                put("accessKey", "4BDB3609-C1F1-4195-9B37-FEFF45DA8B8E")
+            }.toString()
+            sendJsonOnChannel(controlChannel, authMsg)
+
+            val gamepadMsg = JSONObject().apply {
+                put("message", "gamepadChanged")
+                put("gamepadIndex", 0)
+                put("wasAdded", true)
+            }.toString()
+            sendJsonOnChannel(controlChannel, gamepadMsg)
+
+            val keyframeMsg = JSONObject().apply {
+                put("message", "videoKeyframeRequested")
+                put("ifrRequested", true)
+            }.toString()
+            sendJsonOnChannel(controlChannel, keyframeMsg)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro no handshake de controle: ${e.message}")
+        }
+    }
+
+    private fun sendXboxMessageHandshake() {
+        try {
+            val handshake = JSONObject().apply {
+                put("type", "Handshake")
+                put("version", "messageV1")
+                put("id", "00000000-0000-0000-0000-000000000001")
+                put("cv", "")
+            }.toString()
+            sendJsonOnChannel(messageChannel, handshake)
+        } catch (ignored: Exception) {}
+    }
+
+    private fun sendJsonOnChannel(channel: DataChannel?, jsonText: String) {
+        val bytes = (jsonText + "\u0000").toByteArray(Charsets.UTF_8)
+        val buf = DataChannel.Buffer(ByteBuffer.wrap(bytes), false)
+        channel?.send(buf)
     }
 
     private fun sanitizeAndPrioritizeH264(rawSdp: String): String {
@@ -191,19 +271,7 @@ class XCloudWebRtcClient(
         for (line in lines) {
             if (line.isBlank()) continue
             if (line.startsWith("a=extmap-allow-mixed")) continue
-
-            // Filtra candidatos IPv6 ou limpa tags proprietárias do Android nos candidatos IPv4
-            if (line.startsWith("a=candidate:")) {
-                val parts = line.split(" ")
-                if (parts.size >= 5 && parts[4].contains(":")) {
-                    continue // Ignora IPv6 local que dá HTTP 400 no xCloud
-                }
-                val cleanCand = line
-                    .replace(Regex(" network-id \\d+"), "")
-                    .replace(Regex(" network-cost \\d+"), "")
-                out.append(cleanCand).append("\r\n")
-                continue
-            }
+            if (line.startsWith("a=candidate:")) continue
 
             if (line.startsWith("m=video ") && h264Payloads.isNotEmpty()) {
                 val parts = line.split(" ")

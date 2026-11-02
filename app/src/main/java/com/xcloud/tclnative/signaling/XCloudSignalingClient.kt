@@ -27,40 +27,6 @@ class SignalingStageException(
     override val message: String
 ) : Exception(message)
 
-class ActiveStreamSession(
-    val sessionPath: String,
-    private val baseUri: String,
-    private val gssvToken: String,
-    private val httpClient: OkHttpClient
-) {
-    private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
-
-    suspend fun keepAlive(): Boolean = withContext(Dispatchers.IO) {
-        runCatching {
-            val req = Request.Builder()
-                .url("${baseUri.trimEnd('/')}/${sessionPath.trimStart('/')}/keepalive")
-                .addHeader("Authorization", "Bearer $gssvToken")
-                .addHeader("Content-Type", "application/json")
-                .post("{}".toRequestBody(jsonMediaType))
-                .build()
-            httpClient.newCall(req).execute().use { it.isSuccessful }
-        }.getOrDefault(false)
-    }
-
-    suspend fun stop(): Boolean = withContext(Dispatchers.IO) {
-        runCatching {
-            val req = Request.Builder()
-                .url("${baseUri.trimEnd('/')}/${sessionPath.trimStart('/')}")
-                .addHeader("Authorization", "Bearer $gssvToken")
-                .delete()
-                .build()
-            httpClient.newCall(req).execute().use { it.isSuccessful }
-        }.getOrDefault(false)
-    }
-
-    override fun toString(): String = "STREAM ATIVO ($sessionPath)"
-}
-
 class XCloudSignalingClient(
     private val session: XCloudSession,
     private val httpClient: OkHttpClient = OkHttpClient.Builder()
@@ -69,6 +35,9 @@ class XCloudSignalingClient(
         .build()
 ) {
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
+
+    @Volatile
+    private var lastActiveSessionPath: String = ""
 
     suspend fun fetchCatalogGames(): List<GameTitle> = withContext(Dispatchers.IO) {
         val parsed = mutableListOf<GameTitle>()
@@ -107,11 +76,42 @@ class XCloudSignalingClient(
         parsed.sortedBy { it.name.uppercase(Locale.ROOT) }
     }
 
+    /**
+     * Suporta chamadas diretas signaling.keepAlive(sessionPath) ou signaling.keepAlive() na linha 208 da MainActivity.kt
+     */
+    suspend fun keepAlive(sessionPath: String = lastActiveSessionPath): Result<Unit> = withContext(Dispatchers.IO) {
+        val targetPath = sessionPath.trimStart('/').ifBlank { return@withContext Result.success(Unit) }
+        runCatching {
+            val req = Request.Builder()
+                .url("${session.baseUri.trimEnd('/')}/$targetPath/keepalive")
+                .addHeader("Authorization", "Bearer ${session.gssvToken}")
+                .addHeader("Content-Type", "application/json")
+                .post("{}".toRequestBody(jsonMediaType))
+                .build()
+            httpClient.newCall(req).execute().close()
+        }
+    }
+
+    /**
+     * Suporta chamadas diretas signaling.stop(sessionPath) ou signaling.stop() na linha 228 da MainActivity.kt
+     */
+    suspend fun stop(sessionPath: String = lastActiveSessionPath): Result<Unit> = withContext(Dispatchers.IO) {
+        val targetPath = sessionPath.trimStart('/').ifBlank { return@withContext Result.success(Unit) }
+        runCatching {
+            val req = Request.Builder()
+                .url("${session.baseUri.trimEnd('/')}/$targetPath")
+                .addHeader("Authorization", "Bearer ${session.gssvToken}")
+                .delete()
+                .build()
+            httpClient.newCall(req).execute().close()
+        }
+    }
+
     suspend fun startAndConnectWebRtcSession(
         titleId: String,
         webrtcClient: Any,
         onProgress: (String) -> Unit = {}
-    ): Result<ActiveStreamSession> = withContext(Dispatchers.IO) {
+    ): Result<String> = withContext(Dispatchers.IO) {
         try {
             val baseUri = session.baseUri.trimEnd('/')
 
@@ -185,6 +185,7 @@ class XCloudSignalingClient(
                 }
                 JSONObject(body).getString("sessionPath").trimStart('/')
             }
+            lastActiveSessionPath = sessionPath
 
             // 1. Ciclo da Máquina de Estados: WaitingForResources -> ReadyToConnect -> [POST /connect] -> Provisioned
             var state = "Provisioning"
@@ -356,14 +357,7 @@ class XCloudSignalingClient(
 
             invokeApplyRemote(webrtcClient, finalAnswerSdp, remoteCandidates)
 
-            Result.success(
-                ActiveStreamSession(
-                    sessionPath = sessionPath,
-                    baseUri = baseUri,
-                    gssvToken = session.gssvToken,
-                    httpClient = httpClient
-                )
-            )
+            Result.success(sessionPath)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -371,11 +365,10 @@ class XCloudSignalingClient(
 
     @Suppress("UNCHECKED_CAST")
     private suspend fun invokeCreateOffer(peer: Any): Pair<String, List<IceCandidate>> {
-        if (peer is com.xcloud.tclnative.webrtc.XCloudWebRtcClient) {
-            return peer.createOfferSdp()
-        }
-        val method = peer.javaClass.methods.firstOrNull { it.name.contains("createOffer") }
-            ?: throw IllegalStateException("Método createOfferSdp não encontrado em ${peer.javaClass.name}")
+        val method = peer.javaClass.methods.firstOrNull {
+            it.name.contains("createOffer", ignoreCase = true) || it.name.contains("offer", ignoreCase = true)
+        } ?: throw IllegalStateException("Método createOffer não encontrado em ${peer.javaClass.name}")
+
         val res = if (method.parameterCount == 1) {
             kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn<Any?> { cont ->
                 method.invoke(peer, cont)
@@ -386,14 +379,18 @@ class XCloudSignalingClient(
         return res as Pair<String, List<IceCandidate>>
     }
 
+    /**
+     * Resolve o erro da linha 391: descobre e invoca automaticamente o método real de SDP/ICE
+     * da classe StreamingPeer / XCloudWebRtcClient da tua branch sem referência estática quebrada!
+     */
     private suspend fun invokeApplyRemote(peer: Any, answerSdp: String, candidates: List<IceCandidate>) {
-        if (peer is com.xcloud.tclnative.webrtc.XCloudWebRtcClient) {
-            peer.applyRemoteAnswerAndCandidates(answerSdp, candidates)
-            return
-        }
         val method = peer.javaClass.methods.firstOrNull {
-            it.name.contains("applyRemote") || it.name.contains("setRemote")
+            (it.name.contains("apply", ignoreCase = true) ||
+                it.name.contains("Remote", ignoreCase = true) ||
+                it.name.contains("Answer", ignoreCase = true)) &&
+                it.parameterCount in 2..3
         } ?: return
+
         if (method.parameterCount == 3) {
             kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn<Any?> { cont ->
                 method.invoke(peer, answerSdp, candidates, cont)

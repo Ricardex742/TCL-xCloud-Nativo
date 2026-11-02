@@ -1,6 +1,8 @@
 # TCL-xCloud-Nativo
 Cliente experimental para Xbox Cloud Gaming em Android 10 ou superior, com vídeo nativo por WebRTC e SurfaceViewRenderer. A disponibilidade do jogo depende da conta, da região e da conectividade; o scaler nativo não comprova ativação de AiPQ 4K.
 
+O [catálogo 0.10.0](docs/dashboard-0.10.md) usa o template fornecido: fundo carvão/roxo, tipografia condensada, seleção violeta, jogo em foco no cabeçalho e seis colunas de capas com duas fileiras visíveis em TV 16:9. LB/RB alterna as cinco categorias, Y favorita, X pesquisa e Start abre opções. Favoritos/histórico são locais e separados por conta. Perfil e capas são obtidos dos serviços Microsoft; assinatura não confirmada e saldo Rewards indisponível aparecem como `—`, sem valores ilustrativos.
+
 O workflow `build-apk.yml` roda nos pushes da branch `ci/apk-android10-3cc2595` e pode ser executado manualmente nela. Ele prepara JDK 21, Gradle 8.7 e Android SDK 34, executa os testes JVM, verifica APIs incompatíveis com o Android mínimo declarado (API 24, incluindo Android 10), gera o APK debug e verifica sua assinatura. Baixe `TCL-xCloud-App-Debug-Android10` na seção **Artifacts** da execução: ele contém o APK e seu checksum SHA-256. O relatório de lint é salvo separadamente. O módulo instalável é `:app`; os comandos usam esse alvo explicitamente.
 
 Com JDK 21, Gradle 8.7 e Android SDK 34 configurados, use na raiz do repositório:

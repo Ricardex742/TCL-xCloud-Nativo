@@ -90,3 +90,4 @@ jobs:
           path: |
             app/build/reports/lint-results-debug.*
             app/build/test-results/testDebugUnitTest/
+            app/build/reports/dashboard/

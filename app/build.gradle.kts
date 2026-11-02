@@ -11,8 +11,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 9
-        versionName = "0.9.0-controller-video-recovery"
+        versionCode = 10
+        versionName = "0.10.0-horizon-dashboard"
     }
 
     buildTypes {
@@ -33,9 +33,11 @@ android {
     lint {
         checkOnly += setOf("NewApi", "InlinedApi")
     }
+    testOptions.unitTests.isIncludeAndroidResources = true
 }
 
 dependencies {
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.leanback:leanback:1.0.0")
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
@@ -46,4 +48,12 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testImplementation("org.json:json:20231013")
+    testImplementation("org.robolectric:robolectric:4.14.1")
+}
+
+tasks.withType<Test>().configureEach {
+    systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
+    // The native-rendering test's SDK resolver must honor a configured build proxy as Gradle does.
+    listOf("https.proxyHost", "https.proxyPort", "http.proxyHost", "http.proxyPort",
+        "javax.net.ssl.trustStore").forEach { key -> System.getProperty(key)?.let { systemProperty(key, it) } }
 }

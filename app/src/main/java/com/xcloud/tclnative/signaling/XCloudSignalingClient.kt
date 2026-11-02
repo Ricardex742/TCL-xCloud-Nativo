@@ -22,7 +22,11 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
-data class GameTitle(val titleId: String, val name: String)
+data class GameTitle(
+    val titleId: String, val name: String, val productId: String? = null,
+    val posterUrl: String? = null, val tileUrl: String? = null, val gamePass: Boolean = false,
+    val userSubscriptions: List<String> = emptyList()
+)
 
 class XCloudSignalingClient(
     private val session: XCloudSession,
@@ -60,7 +64,13 @@ class XCloudSignalingClient(
         (0 until results.length()).mapNotNull { index ->
             val game = results.getJSONObject(index)
             val id = game.optString("titleId").trim().takeIf { it.isNotEmpty() } ?: return@mapNotNull null
-            GameTitle(id, game.optJSONObject("details")?.optString("productTitle")?.takeIf { it.isNotBlank() } ?: id)
+            val details = game.optJSONObject("details")
+            val subscriptions = details?.optJSONArray("userSubscriptions")
+            GameTitle(id, details?.optString("productTitle")?.takeIf { it.isNotBlank() } ?: id,
+                productId = details?.optString("productId")?.takeIf { it.isNotBlank() },
+                userSubscriptions = subscriptions?.let { values -> (0 until values.length()).mapNotNull {
+                    values.optString(it).takeIf { value -> value.isNotBlank() }
+                } } ?: emptyList())
         }.distinctBy { it.titleId }.sortedBy { it.name.lowercase(java.util.Locale.ROOT) }
     }
 

@@ -8,6 +8,7 @@ import com.google.zxing.qrcode.QRCodeWriter
 import com.xcloud.tclnative.net.CloudHttpException
 import com.xcloud.tclnative.net.awaitResponse
 import com.xcloud.tclnative.net.checkedBody
+import com.xcloud.tclnative.catalog.XboxProfile
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -32,7 +33,8 @@ data class AuthEndpoints(
     val userAuthUrl: String = "https://user.auth.xboxlive.com/user/authenticate",
     val xstsAuthorizeUrl: String = "https://xsts.auth.xboxlive.com/xsts/authorize",
     val xcloudLoginUrl: String = "https://xgpuweb.gssv-play-prod.xboxlive.com/v2/login/user",
-    val transferTokenUrl: String = "https://login.live.com/oauth20_token.srf"
+    val transferTokenUrl: String = "https://login.live.com/oauth20_token.srf",
+    val profileUrl: String = "https://profile.xboxlive.com/users/me/profile/settings?settings=GameDisplayName,GameDisplayPicRaw,Gamertag"
 )
 data class DeviceCodeInfo(
     val userCode: String, val deviceCode: String, val verificationUri: String,
@@ -48,6 +50,8 @@ class XalAuthenticator(
     private val clockMs: () -> Long = { System.currentTimeMillis() },
     private val pause: suspend (Long) -> Unit = { delay(it) }
 ) {
+    private var profileUserToken: String? = null
+    private var profileUserHash: String? = null
     constructor(context: Context) : this(PreferencesTokenStore(context),
         OkHttpClient.Builder().callTimeout(25, TimeUnit.SECONDS).build())
 
@@ -85,7 +89,7 @@ class XalAuthenticator(
     }
     fun saveRpsTicket(ticket: String) = saveTokens(ticket)
     fun getSavedRpsTicket(): String? = store.read()?.ticket
-    fun clearSession() = store.clear()
+    fun clearSession() { profileUserToken = null; profileUserHash = null; store.clear() }
     fun supportsConsoleTransfer(): Boolean = store.read()?.let {
         it.clientId == XCLOUD_CLIENT_ID && !it.refreshToken.isNullOrBlank()
     } == true
@@ -143,6 +147,8 @@ class XalAuthenticator(
     }
 
     suspend fun authenticateToXCloud(rpsTicketInput: String? = null, onProgress: (String) -> Unit = {}): Result<XCloudSession> = result {
+        profileUserToken = null
+        profileUserHash = null
         var token = store.read()
         if (!rpsTicketInput.isNullOrBlank() && (token == null || normalizeRpsTicket(token.ticket) != normalizeRpsTicket(rpsTicketInput))) {
             saveTokens(rpsTicketInput)
@@ -175,8 +181,26 @@ class XalAuthenticator(
         val regions = cloud.getJSONObject("offeringSettings").getJSONArray("regions")
         val region = (0 until regions.length()).map { regions.getJSONObject(it) }.firstOrNull { it.optBoolean("isDefault") }
             ?: throw java.io.IOException("AUTH_GSSV: o serviço não informou uma região padrão")
+        profileUserToken = user.getString("Token")
+        profileUserHash = hash
         XCloudSession(cloud.getString("gsToken"), region.getString("baseUri").trimEnd('/'), hash,
             clockMs() + cloud.optLong("durationInSeconds", 3600) * 1000)
+    }
+
+    /** Optional Xbox profile grant is separate from GSSV/console transfer and never blocks playing. */
+    suspend fun loadXboxProfile(): Result<XboxProfile> = result {
+        val token = profileUserToken ?: throw AuthenticationRequiredException()
+        val hash = profileUserHash ?: throw AuthenticationRequiredException()
+        val web = JSONObject(post(endpoints.xstsAuthorizeUrl, "PROFILE_XSTS", json(JSONObject()
+            .put("RelyingParty", "http://xboxlive.com").put("TokenType", "JWT").put("Properties", JSONObject()
+                .put("SandboxId", "RETAIL").put("UserTokens", JSONArray().put(token))))))
+        val webHash = web.optJSONObject("DisplayClaims")?.optJSONArray("xui")?.optJSONObject(0)
+            ?.optString("uhs")?.takeIf { it.isNotBlank() } ?: hash
+        val request = Request.Builder().url(endpoints.profileUrl)
+            .header("Authorization", "XBL3.0 x=$webHash;${web.getString("Token")}")
+            .header("x-xbl-contract-version", "2").header("Accept-Language", "pt-BR")
+            .header("Accept", "application/json").build()
+        httpClient.newCall(request).awaitResponse().use { XboxProfile.parse(JSONObject(it.checkedBody("PROFILE"))) }
     }
 
     /** Requested only when a ReadyToConnect session needs /connect; never use the GSSV token here. */

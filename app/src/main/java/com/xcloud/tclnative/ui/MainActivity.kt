@@ -10,8 +10,6 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -22,13 +20,14 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import com.xcloud.tclnative.catalog.CatalogService
+import com.xcloud.tclnative.catalog.GameLibrary
+import com.xcloud.tclnative.ui.dashboard.GameDashboardView
 import com.xcloud.tclnative.auth.XCloudSession
 import com.xcloud.tclnative.auth.XalAuthenticator
 import com.xcloud.tclnative.renderer.AiPqSurfaceRenderer
-import com.xcloud.tclnative.signaling.GameTitle
 import com.xcloud.tclnative.signaling.XCloudSignalingClient
 import com.xcloud.tclnative.webrtc.XCloudWebRtcClient
 import com.xcloud.tclnative.webrtc.ControllerShortcut
@@ -63,6 +62,9 @@ class MainActivity : Activity() {
     private val controllerShortcut = ControllerShortcut()
     private var shortcutFlushJob: Job? = null
     private var videoRecoveryDialog: AlertDialog? = null
+    private var dashboard: GameDashboardView? = null
+    private var dashboardJob: Job? = null
+    private var gameLibrary: GameLibrary? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -187,6 +189,17 @@ class MainActivity : Activity() {
     }
 
     private fun renderLoginMenu() {
+        dashboardJob?.cancel()
+        dashboard?.close()
+        dashboard = null
+        gameLibrary = null
+        controlPanel.setPadding(36, 24, 36, 24)
+        controlPanel.setBackgroundColor(Color.argb(235, 16, 16, 20))
+        controlPanel.layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT).apply {
+            topMargin = 56; bottomMargin = 16; marginStart = 48; marginEnd = 48
+        }
+        hudTextView.visibility = View.VISIBLE
         qrPollingJob?.cancel()
         controlPanel.removeAllViews()
         controlPanel.visibility = View.VISIBLE
@@ -318,121 +331,124 @@ class MainActivity : Activity() {
     }
 
     private fun renderGameDashboard(session: XCloudSession) {
+        dashboardJob?.cancel()
         val signaling = XCloudSignalingClient(session, transferTokenProvider = { authenticator.getConsoleTransferToken() })
-
-        mainScope.launch {
-            val allGames = try { signaling.fetchCatalogGames() } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
+        dashboardJob = mainScope.launch {
+            val allGames = try { signaling.fetchCatalogGames() }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) {
                 hudTextView.text = "Falha no catálogo: ${error.message}"
                 hudTextView.setTextColor(Color.RED)
+                showCopyableErrorDialog("Catálogo", error.message ?: "Catálogo indisponível")
                 return@launch
             }
+            dashboard?.close()
+            val library = GameLibrary(this@MainActivity, session.userHash)
+            gameLibrary = library
+            val view = GameDashboardView(this@MainActivity, library,
+                onPlay = { game -> launchCloudGame(signaling, game.titleId, game.name) },
+                onSearch = { showCatalogSearch() },
+                onOptions = { showCatalogOptions(session) },
+                onExit = {
+                    AlertDialog.Builder(this@MainActivity, android.R.style.Theme_Material_Dialog_Alert)
+                        .setTitle("Sair do aplicativo?")
+                        .setMessage("Seu login e seus favoritos continuarão salvos neste aparelho.")
+                        .setPositiveButton("Sair") { _, _ -> finish() }
+                        .setNegativeButton("Continuar", null).show()
+                })
+            dashboard = view
             controlPanel.removeAllViews()
+            controlPanel.setPadding(0, 0, 0, 0)
+            controlPanel.setBackgroundColor(Color.TRANSPARENT)
+            controlPanel.layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT)
+            controlPanel.addView(view, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT))
             controlPanel.visibility = View.VISIBLE
-
-            val topBar = LinearLayout(this@MainActivity).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(0, 0, 0, 10)
+            hudTextView.visibility = View.GONE
+            view.setGames(allGames)
+            view.restoreFocus()
+            val catalog = CatalogService()
+            launch {
+                catalog.hydrate(allGames) { hydrated -> withContext(Dispatchers.Main) {
+                    if (dashboard === view) view.setGames(hydrated)
+                } }
             }
-
-            val header = TextView(this@MainActivity).apply {
-                text = "CATÁLOGO NATIVO — ${allGames.size} JOGOS REAIS"
-                setTextColor(Color.WHITE)
-                textSize = 15f
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            launch {
+                val popular = async { catalog.gallery(CatalogService.POPULAR) }
+                val added = async { catalog.gallery(CatalogService.RECENTLY_ADDED) }
+                view.setGalleries(popular.await(), added.await())
             }
-            topBar.addView(header)
-
-            val btnLogout = Button(this@MainActivity).apply {
-                text = "Trocar Conta"
-                setOnClickListener {
-                    authenticator.clearSession()
-                    renderLoginMenu()
+            launch {
+                authenticator.loadXboxProfile().onSuccess { profile ->
+                    if (dashboard === view) view.setProfile(profile)
                 }
             }
-            topBar.addView(Button(this@MainActivity).apply {
-                fun updateLabel() { text = if (lowLatencyVideo) "Vídeo: menor atraso" else "Vídeo: adaptativo" }
-                updateLabel()
-                setOnClickListener {
+        }
+    }
+
+    private fun showCatalogSearch() {
+        val view = dashboard ?: return
+        val input = EditText(this).apply {
+            setText(view.searchQuery)
+            hint = "Nome do jogo"
+            isSingleLine = true
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.LTGRAY)
+            setPadding(24, 16, 24, 16)
+            selectAll()
+        }
+        AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+            .setTitle("Pesquisar jogos").setView(input)
+            .setPositiveButton("Buscar") { _, _ -> view.setSearch(input.text.toString()) }
+            .setNeutralButton("Limpar busca") { _, _ -> view.setSearch("") }
+            .setNegativeButton("Voltar", null).show()
+    }
+
+    private fun showCatalogOptions(session: XCloudSession) {
+        val items = arrayOf("Pesquisar jogos", "Vídeo: " + if (lowLatencyVideo) "menor atraso" else "adaptativo",
+            "Microsoft Rewards — consultar saldo", "Gerenciar assinatura Microsoft", "Atualizar catálogo", "Trocar conta")
+        AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+            .setTitle("Conta e opções").setItems(items) { _, choice -> when (choice) {
+                0 -> showCatalogSearch()
+                1 -> {
                     lowLatencyVideo = !lowLatencyVideo
                     if (Build.VERSION.SDK_INT >= 30) window.setPreferMinimalPostProcessing(lowLatencyVideo)
                     surfaceRenderer.minimalPostProcessingRequested = lowLatencyVideo && Build.VERSION.SDK_INT >= 30
-                    getSharedPreferences("stream_preferences", Context.MODE_PRIVATE).edit().putBoolean("low_latency_video", lowLatencyVideo).apply()
-                    updateLabel()
-                    hudTextView.text = "Modo de vídeo aplicado à próxima partida."
+                    getSharedPreferences("stream_preferences", Context.MODE_PRIVATE).edit()
+                        .putBoolean("low_latency_video", lowLatencyVideo).apply()
+                    Toast.makeText(this, "Modo de vídeo aplicado à próxima partida.", Toast.LENGTH_SHORT).show()
                 }
-            })
-            topBar.addView(btnLogout)
-            controlPanel.addView(topBar)
+                2 -> openAccountPage("https://rewards.bing.com/")
+                3 -> openAccountPage("https://account.microsoft.com/services")
+                4 -> renderGameDashboard(session)
+                5 -> { authenticator.clearSession(); renderLoginMenu() }
+            } }.setNegativeButton("Voltar", null).show()
+    }
 
-            val searchInput = EditText(this@MainActivity).apply {
-                hint = "Pesquisar jogo (ex: FORTNITE, FORZA, CALL OF DUTY, GTA)..."
-                setTextColor(Color.WHITE)
-                setHintTextColor(Color.GRAY)
-                setBackgroundColor(Color.argb(255, 35, 35, 42))
-                setPadding(24, 12, 24, 12)
-                isSingleLine = true
-            }
-            controlPanel.addView(
-                searchInput,
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply { bottomMargin = 10 }
-            )
-
-            val scroll = ScrollView(this@MainActivity)
-            val gamesListLayout = LinearLayout(this@MainActivity).apply {
-                orientation = LinearLayout.VERTICAL
-            }
-            scroll.addView(gamesListLayout)
-            controlPanel.addView(
-                scroll,
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    0,
-                    1f
-                )
-            )
-
-            fun populateGames(filterQuery: String) {
-                gamesListLayout.removeAllViews()
-                val filtered = if (filterQuery.isBlank()) {
-                    allGames.take(120)
-                } else {
-                    allGames.filter {
-                        it.name.contains(filterQuery, ignoreCase = true) ||
-                            it.titleId.contains(filterQuery, ignoreCase = true)
-                    }.take(120)
-                }
-
-                for (game in filtered) {
-                    val btnGame = Button(this@MainActivity).apply {
-                        text = "▶ ${game.name}"
-                        isFocusable = true
-                        setOnClickListener {
-                            launchCloudGame(signaling, game.titleId, game.name)
-                        }
-                    }
-                    gamesListLayout.addView(btnGame)
-                }
-            }
-
-            populateGames("")
-
-            searchInput.addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    populateGames(s?.toString() ?: "")
-                }
-                override fun afterTextChanged(s: Editable?) {}
-            })
-
-            hudTextView.text = "Catálogo pronto (${allGames.size} títulos) | Selecione um jogo"
-            hudTextView.setTextColor(Color.GREEN)
+    private fun openAccountPage(url: String) {
+        try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+        catch (_: android.content.ActivityNotFoundException) {
+            AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert).setTitle("Acesse pelo celular")
+                .setMessage(url).setPositiveButton("Fechar", null).show()
         }
+    }
+
+    private fun restoreDashboard() {
+        controlPanel.visibility = View.VISIBLE
+        dashboard?.let { view -> hudTextView.visibility = View.GONE; view.restoreFocus() }
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        val view = dashboard
+        if (view != null && controlPanel.visibility == View.VISIBLE && queuePanel.visibility != View.VISIBLE) {
+            if (event.keyCode == KeyEvent.KEYCODE_BACK) {
+                if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) view.back()
+                return true
+            }
+            if (view.handleKey(event)) return true
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     private fun launchCloudGame(signaling: XCloudSignalingClient, titleId: String, gameName: String) {
@@ -455,6 +471,7 @@ class MainActivity : Activity() {
             surfaceRenderer.onFirstFrameRendered = {
                 if (generation == playbackGeneration && !firstFrame.isCompleted) {
                     firstFrame.complete(Unit)
+                    gameLibrary?.recordPlayed(titleId)
                     hudTextView.text = "Vídeo nativo ativo [$gameName]"
                     hudTextView.setTextColor(Color.GREEN)
                     statsView.visibility = if (statisticsMode != 0) View.VISIBLE else View.GONE
@@ -582,7 +599,7 @@ class MainActivity : Activity() {
                     surfaceRenderer.clearSession()
                     rtc.close()
                     if (webrtcClient === rtc) webrtcClient = null
-                    if (generation == playbackGeneration) controlPanel.visibility = View.VISIBLE
+                    if (generation == playbackGeneration) restoreDashboard()
                 }
             }
         }
@@ -617,7 +634,7 @@ class MainActivity : Activity() {
         statsView.visibility = View.GONE
         hudTextView.text = "Sessão cancelada. Selecione um jogo."
         hudTextView.visibility = View.VISIBLE
-        controlPanel.visibility = View.VISIBLE
+        restoreDashboard()
     }
 
     private fun showCopyableErrorDialog(gameName: String, fullError: String) {
@@ -767,6 +784,7 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         ++playbackGeneration
         mainScope.cancel()
+        dashboard?.close()
         videoRecoveryDialog?.dismiss()
         surfaceRenderer.clearSession()
         webrtcClient?.close()

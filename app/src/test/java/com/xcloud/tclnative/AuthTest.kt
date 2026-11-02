@@ -33,7 +33,8 @@ class AuthTest {
     @After fun cleanup() { server.shutdown() }
     private fun auth(pause: suspend (Long) -> Unit = { waits.add(it); now += it }): XalAuthenticator =
         XalAuthenticator(store, client, AuthEndpoints(server.url("/device").toString(), server.url("/token").toString(),
-            server.url("/user").toString(), server.url("/xsts").toString(), server.url("/cloud").toString(), server.url("/transfer").toString()), { now }, pause)
+            server.url("/user").toString(), server.url("/xsts").toString(), server.url("/cloud").toString(), server.url("/transfer").toString(),
+            server.url("/profile").toString()), { now }, pause)
     private fun enqueue(body: String, code: Int = 200) { server.enqueue(MockResponse().setResponseCode(code).setBody(body)) }
     private fun exchange() {
         enqueue("""{"Token":"user-token","DisplayClaims":{"xui":[{"uhs":"hash"}]}}""")
@@ -42,6 +43,25 @@ class AuthTest {
     }
     private fun fresh() = OAuthToken("t=access", "refresh", 3_600_000, XalAuthenticator.DEVICE_CLIENT_ID)
     private fun info(expires: Long = 100_000) = DeviceCodeInfo("USER", "DEVICE", "https://microsoft.com/link", null, 1, expires)
+
+    @Test fun optionalProfileUsesItsOwnXboxGrantAndDoesNotTreatGamerscoreAsRewards() = runBlocking {
+        store.token = fresh(); exchange()
+        val authenticator = auth()
+        assertTrue(authenticator.authenticateToXCloud().isSuccess)
+        repeat(3) { server.takeRequest() }
+        enqueue("""{"Token":"web-only-token","DisplayClaims":{"xui":[{"uhs":"web-hash"}]}}""")
+        enqueue("""{"profileUsers":[{"settings":[{"id":"Gamertag","value":"Player"},{"id":"GameDisplayName","value":"Lucas"},{"id":"Gamerscore","value":"12345"}]}]}""")
+        val profile = authenticator.loadXboxProfile().getOrThrow()
+        assertEquals("Lucas", profile.displayName)
+        assertNull(profile.rewardsPoints)
+        val grant = JSONObject(server.takeRequest().body.readUtf8())
+        assertEquals("http://xboxlive.com", grant.getString("RelyingParty"))
+        assertEquals("user-token", grant.getJSONObject("Properties").getJSONArray("UserTokens").getString(0))
+        assertEquals("XBL3.0 x=web-hash;web-only-token", server.takeRequest().getHeader("Authorization"))
+        authenticator.clearSession()
+        assertTrue(authenticator.loadXboxProfile().isFailure)
+        assertEquals(5, server.requestCount)
+    }
 
     @Test fun exchangePreservesRefreshTokenAndSendsRawXsts() = runBlocking {
         store.token = fresh(); exchange()

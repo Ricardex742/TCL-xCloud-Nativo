@@ -28,10 +28,11 @@ class XCloudSignalingClient(
     private val httpClient: OkHttpClient = OkHttpClient.Builder().callTimeout(25, TimeUnit.SECONDS).build(),
     private val pause: suspend (Long) -> Unit = { delay(it) },
     private val clockMs: () -> Long = { System.nanoTime() / 1_000_000 },
-    private val queueTimeoutMs: Long = 15 * 60_000,
+    private val queueTimeoutMs: Long = 60 * 60_000,
     private val transferTokenProvider: suspend () -> String = { session.transferToken }
 ) {
     private val activePath = AtomicReference<String?>(null)
+    private val waitTimeClient = httpClient.newBuilder().callTimeout(3, TimeUnit.SECONDS).build()
     private val jsonType = "application/json; charset=utf-8".toMediaType()
     private val deviceInfo = JSONObject().put("appInfo", JSONObject().put("env", JSONObject()
         .put("clientAppId", "www.xbox.com").put("clientAppType", "browser").put("clientAppVersion", "26.1.0")))
@@ -40,7 +41,8 @@ class XCloudSignalingClient(
             .put("displayInfo", JSONObject().put("dimensions", JSONObject().put("widthInPixels", 1920).put("heightInPixels", 1080))
                 .put("pixelDensity", JSONObject().put("dpiX", 1).put("dpiY", 1)))).toString()
 
-    private suspend fun request(path: String, stage: String, method: String = "GET", body: JSONObject? = null): String {
+    private suspend fun request(path: String, stage: String, method: String = "GET", body: JSONObject? = null,
+                                client: OkHttpClient = httpClient): String {
         val builder = Request.Builder().url(CloudProtocol.sessionUrl(session.baseUri, path))
             .header("Authorization", "Bearer ${session.gssvToken}")
             .header("Accept", "application/json").header("X-Gssv-Client", "XboxComBrowser")
@@ -49,7 +51,7 @@ class XCloudSignalingClient(
             "POST" -> builder.post((body?.toString() ?: "").toRequestBody(jsonType))
             "DELETE" -> builder.delete()
         }
-        return httpClient.newCall(builder.build()).awaitResponse().use { it.checkedBody(stage) }
+        return client.newCall(builder.build()).awaitResponse().use { it.checkedBody(stage) }
     }
 
     suspend fun fetchCatalogGames(): List<GameTitle> = withContext(Dispatchers.IO) {
@@ -61,41 +63,70 @@ class XCloudSignalingClient(
         }.distinctBy { it.titleId }.sortedBy { it.name.lowercase(java.util.Locale.ROOT) }
     }
 
-    private suspend fun awaitProvisioned(path: String, onProgress: (String) -> Unit) {
+    private suspend fun awaitProvisioned(path: String, titleId: String, onQueueStatus: (QueueStatus?) -> Unit,
+                                         onProgress: (String) -> Unit) {
         val started = clockMs()
         var connectSentAt: Long? = null
-        while (true) {
-            val state = JSONObject(request("$path/state", "SESSION_STATE"))
-            val name = state.optString("state")
-            val elapsed = (clockMs() - started) / 1000
-            when (name) {
-                "Provisioned" -> return
-                "ReadyToConnect" -> {
-                    if (connectSentAt == null) {
-                        onProgress("CONSOLE_CONNECT: Autenticando a sessão Xbox...")
-                        val token = transferTokenProvider()
-                        if (token.isBlank()) throw AuthenticationRequiredException(
-                            "CONSOLE_CONNECT: login sem credencial de transferência. Entre novamente pelo QR Code.")
-                        request("$path/connect", "CONSOLE_CONNECT", "POST", JSONObject().put("userToken", token))
-                        connectSentAt = clockMs()
+        var queue: QueueStatus? = null
+        var estimateAttemptAt: Long? = null
+        try {
+            while (true) {
+                val state = JSONObject(request("$path/state", "SESSION_STATE"))
+                val name = state.optString("state")
+                val elapsed = (clockMs() - started) / 1000
+                if (name != "WaitingForResources") onQueueStatus(null)
+                when (name) {
+                    "Provisioned" -> return
+                    "ReadyToConnect" -> {
+                        if (connectSentAt == null) {
+                            onProgress("CONSOLE_CONNECT: Autenticando a sessão Xbox...")
+                            val token = transferTokenProvider()
+                            if (token.isBlank()) throw AuthenticationRequiredException(
+                                "CONSOLE_CONNECT: login sem credencial de transferência. Entre novamente pelo QR Code.")
+                            request("$path/connect", "CONSOLE_CONNECT", "POST", JSONObject().put("userToken", token))
+                            connectSentAt = clockMs()
+                        }
+                        onProgress("PROVISIONING: Aguardando confirmação da sessão Xbox (${elapsed}s). Voltar cancela.")
                     }
-                    onProgress("PROVISIONING: Aguardando confirmação da sessão Xbox (${elapsed}s). Voltar cancela.")
+                    "WaitingForResources" -> {
+                        val confirmedAt = clockMs()
+                        queue = (queue ?: QueueStatus(confirmedAt, confirmedAt, limitMs = queueTimeoutMs))
+                            .copy(confirmedAtMs = confirmedAt)
+                        onQueueStatus(queue)
+                        onProgress("QUEUE: Aguardando vaga no Xbox Cloud (${QueueStatus.duration(elapsed)}). Voltar cancela.")
+                        if (estimateAttemptAt == null || confirmedAt - estimateAttemptAt >= 30_000) {
+                            estimateAttemptAt = confirmedAt
+                            val url = CloudProtocol.sessionUrl(session.baseUri, "/v1/waittime/")
+                                .newBuilder().addPathSegment(titleId).build().encodedPath
+                            try {
+                                val estimate = QueueEstimate.parse(request(url, "QUEUE_ESTIMATE", client = waitTimeClient))
+                                queue = if (estimate != null) queue.copy(estimate = estimate, estimateAtMs = clockMs(), estimateFailed = false)
+                                    else queue.copy(estimateFailed = true)
+                            } catch (error: IOException) {
+                                queue = queue.copy(estimateFailed = true)
+                            } catch (error: org.json.JSONException) {
+                                queue = queue.copy(estimateFailed = true)
+                            }
+                            onQueueStatus(queue)
+                        }
+                    }
+                    "Provisioning", "New" -> onProgress("PROVISIONING: Preparando o jogo (${elapsed}s). Voltar cancela.")
+                    "Failed", "Error", "Ended", "Cancelled", "Closed" -> {
+                        val code = state.optJSONObject("errorDetails")?.optString("code")
+                            ?.takeIf { it.matches(Regex("[A-Za-z0-9_.-]{1,80}")) }
+                        throw IOException("SESSION_STATE: $name" + (code?.let { " — código $it" } ?: ""))
+                    }
+                    else -> throw IOException("SESSION_STATE: estado não reconhecido")
                 }
-                "WaitingForResources" -> onProgress("QUEUE: Aguardando vaga no Xbox Cloud (${elapsed}s). Voltar cancela.")
-                "Provisioning", "New" -> onProgress("PROVISIONING: Preparando o jogo (${elapsed}s). Voltar cancela.")
-                "Failed", "Error", "Ended", "Cancelled", "Closed" -> {
-                    val code = state.optJSONObject("errorDetails")?.optString("code")
-                        ?.takeIf { it.matches(Regex("[A-Za-z0-9_.-]{1,80}")) }
-                    throw IOException("SESSION_STATE: $name" + (code?.let { " — código $it" } ?: ""))
+                if (connectSentAt != null && clockMs() - connectSentAt >= 60_000) {
+                    throw IOException("CONSOLE_CONNECT: o serviço não confirmou Provisioned após autenticar a sessão.")
                 }
-                else -> throw IOException("SESSION_STATE: estado não reconhecido")
+                if (clockMs() - started >= queueTimeoutMs) throw IOException(
+                    "QUEUE_TIMEOUT: o serviço continua em $name após ${elapsed}s. Nenhum vídeo foi iniciado; tente novamente mais tarde.")
+                pause(1500)
             }
-            if (connectSentAt != null && clockMs() - connectSentAt >= 60_000) {
-                throw IOException("CONSOLE_CONNECT: o serviço não confirmou Provisioned após autenticar a sessão.")
-            }
-            if (clockMs() - started >= queueTimeoutMs) throw IOException(
-                "QUEUE_TIMEOUT: o serviço continua em $name após ${elapsed}s. Nenhum vídeo foi iniciado; tente novamente mais tarde.")
-            pause(1500)
+        } finally {
+            onQueueStatus(null)
         }
     }
 
@@ -110,7 +141,7 @@ class XCloudSignalingClient(
     }
 
     suspend fun startAndConnectWebRtcSession(
-        titleId: String, peer: StreamingPeer, onProgress: (String) -> Unit
+        titleId: String, peer: StreamingPeer, onQueueStatus: (QueueStatus?) -> Unit = {}, onProgress: (String) -> Unit
     ): Result<String> = withContext(Dispatchers.IO) {
         stop()
         try {
@@ -123,7 +154,7 @@ class XCloudSignalingClient(
             val response = JSONObject(request("/v5/sessions/cloud/play", "PLAY", "POST", play))
             val path = CloudProtocol.sessionUrl(session.baseUri, response.getString("sessionPath")).encodedPath.trimEnd('/')
             activePath.set(path)
-            awaitProvisioned(path, onProgress)
+            awaitProvisioned(path, titleId, onQueueStatus, onProgress)
 
             onProgress("SDP: Sessão provisionada. Negociando vídeo nativo...")
             val (offer, candidates) = peer.createOfferSdp()

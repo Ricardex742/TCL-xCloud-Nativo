@@ -11,8 +11,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 5
-        versionName = "0.5.0-session-connect"
+        versionCode = 6
+        versionName = "0.6.0-msal-queue"
     }
 
     buildTypes {

@@ -27,11 +27,12 @@ data class XCloudSession(
     val expiresAtMs: Long = System.currentTimeMillis() + 3600_000L, val transferToken: String = ""
 )
 data class AuthEndpoints(
-    val deviceCodeUrl: String = "https://login.live.com/oauth20_connect.srf",
-    val tokenUrl: String = "https://login.live.com/oauth20_token.srf",
+    val deviceCodeUrl: String = "https://login.microsoftonline.com/consumers/oauth2/v2.0/devicecode",
+    val tokenUrl: String = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token",
     val userAuthUrl: String = "https://user.auth.xboxlive.com/user/authenticate",
     val xstsAuthorizeUrl: String = "https://xsts.auth.xboxlive.com/xsts/authorize",
-    val xcloudLoginUrl: String = "https://xgpuweb.gssv-play-prod.xboxlive.com/v2/login/user"
+    val xcloudLoginUrl: String = "https://xgpuweb.gssv-play-prod.xboxlive.com/v2/login/user",
+    val transferTokenUrl: String = "https://login.live.com/oauth20_token.srf"
 )
 data class DeviceCodeInfo(
     val userCode: String, val deviceCode: String, val verificationUri: String,
@@ -55,6 +56,7 @@ class XalAuthenticator(
         const val DEVICE_CLIENT_ID = "0000000048183522"
         const val XCLOUD_CLIENT_ID = "1f907974-e22b-4810-a9de-d9647380c97e"
         const val LIVE_SCOPE = "service::user.auth.xboxlive.com::MBI_SSL"
+        const val MSAL_SCOPE = "xboxlive.signin openid profile offline_access"
         const val TRANSFER_TOKEN_SCOPE = "service::http://Passport.NET/purpose::PURPOSE_XBOX_CLOUD_CONSOLE_TRANSFER_TOKEN"
         fun normalizeRpsTicket(raw: String): String = raw.trim().let {
             if (it.startsWith("t=") || it.startsWith("d=")) it else "t=$it"
@@ -74,20 +76,23 @@ class XalAuthenticator(
     }
 
     fun saveTokens(accessToken: String, refreshToken: String? = null, expiresInSeconds: Long? = null,
-                   clientId: String = BROWSER_CLIENT_ID) {
+                   clientId: String? = null) {
         val ticket = normalizeRpsTicket(accessToken)
         val old = store.read()?.takeIf { normalizeRpsTicket(it.ticket) == ticket }
         store.write(OAuthToken(ticket, refreshToken ?: old?.refreshToken,
             expiresInSeconds?.let { clockMs() + it * 1000 } ?: old?.expiresAtMs,
-            old?.clientId ?: clientId))
+            clientId ?: old?.clientId ?: BROWSER_CLIENT_ID))
     }
     fun saveRpsTicket(ticket: String) = saveTokens(ticket)
     fun getSavedRpsTicket(): String? = store.read()?.ticket
     fun clearSession() = store.clear()
+    fun supportsConsoleTransfer(): Boolean = store.read()?.let {
+        it.clientId == XCLOUD_CLIENT_ID && !it.refreshToken.isNullOrBlank()
+    } == true
 
     suspend fun requestDeviceCodeQr(): Result<DeviceCodeInfo> = result {
         val data = JSONObject(post(endpoints.deviceCodeUrl, "AUTH_DEVICE_CODE", FormBody.Builder()
-            .add("client_id", DEVICE_CLIENT_ID).add("scope", LIVE_SCOPE).add("response_type", "device_code").build()))
+            .add("client_id", XCLOUD_CLIENT_ID).add("scope", MSAL_SCOPE).build()))
         val uri = data.getString("verification_uri")
         val complete = data.optString("verification_uri_complete").takeIf { it.isNotBlank() }
         // The provider's URI is authoritative; display the separate user code when no complete URI exists.
@@ -103,10 +108,11 @@ class XalAuthenticator(
             if (clockMs() >= info.expiresAtMs) break
             try {
                 val data = JSONObject(post(endpoints.tokenUrl, "AUTH_TOKEN", FormBody.Builder()
-                    .add("client_id", DEVICE_CLIENT_ID).add("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
+                    .add("client_id", XCLOUD_CLIENT_ID).add("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
                     .add("device_code", info.deviceCode).build()))
-                saveTokens(data.getString("access_token"), data.optString("refresh_token").takeIf { it.isNotBlank() },
-                    data.getLong("expires_in"), DEVICE_CLIENT_ID)
+                val refresh = data.optString("refresh_token").takeIf { it.isNotBlank() }
+                    ?: throw AuthenticationRequiredException("AUTH_TOKEN: login sem renovação. Solicite outro QR Code.")
+                saveTokens(data.getString("access_token"), refresh, data.getLong("expires_in"), XCLOUD_CLIENT_ID)
                 return@result store.read()!!.ticket
             } catch (error: CloudHttpException) {
                 when (error.serviceCode) {
@@ -123,8 +129,10 @@ class XalAuthenticator(
     private suspend fun refresh(token: OAuthToken): OAuthToken {
         val refreshToken = token.refreshToken ?: throw AuthenticationRequiredException()
         val data = try {
-            JSONObject(post(endpoints.tokenUrl, "AUTH_REFRESH", FormBody.Builder().add("grant_type", "refresh_token")
-                .add("client_id", token.clientId).add("refresh_token", refreshToken).add("scope", LIVE_SCOPE).build()))
+            val msal = token.clientId == XCLOUD_CLIENT_ID
+            JSONObject(post(if (msal) endpoints.tokenUrl else endpoints.transferTokenUrl, "AUTH_REFRESH",
+                FormBody.Builder().add("grant_type", "refresh_token").add("client_id", token.clientId)
+                    .add("refresh_token", refreshToken).add("scope", if (msal) MSAL_SCOPE else LIVE_SCOPE).build()))
         } catch (error: CloudHttpException) {
             if (error.serviceCode == "invalid_grant") throw AuthenticationRequiredException("AUTH_REFRESH: login expirado ou revogado. Entre pelo QR Code.")
             throw error
@@ -144,7 +152,8 @@ class XalAuthenticator(
         if (current.expiresAtMs?.let { it <= clockMs() } == true) current = refresh(current)
         onProgress("AUTH_XBL: Autenticando na Xbox Live...")
         suspend fun userTicket(token: OAuthToken): JSONObject {
-            val ticket = if (token.clientId == DEVICE_CLIENT_ID) "d=" + token.ticket.removePrefix("t=").removePrefix("d=")
+            val ticket = if (token.clientId == DEVICE_CLIENT_ID || token.clientId == XCLOUD_CLIENT_ID)
+                "d=" + token.ticket.removePrefix("t=").removePrefix("d=")
                 else normalizeRpsTicket(token.ticket)
             return JSONObject(post(endpoints.userAuthUrl, "AUTH_XBL", json(JSONObject()
                 .put("RelyingParty", "http://auth.xboxlive.com").put("TokenType", "JWT").put("Properties", JSONObject()
@@ -173,15 +182,17 @@ class XalAuthenticator(
     /** Requested only when a ReadyToConnect session needs /connect; never use the GSSV token here. */
     suspend fun getConsoleTransferToken(): String = withContext(Dispatchers.IO) {
         val token = store.read() ?: throw AuthenticationRequiredException()
+        if (token.clientId != XCLOUD_CLIENT_ID) throw AuthenticationRequiredException(
+            "CONSOLE_TOKEN: atualize o login pelo QR Code desta versão para autorizar a conexão Xbox.")
         val refresh = token.refreshToken ?: throw AuthenticationRequiredException(
             "CONSOLE_CONNECT: este login não possui refresh token. Entre novamente pelo QR Code.")
         val data = try {
-            JSONObject(post(endpoints.tokenUrl, "CONSOLE_TOKEN", FormBody.Builder()
+            JSONObject(post(endpoints.transferTokenUrl, "CONSOLE_TOKEN", FormBody.Builder()
                 .add("grant_type", "refresh_token").add("client_id", token.clientId)
                 .add("refresh_token", refresh).add("scope", TRANSFER_TOKEN_SCOPE).build()))
         } catch (error: CloudHttpException) {
-            if (error.serviceCode == "invalid_grant") throw AuthenticationRequiredException(
-                "CONSOLE_TOKEN: credencial expirada ou revogada. Entre novamente pelo QR Code.")
+            if (error.serviceCode in setOf("invalid_grant", "invalid_scope", "consent_required")) throw AuthenticationRequiredException(
+                "CONSOLE_TOKEN: login sem permissão de conexão (${error.serviceCode}). Entre novamente pelo QR Code desta versão.")
             throw error
         }
         data.optString("refresh_token").takeIf { it.isNotBlank() }?.let { store.write(token.copy(refreshToken = it)) }

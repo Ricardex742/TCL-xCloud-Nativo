@@ -1,6 +1,5 @@
 package com.xcloud.tclnative.ui
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.ClipData
@@ -18,9 +17,6 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
-import android.webkit.WebResourceRequest
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -53,16 +49,10 @@ class MainActivity : Activity() {
     @Volatile private var playbackGeneration = 0
     private var gamepadState = com.xcloud.tclnative.webrtc.GamepadState()
     private var qrPollingJob: Job? = null
-
-    companion object {
-        private const val OAUTH_AUTHORIZE_URL =
-            "https://login.live.com/oauth20_authorize.srf" +
-                "?client_id=000000004c12ae6f" +
-                "&response_type=token" +
-                "&approval_prompt=auto" +
-                "&scope=service::user.auth.xboxlive.com::MBI_SSL" +
-                "&redirect_uri=https://login.live.com/oauth20_desktop.srf"
-    }
+    private lateinit var queuePanel: LinearLayout
+    private lateinit var queueText: TextView
+    private var queueSnapshot: com.xcloud.tclnative.signaling.QueueStatus? = null
+    private var queueTicker: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -120,13 +110,45 @@ class MainActivity : Activity() {
         }
         rootLayout.addView(controlPanel, panelParams)
 
+        queuePanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(36, 20, 36, 20)
+            setBackgroundColor(Color.rgb(20, 24, 30))
+            visibility = View.GONE
+            addView(TextView(this@MainActivity).apply {
+                text = "Fila do Xbox Cloud"
+                textSize = 22f
+                setTextColor(Color.WHITE)
+                gravity = Gravity.CENTER
+            })
+            addView(android.widget.ProgressBar(this@MainActivity), LinearLayout.LayoutParams(48, 48))
+        }
+        queueText = TextView(this).apply {
+            textSize = 17f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            setPadding(0, 10, 0, 10)
+        }
+        queuePanel.addView(queueText)
+        queuePanel.addView(Button(this).apply {
+            text = "Cancelar espera"
+            setOnClickListener { cancelPlayback() }
+        })
+        rootLayout.addView(queuePanel, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER
+        ).apply { marginStart = 48; marginEnd = 48 })
         setContentView(rootLayout)
 
         val savedTicket = authenticator.getSavedRpsTicket()
-        if (!savedTicket.isNullOrEmpty()) {
+        if (!savedTicket.isNullOrEmpty() && authenticator.supportsConsoleTransfer()) {
             connectToXboxCloud(savedTicket)
         } else {
             renderLoginMenu()
+            if (!savedTicket.isNullOrEmpty()) {
+                hudTextView.text = "Atualize seu login pelo QR Code para conectar os jogos."
+                hudTextView.setTextColor(Color.YELLOW)
+            }
         }
     }
 
@@ -145,19 +167,13 @@ class MainActivity : Activity() {
         controlPanel.addView(titleView)
 
         val btnQrLogin = Button(this).apply {
-            text = "1. Entrar via QR Code Oficial (TV / Celular)"
+            text = "Entrar pelo QR Code Microsoft"
             isFocusable = true
             isFocusableInTouchMode = true
             setOnClickListener { startQrCodeLoginFlow() }
         }
         controlPanel.addView(btnQrLogin)
 
-        val btnAutoLogin = Button(this).apply {
-            text = "2. Login Direto de 1 Toque (Navegador)"
-            isFocusable = true
-            setOnClickListener { openAutoCaptureLoginWebView() }
-        }
-        controlPanel.addView(btnAutoLogin)
     }
 
     private fun startQrCodeLoginFlow() {
@@ -216,7 +232,7 @@ class MainActivity : Activity() {
             val qrRes = authenticator.requestDeviceCodeQr()
             qrRes.onSuccess { info ->
                 qrImageView.setImageBitmap(info.qrBitmap)
-                stepsText.text = "Escaneie o QR Code ou acesse\nmicrosoft.com/link com o código:"
+                stepsText.text = "Escaneie o QR Code ou acesse\n${info.verificationUri} com o código:"
                 codeText.text = info.userCode
                 btnApprovePhone.visibility = View.VISIBLE
                 btnApprovePhone.setOnClickListener {
@@ -238,58 +254,6 @@ class MainActivity : Activity() {
         }
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
-    private fun openAutoCaptureLoginWebView() {
-        val dialog = AlertDialog.Builder(this).create()
-        val loginWebView = WebView(this).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            webViewClient = object : WebViewClient() {
-                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                    val url = request?.url?.toString() ?: return false
-                    if (url.contains("access_token=")) {
-                        val token = extractAccessToken(url)
-                        view?.destroy()
-                        dialog.dismiss()
-                        connectToXboxCloud(token)
-                        return true
-                    }
-                    return false
-                }
-
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    super.onPageFinished(view, url)
-                    if (url != null && url.contains("access_token=")) {
-                        val token = extractAccessToken(url)
-                        view?.destroy()
-                        dialog.dismiss()
-                        connectToXboxCloud(token)
-                    }
-                }
-            }
-            loadUrl(OAUTH_AUTHORIZE_URL)
-        }
-
-        val container = FrameLayout(this).apply {
-            addView(loginWebView, FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            ))
-        }
-        dialog.setView(container)
-        dialog.show()
-        dialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
-    }
-
-    private fun extractAccessToken(input: String): String {
-        if (input.contains("access_token=")) {
-            val afterToken = input.substringAfter("access_token=")
-            val rawToken = afterToken.substringBefore("&")
-            return Uri.decode(rawToken)
-        }
-        return input
-    }
-
     private fun connectToXboxCloud(rpsTicket: String) {
         hudTextView.text = "Autenticando na Xbox Live e buscando catálogo oficial do Brasil..."
         hudTextView.setTextColor(Color.YELLOW)
@@ -297,6 +261,16 @@ class MainActivity : Activity() {
         mainScope.launch {
             val result = authenticator.authenticateToXCloud(rpsTicket)
             result.onSuccess { session ->
+                // Validate the console grant before the user spends time in a game's queue.
+                try {
+                    authenticator.getConsoleTransferToken()
+                } catch (cancelled: CancellationException) { throw cancelled }
+                catch (error: Exception) {
+                    renderLoginMenu()
+                    hudTextView.text = "Não foi possível autorizar os jogos: ${error.message}"
+                    hudTextView.setTextColor(Color.RED)
+                    return@launch
+                }
                 hudTextView.text = "CONECTADO! Região: ${session.baseUri.replace("https://", "")} | Sincronizando Catálogo..."
                 hudTextView.setTextColor(Color.GREEN)
                 renderGameDashboard(session)
@@ -452,7 +426,9 @@ class MainActivity : Activity() {
                 } })
             webrtcClient = rtc
             try {
-                signaling.startAndConnectWebRtcSession(titleId, rtc) { progress -> runOnUiThread {
+                signaling.startAndConnectWebRtcSession(titleId, rtc, onQueueStatus = { status -> runOnUiThread {
+                    if (generation == playbackGeneration) showQueue(status)
+                } }) { progress -> runOnUiThread {
                     if (generation == playbackGeneration && !firstFrame.isCompleted) {
                         hudTextView.text = progress
                         hudTextView.setTextColor(Color.YELLOW)
@@ -484,6 +460,7 @@ class MainActivity : Activity() {
                 // The server-side Xbox and the local decoder must both be released before retrying.
                 withContext(NonCancellable) {
                     signaling.stop()
+                    if (generation == playbackGeneration) showQueue(null)
                     surfaceRenderer.clearSession()
                     rtc.close()
                     if (webrtcClient === rtc) webrtcClient = null
@@ -491,6 +468,35 @@ class MainActivity : Activity() {
                 }
             }
         }
+    }
+
+    private fun showQueue(status: com.xcloud.tclnative.signaling.QueueStatus?) {
+        val wasHidden = queuePanel.visibility != View.VISIBLE
+        queueSnapshot = status
+        queuePanel.visibility = if (status == null) View.GONE else View.VISIBLE
+        if (status == null) {
+            queueTicker?.cancel()
+            queueTicker = null
+        } else {
+            if (wasHidden) queuePanel.getChildAt(queuePanel.childCount - 1).requestFocus()
+            queueText.text = status.message(System.nanoTime() / 1_000_000)
+            if (queueTicker?.isActive != true) queueTicker = mainScope.launch {
+                while (isActive) {
+                    val snapshot = queueSnapshot ?: break
+                    queueText.text = snapshot.message(System.nanoTime() / 1_000_000)
+                    delay(1000)
+                }
+            }
+        }
+    }
+
+    private fun cancelPlayback() {
+        ++playbackGeneration
+        gameJob?.cancel()
+        showQueue(null)
+        hudTextView.text = "Sessão cancelada. Selecione um jogo."
+        hudTextView.visibility = View.VISIBLE
+        controlPanel.visibility = View.VISIBLE
     }
 
     private fun showCopyableErrorDialog(gameName: String, fullError: String) {
@@ -507,7 +513,7 @@ class MainActivity : Activity() {
     }
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
-        if (controlPanel.visibility == View.GONE && webrtcClient != null &&
+        if (controlPanel.visibility == View.GONE && queuePanel.visibility != View.VISIBLE && webrtcClient != null &&
             event.source and android.view.InputDevice.SOURCE_JOYSTICK != 0 && event.action == MotionEvent.ACTION_MOVE) {
             fun axis(id: Int): Float {
                 val value = event.getAxisValue(id)
@@ -552,7 +558,7 @@ class MainActivity : Activity() {
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
         val mask = gamepadButton(keyCode)
-        if (mask != 0 && controlPanel.visibility == View.GONE && webrtcClient != null) {
+        if (mask != 0 && controlPanel.visibility == View.GONE && queuePanel.visibility != View.VISIBLE && webrtcClient != null) {
             gamepadState = gamepadState.copy(buttons = gamepadState.buttons and mask.inv())
             webrtcClient?.updateGamepad(gamepadState)
             return true
@@ -570,15 +576,11 @@ class MainActivity : Activity() {
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK && controlPanel.visibility == View.GONE) {
-            ++playbackGeneration
-            gameJob?.cancel()
-            hudTextView.text = "Sessão cancelada. Selecione um jogo."
-            hudTextView.visibility = View.VISIBLE
-            controlPanel.visibility = View.VISIBLE
+            cancelPlayback()
             return true
         }
         val mask = gamepadButton(keyCode)
-        if (mask != 0 && controlPanel.visibility == View.GONE && webrtcClient != null) {
+        if (mask != 0 && controlPanel.visibility == View.GONE && queuePanel.visibility != View.VISIBLE && webrtcClient != null) {
             gamepadState = gamepadState.copy(buttons = gamepadState.buttons or mask)
             webrtcClient?.updateGamepad(gamepadState)
             return true

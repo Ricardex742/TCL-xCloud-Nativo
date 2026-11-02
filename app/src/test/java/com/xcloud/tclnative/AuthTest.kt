@@ -33,7 +33,7 @@ class AuthTest {
     @After fun cleanup() { server.shutdown() }
     private fun auth(pause: suspend (Long) -> Unit = { waits.add(it); now += it }): XalAuthenticator =
         XalAuthenticator(store, client, AuthEndpoints(server.url("/device").toString(), server.url("/token").toString(),
-            server.url("/user").toString(), server.url("/xsts").toString(), server.url("/cloud").toString()), { now }, pause)
+            server.url("/user").toString(), server.url("/xsts").toString(), server.url("/cloud").toString(), server.url("/transfer").toString()), { now }, pause)
     private fun enqueue(body: String, code: Int = 200) { server.enqueue(MockResponse().setResponseCode(code).setBody(body)) }
     private fun exchange() {
         enqueue("""{"Token":"user-token","DisplayClaims":{"xui":[{"uhs":"hash"}]}}""")
@@ -65,7 +65,7 @@ class AuthTest {
         enqueue("""{"access_token":"new","expires_in":3600}"""); exchange()
         auth().authenticateToXCloud("t=access").getOrThrow()
         val refresh = server.takeRequest()
-        assertEquals("/token", refresh.path)
+        assertEquals("/transfer", refresh.path)
         val form = refresh.body.readUtf8()
         assertTrue(form.contains("grant_type=refresh_token"))
         assertTrue(form.contains("client_id=${XalAuthenticator.DEVICE_CLIENT_ID}"))
@@ -86,7 +86,7 @@ class AuthTest {
         val failure = auth().authenticateToXCloud("t=access").exceptionOrNull()
         assertTrue(failure is AuthenticationRequiredException)
         assertFalse(failure!!.message!!.contains("do-not-expose"))
-        assertEquals(1, server.requestCount); assertEquals("/token", server.takeRequest().path)
+        assertEquals(1, server.requestCount); assertEquals("/transfer", server.takeRequest().path)
     }
     @Test fun expiredLegacyTicketWithoutRefreshRequiresANewLogin() = runBlocking {
         store.token = fresh().copy(refreshToken = null)
@@ -122,6 +122,7 @@ class AuthTest {
         assertEquals("t=qr-access", auth().pollForDeviceCodeLogin(info()).getOrThrow())
         assertEquals(listOf(1000L, 6000L, 6000L), waits)
         assertEquals("qr-refresh", store.token?.refreshToken)
+        assertEquals(XalAuthenticator.XCLOUD_CLIENT_ID, store.token?.clientId)
     }
     @Test fun deviceExpiryStopsPollingAtTheServerDeadline() = runBlocking {
         repeat(2) { enqueue("""{"error":"authorization_pending"}""", 400) }
@@ -149,15 +150,17 @@ class AuthTest {
         assertTrue(call.isCanceled())
     }
 
-    @Test fun consoleTokenUsesTransferScopeAndOriginalClientAndPreservesLogin() = runBlocking {
-        store.token = fresh()
+    @Test fun consoleTokenUsesTransferScopeAndXcloudClientAndPreservesLogin() = runBlocking {
+        store.token = fresh().copy(clientId = XalAuthenticator.XCLOUD_CLIENT_ID)
         enqueue("""{"access_token":"console-token","refresh_token":"rotated"}""")
         assertEquals("console-token", auth().getConsoleTransferToken())
-        val form = server.takeRequest().body.readUtf8()
-        assertTrue(form.contains("client_id=${XalAuthenticator.DEVICE_CLIENT_ID}"))
+        val request = server.takeRequest()
+        assertEquals("/transfer", request.path)
+        val form = request.body.readUtf8()
+        assertTrue(form.contains("client_id=${XalAuthenticator.XCLOUD_CLIENT_ID}"))
         assertTrue(form.contains("grant_type=refresh_token"))
         assertTrue(form.contains("PURPOSE_XBOX_CLOUD_CONSOLE_TRANSFER_TOKEN"))
-        assertEquals(fresh().copy(refreshToken = "rotated"), store.token)
+        assertEquals(fresh().copy(refreshToken = "rotated", clientId = XalAuthenticator.XCLOUD_CLIENT_ID), store.token)
     }
     @Test fun legacyBrowserLoginWithoutRefreshCannotInventAConsoleToken() = runBlocking {
         store.token = fresh().copy(refreshToken = null)
@@ -166,7 +169,7 @@ class AuthTest {
         assertEquals(0, server.requestCount)
     }
     @Test fun revokedConsoleCredentialRequiresLoginAndDoesNotExposeResponse() = runBlocking {
-        store.token = fresh()
+        store.token = fresh().copy(clientId = XalAuthenticator.XCLOUD_CLIENT_ID)
         enqueue("""{"error":"invalid_grant","access_token":"do-not-expose"}""", 400)
         try { auth().getConsoleTransferToken(); fail("Revoked credentials were accepted") }
         catch (error: AuthenticationRequiredException) {
@@ -181,5 +184,82 @@ class AuthTest {
         auth().authenticateToXCloud("legacy-access").getOrThrow()
         val properties = JSONObject(server.takeRequest().body.readUtf8()).getJSONObject("Properties")
         assertEquals("t=legacy-access", properties.getString("RpsTicket"))
+    }
+
+    @Test fun qrStartsTheXcloudMsalFlowWithOfflineAccess() = runBlocking {
+        enqueue("""{"user_code":"U","device_code":"D","verification_uri":"https://microsoft.com/link","interval":1,"expires_in":90}""")
+        auth().requestDeviceCodeQr().getOrThrow()
+        val request = server.takeRequest()
+        val form = request.body.readUtf8()
+        assertEquals("/device", request.path)
+        assertTrue(form.contains("client_id=${XalAuthenticator.XCLOUD_CLIENT_ID}"))
+        assertTrue(form.contains("xboxlive.signin"))
+        assertTrue(form.contains("offline_access"))
+        assertFalse(form.contains("MBI_SSL"))
+        val endpoints = AuthEndpoints()
+        assertEquals("https://login.microsoftonline.com/consumers/oauth2/v2.0/devicecode", endpoints.deviceCodeUrl)
+        assertEquals("https://login.microsoftonline.com/consumers/oauth2/v2.0/token", endpoints.tokenUrl)
+        assertEquals("https://login.live.com/oauth20_token.srf", endpoints.transferTokenUrl)
+    }
+    @Test fun oldDeviceLoginCannotRepeatTheInvalidScopeRequest() = runBlocking {
+        store.token = fresh()
+        assertFalse(auth().supportsConsoleTransfer())
+        try { auth().getConsoleTransferToken(); fail("Legacy OAuth client was reused for transfer scope") }
+        catch (error: AuthenticationRequiredException) { assertTrue(error.message!!.contains("QR Code desta versão")) }
+        assertEquals(0, server.requestCount)
+        assertEquals(fresh(), store.token)
+    }
+    @Test fun msalRefreshUsesV2EndpointAndMsalScope() = runBlocking {
+        store.token = fresh().copy(clientId = XalAuthenticator.XCLOUD_CLIENT_ID, expiresAtMs = 1); now = 100
+        enqueue("""{"access_token":"new","expires_in":3600}"""); exchange()
+        auth().authenticateToXCloud("t=access").getOrThrow()
+        val request = server.takeRequest()
+        assertEquals("/token", request.path)
+        val form = request.body.readUtf8()
+        assertTrue(form.contains("offline_access")); assertFalse(form.contains("MBI_SSL"))
+        assertTrue(form.contains("client_id=${XalAuthenticator.XCLOUD_CLIENT_ID}"))
+    }
+    @Test fun invalidTransferScopeIsActionableAndNeverTriggersClientGuessing() = runBlocking {
+        store.token = fresh().copy(clientId = XalAuthenticator.XCLOUD_CLIENT_ID)
+        enqueue("""{"error":"invalid_scope","access_token":"do-not-expose"}""", 400)
+        try { auth().getConsoleTransferToken(); fail("Invalid scope was accepted") }
+        catch (error: AuthenticationRequiredException) {
+            assertTrue(error.message!!.contains("QR Code"))
+            assertFalse(error.message!!.contains("do-not-expose"))
+        }
+        assertEquals(1, server.requestCount)
+        assertEquals("/transfer", server.takeRequest().path)
+    }
+    @Test fun newQrLoginCanAuthenticateAndRequestConsoleTransferWithoutMixingClients() = runBlocking {
+        enqueue("""{"access_token":"new-access","refresh_token":"new-refresh","expires_in":3600}""")
+        val login = auth()
+        val ticket = login.pollForDeviceCodeLogin(info()).getOrThrow()
+        val poll = server.takeRequest()
+        assertEquals("/token", poll.path)
+        assertTrue(poll.body.readUtf8().contains("client_id=${XalAuthenticator.XCLOUD_CLIENT_ID}"))
+        exchange()
+        login.authenticateToXCloud(ticket).getOrThrow()
+        val user = JSONObject(server.takeRequest().body.readUtf8())
+        assertEquals("d=new-access", user.getJSONObject("Properties").getString("RpsTicket"))
+        server.takeRequest(); server.takeRequest()
+        enqueue("""{"access_token":"transfer","refresh_token":"rotated"}""")
+        assertEquals("transfer", login.getConsoleTransferToken())
+        val transfer = server.takeRequest()
+        assertEquals("/transfer", transfer.path)
+        val form = transfer.body.readUtf8()
+        assertTrue(form.contains("client_id=${XalAuthenticator.XCLOUD_CLIENT_ID}"))
+        assertTrue(form.contains("PURPOSE_XBOX_CLOUD_CONSOLE_TRANSFER_TOKEN"))
+        assertTrue(form.contains("refresh_token=new-refresh"))
+        assertTrue(login.supportsConsoleTransfer())
+        assertEquals("rotated", store.token?.refreshToken)
+    }
+
+    @Test fun completedMsalLoginReplacesTheLegacyClientIdentityEvenIfTheTicketMatches() = runBlocking {
+        store.token = fresh()
+        enqueue("""{"access_token":"access","refresh_token":"msal-refresh","expires_in":3600}""")
+        auth().pollForDeviceCodeLogin(info()).getOrThrow()
+        assertEquals(XalAuthenticator.XCLOUD_CLIENT_ID, store.token?.clientId)
+        assertEquals("msal-refresh", store.token?.refreshToken)
+        assertTrue(auth().supportsConsoleTransfer())
     }
 }

@@ -26,6 +26,12 @@ class SignalingTest {
     private val requests = CopyOnWriteArrayList<RecordedRequest>()
     private val events = CopyOnWriteArrayList<String>()
     private var now = 0L
+    private var estimateBody = """{"estimatedTotalWaitTimeInSeconds":300}"""
+    private var rejectEstimate = false
+    private var stallEstimate = false
+    private var failAfterFirstEstimate = false
+    private var estimateCalls = 0
+    private var estimateEntered = CompletableDeferred<Unit>()
     private var queuedStates = 0
     private var connectSent = false
     private var provisioned = false
@@ -48,6 +54,8 @@ class SignalingTest {
         override suspend fun awaitReady() { events.add("ready"); if (rejectTransport) throw IOException("TRANSPORT: failed") }
     }
     @Before fun setup() {
+        estimateBody = """{"estimatedTotalWaitTimeInSeconds":300}"""; rejectEstimate = false
+        stallEstimate = false; failAfterFirstEstimate = false; estimateCalls = 0; estimateEntered = CompletableDeferred()
         now = 0; queuedStates = 0; connectSent = false; provisioned = false; rejectConnect = false; failedState = false
         requests.clear(); events.clear(); rejectIce = false; rejectCatalog = false; rejectTransport = false
         server = MockWebServer()
@@ -56,6 +64,15 @@ class SignalingTest {
                 requests.add(request)
                 return when (request.method to request.path) {
                     "GET" to "/v2/titles" -> if (rejectCatalog) response("{}", 503) else response("""{"results":[{"titleId":"real-id","details":{"productTitle":"Real Game"}}]}""")
+                    "GET" to "/v1/waittime/real-id" -> {
+                        estimateEntered.complete(Unit)
+                        estimateCalls++
+                        when {
+                            stallEstimate -> MockResponse().setSocketPolicy(okhttp3.mockwebserver.SocketPolicy.NO_RESPONSE)
+                            rejectEstimate || (failAfterFirstEstimate && estimateCalls > 1) -> response("{}", 503)
+                            else -> response(estimateBody)
+                        }
+                    }
                     "POST" to "/v5/sessions/cloud/play" -> response("""{"sessionPath":"/session"}""")
                     "GET" to "/session/state" -> when {
                         failedState -> response("""{"state":"Failed","errorDetails":{"code":"NoCapacity"}}""")
@@ -183,5 +200,55 @@ class SignalingTest {
         assertEquals(0L, now)
         assertFalse(events.contains("offer"))
         assertEquals(1, requests.count { it.method == "DELETE" })
+    }
+
+    @Test fun waitEstimateIsRefreshedAtThirtySecondIntervalsAndDoesNotFloodTheService() = runBlocking {
+        queuedStates = 45
+        val snapshots = mutableListOf<com.xcloud.tclnative.signaling.QueueStatus?>()
+        val client = signaling()
+        assertTrue(client.startAndConnectWebRtcSession("real-id", peer, onQueueStatus = { snapshots.add(it) }) {}.isSuccess)
+        val requestsForEstimate = requests.filter { it.path == "/v1/waittime/real-id" }
+        assertEquals(3, requestsForEstimate.size)
+        assertTrue(snapshots.filterNotNull().any { it.estimate?.seconds == 300L })
+        assertNull(snapshots.last())
+        client.stop()
+    }
+    @Test fun failureOfOptionalEstimateDoesNotFailTheActualQueue() = runBlocking {
+        queuedStates = 3; rejectEstimate = true
+        val snapshots = mutableListOf<com.xcloud.tclnative.signaling.QueueStatus?>()
+        val client = signaling()
+        val result = client.startAndConnectWebRtcSession("real-id", peer, onQueueStatus = { snapshots.add(it) }) {}
+        assertTrue(result.exceptionOrNull()?.message, result.isSuccess)
+        assertTrue(snapshots.filterNotNull().any { it.estimateFailed && it.estimate == null })
+        assertTrue(events.contains("ready"))
+        client.stop()
+    }
+    @Test fun missingEstimateDoesNotTurnIntoAFakeZeroMinuteWait() = runBlocking {
+        queuedStates = 2; estimateBody = "{}"
+        val snapshots = mutableListOf<com.xcloud.tclnative.signaling.QueueStatus?>()
+        val client = signaling()
+        assertTrue(client.startAndConnectWebRtcSession("real-id", peer, onQueueStatus = { snapshots.add(it) }) {}.isSuccess)
+        assertTrue(snapshots.filterNotNull().all { it.estimate == null })
+        client.stop()
+    }
+
+    @Test fun successfulForecastIsRetainedAndMarkedStaleWhenTheNextRefreshFails() = runBlocking {
+        queuedStates = 45; failAfterFirstEstimate = true
+        val snapshots = mutableListOf<com.xcloud.tclnative.signaling.QueueStatus?>()
+        val client = signaling()
+        assertTrue(client.startAndConnectWebRtcSession("real-id", peer, onQueueStatus = { snapshots.add(it) }) {}.isSuccess)
+        assertTrue(snapshots.filterNotNull().any { it.estimate?.seconds == 300L && it.estimateFailed })
+        client.stop()
+    }
+    @Test fun cancellingWhileTheForecastRequestIsStalledStillDeletesTheSession() = runBlocking {
+        queuedStates = Int.MAX_VALUE; stallEstimate = true
+        val snapshots = java.util.concurrent.CopyOnWriteArrayList<com.xcloud.tclnative.signaling.QueueStatus?>()
+        val job = async { signaling().startAndConnectWebRtcSession("real-id", peer, onQueueStatus = { snapshots.add(it) }) {} }
+        withTimeout(2000) { estimateEntered.await() }
+        withTimeout(2000) { job.cancelAndJoin() }
+        assertTrue(job.isCancelled)
+        assertEquals(1, requests.count { it.method == "DELETE" })
+        assertFalse(events.contains("offer"))
+        assertNull(snapshots.last())
     }
 }

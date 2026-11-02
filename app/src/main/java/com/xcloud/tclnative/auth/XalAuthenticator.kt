@@ -30,7 +30,7 @@ data class DeviceCodeInfo(
     val verificationUri: String,
     val verificationUriComplete: String,
     val intervalSeconds: Int,
-    val expiresInSeconds: Int,
+    val expiresInSeconds: Int = 600,
     val qrBitmap: Bitmap
 )
 
@@ -43,26 +43,63 @@ class AuthStageException(
 ) : Exception(message)
 
 class XalAuthenticator(
-    context: Context,
+    context: Context? = null,
     private val httpClient: OkHttpClient = CloudHttp.client,
-    private val tokenStore: OAuthTokenStore = SharedPrefsOAuthTokenStore(context)
+    private val tokenStore: OAuthTokenStore = if (context != null) {
+        SharedPrefsOAuthTokenStore(context)
+    } else {
+        InMemoryOAuthTokenStore()
+    }
 ) {
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
     companion object {
-        internal const val DEVICE_CLIENT_ID = "0000000048183522"
-        internal const val XCLOUD_CLIENT_ID = "1f907974-e22b-4810-a9de-d9647380c97e"
-        internal const val LIVE_SCOPE = "service::user.auth.xboxlive.com::MBI_SSL"
-        internal const val TRANSFER_TOKEN_SCOPE =
+        const val BROWSER_CLIENT_ID = "000000004c12ae6f"
+        const val DEVICE_CLIENT_ID = "0000000048183522"
+        const val XCLOUD_CLIENT_ID = "1f907974-e22b-4810-a9de-d9647380c97e"
+        const val REDIRECT_URI = "https://login.live.com/oauth20_desktop.srf"
+        const val LIVE_SCOPE = "service::user.auth.xboxlive.com::MBI_SSL"
+        const val TRANSFER_TOKEN_SCOPE =
             "service::http://Passport.NET/purpose::PURPOSE_XBOX_CLOUD_CONSOLE_TRANSFER_TOKEN"
 
-        internal fun normalizeRpsTicket(rawTicket: String): String {
+        fun getAuthorizationUrl(clientId: String = BROWSER_CLIENT_ID): String {
+            return "https://login.live.com/oauth20_authorize.srf" +
+                "?client_id=$clientId" +
+                "&response_type=token" +
+                "&approval_prompt=auto" +
+                "&scope=$LIVE_SCOPE" +
+                "&redirect_uri=$REDIRECT_URI"
+        }
+
+        fun normalizeRpsTicket(rawTicket: String): String {
             val trimmed = rawTicket.trim()
             if (trimmed.startsWith("t=") || trimmed.startsWith("d=")) {
                 return trimmed
             }
             return "d=$trimmed"
         }
+    }
+
+    /**
+     * Suporta todas as sobrecargas de saveTokens chamadas pela MainActivity e pelos Testes
+     */
+    fun saveTokens(
+        accessToken: String,
+        refreshToken: String = "",
+        clientId: String = BROWSER_CLIENT_ID,
+        expiresInSeconds: Long = 3600L
+    ) {
+        val cleanAccess = accessToken.removePrefix("d=").removePrefix("t=").trim()
+        val stored = StoredOAuthTokens(
+            accessToken = cleanAccess,
+            refreshToken = refreshToken,
+            expiresAtEpochMillis = System.currentTimeMillis() + (expiresInSeconds * 1000L)
+        )
+        tokenStore.save(stored)
+    }
+
+    fun saveRpsTicket(rpsTicket: String) {
+        saveTokens(accessToken = rpsTicket)
     }
 
     fun getSavedTokens(): StoredOAuthTokens? = tokenStore.load()
@@ -102,7 +139,7 @@ class XalAuthenticator(
                 "https://login.live.com/oauth20_remoteconnect.srf"
             )
             val completeUri = "$verificationUri?otc=$userCode"
-            val interval = json.optInt("interval", 5).coerceAtLeast(3)
+            val interval = json.optInt("interval", 5).coerceAtLeast(1)
             val expiresIn = json.optInt("expires_in", 600)
 
             val qrBitmap = generateQrCodeBitmap(completeUri, 420)
@@ -123,7 +160,7 @@ class XalAuthenticator(
         }
     }
 
-    suspend fun pollForDeviceCodeLogin(deviceInfo: DeviceCodeInfo): Result<StoredOAuthTokens> =
+    suspend fun pollForDeviceCodeLogin(deviceInfo: DeviceCodeInfo): Result<String> =
         withContext(Dispatchers.IO) {
             try {
                 val maxAttempts = (deviceInfo.expiresInSeconds / deviceInfo.intervalSeconds).coerceAtLeast(30)
@@ -149,13 +186,13 @@ class XalAuthenticator(
                             val accessToken = json.getString("access_token")
                             val refreshToken = json.optString("refresh_token", "")
                             val expiresIn = json.optLong("expires_in", 3600L)
-                            val stored = StoredOAuthTokens(
+                            saveTokens(
                                 accessToken = accessToken,
                                 refreshToken = refreshToken,
-                                expiresAtEpochMillis = System.currentTimeMillis() + (expiresIn * 1000L)
+                                clientId = DEVICE_CLIENT_ID,
+                                expiresInSeconds = expiresIn
                             )
-                            tokenStore.save(stored)
-                            return@withContext Result.success(stored)
+                            return@withContext Result.success(accessToken)
                         } else {
                             val err = json.optString("error", "")
                             if (err != "authorization_pending" && err != "slow_down" && err.isNotEmpty()) {
@@ -173,64 +210,61 @@ class XalAuthenticator(
             }
         }
 
-    suspend fun refreshAccessTokenIfNeeded(): Result<StoredOAuthTokens> = withContext(Dispatchers.IO) {
-        val current = tokenStore.load()
-            ?: return@withContext Result.failure(
-                AuthStageException("OAUTH_REFRESH", message = "OAUTH_REFRESH: Sem sessão guardada")
-            )
-
-        val now = System.currentTimeMillis()
-        if (current.accessToken.isNotBlank() && current.expiresAtEpochMillis > now + 60_000L) {
-            return@withContext Result.success(current)
-        }
-
-        if (current.refreshToken.isBlank()) {
-            return@withContext Result.success(current)
-        }
-
-        try {
-            val formBody = FormBody.Builder()
-                .add("client_id", DEVICE_CLIENT_ID)
-                .add("grant_type", "refresh_token")
-                .add("refresh_token", current.refreshToken)
-                .add("scope", LIVE_SCOPE)
-                .build()
-
-            val req = Request.Builder()
-                .url("https://login.live.com/oauth20_token.srf")
-                .post(formBody)
-                .build()
-
-            httpClient.newCall(req).execute().use { resp ->
-                val body = resp.body?.string().orEmpty()
-                if (!resp.isSuccessful) {
-                    throw buildStageException("OAUTH_REFRESH", resp.code, body, resp.headers["MS-CV"])
-                }
-                val json = JSONObject(body)
-                val newAccess = json.getString("access_token")
-                val newRefresh = json.optString("refresh_token", current.refreshToken)
-                val expiresIn = json.optLong("expires_in", 3600L)
-                val updated = StoredOAuthTokens(
-                    accessToken = newAccess,
-                    refreshToken = newRefresh,
-                    expiresAtEpochMillis = System.currentTimeMillis() + (expiresIn * 1000L)
+    suspend fun refreshAccessTokenIfNeeded(clientId: String = DEVICE_CLIENT_ID): Result<StoredOAuthTokens> =
+        withContext(Dispatchers.IO) {
+            val current = tokenStore.load()
+                ?: return@withContext Result.failure(
+                    AuthStageException("OAUTH_REFRESH", message = "OAUTH_REFRESH: Sem sessão guardada")
                 )
-                tokenStore.save(updated)
-                Result.success(updated)
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 
-    /**
-     * Solicita o Console Transfer Token (Long Play Token) exigido pelo POST /{sessionPath}/connect
-     * para transitar de ReadyToConnect para Provisioned sem dar erro SessionNotConnectable.
-     */
+            val now = System.currentTimeMillis()
+            if (current.accessToken.isNotBlank() && current.expiresAtEpochMillis > now + 60_000L) {
+                return@withContext Result.success(current)
+            }
+
+            if (current.refreshToken.isBlank()) {
+                return@withContext Result.success(current)
+            }
+
+            try {
+                val formBody = FormBody.Builder()
+                    .add("client_id", clientId)
+                    .add("grant_type", "refresh_token")
+                    .add("refresh_token", current.refreshToken)
+                    .add("scope", LIVE_SCOPE)
+                    .build()
+
+                val req = Request.Builder()
+                    .url("https://login.live.com/oauth20_token.srf")
+                    .post(formBody)
+                    .build()
+
+                httpClient.newCall(req).execute().use { resp ->
+                    val body = resp.body?.string().orEmpty()
+                    if (!resp.isSuccessful) {
+                        throw buildStageException("OAUTH_REFRESH", resp.code, body, resp.headers["MS-CV"])
+                    }
+                    val json = JSONObject(body)
+                    val newAccess = json.getString("access_token")
+                    val newRefresh = json.optString("refresh_token", current.refreshToken)
+                    val expiresIn = json.optLong("expires_in", 3600L)
+                    val updated = StoredOAuthTokens(
+                        accessToken = newAccess,
+                        refreshToken = newRefresh,
+                        expiresAtEpochMillis = System.currentTimeMillis() + (expiresIn * 1000L)
+                    )
+                    tokenStore.save(updated)
+                    Result.success(updated)
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
     suspend fun fetchConsoleTransferToken(refreshToken: String): String = withContext(Dispatchers.IO) {
         if (refreshToken.isBlank()) return@withContext ""
 
-        for (clientId in listOf(DEVICE_CLIENT_ID, XCLOUD_CLIENT_ID)) {
+        for (clientId in listOf(DEVICE_CLIENT_ID, BROWSER_CLIENT_ID, XCLOUD_CLIENT_ID)) {
             try {
                 val formBody = FormBody.Builder()
                     .add("grant_type", "refresh_token")
@@ -265,7 +299,6 @@ class XalAuthenticator(
                     ?: stored?.accessToken
                     ?: throw AuthStageException("XBL_USER_TOKEN", message = "XBL_USER_TOKEN: Token OAuth ausente")
 
-                // Tenta com prefixo d= e fallback automático para t= caso a conta MSA exija
                 val candidateTickets = listOf(
                     normalizeRpsTicket(rawTicket),
                     "t=${rawTicket.removePrefix("d=").removePrefix("t=").trim()}"
@@ -324,7 +357,6 @@ class XalAuthenticator(
                     throw lastUserError ?: AuthStageException("XBL_USER_TOKEN", message = "Falha no UserToken")
                 }
 
-                // 2. XSTS Token para http://gssv.xboxlive.com/
                 val xstsJson = JSONObject().apply {
                     put("RelyingParty", "http://gssv.xboxlive.com/")
                     put("TokenType", "JWT")
@@ -350,7 +382,6 @@ class XalAuthenticator(
                     JSONObject(body).getString("Token")
                 }
 
-                // 3. Login xCloud GSSV (xgpuweb)
                 val xcloudLoginJson = JSONObject().apply {
                     put("token", xstsToken)
                     put("offeringId", "xgpuweb")
@@ -383,7 +414,6 @@ class XalAuthenticator(
                     }
                 }
 
-                // 4. Obtém o Transfer Token (LPT) para o POST /connect não dar SessionNotConnectable
                 val refreshToken = stored?.refreshToken.orEmpty()
                 val transferToken = fetchConsoleTransferToken(refreshToken)
 
@@ -418,7 +448,7 @@ class XalAuthenticator(
             append("$stage: HTTP $statusCode")
             if (!errorCode.isNullOrBlank()) append(" — código $errorCode")
             if (!desc.isNullOrBlank()) append(" ($desc)")
-            if (!corrId.isNullOrBlank()) append(" [req $corrId]")
+            if (!corrId.isNullOrBlank()) append(" (requisição $corrId)")
         }
         return AuthStageException(stage, statusCode, errorCode, corrId, msg)
     }
@@ -434,7 +464,6 @@ class XalAuthenticator(
             }
             bmp
         } catch (e: Throwable) {
-            // Fallback seguro para ambientes de teste unitário JVM (sem Android Grafik real)
             runCatching { Bitmap.createBitmap(1, 1, Bitmap.Config.RGB_565) }.getOrNull()
                 ?: throw RuntimeException("QR Bitmap fallback", e)
         }

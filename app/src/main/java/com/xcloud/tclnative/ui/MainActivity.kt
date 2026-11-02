@@ -22,6 +22,10 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import com.xcloud.tclnative.catalog.CatalogCache
+import java.io.File
+import com.xcloud.tclnative.signaling.GameTitle
+import com.xcloud.tclnative.ui.dashboard.GameLoadingView
 import com.xcloud.tclnative.catalog.CatalogService
 import com.xcloud.tclnative.catalog.GameLibrary
 import com.xcloud.tclnative.ui.dashboard.GameDashboardView
@@ -55,9 +59,8 @@ class MainActivity : Activity() {
     @Volatile private var playbackGeneration = 0
     private var gamepadState = com.xcloud.tclnative.webrtc.GamepadState()
     private var qrPollingJob: Job? = null
-    private lateinit var queuePanel: LinearLayout
-    private lateinit var queueText: TextView
-    private var queueSnapshot: com.xcloud.tclnative.signaling.QueueStatus? = null
+    private lateinit var queuePanel: GameLoadingView
+    private var pendingLoadingGame: GameTitle? = null
     private var queueTicker: Job? = null
     private val controllerShortcut = ControllerShortcut()
     private var shortcutFlushJob: Job? = null
@@ -70,6 +73,9 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        window.navigationBarColor = Color.BLACK
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+            View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
         authenticator = XalAuthenticator(this)
         lowLatencyVideo = getSharedPreferences("stream_preferences", Context.MODE_PRIVATE).getBoolean("low_latency_video", true)
         if (Build.VERSION.SDK_INT >= 30) window.setPreferMinimalPostProcessing(lowLatencyVideo)
@@ -133,34 +139,9 @@ class MainActivity : Activity() {
         }
         rootLayout.addView(controlPanel, panelParams)
 
-        queuePanel = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            setPadding(36, 20, 36, 20)
-            setBackgroundColor(Color.rgb(20, 24, 30))
-            visibility = View.GONE
-            addView(TextView(this@MainActivity).apply {
-                text = "Fila do Xbox Cloud"
-                textSize = 22f
-                setTextColor(Color.WHITE)
-                gravity = Gravity.CENTER
-            })
-            addView(android.widget.ProgressBar(this@MainActivity), LinearLayout.LayoutParams(48, 48))
-        }
-        queueText = TextView(this).apply {
-            textSize = 17f
-            setTextColor(Color.WHITE)
-            gravity = Gravity.CENTER
-            setPadding(0, 10, 0, 10)
-        }
-        queuePanel.addView(queueText)
-        queuePanel.addView(Button(this).apply {
-            text = "Cancelar espera"
-            setOnClickListener { cancelPlayback() }
-        })
+        queuePanel = GameLoadingView(this) { cancelPlayback() }
         rootLayout.addView(queuePanel, FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER
-        ).apply { marginStart = 48; marginEnd = 48 })
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
         statsView = TextView(this).apply {
             textSize = 12f
             typeface = android.graphics.Typeface.MONOSPACE
@@ -346,7 +327,7 @@ class MainActivity : Activity() {
             val library = GameLibrary(this@MainActivity, session.userHash)
             gameLibrary = library
             val view = GameDashboardView(this@MainActivity, library,
-                onPlay = { game -> launchCloudGame(signaling, game.titleId, game.name) },
+                onPlay = { game -> launchCloudGame(signaling, game) },
                 onSearch = { showCatalogSearch() },
                 onOptions = { showCatalogOptions(session) },
                 onExit = {
@@ -368,11 +349,20 @@ class MainActivity : Activity() {
             hudTextView.visibility = View.GONE
             view.setGames(allGames)
             view.restoreFocus()
-            val catalog = CatalogService()
+            val catalog = CatalogService(cache = CatalogCache(File(cacheDir, "catalog-art-v2.json")))
             launch {
-                catalog.hydrate(allGames) { hydrated -> withContext(Dispatchers.Main) {
-                    if (dashboard === view) view.setGames(hydrated)
+                catalog.hydrate(allGames, onProgress = { progress -> withContext(Dispatchers.Main) {
+                    if (dashboard === view) view.setMetadataProgress(progress)
+                } }) { hydrated -> withContext(Dispatchers.Main) {
+                    if (dashboard === view) { view.setGames(hydrated); refreshLoadingArt() }
                 } }
+            }
+            launch {
+                val included = async { catalog.gallery(CatalogService.GAME_PASS) }
+                val free = async { catalog.gallery(CatalogService.FREE_TO_PLAY) }
+                val products = included.await()?.toSet()
+                val excluded = free.await()?.toSet() ?: emptySet()
+                if (dashboard === view) { view.setGamePassProducts(products?.minus(excluded)); refreshLoadingArt() }
             }
             launch {
                 val popular = async { catalog.gallery(CatalogService.POPULAR) }
@@ -440,6 +430,17 @@ class MainActivity : Activity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (queuePanel.visibility == View.VISIBLE) {
+            val key = event.keyCode
+            if (key in setOf(KeyEvent.KEYCODE_BUTTON_A, KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER,
+                    KeyEvent.KEYCODE_BUTTON_B, KeyEvent.KEYCODE_BACK)) {
+                if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                    if (key == KeyEvent.KEYCODE_BUTTON_B || key == KeyEvent.KEYCODE_BACK) cancelPlayback()
+                    else queuePanel.cancelFromController()
+                }
+                return true
+            }
+        }
         val view = dashboard
         if (view != null && controlPanel.visibility == View.VISIBLE && queuePanel.visibility != View.VISIBLE) {
             if (event.keyCode == KeyEvent.KEYCODE_BACK) {
@@ -451,14 +452,17 @@ class MainActivity : Activity() {
         return super.dispatchKeyEvent(event)
     }
 
-    private fun launchCloudGame(signaling: XCloudSignalingClient, titleId: String, gameName: String) {
+    private fun launchCloudGame(signaling: XCloudSignalingClient, game: GameTitle) {
+        val titleId = game.titleId
+        val gameName = game.name
         val previous = gameJob
         previous?.cancel()
         val generation = ++playbackGeneration
         controlPanel.visibility = View.GONE
         statsView.visibility = View.GONE
         statsView.text = "Estatísticas: aguardando amostras WebRTC..."
-        hudTextView.visibility = View.VISIBLE
+        hudTextView.visibility = View.GONE
+        beginLoading(game)
         hudTextView.text = "PLAY: Solicitando sessão para [$gameName]. Voltar cancela."
         hudTextView.setTextColor(Color.CYAN)
         gameJob = mainScope.launch {
@@ -471,6 +475,8 @@ class MainActivity : Activity() {
             surfaceRenderer.onFirstFrameRendered = {
                 if (generation == playbackGeneration && !firstFrame.isCompleted) {
                     firstFrame.complete(Unit)
+                    finishLoading()
+                    hudTextView.visibility = View.VISIBLE
                     gameLibrary?.recordPlayed(titleId)
                     hudTextView.text = "Vídeo nativo ativo [$gameName]"
                     hudTextView.setTextColor(Color.GREEN)
@@ -507,10 +513,12 @@ class MainActivity : Activity() {
                     if (generation == playbackGeneration) showQueue(status)
                 } }) { progress -> runOnUiThread {
                     if (generation == playbackGeneration && !firstFrame.isCompleted) {
+                        queuePanel.updateProgress(progress)
                         hudTextView.text = progress
                         hudTextView.setTextColor(Color.YELLOW)
                     }
                 } }.getOrThrow()
+                if (!firstFrame.isCompleted) queuePanel.updateProgress("VIDEO:")
                 if (withTimeoutOrNull(20_000) {
                     kotlinx.coroutines.selects.select<Unit> {
                         firstFrame.onAwait { }
@@ -591,7 +599,7 @@ class MainActivity : Activity() {
                 withContext(NonCancellable) {
                     signaling.stop()
                     if (generation == playbackGeneration) {
-                        showQueue(null)
+                        finishLoading()
                         statsView.visibility = View.GONE
                     }
                     videoRecoveryDialog?.dismiss()
@@ -605,24 +613,28 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun showQueue(status: com.xcloud.tclnative.signaling.QueueStatus?) {
-        val wasHidden = queuePanel.visibility != View.VISIBLE
-        queueSnapshot = status
-        queuePanel.visibility = if (status == null) View.GONE else View.VISIBLE
-        if (status == null) {
-            queueTicker?.cancel()
-            queueTicker = null
-        } else {
-            if (wasHidden) queuePanel.getChildAt(queuePanel.childCount - 1).requestFocus()
-            queueText.text = status.message(System.nanoTime() / 1_000_000)
-            if (queueTicker?.isActive != true) queueTicker = mainScope.launch {
-                while (isActive) {
-                    val snapshot = queueSnapshot ?: break
-                    queueText.text = snapshot.message(System.nanoTime() / 1_000_000)
-                    delay(1000)
-                }
+    private fun beginLoading(game: GameTitle) {
+        pendingLoadingGame = game
+        queuePanel.begin(game)
+        queueTicker?.cancel()
+        queueTicker = mainScope.launch {
+            while (isActive && pendingLoadingGame != null) {
+                queuePanel.render(System.nanoTime()/1_000_000)
+                delay(1000)
             }
         }
+    }
+    private fun refreshLoadingArt() {
+        val pending = pendingLoadingGame ?: return
+        dashboard?.gameById(pending.titleId)?.let { game -> pendingLoadingGame = game; queuePanel.setGame(game) }
+    }
+    private fun finishLoading() {
+        pendingLoadingGame = null
+        queueTicker?.cancel(); queueTicker = null
+        queuePanel.dismiss()
+    }
+    private fun showQueue(status: com.xcloud.tclnative.signaling.QueueStatus?) {
+        if (pendingLoadingGame != null) queuePanel.updateQueue(status)
     }
 
     private fun cancelPlayback() {
@@ -630,7 +642,7 @@ class MainActivity : Activity() {
         gameJob?.cancel()
         videoRecoveryDialog?.dismiss()
         resetController()
-        showQueue(null)
+        finishLoading()
         statsView.visibility = View.GONE
         hudTextView.text = "Sessão cancelada. Selecione um jogo."
         hudTextView.visibility = View.VISIBLE
@@ -757,6 +769,8 @@ class MainActivity : Activity() {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (!hasFocus) resetController()
+        else window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+            View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
@@ -785,6 +799,7 @@ class MainActivity : Activity() {
         ++playbackGeneration
         mainScope.cancel()
         dashboard?.close()
+        queuePanel.close()
         videoRecoveryDialog?.dismiss()
         surfaceRenderer.clearSession()
         webrtcClient?.close()

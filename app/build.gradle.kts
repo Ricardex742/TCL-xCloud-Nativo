@@ -11,8 +11,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 10
-        versionName = "0.10.0-horizon-dashboard"
+        versionCode = 11
+        versionName = "0.11.0-game-art-loading"
     }
 
     buildTypes {

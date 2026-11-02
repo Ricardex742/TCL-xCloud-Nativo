@@ -25,7 +25,8 @@ import java.util.concurrent.atomic.AtomicReference
 data class GameTitle(
     val titleId: String, val name: String, val productId: String? = null,
     val posterUrl: String? = null, val tileUrl: String? = null, val gamePass: Boolean = false,
-    val userSubscriptions: List<String> = emptyList()
+    val userSubscriptions: List<String> = emptyList(), val heroUrl: String? = null,
+    val seriesOptimized: Boolean = false, val xboxTitleId: String? = null
 )
 
 class XCloudSignalingClient(
@@ -67,7 +68,9 @@ class XCloudSignalingClient(
             val details = game.optJSONObject("details")
             val subscriptions = details?.optJSONArray("userSubscriptions")
             GameTitle(id, details?.optString("productTitle")?.takeIf { it.isNotBlank() } ?: id,
-                productId = details?.optString("productId")?.takeIf { it.isNotBlank() },
+                productId = details?.optString("productId")?.takeIf { it.isNotBlank() && it != "null" }
+                    ?: game.optString("productId").takeIf { it.isNotBlank() && it != "null" },
+                xboxTitleId = details?.optString("xboxTitleId")?.takeIf { it.isNotBlank() && it != "null" },
                 userSubscriptions = subscriptions?.let { values -> (0 until values.length()).mapNotNull {
                     values.optString(it).takeIf { value -> value.isNotBlank() }
                 } } ?: emptyList())

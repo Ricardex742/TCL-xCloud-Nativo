@@ -47,6 +47,7 @@ class GameDashboardView(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val posters = PosterLoader(context, scope)
     private var games = emptyList<GameTitle>()
+    private var gamePassProducts: Set<String>? = null
     private var popular: List<String>? = null
     private var added: List<String>? = null
     private var galleriesLoaded = false
@@ -112,6 +113,7 @@ class GameDashboardView(
         maxLines = 4
     }
     private val footer = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+    private val metadataNote = label(17f, false).apply { setTextColor(DashboardTheme.muted) }
     private val catalogNote = label(18f, false).apply { gravity = Gravity.END; setTextColor(DashboardTheme.muted) }
     private val adapter = CoversAdapter()
 
@@ -153,7 +155,7 @@ class GameDashboardView(
         addView(navigation)
         grid.adapter = adapter
         addView(grid); addView(emptyState)
-        addView(footer); addView(catalogNote)
+        addView(footer); addView(catalogNote); addView(metadataNote)
         hint("A", "SELECIONAR") { selectedGame?.let(onPlay) }
         hint("B", "VOLTAR") { back() }
         hint("Y", "FAVORITAR") { toggleSelectedFavorite() }
@@ -183,10 +185,23 @@ class GameDashboardView(
     }
 
     fun setGames(titles: List<GameTitle>) {
-        games = titles
+        games = titles.map { game -> game.copy(gamePass = gamePassProducts?.let { game.productId in it } ?: game.gamePass) }
         val tier = XboxProfile.subscription(titles.flatMap { it.userSubscriptions })
         profile = profile.copy(subscription = tier ?: profile.subscription)
         renderProfile(); refresh()
+    }
+    fun gameById(id: String): GameTitle? = games.firstOrNull { it.titleId == id }
+    fun setGamePassProducts(products: Set<String>?) {
+        gamePassProducts = products
+        setGames(games)
+    }
+    fun setMetadataProgress(progress: com.xcloud.tclnative.catalog.CatalogService.Progress) {
+        metadataNote.text = when {
+            !progress.finished -> "CARREGANDO INFORMAÇÕES E CAPAS: ${progress.covers}/${progress.total}"
+            progress.covers == 0 -> "CAPAS INDISPONÍVEIS. START → ATUALIZAR CATÁLOGO."
+            progress.covers < progress.total -> "ALGUMAS CAPAS INDISPONÍVEIS. ATUALIZE PELO MENU."
+            else -> ""
+        }
     }
     fun setProfile(value: XboxProfile) {
         profile = value.copy(subscription = value.subscription ?: profile.subscription)
@@ -202,7 +217,7 @@ class GameDashboardView(
         avatarLetter.text = profile.displayName.take(1).uppercase(Locale.getDefault())
         connected.contentDescription = "Conta autenticada no Xbox Cloud"
         profilePanel.contentDescription = "${profile.displayName}, ${profile.gamertag}. Abrir opções da conta"
-        posters.load(avatar, profile.avatarUrl) { ready -> avatarLetter.visibility = if (ready) View.GONE else View.VISIBLE }
+        posters.load(avatar, profile.avatarUrl, 256, 256) { ready -> avatarLetter.visibility = if (ready) View.GONE else View.VISIBLE }
     }
     fun setGalleries(popular: List<String>?, added: List<String>?) {
         this.popular = popular; this.added = added; galleriesLoaded = true; refresh()
@@ -282,7 +297,7 @@ class GameDashboardView(
             if (second.isNotEmpty()) setSpan(ForegroundColorSpan(DashboardTheme.yellow), first.length + 1, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         headerIcon.contentDescription = "Ícone de ${game.name}"
-        posters.load(headerIcon, game.tileUrl ?: game.posterUrl)
+        posters.load(headerIcon, game.tileUrl ?: game.posterUrl, 512, 512)
     }
     private fun toggleSelectedFavorite() {
         val game = selectedGame ?: return
@@ -334,44 +349,40 @@ class GameDashboardView(
     private fun textSize(view: TextView, value: Float) = view.setTextSize(TypedValue.COMPLEX_UNIT_PX, value * scale)
     private fun layoutGeometry(w: Int, h: Int) {
         val s = scale
-        // The supplied reference is taller than 16:9. Compact the header on a TV to keep
-        // both rows fully visible while preserving the portrait art's aspect ratio.
-        val compact = w.toFloat()/h > 1.5f
-        coverVerticalPadding = (if (compact) 6f else 8f)*s
+        // Reserve the full header for the game and profile. The portrait grid scrolls below it.
+        coverVerticalPadding = 7*s
         val coverWidth = (w-150*s)/COLUMNS - 20*s
         coverHeight = (coverWidth*1.52f+2*coverVerticalPadding).roundToInt().coerceAtLeast(1)
-        val footerTop = h - (if (compact) 38 else 76)*s
-        val top = if (compact) maxOf(h*.19f, footerTop-2*coverHeight-10*s) else h*.298f
-        val headerTop = if (compact) 18*s else h*.0506f
-        val headerSize = if (compact) 64*s else minOf(116*s, h*.15f)
+        val footerTop = h-42*s
+        val headerTop = 20*s
+        val headerSize = 116*s
+        val navHeight = 54*s
+        val navTop = headerTop+headerSize+30*s
+        val top = navTop+navHeight+18*s
         place(headerIcon, 106*s, headerTop, headerSize, headerSize)
-        place(headerTitle, 106*s+headerSize+20*s, headerTop+8*s, 580*s-headerSize, headerSize)
-        val titleMax = if (compact) 32f else 46f
-        textSize(headerTitle, titleMax)
+        place(headerTitle, 242*s, headerTop+8*s, 465*s, 110*s)
+        textSize(headerTitle, 46f)
         if (android.os.Build.VERSION.SDK_INT >= 26) headerTitle.setAutoSizeTextTypeUniformWithConfiguration(
-            (24*s).roundToInt().coerceAtLeast(1), (titleMax*s).roundToInt().coerceAtLeast(2), 1, TypedValue.COMPLEX_UNIT_PX)
+            (24*s).roundToInt().coerceAtLeast(1), (46*s).roundToInt().coerceAtLeast(2), 1, TypedValue.COMPLEX_UNIT_PX)
         place(profilePanel, w-424*s, headerTop+2*s, 372*s, headerSize)
-        val p = if (compact) .68f else 1f
-        val a = minOf(80*s, headerSize*.86f)
-        place(avatarLetter, 10*s, 12*s*p, a, a); place(avatar, 10*s, 12*s*p, a, a)
-        place(connected, 10*s+a-19*s, 12*s*p+a-18*s, 15*s, 15*s)
+        val a = 80*s
+        place(avatarLetter, 10*s, 12*s, a, a); place(avatar, 10*s, 12*s, a, a)
+        place(connected, 10*s+a-19*s, 12*s+a-18*s, 15*s, 15*s)
         val tx = 106*s
-        place(accountName, tx, 0f, 265*s, 34*s*p)
-        place(gamertag, tx, 30*s*p, 265*s, 30*s*p)
-        place(subscription, tx, 68*s*p, 102*s, 26*s*p)
-        place(medal, tx+116*s, 65*s*p, 30*s*p, 32*s*p)
-        place(rewards, tx+152*s, 66*s*p, 112*s, 32*s*p)
-        val pf = if (compact) .78f else 1f
-        textSize(accountName, 27f*pf); textSize(gamertag, 24f*pf); textSize(subscription, 20f*pf)
-        textSize(rewards, 25f*pf); textSize(avatarLetter, 28f)
-        val navHeight = (if (compact) 36 else 62)*s
-        val navTop = if (compact) top-navHeight-14*s else h*.214f
+        place(accountName, tx, 0f, 265*s, 34*s)
+        place(gamertag, tx, 30*s, 265*s, 30*s)
+        place(subscription, tx, 68*s, 102*s, 26*s)
+        place(medal, tx+116*s, 65*s, 30*s, 32*s)
+        place(rewards, tx+152*s, 66*s, 112*s, 32*s)
+        textSize(accountName, 27f); textSize(gamertag, 24f); textSize(subscription, 20f)
+        textSize(rewards, 25f); textSize(avatarLetter, 28f)
+        place(metadataNote, 106*s, headerTop+headerSize+5*s, w-210*s, 22*s); textSize(metadataNote, 17f)
         place(navigation, 48*s, navTop, w-84*s, navHeight+3*s)
         val shoulderTop = (navHeight-29*s)/2
         place(lb, 3*s, shoulderTop, 40*s, 29*s); place(rb, w-128*s, shoulderTop, 40*s, 29*s)
         place(tabRow, 58*s, 0f, w-204*s, navHeight)
         tabs.forEach { textSize(it, 25f) }; textSize(lb, 23f); textSize(rb, 23f)
-        place(grid, 96*s, top, w-150*s, minOf(2f*coverHeight+1, footerTop-top-6*s))
+        place(grid, 96*s, top, w-150*s, (footerTop-top-10*s).coerceAtLeast(coverHeight.toFloat()))
         place(emptyState, 106*s, top, w-210*s, h*.50f)
         textSize(emptyState, 26f)
         place(footer, 60*s, footerTop, w-120*s, 34*s)
@@ -428,6 +439,7 @@ class GameDashboardView(
         }
         private val fallback = label(29f).apply { gravity = Gravity.CENTER; maxLines = 4; setPadding(12, 12, 12, 12) }
         val image = ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
+        private val badges = GameBadgesView(context)
         private val favorite = label(22f).apply {
             text = "★"; gravity = Gravity.CENTER; setTextColor(DashboardTheme.yellow)
             background = rounded(0xc0181420.toInt(), 6f)
@@ -440,6 +452,7 @@ class GameDashboardView(
             clipChildren = false; setWillNotDraw(false)
             cover.addView(fallback, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
             cover.addView(image, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+            cover.addView(badges)
             addView(cover); addView(favorite)
         }
         fun bind(game: GameTitle) {
@@ -448,6 +461,8 @@ class GameDashboardView(
             favorite.visibility = if (game.titleId in library.favorites) View.VISIBLE else View.GONE
             posters.load(image, game.posterUrl ?: game.tileUrl)
             val s = scale
+            badges.bind(game.gamePass, game.seriesOptimized, s)
+            badges.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, (52*s).roundToInt(), Gravity.BOTTOM)
             cover.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT).apply {
                 setMargins((10*s).roundToInt(), coverVerticalPadding.roundToInt(), (10*s).roundToInt(), coverVerticalPadding.roundToInt())
             }

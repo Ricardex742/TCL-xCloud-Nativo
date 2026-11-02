@@ -30,7 +30,7 @@ import java.io.File
 class DashboardTest {
     private val games = listOf("Forza Horizon 5", "33 Immortals", "Battlefield 1", "Diablo IV",
         "Gears of War", "Delta Force", "Sea of Thieves", "Halo Infinite", "Grounded", "Minecraft",
-        "Microsoft Flight Simulator", "Indiana Jones").mapIndexed { i, name -> GameTitle("game-$i", name, "product-$i") }
+        "Microsoft Flight Simulator", "Indiana Jones").mapIndexed { i, name -> GameTitle("game-$i", name, "product-$i", seriesOptimized = i % 2 == 0) }
 
     private fun layout(view: View, w: Int = 1280, h: Int = 948) {
         view.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))
@@ -125,6 +125,7 @@ class DashboardTest {
         val view = GameDashboardView(activity, GameLibrary(activity, "visual-preview"), {}, {}, {}, {})
         activity.setContentView(view)
         view.setGames(games)
+        view.setGamePassProducts(setOf("product-0", "product-1", "product-3"))
         view.setProfile(XboxProfile("LUCAS", "LUCAS XBOX", subscription = "ULTIMATE", rewardsPoints = 12550))
         for ((w, h) in listOf(1280 to 948, 1920 to 1080, 3840 to 2160)) {
             layout(view, w, h)
@@ -138,7 +139,11 @@ class DashboardTest {
             assertEquals(w, view.width)
             assertTrue(grid.right > w * .9f)
             assertTrue(grid.width > w * .8f)
-            assertTrue("Two complete rows must fit above the footer", grid.getChildAt(11).bottom <= grid.height)
+            val icon = (0 until view.childCount).map(view::getChildAt).filterIsInstance<android.widget.ImageView>()
+                .first { it.contentDescription?.startsWith("Ícone de") == true }
+            assertTrue("Full game header must fit above the tabs and grid", icon.bottom < grid.top)
+            assertTrue("Game icon must remain large on TV", icon.height >= w * .085f)
+            assertTrue(grid.height > grid.getChildAt(0).height)
             grid.getChildAt(0).requestFocus()
             val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
             view.draw(Canvas(bitmap))

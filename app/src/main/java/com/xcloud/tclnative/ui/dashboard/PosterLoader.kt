@@ -12,20 +12,25 @@ import kotlinx.coroutines.sync.withPermit
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.io.File
 import java.util.WeakHashMap
 import java.util.concurrent.TimeUnit
 
 /** Bounded cache/parallelism, cancelled recycled requests and no image work on the UI thread. */
 internal class PosterLoader(context: Context, private val scope: CoroutineScope) {
-    private val cache = object : LruCache<String, Bitmap>(16 * 1024 * 1024) {
-        override fun sizeOf(key: String, value: Bitmap) = value.allocationByteCount
-    }
-    private val client = OkHttpClient.Builder().cache(Cache(File(context.cacheDir, "game_art"), 64L*1024*1024))
-        .callTimeout(10, TimeUnit.SECONDS).build()
-    private val slots = Semaphore(4)
+    private val backend = ArtworkBackend.get(context)
+    private val cache = backend.cache
+    private val client = backend.client
+    private val slots = backend.slots
     private val jobs = WeakHashMap<ImageView, Job>()
-    fun load(view: ImageView, url: String?, onReady: (Boolean) -> Unit = {}) {
+    fun load(view: ImageView, originalUrl: String?, maxWidth: Int = 720, maxHeight: Int = 1080, onReady: (Boolean) -> Unit = {}) {
+        val url = originalUrl?.let { raw -> runCatching {
+            val parsed = raw.toHttpUrl()
+            if (parsed.host == "store-images.s-microsoft.com" || parsed.host == "store-images.microsoft.com")
+                parsed.newBuilder().setQueryParameter("w", maxWidth.toString()).setQueryParameter("h", maxHeight.toString())
+                    .setQueryParameter("q", "90").build().toString() else raw
+        }.getOrDefault(raw) }
         jobs.remove(view)?.cancel()
         view.setImageDrawable(null)
         onReady(false)
@@ -44,7 +49,7 @@ internal class PosterLoader(context: Context, private val scope: CoroutineScope)
                             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                             BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
                             var sample = 1
-                            while (bounds.outWidth / sample > 640 || bounds.outHeight / sample > 960) sample *= 2
+                            while (bounds.outWidth / sample > maxWidth*2 || bounds.outHeight / sample > maxHeight*2) sample *= 2
                             BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply {
                                 inSampleSize = sample; inPreferredConfig = Bitmap.Config.RGB_565
                             })?.also { cache.put(url, it) }
@@ -61,7 +66,22 @@ internal class PosterLoader(context: Context, private val scope: CoroutineScope)
     }
     fun cancel(view: ImageView) { jobs.remove(view)?.cancel(); view.setImageDrawable(null) }
     fun close() {
-        jobs.values.toList().forEach { it.cancel() }; jobs.clear(); cache.evictAll()
-        client.dispatcher.cancelAll(); client.connectionPool.evictAll(); client.cache?.close()
+        jobs.values.toList().forEach { it.cancel() }; jobs.clear()
+    }
+}
+
+/** One HTTP/disk cache for the application, shared by the catalog and loading screen. */
+private class ArtworkBackend(context: Context) {
+    val cache = object : LruCache<String, Bitmap>(20 * 1024 * 1024) {
+        override fun sizeOf(key: String, value: Bitmap) = value.allocationByteCount
+    }
+    val client = OkHttpClient.Builder().cache(Cache(File(context.cacheDir, "game_art"), 64L*1024*1024))
+        .callTimeout(12, TimeUnit.SECONDS).build()
+    val slots = Semaphore(4)
+    companion object {
+        @Volatile private var instance: ArtworkBackend? = null
+        fun get(context: Context) = instance ?: synchronized(this) {
+            instance ?: ArtworkBackend(context.applicationContext).also { instance = it }
+        }
     }
 }

@@ -63,7 +63,7 @@ class SignalingTest {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 requests.add(request)
                 return when (request.method to request.path) {
-                    "GET" to "/v2/titles" -> if (rejectCatalog) response("{}", 503) else response("""{"results":[{"titleId":"real-id","details":{"productTitle":"Real Game"}}]}""")
+                    "GET" to "/v2/titles" -> if (rejectCatalog) response("{}", 503) else response("""{"results":[{"titleId":"real-id","productId":"TOPLEVEL-ID","details":{"productTitle":"Real Game","xboxTitleId":"123456"}}]}""")
                     "GET" to "/v1/waittime/real-id" -> {
                         estimateEntered.complete(Unit)
                         estimateCalls++
@@ -144,6 +144,8 @@ class SignalingTest {
     @Test fun realCatalogContainsNoHardcodedVerifiedGames() = runBlocking {
         val games = signaling().fetchCatalogGames()
         assertEquals(listOf("real-id"), games.map { it.titleId }); assertEquals("Real Game", games.single().name)
+        assertEquals("TOPLEVEL-ID", games.single().productId)
+        assertEquals("123456", games.single().xboxTitleId)
     }
     @Test fun catalogHttpFailureDoesNotReturnFakeSuccess() = runBlocking {
         rejectCatalog = true

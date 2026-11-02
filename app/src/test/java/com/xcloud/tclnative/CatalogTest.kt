@@ -59,9 +59,16 @@ class CatalogTest {
     }
     @Test fun anArtBatchFailureDoesNotDiscardTheCatalogOrStopLaterArtBatches() = runBlocking {
         val server = MockWebServer().apply { start() }
+        val requests = java.util.concurrent.CopyOnWriteArrayList<okhttp3.mockwebserver.RecordedRequest>()
+        server.dispatcher = object : okhttp3.mockwebserver.Dispatcher() {
+            override fun dispatch(request: okhttp3.mockwebserver.RecordedRequest): MockResponse {
+                requests.add(request)
+                if (request.requestUrl?.queryParameter("bigIds") == "P50") return MockResponse().setBody(
+                    """{"Products":[{"ProductId":"P50","LocalizedProperties":[{"ProductTitle":"Recovered","Images":[{"ImagePurpose":"Poster","Uri":"https://example.com/50.jpg"}]}]}]}""")
+                return MockResponse().setResponseCode(503)
+            }
+        }
         try {
-            server.enqueue(MockResponse().setResponseCode(503))
-            server.enqueue(MockResponse().setBody("""{"Products":{"P50":{"ProductTitle":"Recovered","Image_Poster":{"URL":"https://example.com/50.jpg"}}}}"""))
             val games = (0..50).map { GameTitle("cloud-$it", "Game $it", "P$it") }
             var hydrated = games
             val service = CatalogService(OkHttpClient.Builder().proxy(Proxy.NO_PROXY).build(), server.url("/").toString().trimEnd('/'))
@@ -69,11 +76,55 @@ class CatalogTest {
             assertEquals(51, hydrated.size)
             assertEquals("Recovered", hydrated.last().name)
             assertEquals("cloud-50", hydrated.last().titleId)
-            val first = server.takeRequest()
-            assertNull(first.getHeader("Authorization")) // Never send GSSV/XSTS to the public art service.
-            assertTrue(first.path!!.contains("market=BR"))
-            assertEquals(50, JSONObject(first.body.readUtf8()).getJSONArray("Products").length())
-            assertEquals(1, JSONObject(server.takeRequest().body.readUtf8()).getJSONArray("Products").length())
+            assertTrue(requests.all { it.getHeader("Authorization") == null })
+            val store = requests.first { it.requestUrl?.queryParameter("bigIds")?.contains("P0") == true }
+            assertEquals("details", store.requestUrl!!.queryParameter("fieldsTemplate"))
+            assertEquals(50, store.requestUrl!!.queryParameter("bigIds")!!.split(",").size)
+            val fallback = requests.first { it.method == "POST" }
+            assertEquals(50, JSONObject(fallback.body.readUtf8()).getJSONArray("Products").length())
+        } finally { server.shutdown() }
+    }
+    @Test fun storeArrayProvidesOriginalLocalizedArtAndSeriesRequiresOptimizationNotJustCompatibility() {
+        val data = JSONObject("""{"Products":[{"ProductId":"ABC","Properties":{"XboxConsoleGenOptimized":["ConsoleGen9"],"XboxConsoleGenCompatible":["ConsoleGen8","ConsoleGen9"]},"LocalizedProperties":[{"Language":"en-US","ProductTitle":"English","Images":[]},{"Language":"pt-BR","ProductTitle":"Forza Horizon 5","Images":[{"ImagePurpose":"Poster","Uri":"//cdn.example/poster.jpg"},{"ImagePurpose":"SquareTile","Uri":"https://cdn.example/tile.jpg"},{"ImagePurpose":"SuperHeroArt","Uri":"https://cdn.example/hero.jpg"}]}]}]}""")
+        val game = CatalogService.merge(listOf(GameTitle("FORZAHORIZON5", "FORZAHORIZON5", "ABC")), data).single()
+        assertEquals("FORZAHORIZON5", game.titleId)
+        assertEquals("Forza Horizon 5", game.name)
+        assertEquals("https://cdn.example/poster.jpg", game.posterUrl)
+        assertEquals("https://cdn.example/tile.jpg", game.tileUrl)
+        assertEquals("https://cdn.example/hero.jpg", game.heroUrl)
+        assertTrue(game.seriesOptimized)
+        assertFalse(StoreMetadata.optimized(JSONObject("""{"Properties":{"XboxConsoleGenCompatible":["ConsoleGen9"]}}""")))
+        assertFalse(StoreMetadata.optimized(JSONObject()))
+    }
+    @Test fun metadataCacheKeepsRealArtAcrossLaunchesWithoutRestoringUnavailableGamesOrEntitlements() {
+        val dir = java.nio.file.Files.createTempDirectory("catalog-cache").toFile()
+        try {
+            val cache = CatalogCache(java.io.File(dir, "art.json"))
+            cache.save(listOf(GameTitle("FORZA", "Forza Horizon 5", "A", "https://example.com/cover.jpg",
+                gamePass = true, heroUrl = "https://example.com/background.jpg", seriesOptimized = true)))
+            val restored = cache.restore(listOf(GameTitle("FORZA", "FORZA", "A"), GameTitle("NEW", "New", "B")))
+            assertEquals("Forza Horizon 5", restored.first().name)
+            assertEquals("https://example.com/background.jpg", restored.first().heroUrl)
+            assertTrue(restored.first().seriesOptimized)
+            assertFalse(restored.first().gamePass)
+            assertEquals(listOf("NEW"), cache.restore(listOf(restored.last())).map { it.titleId })
+        } finally { dir.deleteRecursively() }
+    }
+    @Test fun missingStoreIdUsesTheXboxTitleLookupWithoutChangingTheStreamingId() = runBlocking {
+        val server = MockWebServer().apply { start() }
+        try {
+            server.enqueue(MockResponse().setBody("""{"Products":[{"ProductId":"STORE","LocalizedProperties":[{"ProductTitle":"Real title","Images":[{"ImagePurpose":"Poster","Uri":"https://example.com/real.jpg"}]}]}]}"""))
+            var games = listOf(GameTitle("CLOUD-TITLE", "CLOUD-TITLE", xboxTitleId = "12345"))
+            CatalogService(OkHttpClient.Builder().proxy(Proxy.NO_PROXY).build(), server.url("/").toString().trimEnd('/'))
+                .hydrate(games) { games = it }
+            val request = server.takeRequest()
+            assertEquals("/v7.0/products/lookup", request.requestUrl!!.encodedPath)
+            assertEquals("XboxTitleId", request.requestUrl!!.queryParameter("alternateId"))
+            assertEquals("12345", request.requestUrl!!.queryParameter("value"))
+            assertEquals("CLOUD-TITLE", games.single().titleId)
+            assertEquals("STORE", games.single().productId)
+            assertEquals("Real title", games.single().name)
+            assertEquals("https://example.com/real.jpg", games.single().posterUrl)
         } finally { server.shutdown() }
     }
 }

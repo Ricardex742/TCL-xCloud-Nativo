@@ -74,37 +74,21 @@ class AuthStageException(
 ) : Exception(message)
 
 class XalAuthenticator(
-    private val context: Context? = null,
-    private val httpClient: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(20, TimeUnit.SECONDS)
-        .build(),
-    private val endpoints: AuthEndpoints = AuthEndpoints(),
-    private val externalStore: OAuthTokenStore? = null,
-    private val clockMs: () -> Long = { System.currentTimeMillis() }
+    private val contextOrStore: Any? = null,
+    private val endpointsOrHttpClient: Any? = null,
+    private val httpClientOrStore: Any? = null,
+    private val clockMsProvider: Any? = null
 ) {
-    /**
-     * Construtor secundário exigido pelo AuthTest.kt (linha 35-36)
-     */
-    constructor(
-        tokenStore: OAuthTokenStore,
-        endpoints: AuthEndpoints = AuthEndpoints(),
-        httpClient: Any? = null,
-        clockMs: () -> Long = { System.currentTimeMillis() }
-    ) : this(
-        context = null,
-        httpClient = (httpClient as? OkHttpClient) ?: extractOkHttp(httpClient),
-        endpoints = endpoints,
-        externalStore = tokenStore,
-        clockMs = clockMs
-    )
+    private val httpClient: OkHttpClient = extractOkHttp(endpointsOrHttpClient, httpClientOrStore)
+    private val endpoints: AuthEndpoints = extractEndpoints(endpointsOrHttpClient, httpClientOrStore)
+    private val externalStore: Any? = extractStore(contextOrStore, endpointsOrHttpClient, httpClientOrStore)
+    private val clockMs: () -> Long = extractClock(clockMsProvider, httpClientOrStore)
 
     private val prefs: SharedPreferences? =
-        context?.getSharedPreferences("xcloud_native_auth", Context.MODE_PRIVATE)
+        (contextOrStore as? Context)?.getSharedPreferences("xcloud_native_auth", Context.MODE_PRIVATE)
 
     private var memAccessToken: String = ""
     private var memRefreshToken: String = ""
-    private var memClientId: String = BROWSER_CLIENT_ID
     private var memExpiresAt: Long = 0L
 
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
@@ -135,17 +119,52 @@ class XalAuthenticator(
             return "d=$trimmed"
         }
 
-        private fun extractOkHttp(wrapper: Any?): OkHttpClient {
-            if (wrapper == null) return OkHttpClient()
-            if (wrapper is OkHttpClient) return wrapper
-            runCatching {
-                val field = wrapper.javaClass.declaredFields.firstOrNull {
-                    OkHttpClient::class.java.isAssignableFrom(it.type)
+        private fun extractOkHttp(vararg sources: Any?): OkHttpClient {
+            for (s in sources) {
+                if (s is OkHttpClient) return s
+                if (s != null && s !is Context && s !is AuthEndpoints && s !is Function0<*>) {
+                    runCatching {
+                        val field = s.javaClass.declaredFields.firstOrNull {
+                            OkHttpClient::class.java.isAssignableFrom(it.type)
+                        }
+                        field?.isAccessible = true
+                        (field?.get(s) as? OkHttpClient)?.let { return it }
+                    }
                 }
-                field?.isAccessible = true
-                (field?.get(wrapper) as? OkHttpClient)?.let { return it }
             }
-            return OkHttpClient()
+            return OkHttpClient.Builder()
+                .connectTimeout(20, TimeUnit.SECONDS)
+                .readTimeout(20, TimeUnit.SECONDS)
+                .build()
+        }
+
+        private fun extractEndpoints(vararg sources: Any?): AuthEndpoints {
+            for (s in sources) {
+                if (s is AuthEndpoints) return s
+            }
+            return AuthEndpoints()
+        }
+
+        private fun extractStore(vararg sources: Any?): Any? {
+            for (s in sources) {
+                if (s != null && s !is Context && s !is OkHttpClient && s !is AuthEndpoints && s !is Function0<*>) {
+                    return s
+                }
+            }
+            return null
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        private fun extractClock(vararg sources: Any?): () -> Long {
+            for (s in sources) {
+                if (s is Function0<*>) {
+                    runCatching {
+                        val res = s.invoke()
+                        if (res is Long) return s as () -> Long
+                    }
+                }
+            }
+            return { System.currentTimeMillis() }
         }
     }
 
@@ -161,7 +180,6 @@ class XalAuthenticator(
 
         memAccessToken = cleanAccess
         if (!refreshToken.isNullOrBlank()) memRefreshToken = refreshToken
-        memClientId = clientId
         memExpiresAt = expAt
 
         prefs?.edit()?.apply {
@@ -172,7 +190,6 @@ class XalAuthenticator(
             apply()
         }
 
-        // Sincroniza com externalStore se estiver em ambiente de teste (AuthTest)
         externalStore?.let { store ->
             runCatching {
                 val m = store.javaClass.methods.firstOrNull { it.name.contains("save") }

@@ -303,7 +303,7 @@ class MainActivity : Activity() {
             }.onFailure { err ->
                 hudTextView.text = "Falha na autenticação: ${err.message}"
                 hudTextView.setTextColor(Color.RED)
-                authenticator.clearSession()
+                if (err is com.xcloud.tclnative.auth.AuthenticationRequiredException) authenticator.clearSession()
                 renderLoginMenu()
             }
         }

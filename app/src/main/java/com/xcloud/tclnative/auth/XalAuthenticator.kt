@@ -144,7 +144,8 @@ class XalAuthenticator(
         if (current.expiresAtMs?.let { it <= clockMs() } == true) current = refresh(current)
         onProgress("AUTH_XBL: Autenticando na Xbox Live...")
         suspend fun userTicket(token: OAuthToken): JSONObject {
-            val ticket = if (token.clientId == DEVICE_CLIENT_ID) "d=" + token.ticket.removePrefix("t=").removePrefix("d=") else token.ticket
+            val ticket = if (token.clientId == DEVICE_CLIENT_ID) "d=" + token.ticket.removePrefix("t=").removePrefix("d=")
+                else normalizeRpsTicket(token.ticket)
             return JSONObject(post(endpoints.userAuthUrl, "AUTH_XBL", json(JSONObject()
                 .put("RelyingParty", "http://auth.xboxlive.com").put("TokenType", "JWT").put("Properties", JSONObject()
                     .put("AuthMethod", "RPS").put("SiteName", "user.auth.xboxlive.com").put("RpsTicket", ticket)))))

@@ -174,4 +174,12 @@ class AuthTest {
             assertFalse(error.message!!.contains("do-not-expose"))
         }
     }
+
+    @Test fun savedLegacyBrowserTicketIsNormalizedBeforeXboxAuthentication() = runBlocking {
+        store.token = OAuthToken("legacy-access", null, null, XalAuthenticator.BROWSER_CLIENT_ID)
+        exchange()
+        auth().authenticateToXCloud("legacy-access").getOrThrow()
+        val properties = JSONObject(server.takeRequest().body.readUtf8()).getJSONObject("Properties")
+        assertEquals("t=legacy-access", properties.getString("RpsTicket"))
+    }
 }

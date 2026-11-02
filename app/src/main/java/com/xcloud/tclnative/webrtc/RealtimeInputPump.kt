@@ -79,7 +79,7 @@ class RealtimeInputPump(
                     metrics = metrics.copy(bufferedBytes = queued, maxSchedulerDelayMs = maxDelay,
                         backpressureSkips = skipped, coalescedEdges = buffer.coalescedEdges)
                     if (now - windowStarted >= 1_000_000_000) { maxDelay = 0.0; windowStarted = now }
-                    // Button edges can wake this thread early; regular reports remain at 120Hz.
+                    // Button edges can wake this thread early; regular reports remain at 250Hz.
                     deadline = if (now >= deadline) now + period else deadline
                 }
             } catch (error: Exception) {
@@ -94,7 +94,7 @@ class RealtimeInputPump(
         thread?.let { LockSupport.unpark(it); if (it !== Thread.currentThread()) it.join(250) }
     }
     companion object {
-        const val INPUT_HZ = 120
+        const val INPUT_HZ = 250
         // At most two reports queued locally before suppressing additional state snapshots.
         const val MAX_BUFFERED_BYTES = 2 * 38L
     }

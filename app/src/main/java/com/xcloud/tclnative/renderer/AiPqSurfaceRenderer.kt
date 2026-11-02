@@ -7,6 +7,9 @@ import org.webrtc.EglBase
 import org.webrtc.RendererCommon
 import org.webrtc.SurfaceViewRenderer
 import org.webrtc.VideoTrack
+import org.webrtc.VideoSink
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicBoolean
 
 class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     val eglBase: EglBase = EglBase.create()
@@ -14,8 +17,38 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     var onRenderError: ((Exception) -> Unit)? = null
     private var currentTrack: VideoTrack? = null
     private var renderer: SurfaceViewRenderer? = null
-    private var generation = 0
-    private var released = false
+    private var trackSink: VideoSink? = null
+    @Volatile private var generation = 0
+    private val lastDeliveryMs = AtomicLong(Long.MIN_VALUE)
+    private val presentedToken = AtomicLong()
+    private val probePending = AtomicBoolean()
+    data class VideoHealth(val presentedToken: Long, val deliveredRecently: Boolean)
+
+    /** One zero-scale callback per watchdog tick: no bitmap allocation or GPU pixel readback. */
+    fun probeVideoHealth(): VideoHealth {
+        val id = generation
+        val view = renderer
+        if (view != null && probePending.compareAndSet(false, true)) {
+            view.addFrameListener({
+                if (generation == id && !released) {
+                    presentedToken.incrementAndGet()
+                    probePending.set(false)
+                }
+            }, 0f)
+        }
+        val delivered = lastDeliveryMs.get()
+        return VideoHealth(presentedToken.get(), delivered != Long.MIN_VALUE &&
+            android.os.SystemClock.elapsedRealtime() - delivered < 2000)
+    }
+
+    /** Keep the same remote track, peer connection, audio and Xbox allocation. UI thread only. */
+    fun rebuildSurface() {
+        if (released) return
+        val track = currentTrack
+        replaceRenderer()
+        if (track != null) attachTrackNow(track)
+    }
+    @Volatile private var released = false
     var minimalPostProcessingRequested = false
     private var frameRateHintRequested = false
 
@@ -24,8 +57,14 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     /** A new renderer has a new first-frame event for every session, including retries. */
     fun prepareForSession() {
         check(!released)
+        lastDeliveryMs.set(Long.MIN_VALUE)
+        presentedToken.set(0)
+        replaceRenderer()
+    }
+    private fun replaceRenderer() {
         detachTrack()
         generation++
+        probePending.set(false)
         frameRateHintRequested = false
         renderer?.let { removeView(it); it.release() }
         val id = generation
@@ -57,19 +96,29 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     fun attachVideoTrack(track: VideoTrack) {
         val id = generation
         post {
-            if (!released && generation == id) {
-                detachTrack()
-                val sink = renderer ?: return@post
-                try {
-                    track.addSink(sink)
-                    currentTrack = track
-                } catch (e: Exception) { onRenderError?.invoke(e) }
-            }
+            if (!released && generation == id) attachTrackNow(track)
         }
     }
+    private fun attachTrackNow(track: VideoTrack) {
+        if (currentTrack === track) return
+        detachTrack()
+        val view = renderer ?: return
+        val id = generation
+        val sink = VideoSink { frame ->
+            if (generation == id && !released) {
+                lastDeliveryMs.set(android.os.SystemClock.elapsedRealtime())
+                view.onFrame(frame)
+            }
+        }
+        try {
+            track.addSink(sink)
+            trackSink = sink
+            currentTrack = track
+        } catch (e: Exception) { onRenderError?.invoke(e) }
+    }
     fun detachTrack() {
-        val sink = renderer
-        if (sink != null) currentTrack?.removeSink(sink)
+        trackSink?.let { sink -> currentTrack?.removeSink(sink) }
+        trackSink = null
         currentTrack = null
     }
     fun clearSession() {

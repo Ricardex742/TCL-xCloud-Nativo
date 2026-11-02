@@ -31,6 +31,10 @@ import com.xcloud.tclnative.renderer.AiPqSurfaceRenderer
 import com.xcloud.tclnative.signaling.GameTitle
 import com.xcloud.tclnative.signaling.XCloudSignalingClient
 import com.xcloud.tclnative.webrtc.XCloudWebRtcClient
+import com.xcloud.tclnative.webrtc.ControllerShortcut
+import com.xcloud.tclnative.webrtc.ShortcutUpdate
+import com.xcloud.tclnative.webrtc.VideoRecoveryPolicy
+import com.xcloud.tclnative.webrtc.VideoRecoveryAction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.*
@@ -56,6 +60,9 @@ class MainActivity : Activity() {
     private lateinit var queueText: TextView
     private var queueSnapshot: com.xcloud.tclnative.signaling.QueueStatus? = null
     private var queueTicker: Job? = null
+    private val controllerShortcut = ControllerShortcut()
+    private var shortcutFlushJob: Job? = null
+    private var videoRecoveryDialog: AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -443,10 +450,10 @@ class MainActivity : Activity() {
             if (generation != playbackGeneration) return@launch
             val firstFrame = CompletableDeferred<Unit>()
             val transportFailure = CompletableDeferred<Exception>()
-            gamepadState = com.xcloud.tclnative.webrtc.GamepadState()
+            resetController()
             surfaceRenderer.prepareForSession()
             surfaceRenderer.onFirstFrameRendered = {
-                if (generation == playbackGeneration) {
+                if (generation == playbackGeneration && !firstFrame.isCompleted) {
                     firstFrame.complete(Unit)
                     hudTextView.text = "Vídeo nativo ativo [$gameName]"
                     hudTextView.setTextColor(Color.GREEN)
@@ -496,9 +503,62 @@ class MainActivity : Activity() {
                 } != true) {
                     throw java.io.IOException("VIDEO: transporte conectado, mas nenhum quadro foi renderizado em 20s.")
                 }
+                val recovery = VideoRecoveryPolicy()
+                var lastToken = -1L
+                var recovering = false
+                var nextKeepAlive = android.os.SystemClock.elapsedRealtime() + 30_000
                 while (isActive) {
-                    withTimeoutOrNull(30_000) { transportFailure.await() }?.let { throw it }
-                    signaling.keepAlive()
+                    withTimeoutOrNull(1000) { transportFailure.await() }?.let { throw it }
+                    val now = android.os.SystemClock.elapsedRealtime()
+                    val health = surfaceRenderer.probeVideoHealth()
+                    val action = recovery.observe(now, health.presentedToken, health.deliveredRecently)
+                    if (health.presentedToken != lastToken && recovering) {
+                        recovering = false
+                        videoRecoveryDialog?.dismiss()
+                        hudTextView.text = "Vídeo nativo ativo [$gameName]"
+                        hudTextView.setTextColor(Color.GREEN)
+                    }
+                    lastToken = health.presentedToken
+                    when (action) {
+                        VideoRecoveryAction.NONE -> Unit
+                        VideoRecoveryAction.REQUEST_KEYFRAME -> {
+                            recovering = true
+                            hudTextView.text = "Vídeo sem novos quadros. Solicitando atualização da imagem…"
+                            hudTextView.setTextColor(Color.YELLOW)
+                            rtc.requestVideoKeyframe()
+                        }
+                        VideoRecoveryAction.RESET_DECODER -> {
+                            hudTextView.text = "Recuperando vídeo: reiniciando decoder no próximo quadro-chave…"
+                            rtc.recoverVideoDecoder()
+                        }
+                        VideoRecoveryAction.REBUILD_SURFACE -> {
+                            hudTextView.text = "Recuperando vídeo: recriando superfície de exibição…"
+                            surfaceRenderer.rebuildSurface()
+                            rtc.requestVideoKeyframe()
+                        }
+                        VideoRecoveryAction.OFFER_RETRY -> {
+                            hudTextView.text = "O vídeo ainda não voltou. A sessão Xbox continua aberta."
+                            resetController()
+                            videoRecoveryDialog = AlertDialog.Builder(this@MainActivity)
+                                .setTitle("Imagem sem atualização")
+                                .setMessage("A imagem não voltou após 30 segundos. Tentar recuperar o vídeo mantém a partida aberta. Voltar ao catálogo encerra a sessão.")
+                                .setPositiveButton("Recuperar vídeo") { _, _ ->
+                                    recovery.retry(android.os.SystemClock.elapsedRealtime())
+                                    if (surfaceRenderer.probeVideoHealth().deliveredRecently) surfaceRenderer.rebuildSurface()
+                                    rtc.recoverVideoDecoder()
+                                }
+                                .setNegativeButton("Voltar ao catálogo") { _, _ -> cancelPlayback() }
+                                .setOnCancelListener { cancelPlayback() }
+                                .create().also { dialog ->
+                                    dialog.setOnDismissListener { if (videoRecoveryDialog === dialog) videoRecoveryDialog = null }
+                                    dialog.show()
+                                }
+                        }
+                    }
+                    if (now >= nextKeepAlive) {
+                        signaling.keepAlive()
+                        nextKeepAlive = android.os.SystemClock.elapsedRealtime() + 30_000
+                    }
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -517,6 +577,8 @@ class MainActivity : Activity() {
                         showQueue(null)
                         statsView.visibility = View.GONE
                     }
+                    videoRecoveryDialog?.dismiss()
+                    resetController()
                     surfaceRenderer.clearSession()
                     rtc.close()
                     if (webrtcClient === rtc) webrtcClient = null
@@ -549,6 +611,8 @@ class MainActivity : Activity() {
     private fun cancelPlayback() {
         ++playbackGeneration
         gameJob?.cancel()
+        videoRecoveryDialog?.dismiss()
+        resetController()
         showQueue(null)
         statsView.visibility = View.GONE
         hudTextView.text = "Sessão cancelada. Selecione um jogo."
@@ -569,8 +633,47 @@ class MainActivity : Activity() {
             .show()
     }
 
+    private fun gameplayInputEnabled() = controlPanel.visibility == View.GONE &&
+        queuePanel.visibility != View.VISIBLE && videoRecoveryDialog?.isShowing != true && webrtcClient != null
+
+    private fun cycleStatistics() {
+        statisticsMode = (statisticsMode + 1) % 3
+        statsView.visibility = if (statisticsMode != 0) View.VISIBLE else View.GONE
+    }
+
+    private fun applyShortcut(update: ShortcutUpdate) {
+        val base = gamepadState.buttons and ControllerShortcut.BOTH.inv()
+        if (update.pulse != 0) {
+            webrtcClient?.updateGamepad(gamepadState.copy(buttons = base or update.forwardedButtons or update.pulse))
+        }
+        gamepadState = gamepadState.copy(buttons = base or update.forwardedButtons)
+        webrtcClient?.updateGamepad(gamepadState)
+        if (update.toggleStatistics) cycleStatistics()
+    }
+
+    private fun handleControllerShortcut(mask: Int, down: Boolean): Boolean {
+        if (mask != ControllerShortcut.START && mask != ControllerShortcut.SELECT) return false
+        shortcutFlushJob?.cancel()
+        applyShortcut(controllerShortcut.change(mask, down, android.os.SystemClock.elapsedRealtime()))
+        controllerShortcut.flushAtMs?.let { deadline ->
+            shortcutFlushJob = mainScope.launch {
+                delay((deadline - android.os.SystemClock.elapsedRealtime()).coerceAtLeast(0))
+                if (gameplayInputEnabled()) applyShortcut(controllerShortcut.flush(android.os.SystemClock.elapsedRealtime()))
+            }
+        }
+        return true
+    }
+
+    private fun resetController() {
+        shortcutFlushJob?.cancel()
+        shortcutFlushJob = null
+        controllerShortcut.reset()
+        gamepadState = com.xcloud.tclnative.webrtc.GamepadState()
+        webrtcClient?.updateGamepad(gamepadState)
+    }
+
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
-        if (controlPanel.visibility == View.GONE && queuePanel.visibility != View.VISIBLE && webrtcClient != null &&
+        if (gameplayInputEnabled() &&
             event.source and android.view.InputDevice.SOURCE_JOYSTICK != 0 && event.action == MotionEvent.ACTION_MOVE) {
             fun range(id: Int): com.xcloud.tclnative.webrtc.ControllerAxisRange? =
                 event.device?.getMotionRange(id, event.source)?.let {
@@ -625,7 +728,8 @@ class MainActivity : Activity() {
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
         val mask = gamepadButton(keyCode)
-        if (mask != 0 && controlPanel.visibility == View.GONE && queuePanel.visibility != View.VISIBLE && webrtcClient != null) {
+        if (mask != 0 && gameplayInputEnabled()) {
+            if (handleControllerShortcut(mask, false)) return true
             gamepadState = gamepadState.copy(buttons = gamepadState.buttons and mask.inv())
             webrtcClient?.updateGamepad(gamepadState)
             return true
@@ -635,18 +739,14 @@ class MainActivity : Activity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (!hasFocus) {
-            gamepadState = com.xcloud.tclnative.webrtc.GamepadState()
-            webrtcClient?.updateGamepad(gamepadState)
-        }
+        if (!hasFocus) resetController()
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if ((keyCode == KeyEvent.KEYCODE_INFO || keyCode == KeyEvent.KEYCODE_F10) &&
             controlPanel.visibility == View.GONE && queuePanel.visibility != View.VISIBLE) {
             if (event.repeatCount == 0) {
-                statisticsMode = (statisticsMode + 1) % 3
-                statsView.visibility = if (statisticsMode != 0) View.VISIBLE else View.GONE
+                cycleStatistics()
             }
             return true
         }
@@ -655,7 +755,8 @@ class MainActivity : Activity() {
             return true
         }
         val mask = gamepadButton(keyCode)
-        if (mask != 0 && controlPanel.visibility == View.GONE && queuePanel.visibility != View.VISIBLE && webrtcClient != null) {
+        if (mask != 0 && gameplayInputEnabled()) {
+            if (handleControllerShortcut(mask, true)) return true
             gamepadState = gamepadState.copy(buttons = gamepadState.buttons or mask)
             webrtcClient?.updateGamepad(gamepadState)
             return true
@@ -666,6 +767,7 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         ++playbackGeneration
         mainScope.cancel()
+        videoRecoveryDialog?.dismiss()
         surfaceRenderer.clearSession()
         webrtcClient?.close()
         surfaceRenderer.release()

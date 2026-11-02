@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.view.Surface;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /** Bridge for the pinned WebRTC 1.1.1 codec wrapper. No vendor flags or reflection. */
 public final class LowLatencyDecoderFactory implements VideoDecoderFactory {
@@ -18,11 +19,13 @@ public final class LowLatencyDecoderFactory implements VideoDecoderFactory {
   private final Consumer<String> status;
   private final DefaultVideoDecoderFactory standard;
   private final HardwareVideoDecoderFactory hardware;
+  private final DecoderRecoveryController recovery;
 
-  public LowLatencyDecoderFactory(EglBase.Context context, boolean enabled, Consumer<String> status) {
+  public LowLatencyDecoderFactory(EglBase.Context context, boolean enabled, DecoderRecoveryController recovery, Consumer<String> status) {
     this.context = context;
     this.enabled = enabled;
     this.status = status;
+    this.recovery = recovery;
     standard = new DefaultVideoDecoderFactory(context);
     hardware = new HardwareVideoDecoderFactory(context);
   }
@@ -31,39 +34,36 @@ public final class LowLatencyDecoderFactory implements VideoDecoderFactory {
 
   @Override public VideoDecoder createDecoder(VideoCodecInfo codec) {
     VideoDecoder fallback = standard.createDecoder(codec);
-    if (!enabled || !codec.getName().equalsIgnoreCase("H264")) return fallback;
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-      status.accept("Codec LL: não disponível nesta versão Android");
-      return fallback;
-    }
-    try {
-      // Ask WebRTC which hardware decoder it would normally use. This object is not initialized yet.
-      VideoDecoder original = hardware.createDecoder(codec);
-      if (original == null || fallback == null) return fallback;
-      String name = original.getImplementationName();
-      MediaCodecInfo chosen = null;
-      for (MediaCodecInfo info : new MediaCodecList(MediaCodecList.ALL_CODECS).getCodecInfos()) {
-        if (!info.isEncoder() && info.getName().equals(name)) { chosen = info; break; }
+    VideoDecoder original = hardware.createDecoder(codec);
+    if (original == null || fallback == null) return fallback;
+    Supplier<VideoDecoder> normal = () -> hardware.createDecoder(codec);
+    Supplier<VideoDecoder> preferred = normal;
+    if (enabled && codec.getName().equalsIgnoreCase("H264")) {
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+        status.accept("Codec LL: não disponível nesta versão Android");
+      } else try {
+        String name = original.getImplementationName();
+        MediaCodecInfo chosen = null;
+        for (MediaCodecInfo info : new MediaCodecList(MediaCodecList.ALL_CODECS).getCodecInfos()) {
+          if (!info.isEncoder() && info.getName().equals(name)) { chosen = info; break; }
+        }
+        if (chosen != null) {
+          MediaCodecInfo.CodecCapabilities caps = chosen.getCapabilitiesForType("video/avc");
+          Integer color = MediaCodecUtils.selectColorFormat(MediaCodecUtils.DECODER_COLOR_FORMATS, caps);
+          if (color != null && caps.isFeatureSupported(MediaCodecInfo.CodecCapabilities.FEATURE_LowLatency)) {
+            MediaCodecWrapperFactory wrappers = new MediaCodecWrapperFactoryImpl();
+            preferred = () -> new AndroidVideoDecoder(
+                codecName -> new LowLatencyCodec(wrappers.createByCodecName(codecName), status),
+                name, VideoCodecMimeType.H264, color, context);
+            status.accept("Codec LL: disponível, aguardando configuração");
+          } else status.accept("Codec LL: driver não declara suporte; decoder padrão");
+        }
+      } catch (RuntimeException error) {
+        status.accept("Codec LL: indisponível; decoder padrão");
       }
-      if (chosen == null) return fallback;
-      MediaCodecInfo.CodecCapabilities caps = chosen.getCapabilitiesForType("video/avc");
-      if (!caps.isFeatureSupported(MediaCodecInfo.CodecCapabilities.FEATURE_LowLatency)) {
-        status.accept("Codec LL: driver não declara suporte; decoder padrão");
-        return fallback;
-      }
-      Integer color = MediaCodecUtils.selectColorFormat(MediaCodecUtils.DECODER_COLOR_FORMATS, caps);
-      if (color == null) return fallback;
-      MediaCodecWrapperFactory wrappers = new MediaCodecWrapperFactoryImpl();
-      VideoDecoder lowLatency = new AndroidVideoDecoder(
-          codecName -> new LowLatencyCodec(wrappers.createByCodecName(codecName), status),
-          name, VideoCodecMimeType.H264, color, context);
-      status.accept("Codec LL: disponível, aguardando configuração");
-      // Reuse the unmodified factory if the driver rejects the option or decoding fails.
-      return new VideoDecoderFallback(fallback, lowLatency);
-    } catch (RuntimeException error) {
-      status.accept("Codec LL: indisponível; decoder padrão");
-      return fallback;
     }
+    // Only raw Java hardware decoders can be delegated here. Native wrappers stay outside.
+    return new VideoDecoderFallback(fallback, new RecoverableVideoDecoder(preferred, normal, recovery));
   }
 
   private static final class LowLatencyCodec implements MediaCodecWrapper {

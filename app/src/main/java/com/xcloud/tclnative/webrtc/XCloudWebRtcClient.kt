@@ -34,6 +34,7 @@ class XCloudWebRtcClient(
     private val statsCollector = StreamStatsCollector()
     private val statisticsLock = Any()
     private var statsJob: Job? = null
+    private val decoderRecovery = DecoderRecoveryController()
     private val decoderLatency = java.util.concurrent.atomic.AtomicReference("Codec LL: aguardando vídeo")
     fun latencyDiagnostics(): String = (if (lowLatencyVideo) "Playout solicitado: 0–40 ms" else "Playout: adaptativo") +
         " | " + (if (lowLatencyVideo) decoderLatency.get() else "codec padrão")
@@ -43,7 +44,7 @@ class XCloudWebRtcClient(
             .setFieldTrials(VideoLatencyPolicy.fieldTrials(lowLatencyVideo))
             .setEnableInternalTracer(false).createInitializationOptions())
         factory = PeerConnectionFactory.builder()
-            .setVideoDecoderFactory(LowLatencyDecoderFactory(eglBase.eglBaseContext, lowLatencyVideo) { decoderLatency.set(it) })
+            .setVideoDecoderFactory(LowLatencyDecoderFactory(eglBase.eglBaseContext, lowLatencyVideo, decoderRecovery) { decoderLatency.set(it) })
             .setVideoEncoderFactory(DefaultVideoEncoderFactory(eglBase.eglBaseContext, true, true))
             .createPeerConnectionFactory()
     }
@@ -93,6 +94,7 @@ class XCloudWebRtcClient(
             }
             override fun onAddStream(stream: MediaStream?) { receive(stream?.videoTracks?.firstOrNull()) }
             override fun onAddTrack(receiver: RtpReceiver?, streams: Array<out MediaStream>?) { receive(receiver?.track()) }
+            override fun onTrack(transceiver: RtpTransceiver?) { receive(transceiver?.receiver?.track()) }
         }) ?: throw IOException("TRANSPORT: falha ao criar PeerConnection")
         peerConnection = pc
         val receive = RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.RECV_ONLY)
@@ -184,6 +186,22 @@ class XCloudWebRtcClient(
                 }
             }
         }
+    }
+
+    /** Ask the running Xbox encoder for an IDR without allocating a new cloud session. */
+    fun requestVideoKeyframe(): Boolean {
+        if (closed.get()) return false
+        val control = channels["control"] ?: return false
+        if (control.state() != DataChannel.State.OPEN) return false
+        val message = "{\"message\":\"videoKeyframeRequested\",\"ifrRequested\":true}"
+        return control.send(DataChannel.Buffer(ByteBuffer.wrap(message.toByteArray(Charsets.UTF_8)), false))
+    }
+
+    fun recoverVideoDecoder(): Boolean {
+        if (closed.get()) return false
+        val scheduled = decoderRecovery.requestReset()
+        requestVideoKeyframe()
+        return scheduled
     }
 
     fun updateGamepad(state: GamepadState) { gamepad = state; inputPump?.update(state) }

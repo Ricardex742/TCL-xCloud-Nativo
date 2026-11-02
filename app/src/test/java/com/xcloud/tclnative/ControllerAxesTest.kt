@@ -58,8 +58,8 @@ class ControllerAxesTest {
         assertEquals(1f, ControllerAxes.trigger(5f), 0f)
         assertEquals(0f, ControllerAxes.trigger(-5f), 0f)
     }
-    @Test fun responsiveInputUsesEightMillisecondSlotsAndKeepsLatestAxesDuringButtonTransitions() {
-        assertEquals(120, RealtimeInputPump.INPUT_HZ)
+    @Test fun responsiveInputUsesFourMillisecondSlotsAndKeepsLatestAxesDuringButtonTransitions() {
+        assertEquals(250, RealtimeInputPump.INPUT_HZ)
         val queue = GamepadInputBuffer()
         queue.update(GamepadState(buttons = 16, rightX = .1f, rightTrigger = .1f))
         queue.update(GamepadState(buttons = 16, rightX = .8f, rightTrigger = .9f))

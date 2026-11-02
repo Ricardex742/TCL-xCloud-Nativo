@@ -1,8 +1,6 @@
 package com.xcloud.tclnative.signaling
 
 import com.xcloud.tclnative.auth.XCloudSession
-import com.xcloud.tclnative.net.CloudHttp
-import com.xcloud.tclnative.webrtc.StreamingPeer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -14,6 +12,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.webrtc.IceCandidate
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 data class GameTitle(
     val titleId: String,
@@ -64,7 +63,10 @@ class ActiveStreamSession(
 
 class XCloudSignalingClient(
     private val session: XCloudSession,
-    private val httpClient: OkHttpClient = CloudHttp.client
+    private val httpClient: OkHttpClient = OkHttpClient.Builder()
+        .connectTimeout(25, TimeUnit.SECONDS)
+        .readTimeout(25, TimeUnit.SECONDS)
+        .build()
 ) {
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
@@ -107,7 +109,7 @@ class XCloudSignalingClient(
 
     suspend fun startAndConnectWebRtcSession(
         titleId: String,
-        webrtcClient: StreamingPeer,
+        webrtcClient: Any,
         onProgress: (String) -> Unit = {}
     ): Result<ActiveStreamSession> = withContext(Dispatchers.IO) {
         try {
@@ -184,6 +186,7 @@ class XCloudSignalingClient(
                 JSONObject(body).getString("sessionPath").trimStart('/')
             }
 
+            // 1. Ciclo da Máquina de Estados: WaitingForResources -> ReadyToConnect -> [POST /connect] -> Provisioned
             var state = "Provisioning"
             var connectCalled = false
             var readyToConnectTicks = 0
@@ -213,7 +216,7 @@ class XCloudSignalingClient(
                     when (st) {
                         "WaitingForResources" -> {
                             val elapsedSec = (attempts * 1500) / 1000
-                            val queueText = if (waitSec > 0) "Fila estimada: ${waitSec}s" else "Aguardando vaga... (${elapsedSec}s)"
+                            val queueText = if (waitSec > 0) "Fila: ${waitSec}s" else "Aguardando vaga... (${elapsedSec}s)"
                             onProgress("SESSION_STATE: WaitingForResources — $queueText")
                         }
                         "ReadyToConnect" -> {
@@ -225,7 +228,7 @@ class XCloudSignalingClient(
                             } else {
                                 onProgress("SESSION_STATE: ReadyToConnect -> Aguardando Provisioned...")
                                 if (readyToConnectTicks >= 2) {
-                                    return@use "Provisioned" // Sai do loop com segurança sem usar break inválido
+                                    return@use "Provisioned"
                                 }
                             }
                         }
@@ -240,10 +243,10 @@ class XCloudSignalingClient(
                 }
             }
 
-            // 2. SDP Offer H.264
+            // 2. Invoca createOfferSdp() no cliente WebRTC
             onProgress("SDP_OFFER: Enviando oferta H.264...")
-            val (localOfferSdp, localCandidates) = webrtcClient.createOfferSdp()
-            val sdpOfferPayload = CloudProtocol.buildSdpOfferPayload(localOfferSdp)
+            val (localOfferSdp, localCandidates) = invokeCreateOffer(webrtcClient)
+            val sdpOfferPayload = buildSdpOfferJson(localOfferSdp)
 
             var sdpPosted = false
             var lastSdpException: SignalingStageException? = null
@@ -264,12 +267,12 @@ class XCloudSignalingClient(
                     } else {
                         lastSdpException = buildSignalingException("SDP_OFFER", resp.code, body, resp.headers["MS-CV"])
                         if (body.contains("SessionNotConnectable", ignoreCase = true)) {
-                            onProgress("SDP_OFFER: Destravando sessão (Tentativa $sdpTry/6)...")
+                            onProgress("SDP_OFFER: Destravando consola (Tentativa $sdpTry/6)...")
                             sendSessionConnect(baseUri, sessionPath)
+                            false
                         } else {
                             throw lastSdpException!!
                         }
-                        false
                     }
                 }
                 if (success) {
@@ -280,7 +283,7 @@ class XCloudSignalingClient(
             }
 
             if (!sdpPosted) {
-                throw lastSdpException ?: SignalingStageException("SDP_OFFER", message = "Falha ao enviar SDP Offer")
+                throw lastSdpException ?: SignalingStageException("SDP_OFFER", message = "Falha no SDP Offer")
             }
 
             // 3. SDP Answer
@@ -297,8 +300,11 @@ class XCloudSignalingClient(
 
                 httpClient.newCall(sdpGetReq).execute().use { resp ->
                     val body = resp.body?.string().orEmpty()
-                    if (resp.isSuccessful && resp.code == 200 && body.isNotBlank()) {
-                        remoteAnswerSdp = CloudProtocol.extractSdpAnswer(body)
+                    if (!resp.isSuccessful && resp.code != 204) {
+                        throw buildSignalingException("SDP_ANSWER", resp.code, body, resp.headers["MS-CV"])
+                    }
+                    if (resp.code == 200 && body.isNotBlank()) {
+                        remoteAnswerSdp = parseSdpAnswerJson(body)
                     }
                 }
                 if (!remoteAnswerSdp.isNullOrBlank()) break
@@ -309,7 +315,7 @@ class XCloudSignalingClient(
 
             // 4. ICE Candidates
             onProgress("ICE_POST: Enviando candidatos ICE...")
-            val icePayload = CloudProtocol.buildIceCandidatesPayload(localCandidates)
+            val icePayload = buildIceCandidatesJson(localCandidates)
             val icePostReq = Request.Builder()
                 .url("$baseUri/$sessionPath/ice")
                 .addHeader("Authorization", "Bearer ${session.gssvToken}")
@@ -318,7 +324,12 @@ class XCloudSignalingClient(
                 .post(icePayload.toString().toRequestBody(jsonMediaType))
                 .build()
 
-            httpClient.newCall(icePostReq).execute().close()
+            httpClient.newCall(icePostReq).execute().use { resp ->
+                val body = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    throw buildSignalingException("ICE_POST", resp.code, body, resp.headers["MS-CV"])
+                }
+            }
 
             onProgress("ICE_GET: Sincronizando vídeo...")
             var remoteCandidates = emptyList<IceCandidate>()
@@ -333,14 +344,17 @@ class XCloudSignalingClient(
 
                 httpClient.newCall(iceGetReq).execute().use { resp ->
                     val body = resp.body?.string().orEmpty()
-                    if (resp.isSuccessful && resp.code == 200 && body.isNotBlank()) {
-                        remoteCandidates = CloudProtocol.extractIceCandidates(body)
+                    if (!resp.isSuccessful && resp.code != 204) {
+                        throw buildSignalingException("ICE_GET", resp.code, body, resp.headers["MS-CV"])
+                    }
+                    if (resp.code == 200 && body.isNotBlank()) {
+                        remoteCandidates = parseIceCandidatesJson(body)
                     }
                 }
                 if (remoteCandidates.isNotEmpty()) break
             }
 
-            webrtcClient.applyRemoteAnswerAndCandidates(finalAnswerSdp, remoteCandidates)
+            invokeApplyRemote(webrtcClient, finalAnswerSdp, remoteCandidates)
 
             Result.success(
                 ActiveStreamSession(
@@ -353,6 +367,123 @@ class XCloudSignalingClient(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private suspend fun invokeCreateOffer(peer: Any): Pair<String, List<IceCandidate>> {
+        if (peer is com.xcloud.tclnative.webrtc.XCloudWebRtcClient) {
+            return peer.createOfferSdp()
+        }
+        val method = peer.javaClass.methods.firstOrNull { it.name.contains("createOffer") }
+            ?: throw IllegalStateException("Método createOfferSdp não encontrado em ${peer.javaClass.name}")
+        val res = if (method.parameterCount == 1) {
+            kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn<Any?> { cont ->
+                method.invoke(peer, cont)
+            }
+        } else {
+            method.invoke(peer)
+        }
+        return res as Pair<String, List<IceCandidate>>
+    }
+
+    private suspend fun invokeApplyRemote(peer: Any, answerSdp: String, candidates: List<IceCandidate>) {
+        if (peer is com.xcloud.tclnative.webrtc.XCloudWebRtcClient) {
+            peer.applyRemoteAnswerAndCandidates(answerSdp, candidates)
+            return
+        }
+        val method = peer.javaClass.methods.firstOrNull {
+            it.name.contains("applyRemote") || it.name.contains("setRemote")
+        } ?: return
+        if (method.parameterCount == 3) {
+            kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn<Any?> { cont ->
+                method.invoke(peer, answerSdp, candidates, cont)
+            }
+        } else if (method.parameterCount == 2) {
+            method.invoke(peer, answerSdp, candidates)
+        }
+    }
+
+    private fun buildSdpOfferJson(localOfferSdp: String): JSONObject {
+        return JSONObject().apply {
+            put("messageType", "offer")
+            put("sdp", localOfferSdp)
+            put("configuration", JSONObject().apply {
+                put("chatConfiguration", JSONObject().apply {
+                    put("bytesPerSample", 2)
+                    put("expectedClipDurationMs", 20)
+                    put("format", JSONObject().put("codec", "opus").put("container", "webm"))
+                    put("numChannels", 1)
+                    put("sampleFrequencyHz", 24000)
+                })
+                put("chat", JSONObject().put("minVersion", 1).put("maxVersion", 1))
+                put("control", JSONObject().put("minVersion", 1).put("maxVersion", 3))
+                put("input", JSONObject().put("minVersion", 1).put("maxVersion", 8))
+                put("message", JSONObject().put("minVersion", 1).put("maxVersion", 1))
+            })
+        }
+    }
+
+    private fun parseSdpAnswerJson(body: String): String? {
+        val root = runCatching { JSONObject(body) }.getOrNull() ?: return null
+        root.optJSONObject("exchangeResponse")?.optString("sdp")?.takeIf { it.isNotBlank() }?.let { return it }
+        val exchStr = root.optString("exchangeResponse", "")
+        if (exchStr.isNotBlank()) {
+            runCatching { JSONObject(exchStr).optString("sdp") }.getOrNull()?.takeIf { it.isNotBlank() }?.let { return it }
+        }
+        return root.optString("sdp").takeIf { it.isNotBlank() }
+    }
+
+    private fun buildIceCandidatesJson(localCandidates: List<IceCandidate>): JSONObject {
+        val candsArray = JSONArray()
+        for (c in localCandidates) {
+            candsArray.put(JSONObject().apply {
+                put("candidate", c.sdp)
+                put("sdpMLineIndex", c.sdpMLineIndex)
+                put("sdpMid", c.sdpMid)
+            })
+        }
+        candsArray.put(JSONObject().apply {
+            put("candidate", "a=end-of-candidates")
+            put("sdpMLineIndex", 0)
+            put("sdpMid", "0")
+        })
+        return JSONObject().apply {
+            put("messageType", "iceExchange")
+            put("candidates", candsArray)
+        }
+    }
+
+    private fun parseIceCandidatesJson(body: String): List<IceCandidate> {
+        val out = mutableListOf<IceCandidate>()
+        val root = runCatching { JSONObject(body) }.getOrNull() ?: return out
+        val arr = root.optJSONArray("exchangeResponse")
+            ?: root.optJSONArray("candidates")
+            ?: root.optJSONObject("exchangeResponse")?.optJSONArray("candidates")
+            ?: run {
+                val str = root.optString("exchangeResponse", "").trim()
+                when {
+                    str.startsWith("[") -> runCatching { JSONArray(str) }.getOrNull()
+                    str.startsWith("{") -> runCatching { JSONObject(str).optJSONArray("candidates") }.getOrNull()
+                    else -> null
+                }
+            }
+
+        if (arr != null) {
+            for (i in 0 until arr.length()) {
+                val obj = arr.optJSONObject(i) ?: continue
+                val candStr = obj.optString("candidate", "").trim()
+                if (candStr.isNotEmpty() && !candStr.contains("end-of-candidates")) {
+                    out.add(
+                        IceCandidate(
+                            obj.optString("sdpMid", "0"),
+                            obj.optInt("sdpMLineIndex", 0),
+                            candStr
+                        )
+                    )
+                }
+            }
+        }
+        return out
     }
 
     private fun sendSessionConnect(baseUri: String, sessionPath: String) {

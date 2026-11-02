@@ -7,7 +7,7 @@ import java.util.concurrent.locks.LockSupport
 /** Preserve short button presses while coalescing analog motion into its latest position. */
 class GamepadInputBuffer {
     private var latest = GamepadState()
-    private val edges = ArrayDeque<GamepadState>()
+    private val edges = ArrayDeque<Int>()
     var coalescedEdges = 0L
         private set
     @Synchronized fun update(state: GamepadState): Boolean {
@@ -15,12 +15,12 @@ class GamepadInputBuffer {
         latest = state
         if (edge) {
             if (edges.size >= 8) { coalescedEdges += edges.size; edges.clear() }
-            edges.addLast(state)
+            edges.addLast(state.buttons)
         }
         return edge
     }
     @Synchronized fun hasEdges() = edges.isNotEmpty()
-    @Synchronized fun next() = if (edges.isEmpty()) latest else edges.removeFirst()
+    @Synchronized fun next() = if (edges.isEmpty()) latest else latest.copy(buttons = edges.removeFirst())
     @Synchronized fun discardBacklog() {
         coalescedEdges += edges.size
         edges.clear()
@@ -28,7 +28,7 @@ class GamepadInputBuffer {
 }
 
 data class InputMetrics(val bufferedBytes: Long = 0, val maxSchedulerDelayMs: Double = 0.0,
-                        val backpressureSkips: Long = 0, val coalescedEdges: Long = 0)
+                        val backpressureSkips: Long = 0, val coalescedEdges: Long = 0, val sentState: GamepadState = GamepadState())
 
 /** Native sends run independently from decoder/default-coroutine CPU load. Never catch up by replaying old ticks. */
 class RealtimeInputPump(
@@ -50,7 +50,7 @@ class RealtimeInputPump(
         thread = Thread({
             try {
                 prioritize()
-                val period = 1_000_000_000L / 60
+                val period = 1_000_000_000L / INPUT_HZ
                 val started = System.nanoTime()
                 var deadline = started
                 var sequence = 0
@@ -68,13 +68,18 @@ class RealtimeInputPump(
                     if (queued >= MAX_BUFFERED_BYTES) {
                         skipped++
                         buffer.discardBacklog()
-                    } else if (!send(GamepadPacket.encode(buffer.next(), sequence++, (now - started) / 1_000_000.0))) {
-                        if (running.get()) onFailure()
-                        break
+                    } else {
+                        val state = buffer.next()
+                        if (!send(GamepadPacket.encode(state, sequence++, (now - started) / 1_000_000.0))) {
+                            if (running.get()) onFailure()
+                            break
+                        }
+                        metrics = metrics.copy(sentState = state)
                     }
-                    metrics = InputMetrics(queued, maxDelay, skipped, buffer.coalescedEdges)
+                    metrics = metrics.copy(bufferedBytes = queued, maxSchedulerDelayMs = maxDelay,
+                        backpressureSkips = skipped, coalescedEdges = buffer.coalescedEdges)
                     if (now - windowStarted >= 1_000_000_000) { maxDelay = 0.0; windowStarted = now }
-                    // Button edges can wake this thread early; regular reports remain at 60Hz.
+                    // Button edges can wake this thread early; regular reports remain at 120Hz.
                     deadline = if (now >= deadline) now + period else deadline
                 }
             } catch (error: Exception) {
@@ -89,6 +94,7 @@ class RealtimeInputPump(
         thread?.let { LockSupport.unpark(it); if (it !== Thread.currentThread()) it.join(250) }
     }
     companion object {
+        const val INPUT_HZ = 120
         // At most two reports queued locally before suppressing additional state snapshots.
         const val MAX_BUFFERED_BYTES = 2 * 38L
     }

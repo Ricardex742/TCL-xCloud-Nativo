@@ -42,7 +42,8 @@ class MainActivity : Activity() {
     private lateinit var surfaceRenderer: AiPqSurfaceRenderer
     private lateinit var hudTextView: TextView
     private lateinit var statsView: TextView
-    private var statisticsVisible = true
+    @Volatile private var statisticsMode = 1 // 0 hidden, 1 compact, 2 complete
+    private var lowLatencyVideo = true
     private lateinit var controlPanel: LinearLayout
     private lateinit var authenticator: XalAuthenticator
     private var webrtcClient: XCloudWebRtcClient? = null
@@ -61,6 +62,8 @@ class MainActivity : Activity() {
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         authenticator = XalAuthenticator(this)
+        lowLatencyVideo = getSharedPreferences("stream_preferences", Context.MODE_PRIVATE).getBoolean("low_latency_video", true)
+        if (Build.VERSION.SDK_INT >= 30) window.setPreferMinimalPostProcessing(lowLatencyVideo)
         val uiMode = getSystemService(Context.UI_MODE_SERVICE) as android.app.UiModeManager
         if (uiMode.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION) {
             val display = windowManager.defaultDisplay
@@ -75,6 +78,7 @@ class MainActivity : Activity() {
         }
 
         surfaceRenderer = AiPqSurfaceRenderer(this)
+        surfaceRenderer.minimalPostProcessingRequested = lowLatencyVideo && Build.VERSION.SDK_INT >= 30
         rootLayout.addView(
             surfaceRenderer,
             FrameLayout.LayoutParams(
@@ -341,6 +345,18 @@ class MainActivity : Activity() {
                     renderLoginMenu()
                 }
             }
+            topBar.addView(Button(this@MainActivity).apply {
+                fun updateLabel() { text = if (lowLatencyVideo) "Vídeo: menor atraso" else "Vídeo: adaptativo" }
+                updateLabel()
+                setOnClickListener {
+                    lowLatencyVideo = !lowLatencyVideo
+                    if (Build.VERSION.SDK_INT >= 30) window.setPreferMinimalPostProcessing(lowLatencyVideo)
+                    surfaceRenderer.minimalPostProcessingRequested = lowLatencyVideo && Build.VERSION.SDK_INT >= 30
+                    getSharedPreferences("stream_preferences", Context.MODE_PRIVATE).edit().putBoolean("low_latency_video", lowLatencyVideo).apply()
+                    updateLabel()
+                    hudTextView.text = "Modo de vídeo aplicado à próxima partida."
+                }
+            })
             topBar.addView(btnLogout)
             controlPanel.addView(topBar)
 
@@ -434,7 +450,7 @@ class MainActivity : Activity() {
                     firstFrame.complete(Unit)
                     hudTextView.text = "Vídeo nativo ativo [$gameName]"
                     hudTextView.setTextColor(Color.GREEN)
-                    statsView.visibility = if (statisticsVisible) View.VISIBLE else View.GONE
+                    statsView.visibility = if (statisticsMode != 0) View.VISIBLE else View.GONE
                 }
             }
             surfaceRenderer.onRenderError = { error -> transportFailure.complete(error) }
@@ -451,14 +467,16 @@ class MainActivity : Activity() {
                     }
                 } },
                 onStatistics = { metrics, input ->
-                    val text = metrics.overlay(input, "")
+                    val complete = statisticsMode == 2
+                    val text = if (complete) metrics.overlay(input, "") else metrics.compactOverlay(input)
                     runOnUiThread {
                         if (generation == playbackGeneration) {
-                            statsView.text = text + surfaceRenderer.diagnostics()
-                            statsView.visibility = if (firstFrame.isCompleted && statisticsVisible) View.VISIBLE else View.GONE
+                            statsView.text = text + if (complete) surfaceRenderer.diagnostics() + "\n" +
+                                (webrtcClient?.latencyDiagnostics() ?: "") else surfaceRenderer.compactDiagnostics()
+                            statsView.visibility = if (firstFrame.isCompleted && statisticsMode != 0) View.VISIBLE else View.GONE
                         }
                     }
-                })
+                }, lowLatencyVideo = lowLatencyVideo)
             webrtcClient = rtc
             try {
                 signaling.startAndConnectWebRtcSession(titleId, rtc, onQueueStatus = { status -> runOnUiThread {
@@ -554,22 +572,32 @@ class MainActivity : Activity() {
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
         if (controlPanel.visibility == View.GONE && queuePanel.visibility != View.VISIBLE && webrtcClient != null &&
             event.source and android.view.InputDevice.SOURCE_JOYSTICK != 0 && event.action == MotionEvent.ACTION_MOVE) {
-            fun axis(id: Int): Float {
-                val value = event.getAxisValue(id)
-                val flat = event.device?.getMotionRange(id, event.source)?.flat ?: 0f
-                return if (kotlin.math.abs(value) <= flat) 0f else value
+            fun range(id: Int): com.xcloud.tclnative.webrtc.ControllerAxisRange? =
+                event.device?.getMotionRange(id, event.source)?.let {
+                    com.xcloud.tclnative.webrtc.ControllerAxisRange(it.min, it.max, it.flat)
+                }
+            fun stick(id: Int, hardwareDeadzone: Boolean = false) = com.xcloud.tclnative.webrtc.ControllerAxes.stick(
+                event.getAxisValue(id), range(id), hardwareDeadzone)
+            fun trigger(primary: Int, fallback: Int): Float {
+                fun read(id: Int): Float {
+                    val limits = range(id)
+                    return com.xcloud.tclnative.webrtc.ControllerAxes.trigger(event.getAxisValue(id), limits)
+                }
+                return maxOf(read(primary), read(fallback))
             }
             var buttons = gamepadState.buttons and 0xF0FF
-            val x = axis(MotionEvent.AXIS_HAT_X); val y = axis(MotionEvent.AXIS_HAT_Y)
+            val x = stick(MotionEvent.AXIS_HAT_X); val y = stick(MotionEvent.AXIS_HAT_Y)
             if (y < -0.5f) buttons = buttons or 256
             if (y > 0.5f) buttons = buttons or 512
             if (x < -0.5f) buttons = buttons or 1024
             if (x > 0.5f) buttons = buttons or 2048
+            val rightX = if (range(MotionEvent.AXIS_Z) == null && range(MotionEvent.AXIS_RX) != null) MotionEvent.AXIS_RX else MotionEvent.AXIS_Z
+            val rightY = if (range(MotionEvent.AXIS_RZ) == null && range(MotionEvent.AXIS_RY) != null) MotionEvent.AXIS_RY else MotionEvent.AXIS_RZ
             gamepadState = gamepadState.copy(buttons = buttons,
-                leftX = axis(MotionEvent.AXIS_X), leftY = axis(MotionEvent.AXIS_Y),
-                rightX = axis(MotionEvent.AXIS_Z), rightY = axis(MotionEvent.AXIS_RZ),
-                leftTrigger = maxOf(axis(MotionEvent.AXIS_LTRIGGER), axis(MotionEvent.AXIS_BRAKE)),
-                rightTrigger = maxOf(axis(MotionEvent.AXIS_RTRIGGER), axis(MotionEvent.AXIS_GAS)))
+                leftX = stick(MotionEvent.AXIS_X, true), leftY = stick(MotionEvent.AXIS_Y, true),
+                rightX = stick(rightX), rightY = stick(rightY),
+                leftTrigger = trigger(MotionEvent.AXIS_LTRIGGER, MotionEvent.AXIS_BRAKE),
+                rightTrigger = trigger(MotionEvent.AXIS_RTRIGGER, MotionEvent.AXIS_GAS))
             webrtcClient?.updateGamepad(gamepadState)
             return true
         }
@@ -615,9 +643,11 @@ class MainActivity : Activity() {
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if ((keyCode == KeyEvent.KEYCODE_INFO || keyCode == KeyEvent.KEYCODE_F10) &&
-            event.repeatCount == 0 && controlPanel.visibility == View.GONE && queuePanel.visibility != View.VISIBLE) {
-            statisticsVisible = !statisticsVisible
-            statsView.visibility = if (statisticsVisible) View.VISIBLE else View.GONE
+            controlPanel.visibility == View.GONE && queuePanel.visibility != View.VISIBLE) {
+            if (event.repeatCount == 0) {
+                statisticsMode = (statisticsMode + 1) % 3
+                statsView.visibility = if (statisticsMode != 0) View.VISIBLE else View.GONE
+            }
             return true
         }
         if (keyCode == KeyEvent.KEYCODE_BACK && controlPanel.visibility == View.GONE) {

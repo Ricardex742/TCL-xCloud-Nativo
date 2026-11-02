@@ -11,8 +11,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 7
-        versionName = "0.7.0-hq-stats"
+        versionCode = 8
+        versionName = "0.8.0-low-latency-input"
     }
 
     buildTypes {

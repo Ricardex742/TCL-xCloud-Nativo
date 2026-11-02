@@ -14,7 +14,8 @@ class XCloudWebRtcClient(
     private val eglBase: EglBase,
     private val onVideoTrackReady: (VideoTrack) -> Unit,
     private val onConnectionStateChanged: (String) -> Unit,
-    private val onStatistics: (StreamMetrics, InputMetrics) -> Unit = { _, _ -> }
+    private val onStatistics: (StreamMetrics, InputMetrics) -> Unit = { _, _ -> },
+    private val lowLatencyVideo: Boolean = true
 ) : StreamingPeer {
     private val factory: PeerConnectionFactory
     private var peerConnection: PeerConnection? = null
@@ -33,12 +34,16 @@ class XCloudWebRtcClient(
     private val statsCollector = StreamStatsCollector()
     private val statisticsLock = Any()
     private var statsJob: Job? = null
+    private val decoderLatency = java.util.concurrent.atomic.AtomicReference("Codec LL: aguardando vídeo")
+    fun latencyDiagnostics(): String = (if (lowLatencyVideo) "Playout solicitado: 0–40 ms" else "Playout: adaptativo") +
+        " | " + (if (lowLatencyVideo) decoderLatency.get() else "codec padrão")
 
     init {
         PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(context.applicationContext)
+            .setFieldTrials(VideoLatencyPolicy.fieldTrials(lowLatencyVideo))
             .setEnableInternalTracer(false).createInitializationOptions())
         factory = PeerConnectionFactory.builder()
-            .setVideoDecoderFactory(DefaultVideoDecoderFactory(eglBase.eglBaseContext))
+            .setVideoDecoderFactory(LowLatencyDecoderFactory(eglBase.eglBaseContext, lowLatencyVideo) { decoderLatency.set(it) })
             .setVideoEncoderFactory(DefaultVideoEncoderFactory(eglBase.eglBaseContext, true, true))
             .createPeerConnectionFactory()
     }

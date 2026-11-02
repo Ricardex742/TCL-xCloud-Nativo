@@ -14,6 +14,16 @@ data class StreamMetrics(
     val codec: String? = null, val decoder: String? = null, val powerEfficient: Boolean? = null,
     val intervalSeconds: Double? = null
 ) {
+    fun compactOverlay(input: InputMetrics): String {
+        fun n(value: Double?, decimals: Int = 1) = value?.takeIf(Double::isFinite)
+            ?.let { String.format(Locale.US, "%.${decimals}f", it) } ?: "n/d"
+        val resolution = if (width != null && height != null) "${width}x$height" else "n/d"
+        return "$resolution | ${n(fps, 0)} FPS | ${codec ?: "n/d"} | RX ${n(bitrateMbps)} Mbps\n" +
+            "RTT ${n(rttMs)} ms | Jitter ${n(jitterMs)} ms | Buffer ${n(jitterBufferMs)} ms | Decode ${n(decodeMs, 2)} ms\n" +
+            "Perda ${n(packetLossPercent, 2)}% (${lostPackets ?: "n/d"} pct) | Quadros desc. ${droppedFrames ?: "n/d"} | Input ${n(input.maxSchedulerDelayMs)} ms / ${input.bufferedBytes} B\n" +
+            "DZ app: câmera/LT/RT 0% | LT ${n(input.sentState.leftTrigger * 100.0)}% RT ${n(input.sentState.rightTrigger * 100.0)}% | INFO/F10: detalhes\n"
+    }
+
     fun overlay(input: InputMetrics, renderer: String): String {
         fun number(value: Double?, decimals: Int = 1): String = value?.takeIf(Double::isFinite)
             ?.let { String.format(Locale.US, "%.${decimals}f", it) } ?: "n/d"
@@ -25,6 +35,7 @@ data class StreamMetrics(
             "Quadros descartados WebRTC: ${droppedFrames ?: "n/d"}/intervalo; total ${totalDroppedFrames ?: "n/d"}\n" +
             "Decode: ${number(decodeMs, 2)} ms/quadro | ${decoder ?: "decoder n/d"} | $efficiency\n" +
             "Controle: fila ${input.bufferedBytes} B | atraso local máx. ${number(input.maxSchedulerDelayMs, 2)} ms | coalescidos ${input.coalescedEdges} | espera canal ${input.backpressureSkips}\n" +
+            "Câmera X/Y: ${number(input.sentState.rightX.toDouble(), 4)}/${number(input.sentState.rightY.toDouble(), 4)} | LT/RT: ${number(input.sentState.leftTrigger * 100.0, 1)}%/${number(input.sentState.rightTrigger * 100.0, 1)}% | DZ app: 0% | Input até 120 Hz\n" +
             "Pedido: 1080p HQ, 20–30 Mbps (VBR recebido pode variar) | INFO/F10: ocultar\n$renderer"
     }
 }

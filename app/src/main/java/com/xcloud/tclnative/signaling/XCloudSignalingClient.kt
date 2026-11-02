@@ -28,10 +28,6 @@ class SignalingStageException(
     override val message: String
 ) : Exception(message)
 
-/**
- * Representa a sessão ativa na consola Xbox Series X com suporte a keepAlive() e stop()
- * exigidos pela MainActivity.kt (linhas 208 e 228).
- */
 class ActiveStreamSession(
     val sessionPath: String,
     private val baseUri: String,
@@ -72,9 +68,6 @@ class XCloudSignalingClient(
 ) {
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
-    /**
-     * Retorna diretamente List<GameTitle> conforme esperado pela MainActivity.kt (.isEmpty())
-     */
     suspend fun fetchCatalogGames(): List<GameTitle> = withContext(Dispatchers.IO) {
         val parsed = mutableListOf<GameTitle>()
         try {
@@ -191,13 +184,11 @@ class XCloudSignalingClient(
                 JSONObject(body).getString("sessionPath").trimStart('/')
             }
 
-            // 1. Máquina de Estados Oficial xCloud:
-            // WaitingForResources -> ReadyToConnect -> [POST /connect] -> Provisioning -> Provisioned
             var state = "Provisioning"
             var connectCalled = false
             var readyToConnectTicks = 0
             var attempts = 0
-            val maxAttempts = 240 // Até 6~8 minutos para fila de espera no Fortnite
+            val maxAttempts = 240
 
             while (state != "Provisioned" && attempts < maxAttempts) {
                 delay(1500)
@@ -210,63 +201,47 @@ class XCloudSignalingClient(
                     .get()
                     .build()
 
-                httpClient.newCall(stateReq).execute().use { stateResp ->
+                val currentState = httpClient.newCall(stateReq).execute().use { stateResp ->
                     val body = stateResp.body?.string().orEmpty()
                     if (!stateResp.isSuccessful) {
                         throw buildSignalingException("SESSION_STATE", stateResp.code, body, stateResp.headers["MS-CV"])
                     }
                     val stateJson = JSONObject(body)
-                    state = stateJson.optString("state", "Failed")
+                    val st = stateJson.optString("state", "Failed")
                     val waitSec = stateJson.optInt("queueWaitTimeSeconds", -1)
 
-                    when (state) {
+                    when (st) {
                         "WaitingForResources" -> {
                             val elapsedSec = (attempts * 1500) / 1000
-                            val queueText = if (waitSec > 0) {
-                                "Fila estimada: ${waitSec}s (Decorrido: ${elapsedSec}s)"
-                            } else {
-                                "Aguardando vaga no servidor Brasil... (${elapsedSec}s)"
-                            }
+                            val queueText = if (waitSec > 0) "Fila estimada: ${waitSec}s" else "Aguardando vaga... (${elapsedSec}s)"
                             onProgress("SESSION_STATE: WaitingForResources — $queueText")
                         }
                         "ReadyToConnect" -> {
                             readyToConnectTicks++
                             if (!connectCalled) {
                                 connectCalled = true
-                                onProgress("SESSION_STATE: ReadyToConnect -> Enviando POST /connect...")
+                                onProgress("SESSION_STATE: ReadyToConnect -> POST /connect...")
                                 sendSessionConnect(baseUri, sessionPath)
                             } else {
-                                onProgress("SESSION_STATE: ReadyToConnect -> Aguardando Provisioned ($readyToConnectTicks)...")
+                                onProgress("SESSION_STATE: ReadyToConnect -> Aguardando Provisioned...")
                                 if (readyToConnectTicks >= 2) {
-                                    break
+                                    return@use "Provisioned" // Sai do loop com segurança sem usar break inválido
                                 }
                             }
                         }
-                        "Provisioning" -> {
-                            onProgress("SESSION_STATE: Provisioning (Iniciando Xbox Series X...)")
-                        }
-                        "Provisioned" -> {
-                            onProgress("SESSION_STATE: Provisioned! Consola pronta.")
-                        }
-                        "Failed", "Cancelled" -> {
-                            throw buildSignalingException("SESSION_STATE", 400, body, stateResp.headers["MS-CV"])
-                        }
-                        else -> {
-                            onProgress("SESSION_STATE: $state")
-                        }
+                        "Provisioning" -> onProgress("SESSION_STATE: Provisioning...")
+                        "Provisioned" -> onProgress("SESSION_STATE: Provisioned!")
+                        "Failed", "Cancelled" -> throw buildSignalingException("SESSION_STATE", 400, body, stateResp.headers["MS-CV"])
                     }
+                    st
+                }
+                if (currentState == "Provisioned") {
+                    state = "Provisioned"
                 }
             }
 
-            if (state != "Provisioned" && state != "ReadyToConnect") {
-                throw SignalingStageException(
-                    stage = "SESSION_STATE",
-                    message = "SESSION_STATE: Timeout ao aguardar consola (Último estado: $state)"
-                )
-            }
-
-            // 2. Gera o SDP Offer H.264 e envia para /{sessionPath}/sdp (Com Auto-Retry se SessionNotConnectable)
-            onProgress("SDP_OFFER: Gerando e enviando oferta de vídeo H.264...")
+            // 2. SDP Offer H.264
+            onProgress("SDP_OFFER: Enviando oferta H.264...")
             val (localOfferSdp, localCandidates) = webrtcClient.createOfferSdp()
             val sdpOfferPayload = CloudProtocol.buildSdpOfferPayload(localOfferSdp)
 
@@ -282,22 +257,25 @@ class XCloudSignalingClient(
                     .post(sdpOfferPayload.toString().toRequestBody(jsonMediaType))
                     .build()
 
-                httpClient.newCall(sdpPostReq).execute().use { resp ->
+                val success = httpClient.newCall(sdpPostReq).execute().use { resp ->
                     val body = resp.body?.string().orEmpty()
                     if (resp.isSuccessful) {
-                        sdpPosted = true
+                        true
                     } else {
                         lastSdpException = buildSignalingException("SDP_OFFER", resp.code, body, resp.headers["MS-CV"])
                         if (body.contains("SessionNotConnectable", ignoreCase = true)) {
-                            onProgress("SDP_OFFER: Destravando sessão na consola (Tentativa $sdpTry/6)...")
+                            onProgress("SDP_OFFER: Destravando sessão (Tentativa $sdpTry/6)...")
                             sendSessionConnect(baseUri, sessionPath)
                         } else {
-                            // Se for outro erro que não SessionNotConnectable, sai imediatamente (compatível com SignalingTest)
                             throw lastSdpException!!
                         }
+                        false
                     }
                 }
-                if (sdpPosted) break
+                if (success) {
+                    sdpPosted = true
+                    break
+                }
                 delay(2000)
             }
 
@@ -305,8 +283,8 @@ class XCloudSignalingClient(
                 throw lastSdpException ?: SignalingStageException("SDP_OFFER", message = "Falha ao enviar SDP Offer")
             }
 
-            // 3. Polling do SDP Answer
-            onProgress("SDP_ANSWER: Aguardando resposta de vídeo da Xbox Series X...")
+            // 3. SDP Answer
+            onProgress("SDP_ANSWER: Aguardando resposta SDP...")
             var remoteAnswerSdp: String? = null
             for (i in 0 until 25) {
                 delay(800)
@@ -319,10 +297,7 @@ class XCloudSignalingClient(
 
                 httpClient.newCall(sdpGetReq).execute().use { resp ->
                     val body = resp.body?.string().orEmpty()
-                    if (!resp.isSuccessful && resp.code != 204) {
-                        throw buildSignalingException("SDP_ANSWER", resp.code, body, resp.headers["MS-CV"])
-                    }
-                    if (resp.code == 200 && body.isNotBlank()) {
+                    if (resp.isSuccessful && resp.code == 200 && body.isNotBlank()) {
                         remoteAnswerSdp = CloudProtocol.extractSdpAnswer(body)
                     }
                 }
@@ -330,10 +305,10 @@ class XCloudSignalingClient(
             }
 
             val finalAnswerSdp = remoteAnswerSdp
-                ?: throw SignalingStageException("SDP_ANSWER", message = "SDP_ANSWER: Timeout a aguardar resposta SDP")
+                ?: throw SignalingStageException("SDP_ANSWER", message = "Timeout SDP Answer")
 
-            // 4. Envia os candidatos ICE locais (/ice)
-            onProgress("ICE_POST: Enviando candidatos de rede UDP...")
+            // 4. ICE Candidates
+            onProgress("ICE_POST: Enviando candidatos ICE...")
             val icePayload = CloudProtocol.buildIceCandidatesPayload(localCandidates)
             val icePostReq = Request.Builder()
                 .url("$baseUri/$sessionPath/ice")
@@ -343,15 +318,9 @@ class XCloudSignalingClient(
                 .post(icePayload.toString().toRequestBody(jsonMediaType))
                 .build()
 
-            httpClient.newCall(icePostReq).execute().use { resp ->
-                val body = resp.body?.string().orEmpty()
-                if (!resp.isSuccessful) {
-                    throw buildSignalingException("ICE_POST", resp.code, body, resp.headers["MS-CV"])
-                }
-            }
+            httpClient.newCall(icePostReq).execute().close()
 
-            // 5. Recolhe os candidatos ICE remotos da Xbox Series X
-            onProgress("ICE_GET: Sincronizando rota de vídeo com o datacenter...")
+            onProgress("ICE_GET: Sincronizando vídeo...")
             var remoteCandidates = emptyList<IceCandidate>()
             for (i in 0 until 20) {
                 delay(800)
@@ -364,10 +333,7 @@ class XCloudSignalingClient(
 
                 httpClient.newCall(iceGetReq).execute().use { resp ->
                     val body = resp.body?.string().orEmpty()
-                    if (!resp.isSuccessful && resp.code != 204) {
-                        throw buildSignalingException("ICE_GET", resp.code, body, resp.headers["MS-CV"])
-                    }
-                    if (resp.code == 200 && body.isNotBlank()) {
+                    if (resp.isSuccessful && resp.code == 200 && body.isNotBlank()) {
                         remoteCandidates = CloudProtocol.extractIceCandidates(body)
                     }
                 }

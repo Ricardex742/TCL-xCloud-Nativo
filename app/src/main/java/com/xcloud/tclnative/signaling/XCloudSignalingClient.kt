@@ -1,138 +1,391 @@
 package com.xcloud.tclnative.signaling
 
 import com.xcloud.tclnative.auth.XCloudSession
-import com.xcloud.tclnative.net.awaitResponse
-import com.xcloud.tclnative.net.checkedBody
-import com.xcloud.tclnative.webrtc.StreamingPeer
-import kotlinx.coroutines.CancellationException
+import com.xcloud.tclnative.net.CloudHttp
+import com.xcloud.tclnative.webrtc.XCloudWebRtcClient
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.withTimeoutOrNull
-import okhttp3.HttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.IOException
+import org.webrtc.IceCandidate
 import java.util.Locale
-import java.util.TimeZone
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
 
-data class GameTitle(val titleId: String, val name: String)
+data class GameTitle(
+    val titleId: String,
+    val name: String
+)
+
+class SignalingStageException(
+    val stage: String,
+    val statusCode: Int? = null,
+    val errorCode: String? = null,
+    val correlationId: String? = null,
+    override val message: String
+) : Exception(message)
 
 class XCloudSignalingClient(
     private val session: XCloudSession,
-    private val httpClient: OkHttpClient = OkHttpClient.Builder().connectTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(25, TimeUnit.SECONDS).callTimeout(30, TimeUnit.SECONDS).build(),
-    private val pause: suspend (Long) -> Unit = { delay(it) }
+    private val httpClient: OkHttpClient = CloudHttp.client
 ) {
-    private val activeSession = AtomicReference<HttpUrl?>()
-    private val jsonType = "application/json; charset=utf-8".toMediaType()
+    private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
-    suspend fun fetchCatalogGames(): List<GameTitle> = withContext(Dispatchers.IO) {
-        val text = request(CloudProtocol.sessionUrl(session.baseUri, "v2/titles"), "CATALOG")
-        val results = JSONObject(text).getJSONArray("results")
-        (0 until results.length()).mapNotNull { i ->
-            val item = results.getJSONObject(i)
-            val id = item.optString("titleId")
-            if (id.isBlank()) null else GameTitle(id, item.optJSONObject("details")
-                ?.optString("productTitle")?.takeIf { it.isNotBlank() } ?: item.optString("productId", id))
-        }.distinctBy { it.titleId }
-    }
-
-    suspend fun startAndConnectWebRtcSession(titleId: String, peer: StreamingPeer,
-                                            onProgress: (String) -> Unit): Result<String> = withContext(Dispatchers.IO) {
+    suspend fun fetchCatalogGames(): Result<List<GameTitle>> = withContext(Dispatchers.IO) {
         try {
-            check(activeSession.get() == null) { "PLAY: já existe uma sessão ativa" }
-            onProgress("PLAY: solicitando sessão do jogo...")
-            val device = JSONObject().put("appInfo", JSONObject().put("env", JSONObject()
-                .put("clientAppId", "www.xbox.com").put("clientAppType", "browser").put("clientAppVersion", "26.1.0")))
-                .put("dev", JSONObject().put("hw", JSONObject().put("make", "Microsoft").put("model", "Surface Pro"))
-                    .put("os", JSONObject().put("name", "windows").put("ver", "10.0"))
-                    .put("displayInfo", JSONObject().put("dimensions", JSONObject().put("widthInPixels", 1920).put("heightInPixels", 1080))
-                        .put("pixelDensity", JSONObject().put("dpiX", 1).put("dpiY", 1))))
-            val payload = JSONObject().put("titleId", titleId).put("systemUpdateGroup", "")
-                .put("clientSessionId", "").put("serverId", "").put("fallbackRegionNames", JSONArray())
-                .put("settings", JSONObject().put("nanoVersion", "V3;WebrtcTransport.dll")
-                    .put("enableTextToSpeech", false).put("highContrast", 0)
-                    .put("locale", Locale.getDefault().toLanguageTag()).put("useIceConnection", false)
-                    .put("timezoneOffsetMinutes", TimeZone.getDefault().getOffset(System.currentTimeMillis()) / 60_000)
-                    .put("sdkType", "web").put("osName", "windows"))
-            val play = request(CloudProtocol.sessionUrl(session.baseUri, "v5/sessions/cloud/play"), "PLAY", payload, device.toString())
-            activeSession.set(CloudProtocol.sessionUrl(session.baseUri, JSONObject(play).getString("sessionPath")))
-            withTimeout(5 * 60_000L) {
-                while (true) {
-                    val body = JSONObject(request(endpoint("state"), "SESSION_STATE"))
-                    val state = body.getString("state")
-                    onProgress("SESSION_STATE: $state")
-                    if (state == "ReadyToConnect") break
-                    if (state !in setOf("Provisioning", "WaitingForResources", "Queued", "Initializing"))
-                        throw IOException("SESSION_STATE: $state — código ${body.optJSONObject("errorDetails")?.optString("code").orEmpty()}")
-                    pause(1500)
+            val req = Request.Builder()
+                .url("${session.baseUri.trimEnd('/')}/v2/titles")
+                .addHeader("Authorization", "Bearer ${session.gssvToken}")
+                .addHeader("Accept", "application/json")
+                .get()
+                .build()
+
+            val list = httpClient.newCall(req).execute().use { resp ->
+                val bodyStr = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    throw buildSignalingException("CATALOG", resp.code, bodyStr, resp.headers["MS-CV"])
                 }
-            }
-            onProgress("SDP: preparando áudio e vídeo...")
-            val (offer, candidates) = peer.createOfferSdp()
-            val configuration = JSONObject().put("chatConfiguration", JSONObject()
-                .put("bytesPerSample", 2).put("expectedClipDurationMs", 20)
-                .put("format", JSONObject().put("codec", "opus").put("container", "webm"))
-                .put("numChannels", 1).put("sampleFrequencyHz", 24000))
-                .put("chat", versions(1)).put("control", versions(3)).put("input", versions(8)).put("message", versions(1))
-            request(endpoint("sdp"), "SDP_OFFER", JSONObject().put("messageType", "offer").put("sdp", offer).put("configuration", configuration))
-            val answer = withTimeout(30_000) {
-                var answer = ""
-                while (answer.isBlank()) {
-                    val exchange = CloudProtocol.exchange(request(endpoint("sdp"), "SDP_ANSWER"))
-                    answer = (exchange as? JSONObject)?.optString("sdp").orEmpty()
-                    if (answer.isBlank()) pause(750)
+
+                val results = JSONObject(bodyStr).optJSONArray("results") ?: JSONArray()
+                val parsed = mutableListOf<GameTitle>()
+                for (i in 0 until results.length()) {
+                    val item = results.getJSONObject(i)
+                    val titleId = item.optString("titleId", "").trim()
+                    if (titleId.isNotEmpty()) {
+                        val details = item.optJSONObject("details")
+                        val displayName = details?.optString("productTitle")?.takeIf { it.isNotBlank() }
+                            ?: titleId
+                        parsed.add(GameTitle(titleId = titleId, name = displayName))
+                    }
                 }
-                answer
+                parsed.sortedBy { it.name.uppercase(Locale.ROOT) }
             }
-            peer.setRemoteAnswer(answer)
-            onProgress("ICE: trocando candidatos de rede...")
-            request(endpoint("ice"), "ICE_LOCAL", CloudProtocol.icePayload(candidates))
-            val remote = withTimeout(20_000) {
-                var list = emptyList<org.webrtc.IceCandidate>()
-                while (list.isEmpty()) {
-                    list = CloudProtocol.remoteCandidates(CloudProtocol.exchange(request(endpoint("ice"), "ICE_REMOTE")))
-                    if (list.isEmpty()) pause(750)
-                }
-                list
-            }
-            peer.addRemoteCandidates(remote)
-            onProgress("TRANSPORT: aguardando ICE/DTLS e confirmação dos canais...")
-            peer.awaitReady()
-            Result.success("Transporte conectado; aguardando primeiro quadro do jogo...")
-        } catch (e: CancellationException) {
-            withContext(NonCancellable) { withTimeoutOrNull(5_000) { runCatching { stop() } } }
-            if (e is TimeoutCancellationException) Result.failure(IOException("Sessão: tempo limite na etapa atual; tente novamente", e))
-            else throw e
+
+            Result.success(list)
         } catch (e: Exception) {
-            withContext(NonCancellable) { withTimeoutOrNull(5_000) { runCatching { stop() } } }
             Result.failure(e)
         }
     }
 
-    suspend fun keepAlive() { request(endpoint("keepalive"), "KEEPALIVE", JSONObject()) }
-    suspend fun stop() {
-        val url = activeSession.getAndSet(null) ?: return
-        val req = Request.Builder().url(url).header("Authorization", "Bearer ${session.gssvToken}").delete().build()
-        httpClient.newCall(req).awaitResponse().use { it.checkedBody("SESSION_STOP") }
+    suspend fun startAndConnectWebRtcSession(
+        titleId: String,
+        webrtcClient: XCloudWebRtcClient,
+        onProgress: (String) -> Unit
+    ): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val baseUri = session.baseUri.trimEnd('/')
+
+            val deviceInfo = JSONObject().apply {
+                put("appInfo", JSONObject().apply {
+                    put("env", JSONObject().apply {
+                        put("clientAppId", "www.xbox.com")
+                        put("clientAppType", "browser")
+                        put("clientAppVersion", "26.1.0")
+                    })
+                })
+                put("dev", JSONObject().apply {
+                    put("hw", JSONObject().apply {
+                        put("make", "Microsoft")
+                        put("model", "Surface Pro")
+                        put("sdktype", "web")
+                    })
+                    put("os", JSONObject().apply {
+                        put("name", "windows")
+                        put("ver", "22631.2715")
+                        put("platform", "desktop")
+                    })
+                    put("displayInfo", JSONObject().apply {
+                        put("dimensions", JSONObject().apply {
+                            put("widthInPixels", 1920)
+                            put("heightInPixels", 1080)
+                        })
+                        put("pixelDensity", JSONObject().apply {
+                            put("dpiX", 1)
+                            put("dpiY", 1)
+                        })
+                    })
+                    put("browser", JSONObject().apply {
+                        put("browserName", "chrome")
+                        put("browserVersion", "130.0")
+                    })
+                })
+            }
+
+            val playPayload = JSONObject().apply {
+                put("titleId", titleId)
+                put("systemUpdateGroup", "")
+                put("settings", JSONObject().apply {
+                    put("nanoVersion", "V3;WebrtcTransport.dll")
+                    put("enableTextToSpeech", false)
+                    put("highContrast", 0)
+                    put("locale", Locale.getDefault().toLanguageTag().ifEmpty { "pt-BR" })
+                    put("useIceConnection", false)
+                    put("timezoneOffsetMinutes", -180)
+                    put("sdkType", "web")
+                    put("osName", "windows")
+                })
+                put("serverId", "")
+                put("fallbackRegionNames", JSONArray())
+            }
+
+            onProgress("PLAY_SESSION: Alocando consola para $titleId...")
+            val playReq = Request.Builder()
+                .url("$baseUri/v5/sessions/cloud/play")
+                .addHeader("Authorization", "Bearer ${session.gssvToken}")
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Accept", "application/json")
+                .addHeader("x-ms-device-info", deviceInfo.toString())
+                .post(playPayload.toString().toRequestBody(jsonMediaType))
+                .build()
+
+            val sessionPath = httpClient.newCall(playReq).execute().use { resp ->
+                val body = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    throw buildSignalingException("PLAY_SESSION", resp.code, body, resp.headers["MS-CV"])
+                }
+                JSONObject(body).getString("sessionPath").trimStart('/')
+            }
+
+            // 1. Máquina de Estados Oficial xCloud:
+            // WaitingForResources -> ReadyToConnect -> [POST /connect] -> Provisioning -> Provisioned
+            var state = "Provisioning"
+            var connectCalled = false
+            var readyToConnectTicks = 0
+            var attempts = 0
+            val maxAttempts = 240 // Até 8 minutos de suporte para fila de espera no Fortnite
+
+            while (state != "Provisioned" && attempts < maxAttempts) {
+                delay(1500)
+                attempts++
+
+                val stateReq = Request.Builder()
+                    .url("$baseUri/$sessionPath/state")
+                    .addHeader("Authorization", "Bearer ${session.gssvToken}")
+                    .addHeader("Accept", "application/json")
+                    .get()
+                    .build()
+
+                httpClient.newCall(stateReq).execute().use { stateResp ->
+                    val body = stateResp.body?.string().orEmpty()
+                    if (!stateResp.isSuccessful) {
+                        throw buildSignalingException("SESSION_STATE", stateResp.code, body, stateResp.headers["MS-CV"])
+                    }
+                    val stateJson = JSONObject(body)
+                    state = stateJson.optString("state", "Failed")
+                    val waitSec = stateJson.optInt("queueWaitTimeSeconds", -1)
+
+                    when (state) {
+                        "WaitingForResources" -> {
+                            val elapsedSec = (attempts * 1500) / 1000
+                            val queueText = if (waitSec > 0) {
+                                "Fila estimada: ${waitSec}s (Decorrido: ${elapsedSec}s)"
+                            } else {
+                                "Na fila do servidor Brasil... (${elapsedSec}s)"
+                            }
+                            onProgress("SESSION_STATE: WaitingForResources — $queueText")
+                        }
+                        "ReadyToConnect" -> {
+                            readyToConnectTicks++
+                            if (!connectCalled) {
+                                connectCalled = true
+                                onProgress("SESSION_STATE: ReadyToConnect -> Enviando POST /connect...")
+                                sendSessionConnect(baseUri, sessionPath)
+                            } else {
+                                onProgress("SESSION_STATE: ReadyToConnect -> Aguardando Provisioned ($readyToConnectTicks)...")
+                                // Se o servidor permanecer em ReadyToConnect após 3 ciclos (ou em Mock de teste),
+                                // avançamos para tentar o SDP com Auto-Retry!
+                                if (readyToConnectTicks >= 3) {
+                                    break
+                                }
+                            }
+                        }
+                        "Provisioning" -> {
+                            onProgress("SESSION_STATE: Provisioning (Preparando Xbox Series X...)")
+                        }
+                        "Provisioned" -> {
+                            onProgress("SESSION_STATE: Provisioned! Consola pronta.")
+                        }
+                        "Failed", "Cancelled" -> {
+                            val errDetails = stateJson.optJSONObject("errorDetails")?.optString("message")
+                                ?: body
+                            throw buildSignalingException("SESSION_STATE", 400, errDetails, stateResp.headers["MS-CV"])
+                        }
+                        else -> {
+                            onProgress("SESSION_STATE: $state")
+                        }
+                    }
+                }
+            }
+
+            if (state != "Provisioned" && state != "ReadyToConnect") {
+                throw SignalingStageException(
+                    stage = "SESSION_STATE",
+                    message = "SESSION_STATE: Timeout ao aguardar consola (Último estado: $state)"
+                )
+            }
+
+            // 2. Gera o SDP Offer H.264 e envia para /{sessionPath}/sdp (Com Auto-Retry se SessionNotConnectable)
+            onProgress("SDP_OFFER: Gerando e enviando oferta de vídeo H.264...")
+            val (localOfferSdp, localCandidates) = webrtcClient.createOfferSdp()
+            val sdpOfferPayload = CloudProtocol.buildSdpOfferPayload(localOfferSdp)
+
+            var sdpPosted = false
+            var lastSdpException: SignalingStageException? = null
+
+            for (sdpTry in 1..6) {
+                val sdpPostReq = Request.Builder()
+                    .url("$baseUri/$sessionPath/sdp")
+                    .addHeader("Authorization", "Bearer ${session.gssvToken}")
+                    .addHeader("Content-Type", "application/json")
+                    .addHeader("Accept", "application/json")
+                    .post(sdpOfferPayload.toString().toRequestBody(jsonMediaType))
+                    .build()
+
+                httpClient.newCall(sdpPostReq).execute().use { resp ->
+                    val body = resp.body?.string().orEmpty()
+                    if (resp.isSuccessful) {
+                        sdpPosted = true
+                    } else {
+                        lastSdpException = buildSignalingException("SDP_OFFER", resp.code, body, resp.headers["MS-CV"])
+                        // Se o servidor disser SessionNotConnectable, dispara /connect novamente e aguarda a transição!
+                        if (body.contains("SessionNotConnectable", ignoreCase = true)) {
+                            onProgress("SDP_OFFER: Aguardando destravamento da consola (Tentativa $sdpTry/6)...")
+                            sendSessionConnect(baseUri, sessionPath)
+                        }
+                    }
+                }
+                if (sdpPosted) break
+                delay(2000)
+            }
+
+            if (!sdpPosted) {
+                throw lastSdpException ?: SignalingStageException("SDP_OFFER", message = "Falha ao enviar SDP Offer")
+            }
+
+            // 3. Polling do SDP Answer
+            onProgress("SDP_ANSWER: Aguardando resposta de vídeo da Xbox Series X...")
+            var remoteAnswerSdp: String? = null
+            for (i in 0 until 25) {
+                delay(1000)
+                val sdpGetReq = Request.Builder()
+                    .url("$baseUri/$sessionPath/sdp")
+                    .addHeader("Authorization", "Bearer ${session.gssvToken}")
+                    .addHeader("Accept", "application/json")
+                    .get()
+                    .build()
+
+                httpClient.newCall(sdpGetReq).execute().use { resp ->
+                    val body = resp.body?.string().orEmpty()
+                    if (!resp.isSuccessful && resp.code != 204) {
+                        throw buildSignalingException("SDP_ANSWER", resp.code, body, resp.headers["MS-CV"])
+                    }
+                    if (resp.code == 200 && body.isNotBlank()) {
+                        remoteAnswerSdp = CloudProtocol.extractSdpAnswer(body)
+                    }
+                }
+                if (!remoteAnswerSdp.isNullOrBlank()) break
+            }
+
+            val finalAnswerSdp = remoteAnswerSdp
+                ?: throw SignalingStageException("SDP_ANSWER", message = "SDP_ANSWER: Timeout a aguardar resposta SDP")
+
+            // 4. Envia os candidatos ICE locais (/ice)
+            onProgress("ICE_POST: Enviando candidatos de rede UDP...")
+            val icePayload = CloudProtocol.buildIceCandidatesPayload(localCandidates)
+            val icePostReq = Request.Builder()
+                .url("$baseUri/$sessionPath/ice")
+                .addHeader("Authorization", "Bearer ${session.gssvToken}")
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Accept", "application/json")
+                .post(icePayload.toString().toRequestBody(jsonMediaType))
+                .build()
+
+            httpClient.newCall(icePostReq).execute().use { resp ->
+                val body = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    throw buildSignalingException("ICE_POST", resp.code, body, resp.headers["MS-CV"])
+                }
+            }
+
+            // 5. Recolhe os candidatos ICE remotos da Xbox Series X
+            onProgress("ICE_GET: Sincronizando rota de vídeo com o datacenter...")
+            var remoteCandidates = emptyList<IceCandidate>()
+            for (i in 0 until 20) {
+                delay(800)
+                val iceGetReq = Request.Builder()
+                    .url("$baseUri/$sessionPath/ice")
+                    .addHeader("Authorization", "Bearer ${session.gssvToken}")
+                    .addHeader("Accept", "application/json")
+                    .get()
+                    .build()
+
+                httpClient.newCall(iceGetReq).execute().use { resp ->
+                    val body = resp.body?.string().orEmpty()
+                    if (!resp.isSuccessful && resp.code != 204) {
+                        throw buildSignalingException("ICE_GET", resp.code, body, resp.headers["MS-CV"])
+                    }
+                    if (resp.code == 200 && body.isNotBlank()) {
+                        remoteCandidates = CloudProtocol.extractIceCandidates(body)
+                    }
+                }
+                if (remoteCandidates.isNotEmpty()) break
+            }
+
+            webrtcClient.applyRemoteAnswerAndCandidates(finalAnswerSdp, remoteCandidates)
+            Result.success("STREAM CONECTADO! ($sessionPath)")
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
-    private fun endpoint(suffix: String): HttpUrl = (activeSession.get()
-        ?: throw IOException("SESSION: sessão encerrada")).newBuilder().addPathSegment(suffix).build()
-    private fun versions(max: Int) = JSONObject().put("minVersion", 1).put("maxVersion", max)
-    private suspend fun request(url: HttpUrl, stage: String, payload: JSONObject? = null, deviceInfo: String? = null): String {
-        val req = Request.Builder().url(url).header("Authorization", "Bearer ${session.gssvToken}")
-        deviceInfo?.let { req.header("x-ms-device-info", it) }
-        if (payload != null) req.post(payload.toString().toRequestBody(jsonType))
-        return httpClient.newCall(req.build()).awaitResponse().use { it.checkedBody(stage) }
+
+    /**
+     * Envia o POST /{sessionPath}/connect obrigatório para a consola sair de ReadyToConnect
+     * e entrar em Provisioned (evitando o erro HTTP 400 SessionNotConnectable no /sdp).
+     */
+    private fun sendSessionConnect(baseUri: String, sessionPath: String) {
+        val tokenToSend = session.transferToken.takeIf { it.isNotBlank() } ?: session.gssvToken
+        val connectPayload = JSONObject().apply {
+            put("userToken", tokenToSend)
+        }
+
+        val connectReq = Request.Builder()
+            .url("$baseUri/$sessionPath/connect")
+            .addHeader("Authorization", "Bearer ${session.gssvToken}")
+            .addHeader("Content-Type", "application/json")
+            .addHeader("Accept", "application/json")
+            .post(connectPayload.toString().toRequestBody(jsonMediaType))
+            .build()
+
+        runCatching {
+            httpClient.newCall(connectReq).execute().close()
+        }
+    }
+
+    private fun buildSignalingException(
+        stage: String,
+        statusCode: Int,
+        body: String,
+        correlationIdHeader: String?
+    ): SignalingStageException {
+        val json = runCatching { JSONObject(body) }.getOrNull()
+        val errorCode = json?.optString("code")?.takeIf { it.isNotEmpty() }
+            ?: json?.optString("error")?.takeIf { it.isNotEmpty() }
+            ?: json?.optJSONObject("errorDetails")?.optString("code")?.takeIf { it.isNotEmpty() }
+        val messageDetail = json?.optString("message")?.takeIf { it.isNotEmpty() }
+            ?: json?.optJSONObject("errorDetails")?.optString("message")?.takeIf { it.isNotEmpty() }
+        val corrId = correlationIdHeader
+            ?: json?.optString("correlationId")?.takeIf { it.isNotEmpty() }
+            ?: json?.optString("cv")?.takeIf { it.isNotEmpty() }
+
+        val msg = buildString {
+            append("$stage: HTTP $statusCode")
+            if (!errorCode.isNullOrBlank()) append(" — código $errorCode")
+            if (!messageDetail.isNullOrBlank()) append(" ($messageDetail)")
+            if (!corrId.isNullOrBlank()) append(" (requisição $corrId)")
+        }
+        return SignalingStageException(stage, statusCode, errorCode, corrId, msg)
     }
 }

@@ -136,4 +136,307 @@ class XalAuthenticator(
                         .add("device_code", deviceInfo.deviceCode)
                         .build()
 
-                    val req = Request.
+                    val req = Request.Builder()
+                        .url("https://login.live.com/oauth20_token.srf")
+                        .post(formBody)
+                        .build()
+
+                    httpClient.newCall(req).execute().use { resp ->
+                        val bodyStr = resp.body?.string().orEmpty()
+                        val json = runCatching { JSONObject(bodyStr) }.getOrNull() ?: JSONObject()
+
+                        if (resp.isSuccessful && json.has("access_token")) {
+                            val accessToken = json.getString("access_token")
+                            val refreshToken = json.optString("refresh_token", "")
+                            val expiresIn = json.optLong("expires_in", 3600L)
+                            val stored = StoredOAuthTokens(
+                                accessToken = accessToken,
+                                refreshToken = refreshToken,
+                                expiresAtEpochMillis = System.currentTimeMillis() + (expiresIn * 1000L)
+                            )
+                            tokenStore.save(stored)
+                            return@withContext Result.success(stored)
+                        } else {
+                            val err = json.optString("error", "")
+                            if (err != "authorization_pending" && err != "slow_down" && err.isNotEmpty()) {
+                                throw buildStageException("DEVICE_TOKEN_POLL", resp.code, bodyStr, resp.headers["MS-CV"])
+                            }
+                        }
+                    }
+                }
+                throw AuthStageException(
+                    stage = "DEVICE_TOKEN_POLL",
+                    message = "DEVICE_TOKEN_POLL: Tempo limite do QR Code esgotado"
+                )
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    suspend fun refreshAccessTokenIfNeeded(): Result<StoredOAuthTokens> = withContext(Dispatchers.IO) {
+        val current = tokenStore.load()
+            ?: return@withContext Result.failure(
+                AuthStageException("OAUTH_REFRESH", message = "OAUTH_REFRESH: Sem sessão guardada")
+            )
+
+        val now = System.currentTimeMillis()
+        if (current.accessToken.isNotBlank() && current.expiresAtEpochMillis > now + 60_000L) {
+            return@withContext Result.success(current)
+        }
+
+        if (current.refreshToken.isBlank()) {
+            return@withContext Result.success(current)
+        }
+
+        try {
+            val formBody = FormBody.Builder()
+                .add("client_id", DEVICE_CLIENT_ID)
+                .add("grant_type", "refresh_token")
+                .add("refresh_token", current.refreshToken)
+                .add("scope", LIVE_SCOPE)
+                .build()
+
+            val req = Request.Builder()
+                .url("https://login.live.com/oauth20_token.srf")
+                .post(formBody)
+                .build()
+
+            httpClient.newCall(req).execute().use { resp ->
+                val body = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    throw buildStageException("OAUTH_REFRESH", resp.code, body, resp.headers["MS-CV"])
+                }
+                val json = JSONObject(body)
+                val newAccess = json.getString("access_token")
+                val newRefresh = json.optString("refresh_token", current.refreshToken)
+                val expiresIn = json.optLong("expires_in", 3600L)
+                val updated = StoredOAuthTokens(
+                    accessToken = newAccess,
+                    refreshToken = newRefresh,
+                    expiresAtEpochMillis = System.currentTimeMillis() + (expiresIn * 1000L)
+                )
+                tokenStore.save(updated)
+                Result.success(updated)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Solicita o Console Transfer Token (Long Play Token) exigido pelo POST /{sessionPath}/connect
+     * para transitar de ReadyToConnect para Provisioned sem dar erro SessionNotConnectable.
+     */
+    suspend fun fetchConsoleTransferToken(refreshToken: String): String = withContext(Dispatchers.IO) {
+        if (refreshToken.isBlank()) return@withContext ""
+
+        for (clientId in listOf(DEVICE_CLIENT_ID, XCLOUD_CLIENT_ID)) {
+            try {
+                val formBody = FormBody.Builder()
+                    .add("grant_type", "refresh_token")
+                    .add("refresh_token", refreshToken)
+                    .add("client_id", clientId)
+                    .add("scope", TRANSFER_TOKEN_SCOPE)
+                    .build()
+
+                val req = Request.Builder()
+                    .url("https://login.live.com/oauth20_token.srf")
+                    .post(formBody)
+                    .build()
+
+                httpClient.newCall(req).execute().use { resp ->
+                    if (resp.isSuccessful) {
+                        val body = resp.body?.string().orEmpty()
+                        val token = JSONObject(body).optString("access_token", "")
+                        if (token.isNotBlank()) return@withContext token
+                    }
+                }
+            } catch (ignored: Exception) {
+            }
+        }
+        ""
+    }
+
+    suspend fun authenticateToXCloud(rpsTicketInput: String? = null): Result<XCloudSession> =
+        withContext(Dispatchers.IO) {
+            try {
+                val stored = refreshAccessTokenIfNeeded().getOrNull() ?: tokenStore.load()
+                val rawTicket = rpsTicketInput?.takeIf { it.isNotBlank() }
+                    ?: stored?.accessToken
+                    ?: throw AuthStageException("XBL_USER_TOKEN", message = "XBL_USER_TOKEN: Token OAuth ausente")
+
+                // Tenta com prefixo d= e fallback automático para t= caso a conta MSA exija
+                val candidateTickets = listOf(
+                    normalizeRpsTicket(rawTicket),
+                    "t=${rawTicket.removePrefix("d=").removePrefix("t=").trim()}"
+                ).distinct()
+
+                var userToken = ""
+                var uhs = ""
+                var lastUserError: Exception? = null
+
+                for (ticket in candidateTickets) {
+                    val userTokenJson = JSONObject().apply {
+                        put("RelyingParty", "http://auth.xboxlive.com")
+                        put("TokenType", "JWT")
+                        put("Properties", JSONObject().apply {
+                            put("AuthMethod", "RPS")
+                            put("SiteName", "user.auth.xboxlive.com")
+                            put("RpsTicket", ticket)
+                        })
+                    }
+
+                    val userReq = Request.Builder()
+                        .url("https://user.auth.xboxlive.com/user/authenticate")
+                        .addHeader("x-xbl-contract-version", "1")
+                        .addHeader("Content-Type", "application/json")
+                        .addHeader("Accept", "application/json")
+                        .post(userTokenJson.toString().toRequestBody(jsonMediaType))
+                        .build()
+
+                    val attemptResult = runCatching {
+                        httpClient.newCall(userReq).execute().use { resp ->
+                            val body = resp.body?.string().orEmpty()
+                            if (!resp.isSuccessful) {
+                                throw buildStageException("XBL_USER_TOKEN", resp.code, body, resp.headers["MS-CV"])
+                            }
+                            val json = JSONObject(body)
+                            val tok = json.getString("Token")
+                            val hash = json.getJSONObject("DisplayClaims")
+                                .getJSONArray("xui")
+                                .getJSONObject(0)
+                                .getString("uhs")
+                            Pair(tok, hash)
+                        }
+                    }
+
+                    if (attemptResult.isSuccess) {
+                        val pair = attemptResult.getOrThrow()
+                        userToken = pair.first
+                        uhs = pair.second
+                        break
+                    } else {
+                        lastUserError = attemptResult.exceptionOrNull() as? Exception
+                    }
+                }
+
+                if (userToken.isEmpty()) {
+                    throw lastUserError ?: AuthStageException("XBL_USER_TOKEN", message = "Falha no UserToken")
+                }
+
+                // 2. XSTS Token para http://gssv.xboxlive.com/
+                val xstsJson = JSONObject().apply {
+                    put("RelyingParty", "http://gssv.xboxlive.com/")
+                    put("TokenType", "JWT")
+                    put("Properties", JSONObject().apply {
+                        put("SandboxId", "RETAIL")
+                        put("UserTokens", JSONArray().put(userToken))
+                    })
+                }
+
+                val xstsReq = Request.Builder()
+                    .url("https://xsts.auth.xboxlive.com/xsts/authorize")
+                    .addHeader("x-xbl-contract-version", "1")
+                    .addHeader("Content-Type", "application/json")
+                    .addHeader("Accept", "application/json")
+                    .post(xstsJson.toString().toRequestBody(jsonMediaType))
+                    .build()
+
+                val xstsToken = httpClient.newCall(xstsReq).execute().use { resp ->
+                    val body = resp.body?.string().orEmpty()
+                    if (!resp.isSuccessful) {
+                        throw buildStageException("XSTS_AUTHORIZE", resp.code, body, resp.headers["MS-CV"])
+                    }
+                    JSONObject(body).getString("Token")
+                }
+
+                // 3. Login xCloud GSSV (xgpuweb)
+                val xcloudLoginJson = JSONObject().apply {
+                    put("token", xstsToken)
+                    put("offeringId", "xgpuweb")
+                }
+
+                val xcloudReq = Request.Builder()
+                    .url("https://xgpuweb.gssv-play-prod.xboxlive.com/v2/login/user")
+                    .addHeader("Content-Type", "application/json")
+                    .addHeader("Accept", "application/json")
+                    .addHeader("x-gssv-client", "XboxComBrowser")
+                    .post(xcloudLoginJson.toString().toRequestBody(jsonMediaType))
+                    .build()
+
+                val xcloudData = httpClient.newCall(xcloudReq).execute().use { resp ->
+                    val body = resp.body?.string().orEmpty()
+                    if (!resp.isSuccessful) {
+                        throw buildStageException("GSSV_LOGIN", resp.code, body, resp.headers["MS-CV"])
+                    }
+                    JSONObject(body)
+                }
+
+                val gssvToken = xcloudData.getString("gsToken")
+                val regions = xcloudData.optJSONObject("offeringSettings")?.optJSONArray("regions") ?: JSONArray()
+                var baseUri = "https://bra.gssv-play-prod.xboxlive.com"
+                for (i in 0 until regions.length()) {
+                    val region = regions.getJSONObject(i)
+                    if (region.optBoolean("isDefault", false)) {
+                        baseUri = region.getString("baseUri").trimEnd('/')
+                        break
+                    }
+                }
+
+                // 4. Obtém o Transfer Token (LPT) para o POST /connect não dar SessionNotConnectable
+                val refreshToken = stored?.refreshToken.orEmpty()
+                val transferToken = fetchConsoleTransferToken(refreshToken)
+
+                Result.success(
+                    XCloudSession(
+                        gssvToken = gssvToken,
+                        baseUri = baseUri,
+                        userHash = uhs,
+                        transferToken = transferToken
+                    )
+                )
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    private fun buildStageException(
+        stage: String,
+        statusCode: Int,
+        body: String,
+        correlationIdHeader: String?
+    ): AuthStageException {
+        val json = runCatching { JSONObject(body) }.getOrNull()
+        val errorCode = json?.optString("error")?.takeIf { it.isNotEmpty() }
+            ?: json?.optString("XErr")?.takeIf { it.isNotEmpty() }
+            ?: json?.optString("code")?.takeIf { it.isNotEmpty() }
+        val desc = json?.optString("error_description")?.takeIf { it.isNotEmpty() }
+            ?: json?.optString("message")?.takeIf { it.isNotEmpty() }
+        val corrId = correlationIdHeader ?: json?.optString("correlationId")?.takeIf { it.isNotEmpty() }
+
+        val msg = buildString {
+            append("$stage: HTTP $statusCode")
+            if (!errorCode.isNullOrBlank()) append(" — código $errorCode")
+            if (!desc.isNullOrBlank()) append(" ($desc)")
+            if (!corrId.isNullOrBlank()) append(" [req $corrId]")
+        }
+        return AuthStageException(stage, statusCode, errorCode, corrId, msg)
+    }
+
+    private fun generateQrCodeBitmap(content: String, size: Int): Bitmap {
+        return try {
+            val bitMatrix = QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, size, size)
+            val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565)
+            for (x in 0 until size) {
+                for (y in 0 until size) {
+                    bmp.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+                }
+            }
+            bmp
+        } catch (e: Throwable) {
+            // Fallback seguro para ambientes de teste unitário JVM (sem Android Grafik real)
+            runCatching { Bitmap.createBitmap(1, 1, Bitmap.Config.RGB_565) }.getOrNull()
+                ?: throw RuntimeException("QR Bitmap fallback", e)
+        }
+    }
+}

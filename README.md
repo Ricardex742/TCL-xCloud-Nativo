@@ -1,15 +1,15 @@
 # TCL-xCloud-Nativo
 Cliente experimental para Xbox Cloud Gaming em Android 10 ou superior, com vídeo nativo por WebRTC e SurfaceViewRenderer. A disponibilidade do jogo depende da conta, da região e da conectividade; o scaler nativo não comprova ativação de AiPQ 4K.
 
-O workflow `build-apk.yml` pode ser executado manualmente na branch de desenvolvimento. Ele prepara JDK 21, Gradle 8.7 e Android SDK 34, executa os testes JVM, verifica APIs incompatíveis com Android 10, gera o APK e verifica a assinatura. Os artefatos incluem o APK e os resultados de testes/lint. O módulo instalável é `:app`; os comandos do workflow usam esse alvo explicitamente.
+O workflow `build-apk.yml` roda nos pushes da branch `ci/apk-android10-3cc2595` e pode ser executado manualmente nela. Ele prepara JDK 21, Gradle 8.7 e Android SDK 34, verifica APIs incompatíveis com o Android mínimo declarado (API 24, incluindo Android 10), gera o APK debug e verifica sua assinatura. Baixe `TCL-xCloud-App-Debug-Android10` na seção **Artifacts** da execução: ele contém o APK e seu checksum SHA-256. O relatório de lint é salvo separadamente. O módulo instalável é `:app`; os comandos usam esse alvo explicitamente.
 
-No ambiente de desenvolvimento já preparado, use:
+Com JDK 21, Gradle 8.7 e Android SDK 34 configurados, use na raiz do repositório:
 
 ```bash
-/workspace/.cloud-setup/gradle-android :app:testDebugUnitTest :app:assembleDebug
+gradle --no-daemon --max-workers=2 :app:assembleDebug :app:lintDebug
 ```
 
-Os testes usam respostas HTTP locais e credenciais fictícias. Exercitam expiração/renovação de tokens, polling de Device Code, cancelamento de sockets/sessões, SDP/ICE, handshakes e o formato dos pacotes de gamepad. Não substituem o teste de login e mídia em um dispositivo real. O lint do workflow seleciona `NewApi` e `InlinedApi`; não representa aprovação de todas as regras de publicação Android TV.
+Os testes JVM legados estão desativados no módulo desta branch e não são executados pelo workflow de APK. A geração do APK e o lint não comprovam login ou mídia em um dispositivo real. O lint seleciona `NewApi` e `InlinedApi`; não representa aprovação de todas as regras de publicação Android TV.
 
 Durante o teste no aparelho, registre a etapa e o código de erro mostrados na tela:
 

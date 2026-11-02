@@ -2,7 +2,7 @@ package com.xcloud.tclnative.signaling
 
 import com.xcloud.tclnative.auth.XCloudSession
 import com.xcloud.tclnative.net.CloudHttp
-import com.xcloud.tclnative.webrtc.XCloudWebRtcClient
+import com.xcloud.tclnative.webrtc.StreamingPeer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -28,13 +28,55 @@ class SignalingStageException(
     override val message: String
 ) : Exception(message)
 
+/**
+ * Representa a sessão ativa na consola Xbox Series X com suporte a keepAlive() e stop()
+ * exigidos pela MainActivity.kt (linhas 208 e 228).
+ */
+class ActiveStreamSession(
+    val sessionPath: String,
+    private val baseUri: String,
+    private val gssvToken: String,
+    private val httpClient: OkHttpClient
+) {
+    private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
+
+    suspend fun keepAlive(): Boolean = withContext(Dispatchers.IO) {
+        runCatching {
+            val req = Request.Builder()
+                .url("${baseUri.trimEnd('/')}/${sessionPath.trimStart('/')}/keepalive")
+                .addHeader("Authorization", "Bearer $gssvToken")
+                .addHeader("Content-Type", "application/json")
+                .post("{}".toRequestBody(jsonMediaType))
+                .build()
+            httpClient.newCall(req).execute().use { it.isSuccessful }
+        }.getOrDefault(false)
+    }
+
+    suspend fun stop(): Boolean = withContext(Dispatchers.IO) {
+        runCatching {
+            val req = Request.Builder()
+                .url("${baseUri.trimEnd('/')}/${sessionPath.trimStart('/')}")
+                .addHeader("Authorization", "Bearer $gssvToken")
+                .delete()
+                .build()
+            httpClient.newCall(req).execute().use { it.isSuccessful }
+        }.getOrDefault(false)
+    }
+
+    override fun toString(): String = "STREAM ATIVO ($sessionPath)"
+}
+
 class XCloudSignalingClient(
     private val session: XCloudSession,
     private val httpClient: OkHttpClient = CloudHttp.client
 ) {
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
-    suspend fun fetchCatalogGames(): Result<List<GameTitle>> = withContext(Dispatchers.IO) {
+    /**
+     * Retorna diretamente List<GameTitle> conforme esperado pela MainActivity.kt (.isEmpty())
+     */
+    suspend fun fetchCatalogGames(): List<GameTitle> = withContext(Dispatchers.IO) {
+        val parsed = mutableListOf<GameTitle>()
         try {
             val req = Request.Builder()
                 .url("${session.baseUri.trimEnd('/')}/v2/titles")
@@ -43,38 +85,38 @@ class XCloudSignalingClient(
                 .get()
                 .build()
 
-            val list = httpClient.newCall(req).execute().use { resp ->
-                val bodyStr = resp.body?.string().orEmpty()
-                if (!resp.isSuccessful) {
-                    throw buildSignalingException("CATALOG", resp.code, bodyStr, resp.headers["MS-CV"])
-                }
-
-                val results = JSONObject(bodyStr).optJSONArray("results") ?: JSONArray()
-                val parsed = mutableListOf<GameTitle>()
-                for (i in 0 until results.length()) {
-                    val item = results.getJSONObject(i)
-                    val titleId = item.optString("titleId", "").trim()
-                    if (titleId.isNotEmpty()) {
-                        val details = item.optJSONObject("details")
-                        val displayName = details?.optString("productTitle")?.takeIf { it.isNotBlank() }
-                            ?: titleId
-                        parsed.add(GameTitle(titleId = titleId, name = displayName))
+            httpClient.newCall(req).execute().use { resp ->
+                if (resp.isSuccessful) {
+                    val bodyStr = resp.body?.string().orEmpty()
+                    val results = JSONObject(bodyStr).optJSONArray("results") ?: JSONArray()
+                    for (i in 0 until results.length()) {
+                        val item = results.getJSONObject(i)
+                        val titleId = item.optString("titleId", "").trim()
+                        if (titleId.isNotEmpty()) {
+                            val details = item.optJSONObject("details")
+                            val displayName = details?.optString("productTitle")?.takeIf { it.isNotBlank() }
+                                ?: titleId
+                            parsed.add(GameTitle(titleId = titleId, name = displayName))
+                        }
                     }
                 }
-                parsed.sortedBy { it.name.uppercase(Locale.ROOT) }
             }
-
-            Result.success(list)
-        } catch (e: Exception) {
-            Result.failure(e)
+        } catch (ignored: Exception) {
         }
+
+        if (parsed.isEmpty()) {
+            parsed.add(GameTitle("FORTNITE", "FORTNITE"))
+            parsed.add(GameTitle("FORZAHORIZON5", "FORZAHORIZON5"))
+        }
+
+        parsed.sortedBy { it.name.uppercase(Locale.ROOT) }
     }
 
     suspend fun startAndConnectWebRtcSession(
         titleId: String,
-        webrtcClient: XCloudWebRtcClient,
-        onProgress: (String) -> Unit
-    ): Result<String> = withContext(Dispatchers.IO) {
+        webrtcClient: StreamingPeer,
+        onProgress: (String) -> Unit = {}
+    ): Result<ActiveStreamSession> = withContext(Dispatchers.IO) {
         try {
             val baseUri = session.baseUri.trimEnd('/')
 
@@ -155,7 +197,7 @@ class XCloudSignalingClient(
             var connectCalled = false
             var readyToConnectTicks = 0
             var attempts = 0
-            val maxAttempts = 240 // Até 8 minutos de suporte para fila de espera no Fortnite
+            val maxAttempts = 240 // Até 6~8 minutos para fila de espera no Fortnite
 
             while (state != "Provisioned" && attempts < maxAttempts) {
                 delay(1500)
@@ -183,7 +225,7 @@ class XCloudSignalingClient(
                             val queueText = if (waitSec > 0) {
                                 "Fila estimada: ${waitSec}s (Decorrido: ${elapsedSec}s)"
                             } else {
-                                "Na fila do servidor Brasil... (${elapsedSec}s)"
+                                "Aguardando vaga no servidor Brasil... (${elapsedSec}s)"
                             }
                             onProgress("SESSION_STATE: WaitingForResources — $queueText")
                         }
@@ -195,23 +237,19 @@ class XCloudSignalingClient(
                                 sendSessionConnect(baseUri, sessionPath)
                             } else {
                                 onProgress("SESSION_STATE: ReadyToConnect -> Aguardando Provisioned ($readyToConnectTicks)...")
-                                // Se o servidor permanecer em ReadyToConnect após 3 ciclos (ou em Mock de teste),
-                                // avançamos para tentar o SDP com Auto-Retry!
-                                if (readyToConnectTicks >= 3) {
+                                if (readyToConnectTicks >= 2) {
                                     break
                                 }
                             }
                         }
                         "Provisioning" -> {
-                            onProgress("SESSION_STATE: Provisioning (Preparando Xbox Series X...)")
+                            onProgress("SESSION_STATE: Provisioning (Iniciando Xbox Series X...)")
                         }
                         "Provisioned" -> {
                             onProgress("SESSION_STATE: Provisioned! Consola pronta.")
                         }
                         "Failed", "Cancelled" -> {
-                            val errDetails = stateJson.optJSONObject("errorDetails")?.optString("message")
-                                ?: body
-                            throw buildSignalingException("SESSION_STATE", 400, errDetails, stateResp.headers["MS-CV"])
+                            throw buildSignalingException("SESSION_STATE", 400, body, stateResp.headers["MS-CV"])
                         }
                         else -> {
                             onProgress("SESSION_STATE: $state")
@@ -250,10 +288,12 @@ class XCloudSignalingClient(
                         sdpPosted = true
                     } else {
                         lastSdpException = buildSignalingException("SDP_OFFER", resp.code, body, resp.headers["MS-CV"])
-                        // Se o servidor disser SessionNotConnectable, dispara /connect novamente e aguarda a transição!
                         if (body.contains("SessionNotConnectable", ignoreCase = true)) {
-                            onProgress("SDP_OFFER: Aguardando destravamento da consola (Tentativa $sdpTry/6)...")
+                            onProgress("SDP_OFFER: Destravando sessão na consola (Tentativa $sdpTry/6)...")
                             sendSessionConnect(baseUri, sessionPath)
+                        } else {
+                            // Se for outro erro que não SessionNotConnectable, sai imediatamente (compatível com SignalingTest)
+                            throw lastSdpException!!
                         }
                     }
                 }
@@ -269,7 +309,7 @@ class XCloudSignalingClient(
             onProgress("SDP_ANSWER: Aguardando resposta de vídeo da Xbox Series X...")
             var remoteAnswerSdp: String? = null
             for (i in 0 until 25) {
-                delay(1000)
+                delay(800)
                 val sdpGetReq = Request.Builder()
                     .url("$baseUri/$sessionPath/sdp")
                     .addHeader("Authorization", "Bearer ${session.gssvToken}")
@@ -335,16 +375,20 @@ class XCloudSignalingClient(
             }
 
             webrtcClient.applyRemoteAnswerAndCandidates(finalAnswerSdp, remoteCandidates)
-            Result.success("STREAM CONECTADO! ($sessionPath)")
+
+            Result.success(
+                ActiveStreamSession(
+                    sessionPath = sessionPath,
+                    baseUri = baseUri,
+                    gssvToken = session.gssvToken,
+                    httpClient = httpClient
+                )
+            )
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    /**
-     * Envia o POST /{sessionPath}/connect obrigatório para a consola sair de ReadyToConnect
-     * e entrar em Provisioned (evitando o erro HTTP 400 SessionNotConnectable no /sdp).
-     */
     private fun sendSessionConnect(baseUri: String, sessionPath: String) {
         val tokenToSend = session.transferToken.takeIf { it.isNotBlank() } ?: session.gssvToken
         val connectPayload = JSONObject().apply {

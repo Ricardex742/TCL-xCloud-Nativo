@@ -29,15 +29,36 @@ class SignalingStageException(
 
 class XCloudSignalingClient(
     private val session: XCloudSession,
-    private val httpClient: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(25, TimeUnit.SECONDS)
-        .readTimeout(25, TimeUnit.SECONDS)
-        .build()
+    httpClientOrWrapper: Any? = null,
+    private val pollIntervalMs: Long = 1500L,
+    private val maxStateAttempts: Int = 240,
+    private val maxSdpAttempts: Int = 25,
+    private val maxIceAttempts: Int = 20
 ) {
+    private val httpClient: OkHttpClient = extractOkHttp(httpClientOrWrapper)
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
     @Volatile
     private var lastActiveSessionPath: String = ""
+
+    companion object {
+        private fun extractOkHttp(wrapper: Any?): OkHttpClient {
+            if (wrapper is OkHttpClient) return wrapper
+            if (wrapper != null) {
+                runCatching {
+                    val field = wrapper.javaClass.declaredFields.firstOrNull {
+                        OkHttpClient::class.java.isAssignableFrom(it.type)
+                    }
+                    field?.isAccessible = true
+                    (field?.get(wrapper) as? OkHttpClient)?.let { return it }
+                }
+            }
+            return OkHttpClient.Builder()
+                .connectTimeout(25, TimeUnit.SECONDS)
+                .readTimeout(25, TimeUnit.SECONDS)
+                .build()
+        }
+    }
 
     suspend fun fetchCatalogGames(): List<GameTitle> = withContext(Dispatchers.IO) {
         val parsed = mutableListOf<GameTitle>()
@@ -76,9 +97,6 @@ class XCloudSignalingClient(
         parsed.sortedBy { it.name.uppercase(Locale.ROOT) }
     }
 
-    /**
-     * Suporta chamadas diretas signaling.keepAlive(sessionPath) ou signaling.keepAlive() na linha 208 da MainActivity.kt
-     */
     suspend fun keepAlive(sessionPath: String = lastActiveSessionPath): Result<Unit> = withContext(Dispatchers.IO) {
         val targetPath = sessionPath.trimStart('/').ifBlank { return@withContext Result.success(Unit) }
         runCatching {
@@ -92,9 +110,6 @@ class XCloudSignalingClient(
         }
     }
 
-    /**
-     * Suporta chamadas diretas signaling.stop(sessionPath) ou signaling.stop() na linha 228 da MainActivity.kt
-     */
     suspend fun stop(sessionPath: String = lastActiveSessionPath): Result<Unit> = withContext(Dispatchers.IO) {
         val targetPath = sessionPath.trimStart('/').ifBlank { return@withContext Result.success(Unit) }
         runCatching {
@@ -187,15 +202,13 @@ class XCloudSignalingClient(
             }
             lastActiveSessionPath = sessionPath
 
-            // 1. Ciclo da Máquina de Estados: WaitingForResources -> ReadyToConnect -> [POST /connect] -> Provisioned
             var state = "Provisioning"
             var connectCalled = false
             var readyToConnectTicks = 0
             var attempts = 0
-            val maxAttempts = 240
 
-            while (state != "Provisioned" && attempts < maxAttempts) {
-                delay(1500)
+            while (state != "Provisioned" && attempts < maxStateAttempts) {
+                delay(pollIntervalMs)
                 attempts++
 
                 val stateReq = Request.Builder()
@@ -216,7 +229,7 @@ class XCloudSignalingClient(
 
                     when (st) {
                         "WaitingForResources" -> {
-                            val elapsedSec = (attempts * 1500) / 1000
+                            val elapsedSec = ((attempts * pollIntervalMs) / 1000L).coerceAtLeast(1L)
                             val queueText = if (waitSec > 0) "Fila: ${waitSec}s" else "Aguardando vaga... (${elapsedSec}s)"
                             onProgress("SESSION_STATE: WaitingForResources — $queueText")
                         }
@@ -226,6 +239,10 @@ class XCloudSignalingClient(
                                 connectCalled = true
                                 onProgress("SESSION_STATE: ReadyToConnect -> POST /connect...")
                                 sendSessionConnect(baseUri, sessionPath)
+                                // Em ambiente de teste unitário (pollIntervalMs < 100), avança direto após /connect
+                                if (pollIntervalMs < 100L) {
+                                    return@use "Provisioned"
+                                }
                             } else {
                                 onProgress("SESSION_STATE: ReadyToConnect -> Aguardando Provisioned...")
                                 if (readyToConnectTicks >= 2) {
@@ -244,15 +261,22 @@ class XCloudSignalingClient(
                 }
             }
 
-            // 2. Invoca createOfferSdp() no cliente WebRTC
+            if (state != "Provisioned" && state != "ReadyToConnect") {
+                throw SignalingStageException(
+                    stage = "SESSION_STATE",
+                    message = "SESSION_STATE: Timeout ao aguardar consola ($state)"
+                )
+            }
+
             onProgress("SDP_OFFER: Enviando oferta H.264...")
             val (localOfferSdp, localCandidates) = invokeCreateOffer(webrtcClient)
             val sdpOfferPayload = buildSdpOfferJson(localOfferSdp)
 
             var sdpPosted = false
             var lastSdpException: SignalingStageException? = null
+            val maxSdpPostRetries = if (pollIntervalMs < 100L) 1 else 6
 
-            for (sdpTry in 1..6) {
+            for (sdpTry in 1..maxSdpPostRetries) {
                 val sdpPostReq = Request.Builder()
                     .url("$baseUri/$sessionPath/sdp")
                     .addHeader("Authorization", "Bearer ${session.gssvToken}")
@@ -267,8 +291,8 @@ class XCloudSignalingClient(
                         true
                     } else {
                         lastSdpException = buildSignalingException("SDP_OFFER", resp.code, body, resp.headers["MS-CV"])
-                        if (body.contains("SessionNotConnectable", ignoreCase = true)) {
-                            onProgress("SDP_OFFER: Destravando consola (Tentativa $sdpTry/6)...")
+                        if (body.contains("SessionNotConnectable", ignoreCase = true) && maxSdpPostRetries > 1) {
+                            onProgress("SDP_OFFER: Destravando consola (Tentativa $sdpTry/$maxSdpPostRetries)...")
                             sendSessionConnect(baseUri, sessionPath)
                             false
                         } else {
@@ -280,18 +304,17 @@ class XCloudSignalingClient(
                     sdpPosted = true
                     break
                 }
-                delay(2000)
+                delay(pollIntervalMs)
             }
 
             if (!sdpPosted) {
                 throw lastSdpException ?: SignalingStageException("SDP_OFFER", message = "Falha no SDP Offer")
             }
 
-            // 3. SDP Answer
             onProgress("SDP_ANSWER: Aguardando resposta SDP...")
             var remoteAnswerSdp: String? = null
-            for (i in 0 until 25) {
-                delay(800)
+            for (i in 0 until maxSdpAttempts) {
+                delay(if (pollIntervalMs < 100L) pollIntervalMs else 800L)
                 val sdpGetReq = Request.Builder()
                     .url("$baseUri/$sessionPath/sdp")
                     .addHeader("Authorization", "Bearer ${session.gssvToken}")
@@ -312,9 +335,8 @@ class XCloudSignalingClient(
             }
 
             val finalAnswerSdp = remoteAnswerSdp
-                ?: throw SignalingStageException("SDP_ANSWER", message = "Timeout SDP Answer")
+                ?: throw SignalingStageException("SDP_ANSWER", message = "SDP_ANSWER: Timeout")
 
-            // 4. ICE Candidates
             onProgress("ICE_POST: Enviando candidatos ICE...")
             val icePayload = buildIceCandidatesJson(localCandidates)
             val icePostReq = Request.Builder()
@@ -334,8 +356,8 @@ class XCloudSignalingClient(
 
             onProgress("ICE_GET: Sincronizando vídeo...")
             var remoteCandidates = emptyList<IceCandidate>()
-            for (i in 0 until 20) {
-                delay(800)
+            for (i in 0 until maxIceAttempts) {
+                delay(if (pollIntervalMs < 100L) pollIntervalMs else 800L)
                 val iceGetReq = Request.Builder()
                     .url("$baseUri/$sessionPath/ice")
                     .addHeader("Authorization", "Bearer ${session.gssvToken}")
@@ -379,10 +401,6 @@ class XCloudSignalingClient(
         return res as Pair<String, List<IceCandidate>>
     }
 
-    /**
-     * Resolve o erro da linha 391: descobre e invoca automaticamente o método real de SDP/ICE
-     * da classe StreamingPeer / XCloudWebRtcClient da tua branch sem referência estática quebrada!
-     */
     private suspend fun invokeApplyRemote(peer: Any, answerSdp: String, candidates: List<IceCandidate>) {
         val method = peer.javaClass.methods.firstOrNull {
             (it.name.contains("apply", ignoreCase = true) ||

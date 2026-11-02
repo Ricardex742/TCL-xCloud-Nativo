@@ -1,7 +1,9 @@
 package com.xcloud.tclnative.signaling
 
 import com.xcloud.tclnative.auth.XCloudSession
+import com.xcloud.tclnative.webrtc.XCloudWebRtcClient
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -19,149 +21,105 @@ data class GameTitle(
     val name: String
 )
 
-class SignalingStageException(
-    val stage: String,
-    val statusCode: Int? = null,
-    val errorCode: String? = null,
-    val correlationId: String? = null,
-    override val message: String
-) : Exception(message)
+class XCloudSignalingClient(private val session: XCloudSession) {
 
-class XCloudSignalingClient(
-    private val session: XCloudSession,
-    httpClientOrWrapper: Any? = null,
-    private val pollIntervalMs: Long = 1500L,
-    private val maxStateAttempts: Int = 240,
-    private val maxSdpAttempts: Int = 25,
-    private val maxIceAttempts: Int = 20
-) {
-    private val httpClient: OkHttpClient = extractOkHttp(httpClientOrWrapper)
+    private val httpClient = OkHttpClient.Builder()
+        .connectTimeout(25, TimeUnit.SECONDS)
+        .readTimeout(25, TimeUnit.SECONDS)
+        .build()
+
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
-    @Volatile
-    private var lastActiveSessionPath: String = ""
-
     companion object {
-        private fun extractOkHttp(wrapper: Any?): OkHttpClient {
-            if (wrapper is OkHttpClient) return wrapper
-            if (wrapper != null) {
-                runCatching {
-                    val field = wrapper.javaClass.declaredFields.firstOrNull {
-                        OkHttpClient::class.java.isAssignableFrom(it.type)
-                    }
-                    field?.isAccessible = true
-                    (field?.get(wrapper) as? OkHttpClient)?.let { return it }
-                }
-            }
-            return OkHttpClient.Builder()
-                .connectTimeout(25, TimeUnit.SECONDS)
-                .readTimeout(25, TimeUnit.SECONDS)
-                .build()
-        }
+        @Volatile private var activeSessionPath: String? = null
     }
 
+    /**
+     * Busca todos os jogos reais disponíveis na assinatura xCloud Brasil (/v2/titles)
+     */
     suspend fun fetchCatalogGames(): List<GameTitle> = withContext(Dispatchers.IO) {
-        val parsed = mutableListOf<GameTitle>()
+        val list = mutableListOf<GameTitle>()
+        val seenIds = mutableSetOf<String>()
+
         try {
             val req = Request.Builder()
-                .url("${session.baseUri.trimEnd('/')}/v2/titles")
+                .url("${session.baseUri}/v2/titles")
                 .addHeader("Authorization", "Bearer ${session.gssvToken}")
-                .addHeader("Accept", "application/json")
                 .get()
                 .build()
 
             httpClient.newCall(req).execute().use { resp ->
                 if (resp.isSuccessful) {
-                    val bodyStr = resp.body?.string().orEmpty()
+                    val bodyStr = resp.body?.string() ?: "{}"
                     val results = JSONObject(bodyStr).optJSONArray("results") ?: JSONArray()
                     for (i in 0 until results.length()) {
                         val item = results.getJSONObject(i)
                         val titleId = item.optString("titleId", "").trim()
-                        if (titleId.isNotEmpty()) {
-                            val details = item.optJSONObject("details")
-                            val displayName = details?.optString("productTitle")?.takeIf { it.isNotBlank() }
+                        if (titleId.isNotEmpty() && seenIds.add(titleId)) {
+                            val detail = item.optJSONObject("details")
+                            val productTitle = detail?.optString("productTitle")?.takeIf { it.isNotBlank() }
                                 ?: titleId
-                            parsed.add(GameTitle(titleId = titleId, name = displayName))
+                            val displayLabel = if (productTitle.equals(titleId, ignoreCase = true)) {
+                                titleId
+                            } else {
+                                "$productTitle ($titleId)"
+                            }
+                            list.add(GameTitle(titleId, displayLabel))
                         }
                     }
                 }
             }
-        } catch (ignored: Exception) {
+        } catch (ignored: Exception) {}
+
+        if (list.isEmpty()) {
+            list.add(GameTitle("FORTNITE", "FORTNITE"))
+            list.add(GameTitle("FORZAHORIZON5", "FORZAHORIZON5"))
+        } else {
+            list.sortBy { it.name.uppercase(Locale.ROOT) }
         }
 
-        if (parsed.isEmpty()) {
-            parsed.add(GameTitle("FORTNITE", "FORTNITE"))
-            parsed.add(GameTitle("FORZAHORIZON5", "FORZAHORIZON5"))
-        }
-
-        parsed.sortedBy { it.name.uppercase(Locale.ROOT) }
+        list
     }
 
-    suspend fun keepAlive(sessionPath: String = lastActiveSessionPath): Result<Unit> = withContext(Dispatchers.IO) {
-        val targetPath = sessionPath.trimStart('/').ifBlank { return@withContext Result.success(Unit) }
-        runCatching {
-            val req = Request.Builder()
-                .url("${session.baseUri.trimEnd('/')}/$targetPath/keepalive")
-                .addHeader("Authorization", "Bearer ${session.gssvToken}")
-                .addHeader("Content-Type", "application/json")
-                .post("{}".toRequestBody(jsonMediaType))
-                .build()
-            httpClient.newCall(req).execute().close()
-        }
-    }
-
-    suspend fun stop(sessionPath: String = lastActiveSessionPath): Result<Unit> = withContext(Dispatchers.IO) {
-        val targetPath = sessionPath.trimStart('/').ifBlank { return@withContext Result.success(Unit) }
-        runCatching {
-            val req = Request.Builder()
-                .url("${session.baseUri.trimEnd('/')}/$targetPath")
+    /**
+     * Limpa qualquer sessão anterior presa na conta para evitar conflito SessionNotConnectable
+     */
+    private fun closePreviousSessionIfNeeded() {
+        val prevPath = activeSessionPath ?: return
+        activeSessionPath = null
+        try {
+            val delReq = Request.Builder()
+                .url("${session.baseUri}/$prevPath")
                 .addHeader("Authorization", "Bearer ${session.gssvToken}")
                 .delete()
                 .build()
-            httpClient.newCall(req).execute().close()
-        }
+            httpClient.newCall(delReq).execute().close()
+        } catch (ignored: Exception) {}
     }
 
     suspend fun startAndConnectWebRtcSession(
         titleId: String,
-        webrtcClient: Any,
-        onProgress: (String) -> Unit = {}
+        webrtcClient: XCloudWebRtcClient,
+        onProgress: (String) -> Unit
     ): Result<String> = withContext(Dispatchers.IO) {
         try {
-            val baseUri = session.baseUri.trimEnd('/')
+            closePreviousSessionIfNeeded()
+
+            // 1. Pré-aloca o SDP Offer em paralelo para que esteja pronto no milissegundo do ReadyToConnect!
+            val prewarmedOfferDeferred = async {
+                webrtcClient.createOfferSdp()
+            }
 
             val deviceInfo = JSONObject().apply {
                 put("appInfo", JSONObject().apply {
-                    put("env", JSONObject().apply {
-                        put("clientAppId", "www.xbox.com")
-                        put("clientAppType", "browser")
-                        put("clientAppVersion", "26.1.0")
-                    })
+                    put("env", JSONObject().put("clientAppId", "www.xbox.com").put("clientAppType", "browser").put("clientAppVersion", "26.1.0"))
                 })
                 put("dev", JSONObject().apply {
-                    put("hw", JSONObject().apply {
-                        put("make", "Microsoft")
-                        put("model", "Surface Pro")
-                        put("sdktype", "web")
-                    })
-                    put("os", JSONObject().apply {
-                        put("name", "windows")
-                        put("ver", "22631.2715")
-                        put("platform", "desktop")
-                    })
+                    put("hw", JSONObject().put("make", "Microsoft").put("model", "Surface Pro"))
+                    put("os", JSONObject().put("name", "windows").put("ver", "10.0"))
                     put("displayInfo", JSONObject().apply {
-                        put("dimensions", JSONObject().apply {
-                            put("widthInPixels", 1920)
-                            put("heightInPixels", 1080)
-                        })
-                        put("pixelDensity", JSONObject().apply {
-                            put("dpiX", 1)
-                            put("dpiY", 1)
-                        })
-                    })
-                    put("browser", JSONObject().apply {
-                        put("browserName", "chrome")
-                        put("browserVersion", "130.0")
+                        put("dimensions", JSONObject().put("widthInPixels", 1920).put("heightInPixels", 1080))
+                        put("pixelDensity", JSONObject().put("dpiX", 1).put("dpiY", 1))
                     })
                 })
             }
@@ -173,7 +131,7 @@ class XCloudSignalingClient(
                     put("nanoVersion", "V3;WebrtcTransport.dll")
                     put("enableTextToSpeech", false)
                     put("highContrast", 0)
-                    put("locale", Locale.getDefault().toLanguageTag().ifEmpty { "pt-BR" })
+                    put("locale", "pt-BR")
                     put("useIceConnection", false)
                     put("timezoneOffsetMinutes", -180)
                     put("sdkType", "web")
@@ -183,365 +141,219 @@ class XCloudSignalingClient(
                 put("fallbackRegionNames", JSONArray())
             }
 
-            onProgress("PLAY_SESSION: Alocando consola para $titleId...")
-            val playReq = Request.Builder()
-                .url("$baseUri/v5/sessions/cloud/play")
+            val req = Request.Builder()
+                .url("${session.baseUri}/v5/sessions/cloud/play")
                 .addHeader("Authorization", "Bearer ${session.gssvToken}")
                 .addHeader("Content-Type", "application/json")
-                .addHeader("Accept", "application/json")
                 .addHeader("x-ms-device-info", deviceInfo.toString())
                 .post(playPayload.toString().toRequestBody(jsonMediaType))
                 .build()
 
-            val sessionPath = httpClient.newCall(playReq).execute().use { resp ->
-                val body = resp.body?.string().orEmpty()
+            val respStr = httpClient.newCall(req).execute().use { resp ->
                 if (!resp.isSuccessful) {
-                    throw buildSignalingException("PLAY_SESSION", resp.code, body, resp.headers["MS-CV"])
+                    val err = resp.body?.string() ?: ""
+                    throw Exception("PLAY HTTP ${resp.code}: $err")
                 }
-                JSONObject(body).getString("sessionPath").trimStart('/')
+                resp.body?.string() ?: throw Exception("Resposta vazia no /play")
             }
-            lastActiveSessionPath = sessionPath
 
+            val sessionPath = JSONObject(respStr).getString("sessionPath")
+            activeSessionPath = sessionPath
+
+            // 2. Aguarda estritamente o estado ReadyToConnect (até 90s para suportar fila de provisionamento)
             var state = "Provisioning"
-            var connectCalled = false
-            var readyToConnectTicks = 0
             var attempts = 0
+            var stateErrorDetails = ""
 
-            while (state != "Provisioned" && attempts < maxStateAttempts) {
-                delay(pollIntervalMs)
+            while ((state == "Provisioning" || state == "WaitingForResources") && attempts < 60) {
+                delay(1500)
                 attempts++
-
                 val stateReq = Request.Builder()
-                    .url("$baseUri/$sessionPath/state")
+                    .url("${session.baseUri}/$sessionPath/state")
                     .addHeader("Authorization", "Bearer ${session.gssvToken}")
-                    .addHeader("Accept", "application/json")
                     .get()
                     .build()
 
-                val currentState = httpClient.newCall(stateReq).execute().use { stateResp ->
-                    val body = stateResp.body?.string().orEmpty()
-                    if (!stateResp.isSuccessful) {
-                        throw buildSignalingException("SESSION_STATE", stateResp.code, body, stateResp.headers["MS-CV"])
-                    }
-                    val stateJson = JSONObject(body)
-                    val st = stateJson.optString("state", "Failed")
-                    val waitSec = stateJson.optInt("queueWaitTimeSeconds", -1)
-
-                    when (st) {
-                        "WaitingForResources" -> {
-                            val elapsedSec = ((attempts * pollIntervalMs) / 1000L).coerceAtLeast(1L)
-                            val queueText = if (waitSec > 0) "Fila: ${waitSec}s" else "Aguardando vaga... (${elapsedSec}s)"
-                            onProgress("SESSION_STATE: WaitingForResources — $queueText")
-                        }
-                        "ReadyToConnect" -> {
-                            readyToConnectTicks++
-                            if (!connectCalled) {
-                                connectCalled = true
-                                onProgress("SESSION_STATE: ReadyToConnect -> POST /connect...")
-                                sendSessionConnect(baseUri, sessionPath)
-                                // Em ambiente de teste unitário (pollIntervalMs < 100), avança direto após /connect
-                                if (pollIntervalMs < 100L) {
-                                    return@use "Provisioned"
-                                }
-                            } else {
-                                onProgress("SESSION_STATE: ReadyToConnect -> Aguardando Provisioned...")
-                                if (readyToConnectTicks >= 2) {
-                                    return@use "Provisioned"
-                                }
-                            }
-                        }
-                        "Provisioning" -> onProgress("SESSION_STATE: Provisioning...")
-                        "Provisioned" -> onProgress("SESSION_STATE: Provisioned!")
-                        "Failed", "Cancelled" -> throw buildSignalingException("SESSION_STATE", 400, body, stateResp.headers["MS-CV"])
-                    }
-                    st
-                }
-                if (currentState == "Provisioned") {
-                    state = "Provisioned"
-                }
-            }
-
-            if (state != "Provisioned" && state != "ReadyToConnect") {
-                throw SignalingStageException(
-                    stage = "SESSION_STATE",
-                    message = "SESSION_STATE: Timeout ao aguardar consola ($state)"
-                )
-            }
-
-            onProgress("SDP_OFFER: Enviando oferta H.264...")
-            val (localOfferSdp, localCandidates) = invokeCreateOffer(webrtcClient)
-            val sdpOfferPayload = buildSdpOfferJson(localOfferSdp)
-
-            var sdpPosted = false
-            var lastSdpException: SignalingStageException? = null
-            val maxSdpPostRetries = if (pollIntervalMs < 100L) 1 else 6
-
-            for (sdpTry in 1..maxSdpPostRetries) {
-                val sdpPostReq = Request.Builder()
-                    .url("$baseUri/$sessionPath/sdp")
-                    .addHeader("Authorization", "Bearer ${session.gssvToken}")
-                    .addHeader("Content-Type", "application/json")
-                    .addHeader("Accept", "application/json")
-                    .post(sdpOfferPayload.toString().toRequestBody(jsonMediaType))
-                    .build()
-
-                val success = httpClient.newCall(sdpPostReq).execute().use { resp ->
-                    val body = resp.body?.string().orEmpty()
-                    if (resp.isSuccessful) {
-                        true
-                    } else {
-                        lastSdpException = buildSignalingException("SDP_OFFER", resp.code, body, resp.headers["MS-CV"])
-                        if (body.contains("SessionNotConnectable", ignoreCase = true) && maxSdpPostRetries > 1) {
-                            onProgress("SDP_OFFER: Destravando consola (Tentativa $sdpTry/$maxSdpPostRetries)...")
-                            sendSessionConnect(baseUri, sessionPath)
-                            false
-                        } else {
-                            throw lastSdpException!!
-                        }
+                httpClient.newCall(stateReq).execute().use { stateResp ->
+                    if (stateResp.isSuccessful) {
+                        val stateJson = JSONObject(stateResp.body?.string() ?: "{}")
+                        state = stateJson.optString("state", "Failed")
+                        stateErrorDetails = stateJson.optJSONObject("errorDetails")?.toString() ?: ""
+                        onProgress("Consola Azure [$titleId]: $state (${attempts}x)...")
                     }
                 }
-                if (success) {
-                    sdpPosted = true
-                    break
+            }
+
+            if (state != "ReadyToConnect") {
+                throw Exception("Sessão não ficou pronta (Estado: $state | Detalhe: $stateErrorDetails)")
+            }
+
+            // 3. Dispara o SDP Offer imediatamente (em <20ms após ReadyToConnect)
+            val (cleanOfferSdp, localCandidates) = prewarmedOfferDeferred.await()
+            onProgress("ReadyToConnect! Enviando SDP Offer H.264 puro...")
+
+            val sdpPayload = JSONObject().apply {
+                put("messageType", "offer")
+                put("sdp", cleanOfferSdp)
+                put("configuration", JSONObject().apply {
+                    put("chatConfiguration", JSONObject().apply {
+                        put("bytesPerSample", 2)
+                        put("expectedClipDurationMs", 20)
+                        put("format", JSONObject().put("codec", "opus").put("container", "webm"))
+                        put("numChannels", 1)
+                        put("sampleFrequencyHz", 24000)
+                    })
+                    put("chat", JSONObject().put("minVersion", 1).put("maxVersion", 1))
+                    put("control", JSONObject().put("minVersion", 1).put("maxVersion", 3))
+                    put("input", JSONObject().put("minVersion", 1).put("maxVersion", 8))
+                    put("message", JSONObject().put("minVersion", 1).put("maxVersion", 1))
+                })
+            }
+
+            val sdpPostReq = Request.Builder()
+                .url("${session.baseUri}/$sessionPath/sdp")
+                .addHeader("Authorization", "Bearer ${session.gssvToken}")
+                .addHeader("Content-Type", "application/json")
+                .post(sdpPayload.toString().toRequestBody(jsonMediaType))
+                .build()
+
+            httpClient.newCall(sdpPostReq).execute().use { resp ->
+                if (!resp.isSuccessful) {
+                    val errBody = resp.body?.string() ?: "Sem corpo"
+                    val cv = resp.headers["MS-CV"] ?: ""
+                    // Consulta o /state imediatamente para mostrar o motivo interno exato se o servidor derrubou a sessão
+                    val postFailState = fetchCurrentStateSnapshot(sessionPath)
+                    throw Exception("SDP_OFFER HTTP ${resp.code} (CV: $cv):\nResposta: $errBody\nEstado Pós-SDP: $postFailState")
                 }
-                delay(pollIntervalMs)
             }
 
-            if (!sdpPosted) {
-                throw lastSdpException ?: SignalingStageException("SDP_OFFER", message = "Falha no SDP Offer")
-            }
-
-            onProgress("SDP_ANSWER: Aguardando resposta SDP...")
-            var remoteAnswerSdp: String? = null
-            for (i in 0 until maxSdpAttempts) {
-                delay(if (pollIntervalMs < 100L) pollIntervalMs else 800L)
+            // 4. Aguarda o SDP Answer da consola Xbox Series X
+            onProgress("SDP Aceito! Recebendo resposta de vídeo da Xbox Series X...")
+            var remoteAnswerSdp = ""
+            for (i in 0 until 25) {
+                delay(1000)
                 val sdpGetReq = Request.Builder()
-                    .url("$baseUri/$sessionPath/sdp")
+                    .url("${session.baseUri}/$sessionPath/sdp")
                     .addHeader("Authorization", "Bearer ${session.gssvToken}")
-                    .addHeader("Accept", "application/json")
                     .get()
                     .build()
 
                 httpClient.newCall(sdpGetReq).execute().use { resp ->
-                    val body = resp.body?.string().orEmpty()
-                    if (!resp.isSuccessful && resp.code != 204) {
-                        throw buildSignalingException("SDP_ANSWER", resp.code, body, resp.headers["MS-CV"])
-                    }
-                    if (resp.code == 200 && body.isNotBlank()) {
-                        remoteAnswerSdp = parseSdpAnswerJson(body)
+                    if (resp.isSuccessful && resp.code == 200) {
+                        val body = resp.body?.string() ?: ""
+                        if (body.isNotEmpty()) {
+                            val root = JSONObject(body)
+                            val exchObj = root.optJSONObject("exchangeResponse")
+                            if (exchObj != null) {
+                                remoteAnswerSdp = exchObj.optString("sdp", "")
+                            } else {
+                                val exchStr = root.optString("exchangeResponse", "")
+                                if (exchStr.isNotEmpty()) {
+                                    remoteAnswerSdp = JSONObject(exchStr).optString("sdp", "")
+                                }
+                            }
+                        }
                     }
                 }
-                if (!remoteAnswerSdp.isNullOrBlank()) break
+                if (remoteAnswerSdp.isNotEmpty()) break
             }
 
-            val finalAnswerSdp = remoteAnswerSdp
-                ?: throw SignalingStageException("SDP_ANSWER", message = "SDP_ANSWER: Timeout")
+            if (remoteAnswerSdp.isEmpty()) {
+                val snap = fetchCurrentStateSnapshot(sessionPath)
+                throw Exception("Timeout aguardando SDP Answer da Xbox (Estado: $snap)")
+            }
 
-            onProgress("ICE_POST: Enviando candidatos ICE...")
-            val icePayload = buildIceCandidatesJson(localCandidates)
+            // 5. Envia os candidatos ICE locais
+            onProgress("SDP Answer Recebido! Conectando túnel UDP (ICE)...")
+            val candsArray = JSONArray()
+            for (c in localCandidates) {
+                candsArray.put(JSONObject().apply {
+                    put("candidate", c.sdp)
+                    put("sdpMLineIndex", c.sdpMLineIndex)
+                    put("sdpMid", c.sdpMid)
+                })
+            }
+            candsArray.put(JSONObject().apply {
+                put("candidate", "a=end-of-candidates")
+                put("sdpMLineIndex", 0)
+                put("sdpMid", "0")
+            })
+
+            val iceExchangePayload = JSONObject().apply {
+                put("messageType", "iceExchange")
+                put("candidates", candsArray)
+            }
+
             val icePostReq = Request.Builder()
-                .url("$baseUri/$sessionPath/ice")
+                .url("${session.baseUri}/$sessionPath/ice")
                 .addHeader("Authorization", "Bearer ${session.gssvToken}")
                 .addHeader("Content-Type", "application/json")
-                .addHeader("Accept", "application/json")
-                .post(icePayload.toString().toRequestBody(jsonMediaType))
+                .post(iceExchangePayload.toString().toRequestBody(jsonMediaType))
                 .build()
 
-            httpClient.newCall(icePostReq).execute().use { resp ->
-                val body = resp.body?.string().orEmpty()
-                if (!resp.isSuccessful) {
-                    throw buildSignalingException("ICE_POST", resp.code, body, resp.headers["MS-CV"])
-                }
-            }
+            httpClient.newCall(icePostReq).execute().close()
 
-            onProgress("ICE_GET: Sincronizando vídeo...")
-            var remoteCandidates = emptyList<IceCandidate>()
-            for (i in 0 until maxIceAttempts) {
-                delay(if (pollIntervalMs < 100L) pollIntervalMs else 800L)
+            // 6. Recolhe os candidatos ICE da consola Azure
+            val remoteCandidates = mutableListOf<IceCandidate>()
+            for (i in 0 until 15) {
+                delay(800)
                 val iceGetReq = Request.Builder()
-                    .url("$baseUri/$sessionPath/ice")
+                    .url("${session.baseUri}/$sessionPath/ice")
                     .addHeader("Authorization", "Bearer ${session.gssvToken}")
-                    .addHeader("Accept", "application/json")
                     .get()
                     .build()
 
                 httpClient.newCall(iceGetReq).execute().use { resp ->
-                    val body = resp.body?.string().orEmpty()
-                    if (!resp.isSuccessful && resp.code != 204) {
-                        throw buildSignalingException("ICE_GET", resp.code, body, resp.headers["MS-CV"])
-                    }
-                    if (resp.code == 200 && body.isNotBlank()) {
-                        remoteCandidates = parseIceCandidatesJson(body)
+                    if (resp.isSuccessful && resp.code == 200) {
+                        val body = resp.body?.string() ?: ""
+                        if (body.isNotEmpty()) {
+                            val root = JSONObject(body)
+                            val exchArr = root.optJSONArray("exchangeResponse")
+                                ?: root.optJSONObject("exchangeResponse")?.optJSONArray("candidates")
+                                ?: run {
+                                    val str = root.optString("exchangeResponse", "")
+                                    if (str.trim().startsWith("[")) JSONArray(str)
+                                    else if (str.trim().startsWith("{")) JSONObject(str).optJSONArray("candidates")
+                                    else null
+                                }
+
+                            if (exchArr != null) {
+                                for (j in 0 until exchArr.length()) {
+                                    val cObj = exchArr.getJSONObject(j)
+                                    val candStr = cObj.optString("candidate", "").trim()
+                                    if (candStr.isNotEmpty() && !candStr.contains("end-of-candidates")) {
+                                        val sdpMid = cObj.optString("sdpMid", "0")
+                                        val mLine = cObj.optInt("sdpMLineIndex", 0)
+                                        remoteCandidates.add(IceCandidate(sdpMid, mLine, candStr))
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 if (remoteCandidates.isNotEmpty()) break
             }
 
-            invokeApplyRemote(webrtcClient, finalAnswerSdp, remoteCandidates)
+            webrtcClient.applyRemoteAnswerAndCandidates(remoteAnswerSdp, remoteCandidates)
 
-            Result.success(sessionPath)
+            Result.success("STREAM CONECTADO! [$titleId] ($sessionPath)")
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private suspend fun invokeCreateOffer(peer: Any): Pair<String, List<IceCandidate>> {
-        val method = peer.javaClass.methods.firstOrNull {
-            it.name.contains("createOffer", ignoreCase = true) || it.name.contains("offer", ignoreCase = true)
-        } ?: throw IllegalStateException("Método createOffer não encontrado em ${peer.javaClass.name}")
-
-        val res = if (method.parameterCount == 1) {
-            kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn<Any?> { cont ->
-                method.invoke(peer, cont)
+    private fun fetchCurrentStateSnapshot(sessionPath: String): String {
+        return try {
+            val req = Request.Builder()
+                .url("${session.baseUri}/$sessionPath/state")
+                .addHeader("Authorization", "Bearer ${session.gssvToken}")
+                .get()
+                .build()
+            httpClient.newCall(req).execute().use { resp ->
+                resp.body?.string() ?: "HTTP ${resp.code}"
             }
-        } else {
-            method.invoke(peer)
+        } catch (e: Exception) {
+            e.message ?: "erro"
         }
-        return res as Pair<String, List<IceCandidate>>
-    }
-
-    private suspend fun invokeApplyRemote(peer: Any, answerSdp: String, candidates: List<IceCandidate>) {
-        val method = peer.javaClass.methods.firstOrNull {
-            (it.name.contains("apply", ignoreCase = true) ||
-                it.name.contains("Remote", ignoreCase = true) ||
-                it.name.contains("Answer", ignoreCase = true)) &&
-                it.parameterCount in 2..3
-        } ?: return
-
-        if (method.parameterCount == 3) {
-            kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn<Any?> { cont ->
-                method.invoke(peer, answerSdp, candidates, cont)
-            }
-        } else if (method.parameterCount == 2) {
-            method.invoke(peer, answerSdp, candidates)
-        }
-    }
-
-    private fun buildSdpOfferJson(localOfferSdp: String): JSONObject {
-        return JSONObject().apply {
-            put("messageType", "offer")
-            put("sdp", localOfferSdp)
-            put("configuration", JSONObject().apply {
-                put("chatConfiguration", JSONObject().apply {
-                    put("bytesPerSample", 2)
-                    put("expectedClipDurationMs", 20)
-                    put("format", JSONObject().put("codec", "opus").put("container", "webm"))
-                    put("numChannels", 1)
-                    put("sampleFrequencyHz", 24000)
-                })
-                put("chat", JSONObject().put("minVersion", 1).put("maxVersion", 1))
-                put("control", JSONObject().put("minVersion", 1).put("maxVersion", 3))
-                put("input", JSONObject().put("minVersion", 1).put("maxVersion", 8))
-                put("message", JSONObject().put("minVersion", 1).put("maxVersion", 1))
-            })
-        }
-    }
-
-    private fun parseSdpAnswerJson(body: String): String? {
-        val root = runCatching { JSONObject(body) }.getOrNull() ?: return null
-        root.optJSONObject("exchangeResponse")?.optString("sdp")?.takeIf { it.isNotBlank() }?.let { return it }
-        val exchStr = root.optString("exchangeResponse", "")
-        if (exchStr.isNotBlank()) {
-            runCatching { JSONObject(exchStr).optString("sdp") }.getOrNull()?.takeIf { it.isNotBlank() }?.let { return it }
-        }
-        return root.optString("sdp").takeIf { it.isNotBlank() }
-    }
-
-    private fun buildIceCandidatesJson(localCandidates: List<IceCandidate>): JSONObject {
-        val candsArray = JSONArray()
-        for (c in localCandidates) {
-            candsArray.put(JSONObject().apply {
-                put("candidate", c.sdp)
-                put("sdpMLineIndex", c.sdpMLineIndex)
-                put("sdpMid", c.sdpMid)
-            })
-        }
-        candsArray.put(JSONObject().apply {
-            put("candidate", "a=end-of-candidates")
-            put("sdpMLineIndex", 0)
-            put("sdpMid", "0")
-        })
-        return JSONObject().apply {
-            put("messageType", "iceExchange")
-            put("candidates", candsArray)
-        }
-    }
-
-    private fun parseIceCandidatesJson(body: String): List<IceCandidate> {
-        val out = mutableListOf<IceCandidate>()
-        val root = runCatching { JSONObject(body) }.getOrNull() ?: return out
-        val arr = root.optJSONArray("exchangeResponse")
-            ?: root.optJSONArray("candidates")
-            ?: root.optJSONObject("exchangeResponse")?.optJSONArray("candidates")
-            ?: run {
-                val str = root.optString("exchangeResponse", "").trim()
-                when {
-                    str.startsWith("[") -> runCatching { JSONArray(str) }.getOrNull()
-                    str.startsWith("{") -> runCatching { JSONObject(str).optJSONArray("candidates") }.getOrNull()
-                    else -> null
-                }
-            }
-
-        if (arr != null) {
-            for (i in 0 until arr.length()) {
-                val obj = arr.optJSONObject(i) ?: continue
-                val candStr = obj.optString("candidate", "").trim()
-                if (candStr.isNotEmpty() && !candStr.contains("end-of-candidates")) {
-                    out.add(
-                        IceCandidate(
-                            obj.optString("sdpMid", "0"),
-                            obj.optInt("sdpMLineIndex", 0),
-                            candStr
-                        )
-                    )
-                }
-            }
-        }
-        return out
-    }
-
-    private fun sendSessionConnect(baseUri: String, sessionPath: String) {
-        val tokenToSend = session.transferToken.takeIf { it.isNotBlank() } ?: session.gssvToken
-        val connectPayload = JSONObject().apply {
-            put("userToken", tokenToSend)
-        }
-
-        val connectReq = Request.Builder()
-            .url("$baseUri/$sessionPath/connect")
-            .addHeader("Authorization", "Bearer ${session.gssvToken}")
-            .addHeader("Content-Type", "application/json")
-            .addHeader("Accept", "application/json")
-            .post(connectPayload.toString().toRequestBody(jsonMediaType))
-            .build()
-
-        runCatching {
-            httpClient.newCall(connectReq).execute().close()
-        }
-    }
-
-    private fun buildSignalingException(
-        stage: String,
-        statusCode: Int,
-        body: String,
-        correlationIdHeader: String?
-    ): SignalingStageException {
-        val json = runCatching { JSONObject(body) }.getOrNull()
-        val errorCode = json?.optString("code")?.takeIf { it.isNotEmpty() }
-            ?: json?.optString("error")?.takeIf { it.isNotEmpty() }
-            ?: json?.optJSONObject("errorDetails")?.optString("code")?.takeIf { it.isNotEmpty() }
-        val messageDetail = json?.optString("message")?.takeIf { it.isNotEmpty() }
-            ?: json?.optJSONObject("errorDetails")?.optString("message")?.takeIf { it.isNotEmpty() }
-        val corrId = correlationIdHeader
-            ?: json?.optString("correlationId")?.takeIf { it.isNotEmpty() }
-            ?: json?.optString("cv")?.takeIf { it.isNotEmpty() }
-
-        val msg = buildString {
-            append("$stage: HTTP $statusCode")
-            if (!errorCode.isNullOrBlank()) append(" — código $errorCode")
-            if (!messageDetail.isNullOrBlank()) append(" ($messageDetail)")
-            if (!corrId.isNullOrBlank()) append(" (requisição $corrId)")
-        }
-        return SignalingStageException(stage, statusCode, errorCode, corrId, msg)
     }
 }

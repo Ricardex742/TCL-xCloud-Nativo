@@ -1,6 +1,8 @@
 # TCL-xCloud-Nativo
 Cliente experimental para Xbox Cloud Gaming em Android 10 ou superior, com vídeo nativo por WebRTC e SurfaceViewRenderer. A disponibilidade do jogo depende da conta, da região e da conectividade; o scaler nativo não comprova ativação de AiPQ 4K.
 
+A [versão 0.12.0](docs/green-console-0.12.md) unifica o aplicativo no tema verde: busca, conta, login, QR Code, catálogo e fila usam os mesmos painéis e controles. O destaque de foco padrão do Android é removido das capas para evitar o segundo retângulo sobre o contorno de seleção do aplicativo.
+
 A [versão 0.11.0](docs/art-and-queue-0.11.md) amplia o cabeçalho/perfil, usa o Microsoft Store v7 com fallback e cache para carregar nomes e capas originais, e acrescenta selos Game Pass e X|S conforme os dados oficiais. A fila usa o fundo do jogo e destaca estimativa, tempo aguardado e etapas até chegar o vídeo. A grade mantém seis colunas com rolagem abaixo do cabeçalho maior.
 
 O [catálogo 0.10.0](docs/dashboard-0.10.md) usa o template fornecido: fundo carvão/roxo, tipografia condensada, seleção violeta, jogo em foco no cabeçalho e seis colunas de capas com duas fileiras visíveis em TV 16:9. LB/RB alterna as cinco categorias, Y favorita, X pesquisa e Start abre opções. Favoritos/histórico são locais e separados por conta. Perfil e capas são obtidos dos serviços Microsoft; assinatura não confirmada e saldo Rewards indisponível aparecem como `—`, sem valores ilustrativos.

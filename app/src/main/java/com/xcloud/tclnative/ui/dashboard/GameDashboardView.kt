@@ -70,11 +70,12 @@ class GameDashboardView(
     private val headerTitle = label(44f)
     private val profilePanel = FrameLayout(context).apply {
         id = generateViewId(); isFocusable = true; isClickable = true
+        DashboardTheme.customFocus(this)
         setOnClickListener { onOptions() }
     }
     private val avatar = ImageView(context).apply {
         scaleType = ImageView.ScaleType.CENTER_CROP
-        background = rounded(0xff545363.toInt(), 1000f); clipToOutline = true
+        background = rounded(0xff53655a.toInt(), 1000f); clipToOutline = true
     }
     private val avatarLetter = label(28f).apply { gravity = Gravity.CENTER; text = "X" }
     private val accountName = label(26f)
@@ -86,7 +87,7 @@ class GameDashboardView(
     private val navigation = FrameLayout(context).apply { clipChildren = false; clipToPadding = false }
     private val tabRow = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
-        background = rounded(0xff343436.toInt(), 7f)
+        background = rounded(0xff27352c.toInt(), 7f)
         clipChildren = false; clipToPadding = false
     }
     private val lb = label(24f).apply { text = "LB"; gravity = Gravity.CENTER }
@@ -100,6 +101,7 @@ class GameDashboardView(
         }
     }.apply {
         id = generateViewId()
+        DashboardTheme.customFocus(this)
         layoutManager = GridLayoutManager(context, COLUMNS)
         clipToPadding = false
         itemAnimator = null
@@ -109,7 +111,7 @@ class GameDashboardView(
         descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
     }
     private val emptyState = label(25f, false).apply {
-        gravity = Gravity.CENTER; setTextColor(0xffd1cbd7.toInt()); visibility = View.GONE
+        gravity = Gravity.CENTER; setTextColor(0xffcdd9d1.toInt()); visibility = View.GONE
         maxLines = 4
     }
     private val footer = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
@@ -120,14 +122,14 @@ class GameDashboardView(
     init {
         background = DashboardBackground()
         clipChildren = false; clipToPadding = false
-        headerIcon.background = rounded(0xff41404b.toInt(), 8f); headerIcon.clipToOutline = true
+        headerIcon.background = rounded(0xff334139.toInt(), 8f); headerIcon.clipToOutline = true
         headerTitle.maxLines = 2; headerTitle.setLineSpacing(0f, .96f)
         addView(headerIcon); addView(headerTitle)
         profilePanel.addView(avatar); profilePanel.addView(avatarLetter)
         profilePanel.addView(connected); profilePanel.addView(accountName); profilePanel.addView(gamertag)
         profilePanel.addView(subscription); profilePanel.addView(medal); profilePanel.addView(rewards)
         profilePanel.setOnFocusChangeListener { _, focused ->
-            profilePanel.background = if (focused) rounded(0x663f294e, 9f) else null
+            profilePanel.background = if (focused) rounded(0x66325540, 9f) else null
         }
         addView(profilePanel)
         navigation.addView(tabRow); navigation.addView(lb); navigation.addView(rb)
@@ -142,6 +144,7 @@ class GameDashboardView(
             val view = label(25f).apply {
                 id = generateViewId(); text = tab.label; gravity = Gravity.CENTER
                 isFocusable = true; isFocusableInTouchMode = true; isClickable = true; background = plate
+                DashboardTheme.customFocus(this)
                 setOnClickListener { selectTab(tab); focusFirstCover() }
                 setOnFocusChangeListener { _, focused -> if (focused) selectTab(tab) }
                 nextFocusUpId = profilePanel.id
@@ -211,7 +214,7 @@ class GameDashboardView(
         accountName.text = profile.displayName.uppercase(Locale.getDefault())
         gamertag.text = profile.gamertag.uppercase(Locale.getDefault())
         subscription.text = profile.subscription ?: "ASSINATURA —"
-        subscription.background = rounded(0xff71338d.toInt(), 3f)
+        subscription.background = rounded(0xff256038.toInt(), 3f)
         rewards.text = profile.rewardsPoints?.let { NumberFormat.getIntegerInstance(Locale("pt", "BR")).format(it) + " pts" } ?: "— pts"
         rewards.contentDescription = profile.rewardsPoints?.let { "$it pontos Microsoft Rewards" } ?: "Microsoft Rewards: saldo indisponível"
         avatarLetter.text = profile.displayName.take(1).uppercase(Locale.getDefault())
@@ -433,7 +436,7 @@ class GameDashboardView(
     private class CoverHolder(val card: GameCard) : RecyclerView.ViewHolder(card)
     private inner class GameCard(context: Context) : FrameLayout(context) {
         private val cover = FrameLayout(context).apply {
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(0xff484050.toInt(), 0xff19151f.toInt()))
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(0xff3c5144.toInt(), 0xff141d17.toInt()))
                 .apply { cornerRadius = 7*scale }
             clipToOutline = true
         }
@@ -442,13 +445,14 @@ class GameDashboardView(
         private val badges = GameBadgesView(context)
         private val favorite = label(22f).apply {
             text = "★"; gravity = Gravity.CENTER; setTextColor(DashboardTheme.yellow)
-            background = rounded(0xc0181420.toInt(), 6f)
+            background = rounded(0xc0142018.toInt(), 6f)
         }
         var focused = false
             set(value) { field = value; invalidate() }
         private val outline = Paint(Paint.ANTI_ALIAS_FLAG)
         init {
             isFocusable = true; isFocusableInTouchMode = true; isClickable = true
+            DashboardTheme.customFocus(this)
             clipChildren = false; setWillNotDraw(false)
             cover.addView(fallback, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
             cover.addView(image, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
@@ -477,10 +481,10 @@ class GameDashboardView(
             val rect = RectF(5*s, 3*s, width-5*s, height-3*s)
             outline.style = Paint.Style.STROKE
             for (i in 5 downTo 1) {
-                outline.strokeWidth = i*3*s; outline.color = DashboardTheme.violet; outline.alpha = 10
+                outline.strokeWidth = i*3*s; outline.color = DashboardTheme.accent; outline.alpha = 10
                 canvas.drawRoundRect(rect, 11*s, 11*s, outline)
             }
-            outline.strokeWidth = 3*s; outline.color = DashboardTheme.violet; outline.alpha = 255
+            outline.strokeWidth = 3*s; outline.color = DashboardTheme.accent; outline.alpha = 255
             canvas.drawRoundRect(rect, 10*s, 10*s, outline)
         }
     }

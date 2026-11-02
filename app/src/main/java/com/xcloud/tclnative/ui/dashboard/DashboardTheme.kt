@@ -3,11 +3,38 @@ package com.xcloud.tclnative.ui.dashboard
 import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
+import android.os.Build
+import android.view.View
+import android.widget.TextView
+import android.util.TypedValue
+import android.view.Gravity
 
 internal object DashboardTheme {
-    val violet = Color.rgb(194, 92, 245)
+    val accent = Color.rgb(84, 222, 105)
     val yellow = Color.rgb(255, 211, 64)
-    val muted = Color.rgb(152, 150, 160)
+    val muted = Color.rgb(166, 184, 171)
+    val surface = 0xff202a24.toInt()
+    val border = 0xff3a5944.toInt()
+    fun customFocus(view: View) {
+        if (Build.VERSION.SDK_INT >= 26) view.defaultFocusHighlightEnabled = false
+    }
+    fun panel(radius: Float = 12f) = GradientDrawable(GradientDrawable.Orientation.TL_BR,
+        intArrayOf(0xff202c24.toInt(), 0xff151d18.toInt())).apply {
+        cornerRadius = radius; setStroke(1, border)
+    }
+    fun button(context: Context, label: String, scale: Float = 1f, action: () -> Unit): TextView = TextView(context).apply {
+        text = label; typeface = font(context); includeFontPadding = false
+        setTextSize(TypedValue.COMPLEX_UNIT_PX, 23*scale); setTextColor(Color.WHITE)
+        gravity = Gravity.CENTER; maxLines = 2
+        isFocusable = true; isFocusableInTouchMode = true; isClickable = true
+        customFocus(this)
+        val plate = FocusPlate(8*scale, 5*scale)
+        background = plate
+        setPadding((15*scale).toInt(), (9*scale).toInt(), (15*scale).toInt(), (9*scale).toInt())
+        setOnFocusChangeListener { _, focused -> plate.highlighted = focused }
+        setOnClickListener { if (isEnabled) action() }
+    }
     private var bold: Typeface? = null
     private var medium: Typeface? = null
     fun font(context: Context, heavy: Boolean = true): Typeface {
@@ -20,14 +47,14 @@ internal class DashboardBackground : Drawable() {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     override fun draw(canvas: Canvas) {
         val w = bounds.width().toFloat(); val h = bounds.height().toFloat()
-        paint.shader = LinearGradient(0f, 0f, w, h, intArrayOf(0xff222423.toInt(), 0xff24212b.toInt(),
-            0xff281633.toInt()), floatArrayOf(0f, .55f, 1f), Shader.TileMode.CLAMP)
+        paint.shader = LinearGradient(0f, 0f, w, h, intArrayOf(0xff1b211d.toInt(), 0xff18261e.toInt(),
+            0xff102c1a.toInt()), floatArrayOf(0f, .55f, 1f), Shader.TileMode.CLAMP)
         canvas.drawRect(bounds, paint)
         paint.shader = null
-        paint.color = 0xff302952.toInt()
+        paint.color = 0xff244832.toInt()
         canvas.drawPath(Path().apply { moveTo(.16f*w, h); lineTo(.39f*w, .71f*h)
             lineTo(.56f*w, .71f*h); lineTo(.34f*w, h); close() }, paint)
-        paint.shader = RadialGradient(w, h, .82f*w, intArrayOf(0x443e084d, Color.TRANSPARENT), null, Shader.TileMode.CLAMP)
+        paint.shader = RadialGradient(w, h, .82f*w, intArrayOf(0x443c994d, Color.TRANSPARENT), null, Shader.TileMode.CLAMP)
         canvas.drawRect(bounds, paint)
         paint.shader = null
     }
@@ -44,18 +71,18 @@ internal class FocusPlate(private val radius: Float, private val inset: Float = 
     override fun draw(canvas: Canvas) {
         val rect = RectF(bounds).apply { inset(inset, inset) }
         paint.style = Paint.Style.FILL
-        paint.color = 0xff343436.toInt()
+        paint.color = DashboardTheme.surface
         canvas.drawRoundRect(rect, radius, radius, paint)
         if (!highlighted) return
         paint.style = Paint.Style.STROKE
         for (i in 6 downTo 1) {
             paint.strokeWidth = i * 3f * (radius / 7f)
-            paint.color = DashboardTheme.violet
+            paint.color = DashboardTheme.accent
             paint.alpha = 8 + (6 - i) * 2
             canvas.drawRoundRect(rect, radius, radius, paint)
         }
         paint.strokeWidth = 3f * radius / 7f
-        paint.color = DashboardTheme.violet; paint.alpha = 255
+        paint.color = DashboardTheme.accent; paint.alpha = 255
         canvas.drawRoundRect(rect, radius, radius, paint)
         paint.style = Paint.Style.FILL
     }

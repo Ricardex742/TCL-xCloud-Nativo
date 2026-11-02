@@ -11,8 +11,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 11
-        versionName = "0.11.0-game-art-loading"
+        versionCode = 12
+        versionName = "0.12.0-green-console-ui"
     }
 
     buildTypes {

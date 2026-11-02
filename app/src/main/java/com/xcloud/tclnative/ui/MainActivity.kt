@@ -1,7 +1,7 @@
 package com.xcloud.tclnative.ui
 
 import android.app.Activity
-import android.app.AlertDialog
+import android.app.Dialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -15,10 +15,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
-import android.widget.Button
-import android.widget.EditText
 import android.widget.FrameLayout
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -26,6 +23,9 @@ import com.xcloud.tclnative.catalog.CatalogCache
 import java.io.File
 import com.xcloud.tclnative.signaling.GameTitle
 import com.xcloud.tclnative.ui.dashboard.GameLoadingView
+import com.xcloud.tclnative.ui.dashboard.ConsoleLoginView
+import com.xcloud.tclnative.ui.dashboard.ConsoleDialogs
+import com.xcloud.tclnative.ui.dashboard.ConsoleAction
 import com.xcloud.tclnative.catalog.CatalogService
 import com.xcloud.tclnative.catalog.GameLibrary
 import com.xcloud.tclnative.ui.dashboard.GameDashboardView
@@ -64,10 +64,12 @@ class MainActivity : Activity() {
     private var queueTicker: Job? = null
     private val controllerShortcut = ControllerShortcut()
     private var shortcutFlushJob: Job? = null
-    private var videoRecoveryDialog: AlertDialog? = null
+    private var videoRecoveryDialog: Dialog? = null
     private var dashboard: GameDashboardView? = null
     private var dashboardJob: Job? = null
     private var gameLibrary: GameLibrary? = null
+    private var loginView: ConsoleLoginView? = null
+    private var accountJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -157,158 +159,84 @@ class MainActivity : Activity() {
         ).apply { topMargin = (56 * resources.displayMetrics.density).toInt(); marginStart = 12 })
         setContentView(rootLayout)
 
+        renderLoginMenu()
         val savedTicket = authenticator.getSavedRpsTicket()
         if (!savedTicket.isNullOrEmpty() && authenticator.supportsConsoleTransfer()) {
             connectToXboxCloud(savedTicket)
-        } else {
-            renderLoginMenu()
-            if (!savedTicket.isNullOrEmpty()) {
-                hudTextView.text = "Atualize seu login pelo QR Code para conectar os jogos."
-                hudTextView.setTextColor(Color.YELLOW)
-            }
+        } else if (!savedTicket.isNullOrEmpty()) {
+            loginView?.showError("Atualize seu login pelo QR Code para conectar os jogos.")
         }
     }
 
     private fun renderLoginMenu() {
-        dashboardJob?.cancel()
-        dashboard?.close()
-        dashboard = null
-        gameLibrary = null
-        controlPanel.setPadding(36, 24, 36, 24)
-        controlPanel.setBackgroundColor(Color.argb(235, 16, 16, 20))
-        controlPanel.layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT).apply {
-            topMargin = 56; bottomMargin = 16; marginStart = 48; marginEnd = 48
-        }
-        hudTextView.visibility = View.VISIBLE
+        accountJob?.cancel()
         qrPollingJob?.cancel()
+        dashboardJob?.cancel()
+        dashboard?.close(); dashboard = null
+        loginView?.close()
+        gameLibrary = null
         controlPanel.removeAllViews()
+        controlPanel.setPadding(0,0,0,0)
+        controlPanel.setBackgroundColor(Color.TRANSPARENT)
+        controlPanel.layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT)
+        val view = ConsoleLoginView(this,
+            signIn = { startQrCodeLoginFlow() },
+            back = { if (loginView?.isQr == true) renderLoginMenu() else showExitDialog() },
+            openApproval = { uri -> openAccountPage(uri) })
+        loginView = view
+        controlPanel.addView(view, LinearLayout.LayoutParams(-1,-1))
         controlPanel.visibility = View.VISIBLE
-
-        val titleView = TextView(this).apply {
-            text = "XBOX CLOUD GAMING - MOTOR NATIVO"
-            setTextColor(Color.WHITE)
-            textSize = 18f
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 20)
-        }
-        controlPanel.addView(titleView)
-
-        val btnQrLogin = Button(this).apply {
-            text = "Entrar pelo QR Code Microsoft"
-            isFocusable = true
-            isFocusableInTouchMode = true
-            setOnClickListener { startQrCodeLoginFlow() }
-        }
-        controlPanel.addView(btnQrLogin)
-
+        hudTextView.visibility = View.GONE
     }
 
     private fun startQrCodeLoginFlow() {
         qrPollingJob?.cancel()
-        controlPanel.removeAllViews()
-        controlPanel.visibility = View.VISIBLE
-
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-        }
-
-        val qrImageView = ImageView(this).apply {
-            setPadding(12, 12, 12, 12)
-            setBackgroundColor(Color.WHITE)
-        }
-        row.addView(qrImageView, LinearLayout.LayoutParams(320, 320))
-
-        val col = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(36, 0, 0, 0)
-        }
-
-        val stepsText = TextView(this).apply {
-            text = "Gerando código oficial na Microsoft..."
-            setTextColor(Color.LTGRAY)
-            textSize = 13f
-        }
-        col.addView(stepsText)
-
-        val codeText = TextView(this).apply {
-            text = "--------"
-            setTextColor(Color.GREEN)
-            textSize = 26f
-            setPadding(0, 8, 0, 12)
-        }
-        col.addView(codeText)
-
-        val btnApprovePhone = Button(this).apply {
-            text = "Aprovar Neste Celular"
-            visibility = View.GONE
-        }
-        col.addView(btnApprovePhone)
-
-        val btnBack = Button(this).apply {
-            text = "Voltar"
-            setOnClickListener { renderLoginMenu() }
-        }
-        col.addView(btnBack)
-
-        row.addView(col)
-        controlPanel.addView(row)
-
+        val view = loginView ?: return
+        view.beginQr()
         qrPollingJob = mainScope.launch {
             val qrRes = authenticator.requestDeviceCodeQr()
             qrRes.onSuccess { info ->
-                qrImageView.setImageBitmap(info.qrBitmap)
-                stepsText.text = "Escaneie o QR Code ou acesse\n${info.verificationUri} com o código:"
-                codeText.text = info.userCode
-                btnApprovePhone.visibility = View.VISIBLE
-                btnApprovePhone.setOnClickListener {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(info.verificationUriComplete ?: info.verificationUri)))
+                if (loginView !== view) return@onSuccess
+                view.showQr(info)
+                authenticator.pollForDeviceCodeLogin(info).onSuccess { ticket ->
+                    if (loginView === view) connectToXboxCloud(ticket)
+                }.onFailure { error ->
+                    if (loginView === view) view.showError("Não foi possível concluir o login. ${error.message.orEmpty()}")
                 }
-                hudTextView.text = "Aguardando aprovação do QR Code [${info.userCode}]..."
-                hudTextView.setTextColor(Color.YELLOW)
-
-                val pollRes = authenticator.pollForDeviceCodeLogin(info)
-                pollRes.onSuccess { rpsTicket ->
-                    connectToXboxCloud(rpsTicket)
-                }.onFailure { err ->
-                    hudTextView.text = "QR Code expirado: ${err.message}"
-                    hudTextView.setTextColor(Color.RED)
-                }
-            }.onFailure { err ->
-                stepsText.text = "Erro ao gerar QR: ${err.message}"
+            }.onFailure { error ->
+                if (loginView === view) view.showError("Não foi possível gerar o QR Code. ${error.message.orEmpty()}")
             }
         }
     }
 
     private fun connectToXboxCloud(rpsTicket: String) {
-        hudTextView.text = "Autenticando na Xbox Live e buscando catálogo oficial do Brasil..."
-        hudTextView.setTextColor(Color.YELLOW)
-
-        mainScope.launch {
-            val result = authenticator.authenticateToXCloud(rpsTicket)
-            result.onSuccess { session ->
-                // Validate the console grant before the user spends time in a game's queue.
+        accountJob?.cancel()
+        val view = loginView ?: return
+        view.showConnecting("Conectando sua conta ao Xbox…")
+        accountJob = mainScope.launch {
+            authenticator.authenticateToXCloud(rpsTicket).onSuccess { session ->
                 try {
                     authenticator.getConsoleTransferToken()
                 } catch (cancelled: CancellationException) { throw cancelled }
                 catch (error: Exception) {
-                    renderLoginMenu()
-                    hudTextView.text = "Não foi possível autorizar os jogos: ${error.message}"
-                    hudTextView.setTextColor(Color.RED)
+                    if (loginView === view) view.showError("Não foi possível autorizar os jogos: ${error.message}")
                     return@launch
                 }
-                hudTextView.text = "CONECTADO! Região: ${session.baseUri.replace("https://", "")} | Sincronizando Catálogo..."
-                hudTextView.setTextColor(Color.GREEN)
+                if (loginView !== view) return@launch
+                view.showConnecting("Conta conectada. Carregando seu catálogo…")
                 renderGameDashboard(session)
-            }.onFailure { err ->
-                hudTextView.text = "Falha na autenticação: ${err.message}"
-                hudTextView.setTextColor(Color.RED)
-                if (err is com.xcloud.tclnative.auth.AuthenticationRequiredException) authenticator.clearSession()
-                renderLoginMenu()
+            }.onFailure { error ->
+                if (error is com.xcloud.tclnative.auth.AuthenticationRequiredException) authenticator.clearSession()
+                if (loginView === view) view.showError("Falha na autenticação: ${error.message}")
             }
         }
+    }
+
+    private fun showExitDialog() {
+        ConsoleDialogs.message(this,"Sair do aplicativo?",
+            "Seu login e seus favoritos continuarão salvos neste aparelho.", listOf(
+                ConsoleAction("Continuar") {}, ConsoleAction("Sair") { finish() }))
     }
 
     private fun renderGameDashboard(session: XCloudSession) {
@@ -318,25 +246,19 @@ class MainActivity : Activity() {
             val allGames = try { signaling.fetchCatalogGames() }
             catch (cancelled: CancellationException) { throw cancelled }
             catch (error: Exception) {
-                hudTextView.text = "Falha no catálogo: ${error.message}"
-                hudTextView.setTextColor(Color.RED)
+                loginView?.showError("Não foi possível carregar o catálogo. Tente novamente.")
                 showCopyableErrorDialog("Catálogo", error.message ?: "Catálogo indisponível")
                 return@launch
             }
             dashboard?.close()
+            loginView?.close(); loginView = null
             val library = GameLibrary(this@MainActivity, session.userHash)
             gameLibrary = library
             val view = GameDashboardView(this@MainActivity, library,
                 onPlay = { game -> launchCloudGame(signaling, game) },
                 onSearch = { showCatalogSearch() },
                 onOptions = { showCatalogOptions(session) },
-                onExit = {
-                    AlertDialog.Builder(this@MainActivity, android.R.style.Theme_Material_Dialog_Alert)
-                        .setTitle("Sair do aplicativo?")
-                        .setMessage("Seu login e seus favoritos continuarão salvos neste aparelho.")
-                        .setPositiveButton("Sair") { _, _ -> finish() }
-                        .setNegativeButton("Continuar", null).show()
-                })
+                onExit = { showExitDialog() })
             dashboard = view
             controlPanel.removeAllViews()
             controlPanel.setPadding(0, 0, 0, 0)
@@ -379,48 +301,31 @@ class MainActivity : Activity() {
 
     private fun showCatalogSearch() {
         val view = dashboard ?: return
-        val input = EditText(this).apply {
-            setText(view.searchQuery)
-            hint = "Nome do jogo"
-            isSingleLine = true
-            setTextColor(Color.WHITE)
-            setHintTextColor(Color.LTGRAY)
-            setPadding(24, 16, 24, 16)
-            selectAll()
-        }
-        AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
-            .setTitle("Pesquisar jogos").setView(input)
-            .setPositiveButton("Buscar") { _, _ -> view.setSearch(input.text.toString()) }
-            .setNeutralButton("Limpar busca") { _, _ -> view.setSearch("") }
-            .setNegativeButton("Voltar", null).show()
+        ConsoleDialogs.search(this, view.searchQuery) { query -> view.setSearch(query) }
     }
 
     private fun showCatalogOptions(session: XCloudSession) {
-        val items = arrayOf("Pesquisar jogos", "Vídeo: " + if (lowLatencyVideo) "menor atraso" else "adaptativo",
-            "Microsoft Rewards — consultar saldo", "Gerenciar assinatura Microsoft", "Atualizar catálogo", "Trocar conta")
-        AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
-            .setTitle("Conta e opções").setItems(items) { _, choice -> when (choice) {
-                0 -> showCatalogSearch()
-                1 -> {
-                    lowLatencyVideo = !lowLatencyVideo
-                    if (Build.VERSION.SDK_INT >= 30) window.setPreferMinimalPostProcessing(lowLatencyVideo)
-                    surfaceRenderer.minimalPostProcessingRequested = lowLatencyVideo && Build.VERSION.SDK_INT >= 30
-                    getSharedPreferences("stream_preferences", Context.MODE_PRIVATE).edit()
-                        .putBoolean("low_latency_video", lowLatencyVideo).apply()
-                    Toast.makeText(this, "Modo de vídeo aplicado à próxima partida.", Toast.LENGTH_SHORT).show()
-                }
-                2 -> openAccountPage("https://rewards.bing.com/")
-                3 -> openAccountPage("https://account.microsoft.com/services")
-                4 -> renderGameDashboard(session)
-                5 -> { authenticator.clearSession(); renderLoginMenu() }
-            } }.setNegativeButton("Voltar", null).show()
+        ConsoleDialogs.menu(this,"Conta e opções", listOf(
+            ConsoleAction("Pesquisar jogos") { showCatalogSearch() },
+            ConsoleAction("Vídeo: " + if (lowLatencyVideo) "menor atraso" else "adaptativo") {
+                lowLatencyVideo = !lowLatencyVideo
+                if (Build.VERSION.SDK_INT >= 30) window.setPreferMinimalPostProcessing(lowLatencyVideo)
+                surfaceRenderer.minimalPostProcessingRequested = lowLatencyVideo && Build.VERSION.SDK_INT >= 30
+                getSharedPreferences("stream_preferences", Context.MODE_PRIVATE).edit()
+                    .putBoolean("low_latency_video", lowLatencyVideo).apply()
+                Toast.makeText(this, "Modo de vídeo aplicado à próxima partida.", Toast.LENGTH_SHORT).show()
+            },
+            ConsoleAction("Microsoft Rewards — consultar saldo") { openAccountPage("https://rewards.bing.com/") },
+            ConsoleAction("Gerenciar assinatura Microsoft") { openAccountPage("https://account.microsoft.com/services") },
+            ConsoleAction("Atualizar catálogo") { renderGameDashboard(session) },
+            ConsoleAction("Trocar conta") { authenticator.clearSession(); renderLoginMenu() }
+        ))
     }
 
     private fun openAccountPage(url: String) {
         try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
         catch (_: android.content.ActivityNotFoundException) {
-            AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert).setTitle("Acesse pelo celular")
-                .setMessage(url).setPositiveButton("Fechar", null).show()
+            ConsoleDialogs.message(this,"Acesse pelo celular",url)
         }
     }
 
@@ -441,6 +346,8 @@ class MainActivity : Activity() {
                 return true
             }
         }
+        val login = loginView
+        if (login != null && controlPanel.visibility == View.VISIBLE && login.handleKey(event)) return true
         val view = dashboard
         if (view != null && controlPanel.visibility == View.VISIBLE && queuePanel.visibility != View.VISIBLE) {
             if (event.keyCode == KeyEvent.KEYCODE_BACK) {
@@ -564,20 +471,16 @@ class MainActivity : Activity() {
                         VideoRecoveryAction.OFFER_RETRY -> {
                             hudTextView.text = "O vídeo ainda não voltou. A sessão Xbox continua aberta."
                             resetController()
-                            videoRecoveryDialog = AlertDialog.Builder(this@MainActivity)
-                                .setTitle("Imagem sem atualização")
-                                .setMessage("A imagem não voltou após 30 segundos. Tentar recuperar o vídeo mantém a partida aberta. Voltar ao catálogo encerra a sessão.")
-                                .setPositiveButton("Recuperar vídeo") { _, _ ->
+                            val dialog = ConsoleDialogs.message(this@MainActivity,"Imagem sem atualização",
+                                "A imagem não voltou após 30 segundos. Recuperar o vídeo mantém a partida aberta. Voltar ao catálogo encerra a sessão.",
+                                listOf(ConsoleAction("Recuperar vídeo") {
                                     recovery.retry(android.os.SystemClock.elapsedRealtime())
                                     if (surfaceRenderer.probeVideoHealth().deliveredRecently) surfaceRenderer.rebuildSurface()
                                     rtc.recoverVideoDecoder()
-                                }
-                                .setNegativeButton("Voltar ao catálogo") { _, _ -> cancelPlayback() }
-                                .setOnCancelListener { cancelPlayback() }
-                                .create().also { dialog ->
-                                    dialog.setOnDismissListener { if (videoRecoveryDialog === dialog) videoRecoveryDialog = null }
-                                    dialog.show()
-                                }
+                                }, ConsoleAction("Voltar ao catálogo") { cancelPlayback() }),
+                                onCancel = { cancelPlayback() })
+                            videoRecoveryDialog = dialog
+                            dialog.setOnDismissListener { if (videoRecoveryDialog === dialog) videoRecoveryDialog = null }
                         }
                     }
                     if (now >= nextKeepAlive) {
@@ -650,16 +553,12 @@ class MainActivity : Activity() {
     }
 
     private fun showCopyableErrorDialog(gameName: String, fullError: String) {
-        AlertDialog.Builder(this)
-            .setTitle("Diagnóstico de Sessão ($gameName)")
-            .setMessage(fullError)
-            .setPositiveButton("Copiar Detalhes") { _, _ ->
+        ConsoleDialogs.message(this,"Diagnóstico de sessão ($gameName)",fullError,listOf(
+            ConsoleAction("Copiar detalhes") {
                 val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 clipboard.setPrimaryClip(ClipData.newPlainText("xCloud Error", fullError))
-                Toast.makeText(this, "Detalhes copiados!", Toast.LENGTH_LONG).show()
-            }
-            .setNegativeButton("Fechar", null)
-            .show()
+                Toast.makeText(this,"Detalhes copiados!",Toast.LENGTH_LONG).show()
+            }, ConsoleAction("Fechar") {}))
     }
 
     private fun gameplayInputEnabled() = controlPanel.visibility == View.GONE &&
@@ -799,6 +698,7 @@ class MainActivity : Activity() {
         ++playbackGeneration
         mainScope.cancel()
         dashboard?.close()
+        loginView?.close()
         queuePanel.close()
         videoRecoveryDialog?.dismiss()
         surfaceRenderer.clearSession()

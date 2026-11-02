@@ -24,30 +24,31 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
     private val art = PosterLoader(context, scope)
     private val backdrop = ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
     private val shade = View(context).apply { background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
-        intArrayOf(0xf51a1820.toInt(), 0xcf15151d.toInt(), 0xa62d1838.toInt())) }
-    private val eyebrow = text(19f).apply { text = "XBOX CLOUD GAMING"; setTextColor(DashboardTheme.violet) }
+        intArrayOf(0xf5151d17.toInt(), 0xcf121d16.toInt(), 0xa6163821.toInt())) }
+    private val eyebrow = text(19f).apply { text = "XBOX CLOUD GAMING"; setTextColor(DashboardTheme.accent) }
     private val title = text(44f).apply { maxLines = 2 }
     private val poster = ImageView(context).apply {
         scaleType = ImageView.ScaleType.CENTER_CROP
-        background = rounded(0xff38313f.toInt()); clipToOutline = true
+        background = rounded(0xff304036.toInt()); clipToOutline = true
     }
     private val posterFallback = text(26f).apply { gravity = Gravity.CENTER; maxLines = 4 }
     private val badges = GameBadgesView(context)
-    private val panel = FrameLayout(context).apply { background = rounded(0xe622202b.toInt()) }
+    private val panel = FrameLayout(context).apply { background = rounded(0xe61b2920.toInt()) }
     private val status = text(25f)
-    private val estimateLabel = text(18f, false).apply { setTextColor(0xffc7bbcF.toInt()) }
+    private val estimateLabel = text(18f, false).apply { setTextColor(0xffbfd1c4.toInt()) }
     private val estimate = text(49f)
-    private val elapsedLabel = text(18f, false).apply { setTextColor(0xffc7bbcF.toInt()) }
+    private val elapsedLabel = text(18f, false).apply { setTextColor(0xffbfd1c4.toInt()) }
     private val elapsed = text(33f)
     private val explanation = text(21f, false).apply { maxLines = 2 }
-    private val heartbeat = text(18f, false).apply { setTextColor(0xffc7bbcf.toInt()) }
-    private val freshness = text(17f, false).apply { maxLines = 2; setTextColor(0xffc7bbcf.toInt()) }
-    private val spinner = ProgressBar(context).apply { indeterminateTintList = ColorStateList.valueOf(DashboardTheme.violet) }
+    private val heartbeat = text(18f, false).apply { setTextColor(0xffbfd1c4.toInt()) }
+    private val freshness = text(17f, false).apply { maxLines = 2; setTextColor(0xffbfd1c4.toInt()) }
+    private val spinner = ProgressBar(context).apply { indeterminateTintList = ColorStateList.valueOf(DashboardTheme.accent) }
     private val steps = List(3) { index -> text(21f).apply { gravity = Gravity.CENTER; tag = index } }
-    private val note = text(17f, false).apply { setTextColor(0xffc7bbcf.toInt()); maxLines = 2 }
+    private val note = text(17f, false).apply { setTextColor(0xffbfd1c4.toInt()); maxLines = 2 }
     private val cancelButton = text(22f).apply {
         text = "B  CANCELAR"; gravity = Gravity.CENTER
         isFocusable = true; isFocusableInTouchMode = true; isClickable = true
+        DashboardTheme.customFocus(this)
         val plate = FocusPlate(7f, 5f)
         background = plate
         setOnFocusChangeListener { _, focus -> plate.highlighted = focus }
@@ -77,7 +78,7 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
         maxLines = 1
     }
     private fun rounded(color: Int) = GradientDrawable().apply {
-        setColor(color); cornerRadius = 9f; setStroke(1, 0xff51405f.toInt())
+        setColor(color); cornerRadius = 9f; setStroke(1, 0xff3c5b46.toInt())
     }
     fun begin(value: GameTitle, nowMs: Long = System.nanoTime()/1_000_000) {
         queue = null; phase = LoadingPhase.PREPARING; startedAt = nowMs
@@ -143,15 +144,15 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
             age != null -> "Estimativa atualizada há ${QueueStatus.duration(age)}. O tempo pode variar."
             else -> "A estimativa pode mudar; não é um horário garantido."
         }
-        freshness.setTextColor(if (stale) DashboardTheme.yellow else 0xffc7bbcf.toInt())
+        freshness.setTextColor(if (stale) DashboardTheme.yellow else 0xffbfd1c4.toInt())
         val step = when (phase) { LoadingPhase.QUEUED -> 0; LoadingPhase.PREPARING -> 1; else -> 2 }
         val labels = listOf("FILA", "PREPARAÇÃO", "CONEXÃO")
         steps.forEachIndexed { index, label ->
             label.text = "${if (index < step) "✓" else "${index+1}"}   ${labels[index]}"
-            label.setTextColor(if (index <= step) Color.WHITE else 0xff93879c.toInt())
+            label.setTextColor(if (index <= step) Color.WHITE else 0xff8f9f94.toInt())
             label.background = GradientDrawable().apply {
-                setColor(if (index == step) 0xb45b2d77.toInt() else 0x8824202d.toInt())
-                cornerRadius = 7f; setStroke(if (index == step) 2 else 1, if (index == step) DashboardTheme.violet else 0xff4b3e55.toInt())
+                setColor(if (index == step) 0xb4286539.toInt() else 0x881b2b21.toInt())
+                cornerRadius = 7f; setStroke(if (index == step) 2 else 1, if (index == step) DashboardTheme.accent else 0xff3b5142.toInt())
             }
         }
         note.text = if (snapshot != null) "A previsão pode mudar. Limite da tentativa: ${QueueStatus.duration(snapshot.limitMs/1000)}."

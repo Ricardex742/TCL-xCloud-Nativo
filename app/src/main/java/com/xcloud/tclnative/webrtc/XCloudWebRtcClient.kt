@@ -1,304 +1,382 @@
 package com.xcloud.tclnative.webrtc
 
 import android.content.Context
-import android.os.SystemClock
 import android.util.Log
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONObject
-import org.webrtc.*
-import java.io.IOException
+import org.webrtc.DataChannel
+import org.webrtc.DefaultVideoDecoderFactory
+import org.webrtc.DefaultVideoEncoderFactory
+import org.webrtc.EglBase
+import org.webrtc.IceCandidate
+import org.webrtc.MediaConstraints
+import org.webrtc.MediaStream
+import org.webrtc.MediaStreamTrack
+import org.webrtc.PeerConnection
+import org.webrtc.PeerConnectionFactory
+import org.webrtc.RtpReceiver
+import org.webrtc.RtpTransceiver
+import org.webrtc.SdpObserver
+import org.webrtc.SessionDescription
+import org.webrtc.VideoTrack
 import java.nio.ByteBuffer
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-
-data class VideoStats(val bytes: Long, val frames: Long, val decoded: Long, val codec: String, val decoder: String)
 
 class XCloudWebRtcClient(
     context: Context,
-    eglBase: EglBase,
+    private val eglBase: EglBase,
     private val onVideoTrackReady: (VideoTrack) -> Unit,
-    private val onConnectionStateChanged: (String) -> Unit,
-    private val onServerDialog: (String, String, (Boolean) -> Unit) -> Unit = { _, _, reply -> reply(false) }
-) : StreamingPeer {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val closed = AtomicBoolean(false)
-    private val failure = AtomicReference<Exception?>()
-    private val candidates = ConcurrentLinkedQueue<IceCandidate>()
-    private val gathering = CompletableDeferred<Unit>()
-    private val connected = CompletableDeferred<Unit>()
-    private val channelsReady = CompletableDeferred<Unit>()
-    private val handshake = ChannelHandshake()
-    private val channels = java.util.concurrent.ConcurrentHashMap<String, DataChannel>()
-    private val gamepad = AtomicReference(GamepadState())
-    private val trackIds = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
-    private val inputStarted = AtomicBoolean(false)
-    private val configurationSent = AtomicBoolean(false)
-    private val nativeLock = Any()
-    private val factory: PeerConnectionFactory
-    private var peer: PeerConnection? = null
-
-    init {
-        PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(context.applicationContext)
-            .setEnableInternalTracer(false).createInitializationOptions())
-        factory = PeerConnectionFactory.builder()
-            .setVideoDecoderFactory(DefaultVideoDecoderFactory(eglBase.eglBaseContext))
-            .setVideoEncoderFactory(DefaultVideoEncoderFactory(eglBase.eglBaseContext, true, true)).createPeerConnectionFactory()
+    private val onConnectionStateChanged: (String) -> Unit
+) {
+    companion object {
+        private const val TAG = "XCloudWebRtcClient"
     }
 
-    override suspend fun createOfferSdp(): Pair<String, List<IceCandidate>> {
-        checkHealthy()
-        check(peer == null) { "RTC: esta conexão já tem uma oferta" }
-        val config = PeerConnection.RTCConfiguration(emptyList()).apply {
+    private val factory: PeerConnectionFactory
+    private var peerConnection: PeerConnection? = null
+    private val gatheredCandidates = mutableListOf<IceCandidate>()
+    private var iceGatheringComplete = CompletableDeferred<Unit>()
+
+    private var inputChannel: DataChannel? = null
+    private var controlChannel: DataChannel? = null
+    private var messageChannel: DataChannel? = null
+    private var chatChannel: DataChannel? = null
+
+    init {
+        PeerConnectionFactory.initialize(
+            PeerConnectionFactory.InitializationOptions.builder(context.applicationContext)
+                .setEnableInternalTracer(false)
+                .createInitializationOptions()
+        )
+
+        val decoderFactory = DefaultVideoDecoderFactory(eglBase.eglBaseContext)
+        val encoderFactory = DefaultVideoEncoderFactory(eglBase.eglBaseContext, true, true)
+
+        factory = PeerConnectionFactory.builder()
+            .setVideoDecoderFactory(decoderFactory)
+            .setVideoEncoderFactory(encoderFactory)
+            .createPeerConnectionFactory()
+    }
+
+    suspend fun createOfferSdp(): Pair<String, List<IceCandidate>> {
+        gatheredCandidates.clear()
+        iceGatheringComplete = CompletableDeferred()
+
+        val rtcConfig = PeerConnection.RTCConfiguration(emptyList()).apply {
             sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
             bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE
             rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE
         }
-        val pc = native { factory.createPeerConnection(config, object : PeerConnection.Observer {
-            override fun onSignalingChange(state: PeerConnection.SignalingState?) {}
-            override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {
-                if (!closed.get()) onConnectionStateChanged("ICE: ${state?.name}")
-                if (state == PeerConnection.IceConnectionState.FAILED) fail(IOException("ICE: falha de conectividade de rede"))
+
+        val pc = factory.createPeerConnection(rtcConfig, object : PeerConnection.Observer {
+            override fun onSignalingChange(newState: PeerConnection.SignalingState?) {}
+
+            override fun onIceConnectionChange(newState: PeerConnection.IceConnectionState?) {
+                Log.i(TAG, "Estado ICE: $newState")
+                onConnectionStateChanged(newState?.name ?: "UNKNOWN")
             }
-            override fun onConnectionChange(state: PeerConnection.PeerConnectionState?) {
-                if (closed.get()) return
-                onConnectionStateChanged("TRANSPORT: ${state?.name}")
-                if (state == PeerConnection.PeerConnectionState.CONNECTED) connected.complete(Unit)
-                if (state == PeerConnection.PeerConnectionState.FAILED || state == PeerConnection.PeerConnectionState.CLOSED)
-                    fail(IOException("TRANSPORT: ${state.name}"))
-            }
+
             override fun onIceConnectionReceivingChange(receiving: Boolean) {}
-            override fun onIceGatheringChange(state: PeerConnection.IceGatheringState?) {
-                if (state == PeerConnection.IceGatheringState.COMPLETE) gathering.complete(Unit)
+
+            override fun onIceGatheringChange(newState: PeerConnection.IceGatheringState?) {
+                if (newState == PeerConnection.IceGatheringState.COMPLETE) {
+                    if (!iceGatheringComplete.isCompleted) {
+                        iceGatheringComplete.complete(Unit)
+                    }
+                }
             }
+
             override fun onIceCandidate(candidate: IceCandidate?) {
-                if (candidate != null && !closed.get()) candidates.add(candidate)
+                if (candidate != null && !candidate.sdp.contains(":")) {
+                    val cleanedCandSdp = candidate.sdp
+                        .replace(Regex(" network-id \\d+"), "")
+                        .replace(Regex(" network-cost \\d+"), "")
+                        .replace(Regex(" generation \\d+"), " generation 0")
+                    gatheredCandidates.add(
+                        IceCandidate(candidate.sdpMid, candidate.sdpMLineIndex, cleanedCandSdp)
+                    )
+                }
             }
-            override fun onIceCandidatesRemoved(removed: Array<out IceCandidate>?) {}
+
+            override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {}
+
             override fun onAddStream(stream: MediaStream?) {
-                if (!closed.get()) runCatching { native { stream?.videoTracks?.forEach(::attach) } }
-                    .onFailure { fail(IOException("VIDEO_TRACK: falha ao anexar stream", it)) }
+                stream?.videoTracks?.firstOrNull()?.let { onVideoTrackReady(it) }
             }
+
             override fun onRemoveStream(stream: MediaStream?) {}
-            override fun onAddTrack(receiver: RtpReceiver?, streams: Array<out MediaStream>?) {
-                if (!closed.get()) runCatching { native { (receiver?.track() as? VideoTrack)?.let(::attach) } }
-                    .onFailure { fail(IOException("VIDEO_TRACK: falha ao receber track", it)) }
-            }
-            override fun onTrack(transceiver: RtpTransceiver?) {
-                if (!closed.get()) runCatching { native { (transceiver?.receiver?.track() as? VideoTrack)?.let(::attach) } }
-                    .onFailure { fail(IOException("VIDEO_TRACK: falha ao receber transceiver", it)) }
-            }
-            override fun onDataChannel(channel: DataChannel?) {
-                if (!closed.get()) runCatching { channel?.let(::register) }.onFailure { fail(IOException("CHANNELS: registro falhou", it)) }
-            }
+            override fun onDataChannel(dataChannel: DataChannel?) {}
             override fun onRenegotiationNeeded() {}
-        })?.also { peer = it } ?: throw IOException("RTC: não foi possível criar PeerConnection") }
-        native {
-        pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO,
-            RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.RECV_ONLY))
-        val video = pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO,
-            RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.RECV_ONLY))
-        val codecs = factory.getRtpReceiverCapabilities(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO).codecs
-        check(codecs.any { it.name.equals("H264", true) }) { "RTC: nenhum decoder H.264 disponível" }
-        video.setCodecPreferences(codecs.sortedBy { if (it.name.equals("H264", true)) 0 else 1 })
-        listOf("control" to "controlV1", "input" to "1.0", "message" to "messageV1", "chat" to "chatV1").forEach { (name, protocol) ->
-            register(pc.createDataChannel(name, DataChannel.Init().apply { ordered = true; this.protocol = protocol })
-                ?: throw IOException("RTC: não foi possível criar canal $name"))
-        }
-        }
-        val offer = CompletableDeferred<SessionDescription>()
-        native { pc.createOffer(object : SdpAdapter() {
-            override fun onCreateSuccess(sdp: SessionDescription?) {
-                if (sdp == null) offer.completeExceptionally(IOException("SDP: oferta vazia")) else offer.complete(sdp)
-            }
-            override fun onCreateFailure(error: String?) { offer.completeExceptionally(IOException("SDP: createOffer falhou")) }
-        }, MediaConstraints()) }
-        val description = waitFor(offer, "SDP: timeout ao criar oferta")
-        val local = CompletableDeferred<Unit>()
-        native { pc.setLocalDescription(object : SdpAdapter() {
-            override fun onSetSuccess() { local.complete(Unit) }
-            override fun onSetFailure(error: String?) { local.completeExceptionally(IOException("SDP: setLocalDescription falhou")) }
-        }, description) }
-        waitFor(local, "SDP: timeout ao aplicar oferta")
-        waitFor(gathering, "ICE_LOCAL: coleta não foi concluída")
-        checkHealthy()
-        val gathered = candidates.toList()
-        check(gathered.isNotEmpty()) { "ICE_LOCAL: nenhum candidato encontrado" }
-        Log.i(TAG, "ICE_LOCAL: ${gathered.size} candidatos coletados")
-        // Use exactly the description accepted by libwebrtc, including its ICE credentials.
-        return native { (pc.localDescription?.description ?: throw IOException("SDP: descrição local ausente")) to gathered }
-    }
 
-    override suspend fun setRemoteAnswer(answerSdp: String) {
-        checkHealthy()
-        val done = CompletableDeferred<Unit>()
-        val pc = peer ?: throw IOException("RTC: conexão não inicializada")
-        native { pc.setRemoteDescription(object : SdpAdapter() {
-            override fun onSetSuccess() { done.complete(Unit) }
-            override fun onSetFailure(error: String?) { done.completeExceptionally(IOException("SDP_ANSWER: resposta recusada pela libwebrtc")) }
-        }, SessionDescription(SessionDescription.Type.ANSWER, answerSdp)) }
-        waitFor(done, "SDP_ANSWER: timeout ao aplicar resposta")
-    }
-    override suspend fun addRemoteCandidates(candidates: List<IceCandidate>) {
-        checkHealthy()
-        val pc = peer ?: throw IOException("RTC: conexão não inicializada")
-        for (candidate in candidates) {
-            val added = CompletableDeferred<Unit>()
-            native { pc.addIceCandidate(candidate, object : AddIceObserver {
-                override fun onAddSuccess() { added.complete(Unit) }
-                override fun onAddFailure(error: String?) { added.completeExceptionally(IOException("ICE_REMOTE: candidato recusado")) }
-            }) }
-            waitFor(added, "ICE_REMOTE: timeout ao aplicar candidato")
-        }
-    }
-    override suspend fun awaitReady() {
-        waitFor(connected, "TRANSPORT: ICE/DTLS não conectou", 30_000)
-        waitFor(channelsReady, "CHANNELS: servidor não confirmou handshake", 20_000)
-    }
-    private suspend fun <T> waitFor(value: CompletableDeferred<T>, error: String, timeout: Long = 10_000): T =
-        withTimeoutOrNull(timeout) { value.await() } ?: throw IOException(error)
+            override fun onAddTrack(receiver: RtpReceiver?, mediaStreams: Array<out MediaStream>?) {
+                val track = receiver?.track()
+                if (track is VideoTrack) {
+                    track.setEnabled(true)
+                    onVideoTrackReady(track)
+                }
+            }
+        }) ?: throw Exception("Falha ao instanciar PeerConnection")
 
-    private fun attach(track: VideoTrack) {
-        if (!closed.get() && trackIds.add(track.id())) {
-            track.setEnabled(true)
-            onVideoTrackReady(track)
+        this.peerConnection = pc
+
+        // 1. Transceivers na ordem estrita do protocolo xCloud: Audio (mid:0) e Video (mid:1)
+        val recvOnlyInit = RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.RECV_ONLY)
+        pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, recvOnlyInit)
+        pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, recvOnlyInit)
+
+        // 2. DataChannels oficiais (mid:2)
+        controlChannel = pc.createDataChannel("control", DataChannel.Init().apply {
+            ordered = true
+            protocol = "controlV1"
+        })?.apply {
+            registerObserver(object : DataChannel.Observer {
+                override fun onBufferedAmountChange(previousAmount: Long) {}
+                override fun onStateChange() {
+                    if (state() == DataChannel.State.OPEN) {
+                        sendXboxControlHandshake()
+                    }
+                }
+                override fun onMessage(buffer: DataChannel.Buffer?) {}
+            })
         }
-    }
-    private fun register(channel: DataChannel) = native {
-        val name = channel.label()
-        val old = channels.putIfAbsent(name, channel)
-        if (old != null && old !== channel) { channel.close(); channel.dispose(); return@native }
-        channel.registerObserver(object : DataChannel.Observer {
-            override fun onBufferedAmountChange(previousAmount: Long) {}
-            override fun onStateChange() {
-                if (closed.get()) return
-                try {
-                    when (native { channel.state() }) {
-                        DataChannel.State.OPEN -> dispatch(handshake.onOpen(name))
-                        DataChannel.State.CLOSED -> if (name != "chat") fail(IOException("CHANNELS: canal $name encerrado"))
-                        else -> Unit
-                    }
-                } catch (e: Exception) { fail(e) }
-            }
-            override fun onMessage(buffer: DataChannel.Buffer?) {
-                if (closed.get() || buffer == null || name != "message") return
-                try {
-                    val bytes = ByteArray(buffer.data.remaining()).also { buffer.data.duplicate().get(it) }
-                    val json = JSONObject(String(bytes, Charsets.UTF_8))
-                    when (json.optString("type")) {
-                        "HandshakeAck" -> dispatch(handshake.onHandshakeAck())
-                        "Message", "TransactionStart" -> handleMessage(json)
-                    }
-                } catch (e: Exception) { fail(IOException("CHANNELS: mensagem inválida", e)) }
-            }
+
+        inputChannel = pc.createDataChannel("input", DataChannel.Init().apply {
+            ordered = true
+            protocol = "1.0"
         })
-        if (channel.state() == DataChannel.State.OPEN) dispatch(handshake.onOpen(name))
+
+        messageChannel = pc.createDataChannel("message", DataChannel.Init().apply {
+            ordered = true
+            protocol = "messageV1"
+        })?.apply {
+            registerObserver(object : DataChannel.Observer {
+                override fun onBufferedAmountChange(previousAmount: Long) {}
+                override fun onStateChange() {
+                    if (state() == DataChannel.State.OPEN) {
+                        sendXboxMessageHandshake()
+                    }
+                }
+                override fun onMessage(buffer: DataChannel.Buffer?) {}
+            })
+        }
+
+        chatChannel = pc.createDataChannel("chat", DataChannel.Init().apply {
+            ordered = true
+            protocol = "chatV1"
+        })
+
+        val offerDeferred = CompletableDeferred<SessionDescription>()
+        val constraints = MediaConstraints().apply {
+            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
+            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
+        }
+
+        pc.createOffer(object : SdpObserver {
+            override fun onCreateSuccess(sdp: SessionDescription?) {
+                if (sdp != null) offerDeferred.complete(sdp)
+                else offerDeferred.completeExceptionally(Exception("SDP Offer nulo"))
+            }
+            override fun onSetSuccess() {}
+            override fun onCreateFailure(error: String?) {
+                offerDeferred.completeExceptionally(Exception("Erro createOffer: $error"))
+            }
+            override fun onSetFailure(error: String?) {}
+        }, constraints)
+
+        val offer = offerDeferred.await()
+
+        val setLocalDeferred = CompletableDeferred<Unit>()
+        pc.setLocalDescription(object : SdpObserver {
+            override fun onCreateSuccess(sdp: SessionDescription?) {}
+            override fun onSetSuccess() {
+                setLocalDeferred.complete(Unit)
+            }
+            override fun onCreateFailure(error: String?) {}
+            override fun onSetFailure(error: String?) {
+                setLocalDeferred.completeExceptionally(Exception("Erro setLocalDescription: $error"))
+            }
+        }, offer)
+
+        setLocalDeferred.await()
+
+        withTimeoutOrNull(1200) {
+            iceGatheringComplete.await()
+        }
+
+        val cleanSdp = sanitizeSdpForXboxBlade(offer.description)
+        return Pair(cleanSdp, gatheredCandidates.toList())
     }
-    private fun dispatch(messages: List<ChannelMessage>) {
-        messages.forEach { send(it.channel, it.bytes) }
-        if (messages.any { it.channel == "control" }) configurationSent.set(true)
-        if (handshake.ready && configurationSent.get() && inputStarted.compareAndSet(false, true)) {
-            send("input", GamepadPacket.metadata(SystemClock.elapsedRealtime().toDouble()))
-            channelsReady.complete(Unit)
-            scope.launch {
-                var sequence = 0
-                while (isActive && !closed.get()) {
-                    try {
-                        send("input", GamepadPacket.encode(gamepad.get(), ++sequence, SystemClock.elapsedRealtime().toDouble()), dropIfBusy = true)
-                    } catch (e: Exception) { fail(e); break }
-                    delay(16)
+
+    /**
+     * Limpeza Cirúrgica de SDP para o WebrtcTransport.dll da Microsoft:
+     * - Remove VP8, VP9 e AV1 da seção m=video (mantendo apenas H264 e seu RTX).
+     * - Força profile-level-id=42e01f (Constrained Baseline sem B-frames).
+     * - Remove extensões experimentais do Android que causam HTTP 400 e matam a sessão.
+     */
+    private fun sanitizeSdpForXboxBlade(rawSdp: String): String {
+        val normalizedLines = rawSdp.replace("\r\n", "\n").split("\n")
+
+        // 1. Identifica todos os Payload Types que são H264
+        val h264Pts = mutableSetOf<String>()
+        for (line in normalizedLines) {
+            if (line.startsWith("a=rtpmap:") && line.contains("H264/90000", ignoreCase = true)) {
+                val pt = line.substringAfter("a=rtpmap:").substringBefore(" ").trim()
+                if (pt.isNotEmpty()) h264Pts.add(pt)
+            }
+        }
+
+        // 2. Identifica os Payload Types de RTX vinculados aos H264
+        val rtxPts = mutableSetOf<String>()
+        for (line in normalizedLines) {
+            if (line.startsWith("a=fmtp:") && line.contains("apt=")) {
+                val pt = line.substringAfter("a=fmtp:").substringBefore(" ").trim()
+                val apt = line.substringAfter("apt=").substringBefore(";").substringBefore(" ").trim()
+                if (h264Pts.contains(apt)) {
+                    rtxPts.add(pt)
                 }
             }
         }
-    }
-    private fun handleMessage(json: JSONObject) {
-        when (json.optString("target")) {
-            "/streaming/sessionLifetimeManagement/serverInitiatedDisconnect" -> {
-                reply(json.getString("id"), JSONObject())
-                fail(IOException("SESSION: servidor encerrou o streaming"))
+
+        val allowedVideoPts = h264Pts + rtxPts
+        val out = StringBuilder()
+        var currentSection = "header"
+        var hasInjected42e01f = false
+
+        for (line in normalizedLines) {
+            val trimmed = line.trim()
+            if (trimmed.isEmpty()) continue
+
+            if (trimmed.startsWith("m=audio ")) currentSection = "audio"
+            else if (trimmed.startsWith("m=video ")) currentSection = "video"
+            else if (trimmed.startsWith("m=application ")) currentSection = "application"
+
+            // Remove atributos que quebram o parser C++ da Microsoft
+            if (trimmed.startsWith("a=extmap-allow-mixed")) continue
+            if (trimmed.startsWith("a=candidate:")) continue
+            if (trimmed.startsWith("a=extmap:") && (
+                    trimmed.contains("video-layers-allocation") ||
+                    trimmed.contains("dependency-descriptor") ||
+                    trimmed.contains("color-space") ||
+                    trimmed.contains("playout-delay") ||
+                    trimmed.contains(" video-timing")
+                )
+            ) {
+                continue
             }
-            "/streaming/systemUi/messages/ShowMessageDialog" -> {
-                val content = JSONObject(json.getString("content"))
-                onServerDialog(content.optString("TitleText"), content.optString("ContentText")) { accept ->
-                    if (!closed.get()) runCatching { reply(json.getString("id"), JSONObject().put("Result", if (accept) 0 else 1)) }
-                        .onFailure { fail(IOException("CHANNELS: falha ao responder diálogo", it)) }
+
+            if (currentSection == "video" && allowedVideoPts.isNotEmpty()) {
+                if (trimmed.startsWith("m=video ")) {
+                    val parts = trimmed.split(" ")
+                    if (parts.size > 3) {
+                        val prefix = parts.subList(0, 3).joinToString(" ")
+                        val ptsInLine = parts.subList(3, parts.size).filter { allowedVideoPts.contains(it) }
+                        if (ptsInLine.isNotEmpty()) {
+                            out.append("$prefix ${ptsInLine.joinToString(" ")}\r\n")
+                            continue
+                        }
+                    }
+                }
+
+                // Filtra a=rtpmap, a=fmtp e a=rtcp-fb de codecs descartados (VP8, VP9, AV1)
+                if (trimmed.startsWith("a=rtpmap:") || trimmed.startsWith("a=fmtp:") || trimmed.startsWith("a=rtcp-fb:")) {
+                    val pt = trimmed.substringAfter(":").substringBefore(" ").trim()
+                    if (pt != "*" && !allowedVideoPts.contains(pt)) {
+                        continue
+                    }
+                }
+
+                // Garante que o primeiro H264 declare explicitamente 42e01f exigido pelo xCloud
+                if (trimmed.startsWith("a=fmtp:")) {
+                    val pt = trimmed.substringAfter("a=fmtp:").substringBefore(" ").trim()
+                    if (h264Pts.contains(pt) && !hasInjected42e01f) {
+                        hasInjected42e01f = true
+                        out.append("a=fmtp:$pt level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f\r\n")
+                        continue
+                    }
                 }
             }
+
+            out.append(trimmed).append("\r\n")
+        }
+
+        return out.toString()
+    }
+
+    private fun sendXboxControlHandshake() {
+        try {
+            val authMsg = JSONObject().apply {
+                put("message", "authorizationRequest")
+                put("accessKey", "4BDB3609-C1F1-4195-9B37-FEFF45DA8B8E")
+            }.toString()
+            sendJsonOnChannel(controlChannel, authMsg)
+
+            val gamepadMsg = JSONObject().apply {
+                put("message", "gamepadChanged")
+                put("gamepadIndex", 0)
+                put("wasAdded", true)
+            }.toString()
+            sendJsonOnChannel(controlChannel, gamepadMsg)
+
+            val keyframeMsg = JSONObject().apply {
+                put("message", "videoKeyframeRequested")
+                put("ifrRequested", true)
+            }.toString()
+            sendJsonOnChannel(controlChannel, keyframeMsg)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro no handshake control: ${e.message}")
         }
     }
-    private fun reply(id: String, content: JSONObject) = send("message", ChannelHandshake.encode("message", JSONObject()
-        .put("type", "TransactionComplete").put("id", id).put("cv", "").put("content", content.toString())).bytes)
-    private fun send(name: String, bytes: ByteArray, dropIfBusy: Boolean = false) = native {
-        val channel = channels[name] ?: throw IOException("CHANNELS: canal $name ausente")
-        check(channel.state() == DataChannel.State.OPEN) { "CHANNELS: canal $name não está aberto" }
-        if (dropIfBusy && channel.bufferedAmount() > 64 * 1024) return@native
-        if (!channel.send(DataChannel.Buffer(ByteBuffer.wrap(bytes), true))) throw IOException("CHANNELS: envio falhou em $name")
+
+    private fun sendXboxMessageHandshake() {
+        try {
+            val handshake = JSONObject().apply {
+                put("type", "Handshake")
+                put("version", "messageV1")
+                put("id", "00000000-0000-0000-0000-000000000001")
+                put("cv", "")
+            }.toString()
+            sendJsonOnChannel(messageChannel, handshake)
+        } catch (ignored: Exception) {}
     }
-    fun updateGamepad(state: GamepadState) { gamepad.set(state) }
-    private inline fun <T> native(block: () -> T): T = synchronized(nativeLock) {
-        checkHealthy()
-        block()
+
+    private fun sendJsonOnChannel(channel: DataChannel?, jsonText: String) {
+        val bytes = (jsonText + "\u0000").toByteArray(Charsets.UTF_8)
+        val buf = DataChannel.Buffer(ByteBuffer.wrap(bytes), false)
+        channel?.send(buf)
     }
-    fun checkHealthy() {
-        failure.get()?.let { throw it }
-        check(!closed.get()) { "RTC: sessão encerrada" }
-    }
-    private fun fail(error: Exception) {
-        if (!closed.get() && failure.compareAndSet(null, error)) {
-            Log.e(TAG, error.message ?: "Falha RTC")
-            connected.completeExceptionally(error)
-            channelsReady.completeExceptionally(error)
-            gathering.completeExceptionally(error)
-        }
-    }
-    suspend fun videoStats(): VideoStats {
-        checkHealthy()
-        return withTimeoutOrNull(2_000) {
-            suspendCancellableCoroutine { continuation ->
-                val pc = peer
-                if (pc == null) continuation.resumeWithException(IOException("RTC: conexão ausente"))
-                else native { pc.getStats { report ->
-                    val values = report.statsMap.values
-                    val video = values.firstOrNull { it.type == "inbound-rtp" &&
-                        (it.members["kind"] == "video" || it.members["mediaType"] == "video") }
-                    fun number(key: String) = (video?.members?.get(key) as? Number)?.toLong() ?: 0L
-                    val codec = report.statsMap[video?.members?.get("codecId")]?.members?.get("mimeType")?.toString().orEmpty()
-                    if (continuation.isActive) continuation.resume(VideoStats(number("bytesReceived"), number("framesReceived"),
-                        number("framesDecoded"), codec, video?.members?.get("decoderImplementation")?.toString().orEmpty()))
-                } }
+
+    suspend fun applyRemoteAnswerAndCandidates(answerSdp: String, remoteCandidates: List<IceCandidate>) {
+        val pc = peerConnection ?: return
+        val setRemoteDeferred = CompletableDeferred<Unit>()
+
+        val answer = SessionDescription(SessionDescription.Type.ANSWER, answerSdp)
+        pc.setRemoteDescription(object : SdpObserver {
+            override fun onCreateSuccess(sdp: SessionDescription?) {}
+            override fun onSetSuccess() {
+                setRemoteDeferred.complete(Unit)
             }
-        } ?: throw IOException("RTC_STATS: tempo limite")
+            override fun onCreateFailure(error: String?) {}
+            override fun onSetFailure(error: String?) {
+                setRemoteDeferred.completeExceptionally(Exception("Erro setRemoteDescription: $error"))
+            }
+        }, answer)
+
+        setRemoteDeferred.await()
+
+        for (candidate in remoteCandidates) {
+            try {
+                pc.addIceCandidate(candidate)
+            } catch (ignored: Exception) {}
+        }
     }
+
     fun close() {
-        if (!closed.compareAndSet(false, true)) return
-        scope.cancel()
-        connected.cancel(); channelsReady.cancel(); gathering.cancel()
-        val (oldChannels, oldPeer) = synchronized(nativeLock) {
-            val handles = channels.values.toList() to peer
-            channels.clear(); peer = null
-            handles
-        }
-        // Release the lock before dispose(): native teardown can wait for observer callbacks.
-        oldChannels.forEach { channel -> runCatching { channel.unregisterObserver(); channel.close(); channel.dispose() } }
-        oldPeer?.let { runCatching { it.dispose() } }
-        factory.dispose()
+        try {
+            inputChannel?.close()
+            controlChannel?.close()
+            messageChannel?.close()
+            chatChannel?.close()
+            peerConnection?.close()
+        } catch (ignored: Exception) {}
     }
-    private open class SdpAdapter : SdpObserver {
-        override fun onCreateSuccess(sdp: SessionDescription?) {}
-        override fun onSetSuccess() {}
-        override fun onCreateFailure(error: String?) {}
-        override fun onSetFailure(error: String?) {}
-    }
-    companion object { private const val TAG = "XCloudWebRtcClient" }
 }

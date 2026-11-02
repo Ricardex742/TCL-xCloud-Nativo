@@ -47,7 +47,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gradle --no-daemon --max-workers=2 --stacktrace :app:assembleDebug :app:lintDebug
+          gradle --no-daemon --max-workers=2 --stacktrace :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
+          python3 - <<'PYTEST'
+          from pathlib import Path
+          import os, xml.etree.ElementTree as E
+          suites = [E.parse(p).getroot() for p in Path('app/build/test-results/testDebugUnitTest').glob('TEST-*.xml')]
+          totals = {key: sum(int(s.get(key, 0)) for s in suites) for key in ('tests', 'failures', 'errors', 'skipped')}
+          assert totals['tests'] > 0 and totals['failures'] == 0 and totals['errors'] == 0 and totals['skipped'] == 0, totals
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write(f"Testes JVM: {totals}\n")
+          print(totals)
+          PYTEST
           apk=app/build/outputs/apk/debug/app-debug.apk
           "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --verbose "$apk"
           badging=$("$ANDROID_HOME/build-tools/34.0.0/aapt" dump badging "$apk")
@@ -59,7 +69,7 @@ jobs:
             echo '- Branch: ci/apk-android10-3cc2595'
             echo '- Android mínimo: 7.0 (API 24), incluindo Android 10 (API 29).'
             echo '- Assinatura e lint NewApi/InlinedApi verificados.'
-            echo '- Testes JVM não executados: estão desativados no módulo desta branch.'
+            echo '- Testes JVM de autenticação, provisionamento e protocolo executados.'
             echo '- Baixe o artefato TCL-xCloud-App-Debug-Android10 abaixo.'
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -77,4 +87,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-api-lint-results
-          path: app/build/reports/lint-results-debug.*
+          path: |
+            app/build/reports/lint-results-debug.*
+            app/build/test-results/testDebugUnitTest/

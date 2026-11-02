@@ -25,6 +25,12 @@ class SignalingTest {
     private lateinit var server: MockWebServer
     private val requests = CopyOnWriteArrayList<RecordedRequest>()
     private val events = CopyOnWriteArrayList<String>()
+    private var now = 0L
+    private var queuedStates = 0
+    private var connectSent = false
+    private var provisioned = false
+    private var rejectConnect = false
+    private var failedState = false
     private var rejectIce = false
     private var rejectCatalog = false
     private var rejectTransport = false
@@ -42,6 +48,7 @@ class SignalingTest {
         override suspend fun awaitReady() { events.add("ready"); if (rejectTransport) throw IOException("TRANSPORT: failed") }
     }
     @Before fun setup() {
+        now = 0; queuedStates = 0; connectSent = false; provisioned = false; rejectConnect = false; failedState = false
         requests.clear(); events.clear(); rejectIce = false; rejectCatalog = false; rejectTransport = false
         server = MockWebServer()
         server.dispatcher = object : Dispatcher() {
@@ -50,8 +57,20 @@ class SignalingTest {
                 return when (request.method to request.path) {
                     "GET" to "/v2/titles" -> if (rejectCatalog) response("{}", 503) else response("""{"results":[{"titleId":"real-id","details":{"productTitle":"Real Game"}}]}""")
                     "POST" to "/v5/sessions/cloud/play" -> response("""{"sessionPath":"/session"}""")
-                    "GET" to "/session/state" -> response("""{"state":"ReadyToConnect"}""")
-                    "POST" to "/session/sdp" -> response("{}")
+                    "GET" to "/session/state" -> when {
+                        failedState -> response("""{"state":"Failed","errorDetails":{"code":"NoCapacity"}}""")
+                        queuedStates-- > 0 -> response("""{"state":"WaitingForResources"}""")
+                        !connectSent -> response("""{"state":"ReadyToConnect"}""")
+                        else -> { provisioned = true; response("""{"state":"Provisioned"}""") }
+                    }
+                    "POST" to "/session/connect" -> {
+                        assertEquals("console-token", JSONObject(request.body.clone().readUtf8()).getString("userToken"))
+                        events.add("connect")
+                        if (rejectConnect) response("""{"code":"Unauthorized","token":"must-not-leak"}""", 401)
+                        else { connectSent = true; response("", 204) }
+                    }
+                    "POST" to "/session/sdp" -> if (provisioned) response("{}") else
+                        response("""{"code":"SessionNotConnectable"}""", 400)
                     "GET" to "/session/sdp" -> response(JSONObject().put("exchangeResponse", JSONObject().put("sdp", "v=0\r\nanswer").toString()).toString())
                     "POST" to "/session/ice" -> {
                         events.add(if (events.contains("answer")) "postIceAfterAnswer" else "postIceBeforeAnswer")
@@ -68,14 +87,16 @@ class SignalingTest {
     }
     @After fun cleanup() { server.shutdown() }
     private fun response(body: String, code: Int = 200) = MockResponse().setResponseCode(code).setBody(body)
-    private fun signaling() = XCloudSignalingClient(XCloudSession("test-token", server.url("/").toString(), "hash"),
-        OkHttpClient.Builder().proxy(Proxy.NO_PROXY).callTimeout(3, TimeUnit.SECONDS).build(), {})
+    private fun signaling(queueTimeout: Long = 15 * 60_000, transferToken: String = "console-token") = XCloudSignalingClient(
+        XCloudSession("test-token", server.url("/").toString(), "hash", transferToken = transferToken),
+        OkHttpClient.Builder().proxy(Proxy.NO_PROXY).callTimeout(3, TimeUnit.SECONDS).build(),
+        { now += it }, { now }, queueTimeout)
 
     @Test fun establishesSdpBeforeIcePreservesOfferAndWaitsForTransportReadiness() = runBlocking {
         val signaling = signaling()
         val result = signaling.startAndConnectWebRtcSession("real-id", peer) {}
         assertTrue(result.exceptionOrNull()?.message, result.isSuccess)
-        assertEquals(listOf("offer", "answer", "postIceAfterAnswer", "remoteIce", "ready"), events.toList())
+        assertEquals(listOf("connect", "offer", "answer", "postIceAfterAnswer", "remoteIce", "ready"), events.toList())
         val sdp = JSONObject(requests.single { it.method == "POST" && it.path == "/session/sdp" }.body.readUtf8())
         assertEquals(offer, sdp.getString("sdp"))
         val ice = JSONObject(requests.single { it.method == "POST" && it.path == "/session/ice" }.body.readUtf8())
@@ -121,5 +142,46 @@ class SignalingTest {
         assertTrue(job.isCancelled)
         assertEquals(1, requests.count { it.method == "DELETE" })
         assertFalse(events.contains("ready"))
+    }
+
+    @Test fun queueLongerThanNinetySecondsCanStillProvisionAndConnect() = runBlocking {
+        queuedStates = 70
+        val progress = mutableListOf<String>()
+        val client = signaling()
+        assertTrue(client.startAndConnectWebRtcSession("real-id", peer) { progress.add(it) }.isSuccess)
+        assertTrue(now > 90_000)
+        assertTrue(progress.any { it.startsWith("QUEUE:") })
+        assertEquals(1, requests.count { it.path == "/session/connect" })
+        client.stop()
+    }
+    @Test fun queueDeadlineStopsAndDeletesTheAllocatedSession() = runBlocking {
+        queuedStates = Int.MAX_VALUE
+        val failure = signaling(queueTimeout = 4500).startAndConnectWebRtcSession("real-id", peer) {}.exceptionOrNull()!!
+        assertTrue(failure.message!!.contains("QUEUE_TIMEOUT"))
+        assertFalse(events.contains("offer"))
+        assertEquals(1, requests.count { it.method == "DELETE" })
+    }
+    @Test fun readyToConnectWithoutTransferCredentialDoesNotSendSdpOrGssvAsUserToken() = runBlocking {
+        val failure = signaling(transferToken = "").startAndConnectWebRtcSession("real-id", peer) {}.exceptionOrNull()!!
+        assertTrue(failure.message!!.contains("QR Code"))
+        assertFalse(events.contains("offer"))
+        assertFalse(requests.any { it.path == "/session/connect" })
+        assertEquals(1, requests.count { it.method == "DELETE" })
+    }
+    @Test fun rejectedConsoleAuthenticationNeverReachesSdpAndRedactsResponseBody() = runBlocking {
+        rejectConnect = true
+        val failure = signaling().startAndConnectWebRtcSession("real-id", peer) {}.exceptionOrNull()!!
+        assertTrue(failure.message!!.contains("CONSOLE_CONNECT"))
+        assertFalse(failure.message!!.contains("must-not-leak"))
+        assertFalse(events.contains("offer"))
+        assertEquals(1, requests.count { it.method == "DELETE" })
+    }
+    @Test fun terminalStateReportsServiceCodeAndCleansUpImmediately() = runBlocking {
+        failedState = true
+        val failure = signaling().startAndConnectWebRtcSession("real-id", peer) {}.exceptionOrNull()!!
+        assertTrue(failure.message!!.contains("NoCapacity"))
+        assertEquals(0L, now)
+        assertFalse(events.contains("offer"))
+        assertEquals(1, requests.count { it.method == "DELETE" })
     }
 }

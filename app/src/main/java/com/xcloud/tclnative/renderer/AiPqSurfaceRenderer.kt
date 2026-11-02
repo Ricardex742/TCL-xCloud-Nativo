@@ -57,6 +57,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         currentTrack = null
     }
     fun clearSession() {
+        if (released) return
         generation++
         detachTrack()
         renderer?.clearImage()

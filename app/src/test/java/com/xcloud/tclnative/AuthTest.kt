@@ -148,4 +148,30 @@ class AuthTest {
         withTimeout(1_000) { job.cancelAndJoin() }
         assertTrue(call.isCanceled())
     }
+
+    @Test fun consoleTokenUsesTransferScopeAndOriginalClientAndPreservesLogin() = runBlocking {
+        store.token = fresh()
+        enqueue("""{"access_token":"console-token","refresh_token":"rotated"}""")
+        assertEquals("console-token", auth().getConsoleTransferToken())
+        val form = server.takeRequest().body.readUtf8()
+        assertTrue(form.contains("client_id=${XalAuthenticator.DEVICE_CLIENT_ID}"))
+        assertTrue(form.contains("grant_type=refresh_token"))
+        assertTrue(form.contains("PURPOSE_XBOX_CLOUD_CONSOLE_TRANSFER_TOKEN"))
+        assertEquals(fresh().copy(refreshToken = "rotated"), store.token)
+    }
+    @Test fun legacyBrowserLoginWithoutRefreshCannotInventAConsoleToken() = runBlocking {
+        store.token = fresh().copy(refreshToken = null)
+        try { auth().getConsoleTransferToken(); fail("Missing transfer credentials were ignored") }
+        catch (error: AuthenticationRequiredException) { assertTrue(error.message!!.contains("QR Code")) }
+        assertEquals(0, server.requestCount)
+    }
+    @Test fun revokedConsoleCredentialRequiresLoginAndDoesNotExposeResponse() = runBlocking {
+        store.token = fresh()
+        enqueue("""{"error":"invalid_grant","access_token":"do-not-expose"}""", 400)
+        try { auth().getConsoleTransferToken(); fail("Revoked credentials were accepted") }
+        catch (error: AuthenticationRequiredException) {
+            assertTrue(error.message!!.contains("CONSOLE_TOKEN"))
+            assertFalse(error.message!!.contains("do-not-expose"))
+        }
+    }
 }

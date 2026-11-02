@@ -15,7 +15,7 @@ class PreferencesTokenStore(context: Context) : OAuthTokenStore {
     override fun read(): OAuthToken? {
         val ticket = prefs.getString("rps_ticket", null)?.takeIf { it.isNotBlank() } ?: return null
         return OAuthToken(ticket, prefs.getString("refresh_token", null)?.takeIf { it.isNotBlank() },
-            prefs.getLong("expires_at_ms", 0).takeIf { it > 0 },
+            prefs.getLong("expires_at_ms", prefs.getLong("expires_at", 0)).takeIf { it > 0 },
             prefs.getString("client_id", null) ?: XalAuthenticator.DEVICE_CLIENT_ID)
     }
     override fun write(token: OAuthToken) {

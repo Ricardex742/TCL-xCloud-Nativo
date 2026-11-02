@@ -37,7 +37,7 @@ import com.xcloud.tclnative.signaling.XCloudSignalingClient
 import com.xcloud.tclnative.webrtc.XCloudWebRtcClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.launch
 
 class MainActivity : Activity() {
@@ -48,7 +48,10 @@ class MainActivity : Activity() {
     private lateinit var controlPanel: LinearLayout
     private lateinit var authenticator: XalAuthenticator
     private var webrtcClient: XCloudWebRtcClient? = null
-    private val mainScope = CoroutineScope(Dispatchers.Main + Job())
+    private val mainScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private var gameJob: Job? = null
+    @Volatile private var playbackGeneration = 0
+    private var gamepadState = com.xcloud.tclnative.webrtc.GamepadState()
     private var qrPollingJob: Job? = null
 
     companion object {
@@ -83,7 +86,7 @@ class MainActivity : Activity() {
         val androidVer = Build.VERSION.RELEASE
         val socModel = Build.HARDWARE
         hudTextView = TextView(this).apply {
-            text = "xCloud Native [Android $androidVer | SoC: $socModel] | Decodificador H.264 Ativo"
+            text = "xCloud Native [Android $androidVer | SoC: $socModel] | Aguardando sessão"
             setTextColor(Color.GREEN)
             textSize = 12f
             setBackgroundColor(Color.argb(190, 0, 0, 0))
@@ -217,7 +220,7 @@ class MainActivity : Activity() {
                 codeText.text = info.userCode
                 btnApprovePhone.visibility = View.VISIBLE
                 btnApprovePhone.setOnClickListener {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(info.verificationUriComplete)))
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(info.verificationUriComplete ?: info.verificationUri)))
                 }
                 hudTextView.text = "Aguardando aprovação do QR Code [${info.userCode}]..."
                 hudTextView.setTextColor(Color.YELLOW)
@@ -307,10 +310,16 @@ class MainActivity : Activity() {
     }
 
     private fun renderGameDashboard(session: XCloudSession) {
-        val signaling = XCloudSignalingClient(session)
+        val signaling = XCloudSignalingClient(session, transferTokenProvider = { authenticator.getConsoleTransferToken() })
 
         mainScope.launch {
-            val allGames = signaling.fetchCatalogGames()
+            val allGames = try { signaling.fetchCatalogGames() } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                hudTextView.text = "Falha no catálogo: ${error.message}"
+                hudTextView.setTextColor(Color.RED)
+                return@launch
+            }
             controlPanel.removeAllViews()
             controlPanel.visibility = View.VISIBLE
 
@@ -401,57 +410,85 @@ class MainActivity : Activity() {
                 override fun afterTextChanged(s: Editable?) {}
             })
 
-            hudTextView.text = "Catálogo Oficial Pronto (${allGames.size} títulos) | H.264 Pure SDP Ativo!"
+            hudTextView.text = "Catálogo pronto (${allGames.size} títulos) | Selecione um jogo"
             hudTextView.setTextColor(Color.GREEN)
         }
     }
 
     private fun launchCloudGame(signaling: XCloudSignalingClient, titleId: String, gameName: String) {
+        val previous = gameJob
+        previous?.cancel()
+        val generation = ++playbackGeneration
         controlPanel.visibility = View.GONE
         hudTextView.visibility = View.VISIBLE
-        hudTextView.text = "Alocando Xbox Series X e pré-aquecendo SDP H.264 para [$gameName]..."
+        hudTextView.text = "PLAY: Solicitando sessão para [$gameName]. Voltar cancela."
         hudTextView.setTextColor(Color.CYAN)
-
-        webrtcClient?.close()
-        val rtc = XCloudWebRtcClient(
-            context = this,
-            eglBase = surfaceRenderer.eglBase,
-            onVideoTrackReady = { videoTrack ->
-                surfaceRenderer.attachVideoTrack(videoTrack)
-                runOnUiThread {
-                    hudTextView.text = "STREAM H.264 ATIVO [$gameName] | Renderizador Nativo 1080p->4K!"
+        gameJob = mainScope.launch {
+            previous?.join()
+            if (generation != playbackGeneration) return@launch
+            val firstFrame = CompletableDeferred<Unit>()
+            val transportFailure = CompletableDeferred<Exception>()
+            gamepadState = com.xcloud.tclnative.webrtc.GamepadState()
+            surfaceRenderer.prepareForSession()
+            surfaceRenderer.onFirstFrameRendered = {
+                if (generation == playbackGeneration) {
+                    firstFrame.complete(Unit)
+                    hudTextView.text = "Vídeo nativo ativo [$gameName]"
                     hudTextView.setTextColor(Color.GREEN)
-                    hudTextView.postDelayed({
-                        if (controlPanel.visibility == View.GONE) {
-                            hudTextView.visibility = View.GONE
+                }
+            }
+            surfaceRenderer.onRenderError = { error -> transportFailure.complete(error) }
+            val rtc = XCloudWebRtcClient(this@MainActivity, surfaceRenderer.eglBase,
+                onVideoTrackReady = { track ->
+                    runOnUiThread { if (generation == playbackGeneration) surfaceRenderer.attachVideoTrack(track) }
+                },
+                onConnectionStateChanged = { state -> runOnUiThread {
+                    if (generation == playbackGeneration) {
+                        if (state.contains("FAILED") || state.contains("CLOSED") || state.startsWith("CHANNELS:")) {
+                            transportFailure.complete(java.io.IOException(state))
                         }
-                    }, 5000)
+                        if (!firstFrame.isCompleted) hudTextView.text = state
+                    }
+                } })
+            webrtcClient = rtc
+            try {
+                signaling.startAndConnectWebRtcSession(titleId, rtc) { progress -> runOnUiThread {
+                    if (generation == playbackGeneration && !firstFrame.isCompleted) {
+                        hudTextView.text = progress
+                        hudTextView.setTextColor(Color.YELLOW)
+                    }
+                } }.getOrThrow()
+                if (withTimeoutOrNull(20_000) {
+                    kotlinx.coroutines.selects.select<Unit> {
+                        firstFrame.onAwait { }
+                        transportFailure.onAwait { throw it }
+                    }
+                    true
+                } != true) {
+                    throw java.io.IOException("VIDEO: transporte conectado, mas nenhum quadro foi renderizado em 20s.")
                 }
-            },
-            onConnectionStateChanged = { iceState ->
-                runOnUiThread {
-                    hudTextView.text = "WebRTC ICE: $iceState | Jogo: $gameName"
+                while (isActive) {
+                    withTimeoutOrNull(30_000) { transportFailure.await() }?.let { throw it }
+                    signaling.keepAlive()
                 }
-            }
-        )
-        webrtcClient = rtc
-
-        mainScope.launch {
-            val res = signaling.startAndConnectWebRtcSession(titleId, rtc) { progressMsg ->
-                runOnUiThread {
-                    hudTextView.text = progressMsg
-                    hudTextView.setTextColor(Color.YELLOW)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                if (generation == playbackGeneration) {
+                    val details = error.message ?: "Falha na sessão"
+                    hudTextView.text = details
+                    hudTextView.setTextColor(Color.RED)
+                    showCopyableErrorDialog(gameName, details)
                 }
-            }
-            res.onSuccess { statusMsg ->
-                hudTextView.text = statusMsg
-                hudTextView.setTextColor(Color.GREEN)
-            }.onFailure { err ->
-                val fullError = err.message ?: "Erro desconhecido"
-                hudTextView.text = fullError.lines().firstOrNull() ?: "Falha na sessão"
-                hudTextView.setTextColor(Color.RED)
-                controlPanel.visibility = View.VISIBLE
-                showCopyableErrorDialog(gameName, fullError)
+            } finally {
+                // The server-side Xbox and the local decoder must both be released before retrying.
+                withContext(NonCancellable) {
+                    signaling.stop()
+                    surfaceRenderer.clearSession()
+                    rtc.close()
+                    if (webrtcClient === rtc) webrtcClient = null
+                    if (generation == playbackGeneration) controlPanel.visibility = View.VISIBLE
+                }
             }
         }
     }
@@ -470,21 +507,89 @@ class MainActivity : Activity() {
     }
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+        if (controlPanel.visibility == View.GONE && webrtcClient != null &&
+            event.source and android.view.InputDevice.SOURCE_JOYSTICK != 0 && event.action == MotionEvent.ACTION_MOVE) {
+            fun axis(id: Int): Float {
+                val value = event.getAxisValue(id)
+                val flat = event.device?.getMotionRange(id, event.source)?.flat ?: 0f
+                return if (kotlin.math.abs(value) <= flat) 0f else value
+            }
+            var buttons = gamepadState.buttons and 0xF0FF
+            val x = axis(MotionEvent.AXIS_HAT_X); val y = axis(MotionEvent.AXIS_HAT_Y)
+            if (y < -0.5f) buttons = buttons or 256
+            if (y > 0.5f) buttons = buttons or 512
+            if (x < -0.5f) buttons = buttons or 1024
+            if (x > 0.5f) buttons = buttons or 2048
+            gamepadState = gamepadState.copy(buttons = buttons,
+                leftX = axis(MotionEvent.AXIS_X), leftY = axis(MotionEvent.AXIS_Y),
+                rightX = axis(MotionEvent.AXIS_Z), rightY = axis(MotionEvent.AXIS_RZ),
+                leftTrigger = maxOf(axis(MotionEvent.AXIS_LTRIGGER), axis(MotionEvent.AXIS_BRAKE)),
+                rightTrigger = maxOf(axis(MotionEvent.AXIS_RTRIGGER), axis(MotionEvent.AXIS_GAS)))
+            webrtcClient?.updateGamepad(gamepadState)
+            return true
+        }
         return super.onGenericMotionEvent(event)
+    }
+
+    private fun gamepadButton(key: Int): Int = when (key) {
+        KeyEvent.KEYCODE_BUTTON_MODE -> 2
+        KeyEvent.KEYCODE_BUTTON_START -> 4
+        KeyEvent.KEYCODE_BUTTON_SELECT -> 8
+        KeyEvent.KEYCODE_BUTTON_A, KeyEvent.KEYCODE_DPAD_CENTER -> 16
+        KeyEvent.KEYCODE_BUTTON_B -> 32
+        KeyEvent.KEYCODE_BUTTON_X -> 64
+        KeyEvent.KEYCODE_BUTTON_Y -> 128
+        KeyEvent.KEYCODE_DPAD_UP -> 256
+        KeyEvent.KEYCODE_DPAD_DOWN -> 512
+        KeyEvent.KEYCODE_DPAD_LEFT -> 1024
+        KeyEvent.KEYCODE_DPAD_RIGHT -> 2048
+        KeyEvent.KEYCODE_BUTTON_L1 -> 4096
+        KeyEvent.KEYCODE_BUTTON_R1 -> 8192
+        KeyEvent.KEYCODE_BUTTON_THUMBL -> 16384
+        KeyEvent.KEYCODE_BUTTON_THUMBR -> 32768
+        else -> 0
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        val mask = gamepadButton(keyCode)
+        if (mask != 0 && controlPanel.visibility == View.GONE && webrtcClient != null) {
+            gamepadState = gamepadState.copy(buttons = gamepadState.buttons and mask.inv())
+            webrtcClient?.updateGamepad(gamepadState)
+            return true
+        }
+        return super.onKeyUp(keyCode, event)
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (!hasFocus) {
+            gamepadState = com.xcloud.tclnative.webrtc.GamepadState()
+            webrtcClient?.updateGamepad(gamepadState)
+        }
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK && controlPanel.visibility == View.GONE) {
-            webrtcClient?.close()
+            ++playbackGeneration
+            gameJob?.cancel()
+            hudTextView.text = "Sessão cancelada. Selecione um jogo."
             hudTextView.visibility = View.VISIBLE
             controlPanel.visibility = View.VISIBLE
+            return true
+        }
+        val mask = gamepadButton(keyCode)
+        if (mask != 0 && controlPanel.visibility == View.GONE && webrtcClient != null) {
+            gamepadState = gamepadState.copy(buttons = gamepadState.buttons or mask)
+            webrtcClient?.updateGamepad(gamepadState)
             return true
         }
         return super.onKeyDown(keyCode, event)
     }
 
     override fun onDestroy() {
-        qrPollingJob?.cancel()
+        ++playbackGeneration
+        mainScope.cancel()
+        surfaceRenderer.clearSession()
         webrtcClient?.close()
         surfaceRenderer.release()
         super.onDestroy()

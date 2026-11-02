@@ -11,8 +11,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 4
-        versionName = "0.4.0-h264-pure"
+        versionCode = 5
+        versionName = "0.5.0-session-connect"
     }
 
     buildTypes {
@@ -43,10 +43,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("io.getstream:stream-webrtc-android:1.1.1")
     implementation("com.google.zxing:core:3.5.3")
-}
-
-// Os testes legados ainda não acompanham as APIs desta branch.
-// Desative somente sua execução, preservando os modelos necessários ao lint.
-tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
-    enabled = false
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("org.json:json:20231013")
 }

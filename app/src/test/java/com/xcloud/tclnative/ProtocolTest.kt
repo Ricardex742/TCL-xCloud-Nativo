@@ -81,4 +81,18 @@ class ProtocolTest {
         assertEquals(0, packet.getShort(16).toInt()); assertEquals(0, packet.getShort(18).toInt())
         assertEquals(32767, packet.getShort(22).toInt()); assertEquals(0, packet.getShort(26).toInt())
     }
+
+    @Test fun teredoAddsEncodedIpv4RoutesAndKeepsTheOriginalIpv6Candidate() {
+        val raw = "candidate:1 1 UDP 1 2001:0:4136:e378:8000:63bf:3fff:fdd2 5000 typ host"
+        val candidates = CloudProtocol.remoteCandidates(JSONArray().put(JSONObject()
+            .put("candidate", raw).put("sdpMid", "1").put("sdpMLineIndex", 1)))
+        assertEquals(3, candidates.size)
+        assertTrue(candidates.any { it.sdp.contains("192.0.2.45 9002") })
+        assertTrue(candidates.any { it.sdp.contains("192.0.2.45 40000") })
+        assertTrue(candidates.any { it.sdp == raw })
+        assertTrue(candidates.all { it.sdpMid == "1" && it.sdpMLineIndex == 1 })
+    }
+    @Test(expected = IllegalArgumentException::class) fun sessionCannotRedirectCredentialsToAnotherPort() {
+        CloudProtocol.sessionUrl("https://region.example", "https://region.example:8443/session")
+    }
 }

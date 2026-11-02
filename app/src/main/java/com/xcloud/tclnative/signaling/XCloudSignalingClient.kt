@@ -1,359 +1,174 @@
 package com.xcloud.tclnative.signaling
 
+import com.xcloud.tclnative.auth.AuthenticationRequiredException
 import com.xcloud.tclnative.auth.XCloudSession
-import com.xcloud.tclnative.webrtc.XCloudWebRtcClient
+import com.xcloud.tclnative.net.awaitResponse
+import com.xcloud.tclnative.net.checkedBody
+import com.xcloud.tclnative.webrtc.StreamingPeer
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONArray
 import org.json.JSONObject
-import org.webrtc.IceCandidate
-import java.util.Locale
+import java.io.IOException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
-data class GameTitle(
-    val titleId: String,
-    val name: String
-)
+data class GameTitle(val titleId: String, val name: String)
 
-class XCloudSignalingClient(private val session: XCloudSession) {
+class XCloudSignalingClient(
+    private val session: XCloudSession,
+    private val httpClient: OkHttpClient = OkHttpClient.Builder().callTimeout(25, TimeUnit.SECONDS).build(),
+    private val pause: suspend (Long) -> Unit = { delay(it) },
+    private val clockMs: () -> Long = { System.nanoTime() / 1_000_000 },
+    private val queueTimeoutMs: Long = 15 * 60_000,
+    private val transferTokenProvider: suspend () -> String = { session.transferToken }
+) {
+    private val activePath = AtomicReference<String?>(null)
+    private val jsonType = "application/json; charset=utf-8".toMediaType()
+    private val deviceInfo = JSONObject().put("appInfo", JSONObject().put("env", JSONObject()
+        .put("clientAppId", "www.xbox.com").put("clientAppType", "browser").put("clientAppVersion", "26.1.0")))
+        .put("dev", JSONObject().put("hw", JSONObject().put("make", "Microsoft").put("model", "Surface Pro"))
+            .put("os", JSONObject().put("name", "windows").put("ver", "10.0"))
+            .put("displayInfo", JSONObject().put("dimensions", JSONObject().put("widthInPixels", 1920).put("heightInPixels", 1080))
+                .put("pixelDensity", JSONObject().put("dpiX", 1).put("dpiY", 1)))).toString()
 
-    private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(25, TimeUnit.SECONDS)
-        .readTimeout(25, TimeUnit.SECONDS)
-        .build()
-
-    private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
-
-    companion object {
-        @Volatile private var activeSessionPath: String? = null
-    }
-
-    /**
-     * Busca todos os jogos reais disponíveis na assinatura xCloud Brasil (/v2/titles)
-     */
-    suspend fun fetchCatalogGames(): List<GameTitle> = withContext(Dispatchers.IO) {
-        val list = mutableListOf<GameTitle>()
-        val seenIds = mutableSetOf<String>()
-
-        try {
-            val req = Request.Builder()
-                .url("${session.baseUri}/v2/titles")
-                .addHeader("Authorization", "Bearer ${session.gssvToken}")
-                .get()
-                .build()
-
-            httpClient.newCall(req).execute().use { resp ->
-                if (resp.isSuccessful) {
-                    val bodyStr = resp.body?.string() ?: "{}"
-                    val results = JSONObject(bodyStr).optJSONArray("results") ?: JSONArray()
-                    for (i in 0 until results.length()) {
-                        val item = results.getJSONObject(i)
-                        val titleId = item.optString("titleId", "").trim()
-                        if (titleId.isNotEmpty() && seenIds.add(titleId)) {
-                            val detail = item.optJSONObject("details")
-                            val productTitle = detail?.optString("productTitle")?.takeIf { it.isNotBlank() }
-                                ?: titleId
-                            val displayLabel = if (productTitle.equals(titleId, ignoreCase = true)) {
-                                titleId
-                            } else {
-                                "$productTitle ($titleId)"
-                            }
-                            list.add(GameTitle(titleId, displayLabel))
-                        }
-                    }
-                }
-            }
-        } catch (ignored: Exception) {}
-
-        if (list.isEmpty()) {
-            list.add(GameTitle("FORTNITE", "FORTNITE"))
-            list.add(GameTitle("FORZAHORIZON5", "FORZAHORIZON5"))
-        } else {
-            list.sortBy { it.name.uppercase(Locale.ROOT) }
+    private suspend fun request(path: String, stage: String, method: String = "GET", body: JSONObject? = null): String {
+        val builder = Request.Builder().url(CloudProtocol.sessionUrl(session.baseUri, path))
+            .header("Authorization", "Bearer ${session.gssvToken}")
+            .header("Accept", "application/json").header("X-Gssv-Client", "XboxComBrowser")
+            .header("X-MS-Device-Info", deviceInfo)
+        when (method) {
+            "POST" -> builder.post((body?.toString() ?: "").toRequestBody(jsonType))
+            "DELETE" -> builder.delete()
         }
-
-        list
+        return httpClient.newCall(builder.build()).awaitResponse().use { it.checkedBody(stage) }
     }
 
-    /**
-     * Limpa qualquer sessão anterior presa na conta para evitar conflito SessionNotConnectable
-     */
-    private fun closePreviousSessionIfNeeded() {
-        val prevPath = activeSessionPath ?: return
-        activeSessionPath = null
-        try {
-            val delReq = Request.Builder()
-                .url("${session.baseUri}/$prevPath")
-                .addHeader("Authorization", "Bearer ${session.gssvToken}")
-                .delete()
-                .build()
-            httpClient.newCall(delReq).execute().close()
-        } catch (ignored: Exception) {}
+    suspend fun fetchCatalogGames(): List<GameTitle> = withContext(Dispatchers.IO) {
+        val results = JSONObject(request("/v2/titles", "CATALOG")).getJSONArray("results")
+        (0 until results.length()).mapNotNull { index ->
+            val game = results.getJSONObject(index)
+            val id = game.optString("titleId").trim().takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            GameTitle(id, game.optJSONObject("details")?.optString("productTitle")?.takeIf { it.isNotBlank() } ?: id)
+        }.distinctBy { it.titleId }.sortedBy { it.name.lowercase(java.util.Locale.ROOT) }
+    }
+
+    private suspend fun awaitProvisioned(path: String, onProgress: (String) -> Unit) {
+        val started = clockMs()
+        var connectSentAt: Long? = null
+        while (true) {
+            val state = JSONObject(request("$path/state", "SESSION_STATE"))
+            val name = state.optString("state")
+            val elapsed = (clockMs() - started) / 1000
+            when (name) {
+                "Provisioned" -> return
+                "ReadyToConnect" -> {
+                    if (connectSentAt == null) {
+                        onProgress("CONSOLE_CONNECT: Autenticando a sessão Xbox...")
+                        val token = transferTokenProvider()
+                        if (token.isBlank()) throw AuthenticationRequiredException(
+                            "CONSOLE_CONNECT: login sem credencial de transferência. Entre novamente pelo QR Code.")
+                        request("$path/connect", "CONSOLE_CONNECT", "POST", JSONObject().put("userToken", token))
+                        connectSentAt = clockMs()
+                    }
+                    onProgress("PROVISIONING: Aguardando confirmação da sessão Xbox (${elapsed}s). Voltar cancela.")
+                }
+                "WaitingForResources" -> onProgress("QUEUE: Aguardando vaga no Xbox Cloud (${elapsed}s). Voltar cancela.")
+                "Provisioning", "New" -> onProgress("PROVISIONING: Preparando o jogo (${elapsed}s). Voltar cancela.")
+                "Failed", "Error", "Ended", "Cancelled", "Closed" -> {
+                    val code = state.optJSONObject("errorDetails")?.optString("code")
+                        ?.takeIf { it.matches(Regex("[A-Za-z0-9_.-]{1,80}")) }
+                    throw IOException("SESSION_STATE: $name" + (code?.let { " — código $it" } ?: ""))
+                }
+                else -> throw IOException("SESSION_STATE: estado não reconhecido")
+            }
+            if (connectSentAt != null && clockMs() - connectSentAt >= 60_000) {
+                throw IOException("CONSOLE_CONNECT: o serviço não confirmou Provisioned após autenticar a sessão.")
+            }
+            if (clockMs() - started >= queueTimeoutMs) throw IOException(
+                "QUEUE_TIMEOUT: o serviço continua em $name após ${elapsed}s. Nenhum vídeo foi iniciado; tente novamente mais tarde.")
+            pause(1500)
+        }
+    }
+
+    private suspend fun exchange(path: String, stage: String): Any {
+        val started = clockMs()
+        while (clockMs() - started < 30_000) {
+            val value = CloudProtocol.exchange(request(path, stage))
+            if (value != null) return value
+            pause(500)
+        }
+        throw IOException("$stage: tempo limite aguardando resposta do Xbox")
     }
 
     suspend fun startAndConnectWebRtcSession(
-        titleId: String,
-        webrtcClient: XCloudWebRtcClient,
-        onProgress: (String) -> Unit
+        titleId: String, peer: StreamingPeer, onProgress: (String) -> Unit
     ): Result<String> = withContext(Dispatchers.IO) {
+        stop()
         try {
-            closePreviousSessionIfNeeded()
+            val play = JSONObject().put("clientSessionId", java.util.UUID.randomUUID().toString())
+                .put("titleId", titleId).put("systemUpdateGroup", "").put("serverId", "")
+                .put("fallbackRegionNames", org.json.JSONArray()).put("settings", JSONObject()
+                    .put("nanoVersion", "V3;WebrtcTransport.dll").put("enableOptionalDataCollection", false)
+                    .put("enableTextToSpeech", false).put("highContrast", 0).put("locale", "pt-BR")
+                    .put("useIceConnection", false).put("timezoneOffsetMinutes", -180).put("sdkType", "web").put("osName", "windows"))
+            val response = JSONObject(request("/v5/sessions/cloud/play", "PLAY", "POST", play))
+            val path = CloudProtocol.sessionUrl(session.baseUri, response.getString("sessionPath")).encodedPath.trimEnd('/')
+            activePath.set(path)
+            awaitProvisioned(path, onProgress)
 
-            // 1. Pré-aloca o SDP Offer em paralelo para que esteja pronto no milissegundo do ReadyToConnect!
-            val prewarmedOfferDeferred = async {
-                webrtcClient.createOfferSdp()
+            onProgress("SDP: Sessão provisionada. Negociando vídeo nativo...")
+            val (offer, candidates) = peer.createOfferSdp()
+            val configuration = JSONObject().put("chatConfiguration", JSONObject().put("bytesPerSample", 2)
+                .put("expectedClipDurationMs", 20).put("format", JSONObject().put("codec", "opus").put("container", "webm"))
+                .put("numChannels", 1).put("sampleFrequencyHz", 24000))
+            listOf("chat" to 1, "control" to 3, "input" to 8, "message" to 1).forEach { (channel, version) ->
+                configuration.put(channel, JSONObject().put("minVersion", 1).put("maxVersion", version))
             }
-
-            val deviceInfo = JSONObject().apply {
-                put("appInfo", JSONObject().apply {
-                    put("env", JSONObject().put("clientAppId", "www.xbox.com").put("clientAppType", "browser").put("clientAppVersion", "26.1.0"))
-                })
-                put("dev", JSONObject().apply {
-                    put("hw", JSONObject().put("make", "Microsoft").put("model", "Surface Pro"))
-                    put("os", JSONObject().put("name", "windows").put("ver", "10.0"))
-                    put("displayInfo", JSONObject().apply {
-                        put("dimensions", JSONObject().put("widthInPixels", 1920).put("heightInPixels", 1080))
-                        put("pixelDensity", JSONObject().put("dpiX", 1).put("dpiY", 1))
-                    })
-                })
-            }
-
-            val playPayload = JSONObject().apply {
-                put("titleId", titleId)
-                put("systemUpdateGroup", "")
-                put("settings", JSONObject().apply {
-                    put("nanoVersion", "V3;WebrtcTransport.dll")
-                    put("enableTextToSpeech", false)
-                    put("highContrast", 0)
-                    put("locale", "pt-BR")
-                    put("useIceConnection", false)
-                    put("timezoneOffsetMinutes", -180)
-                    put("sdkType", "web")
-                    put("osName", "windows")
-                })
-                put("serverId", "")
-                put("fallbackRegionNames", JSONArray())
-            }
-
-            val req = Request.Builder()
-                .url("${session.baseUri}/v5/sessions/cloud/play")
-                .addHeader("Authorization", "Bearer ${session.gssvToken}")
-                .addHeader("Content-Type", "application/json")
-                .addHeader("x-ms-device-info", deviceInfo.toString())
-                .post(playPayload.toString().toRequestBody(jsonMediaType))
-                .build()
-
-            val respStr = httpClient.newCall(req).execute().use { resp ->
-                if (!resp.isSuccessful) {
-                    val err = resp.body?.string() ?: ""
-                    throw Exception("PLAY HTTP ${resp.code}: $err")
-                }
-                resp.body?.string() ?: throw Exception("Resposta vazia no /play")
-            }
-
-            val sessionPath = JSONObject(respStr).getString("sessionPath")
-            activeSessionPath = sessionPath
-
-            // 2. Aguarda estritamente o estado ReadyToConnect (até 90s para suportar fila de provisionamento)
-            var state = "Provisioning"
-            var attempts = 0
-            var stateErrorDetails = ""
-
-            while ((state == "Provisioning" || state == "WaitingForResources") && attempts < 60) {
-                delay(1500)
-                attempts++
-                val stateReq = Request.Builder()
-                    .url("${session.baseUri}/$sessionPath/state")
-                    .addHeader("Authorization", "Bearer ${session.gssvToken}")
-                    .get()
-                    .build()
-
-                httpClient.newCall(stateReq).execute().use { stateResp ->
-                    if (stateResp.isSuccessful) {
-                        val stateJson = JSONObject(stateResp.body?.string() ?: "{}")
-                        state = stateJson.optString("state", "Failed")
-                        stateErrorDetails = stateJson.optJSONObject("errorDetails")?.toString() ?: ""
-                        onProgress("Consola Azure [$titleId]: $state (${attempts}x)...")
-                    }
-                }
-            }
-
-            if (state != "ReadyToConnect") {
-                throw Exception("Sessão não ficou pronta (Estado: $state | Detalhe: $stateErrorDetails)")
-            }
-
-            // 3. Dispara o SDP Offer imediatamente (em <20ms após ReadyToConnect)
-            val (cleanOfferSdp, localCandidates) = prewarmedOfferDeferred.await()
-            onProgress("ReadyToConnect! Enviando SDP Offer H.264 puro...")
-
-            val sdpPayload = JSONObject().apply {
-                put("messageType", "offer")
-                put("sdp", cleanOfferSdp)
-                put("configuration", JSONObject().apply {
-                    put("chatConfiguration", JSONObject().apply {
-                        put("bytesPerSample", 2)
-                        put("expectedClipDurationMs", 20)
-                        put("format", JSONObject().put("codec", "opus").put("container", "webm"))
-                        put("numChannels", 1)
-                        put("sampleFrequencyHz", 24000)
-                    })
-                    put("chat", JSONObject().put("minVersion", 1).put("maxVersion", 1))
-                    put("control", JSONObject().put("minVersion", 1).put("maxVersion", 3))
-                    put("input", JSONObject().put("minVersion", 1).put("maxVersion", 8))
-                    put("message", JSONObject().put("minVersion", 1).put("maxVersion", 1))
-                })
-            }
-
-            val sdpPostReq = Request.Builder()
-                .url("${session.baseUri}/$sessionPath/sdp")
-                .addHeader("Authorization", "Bearer ${session.gssvToken}")
-                .addHeader("Content-Type", "application/json")
-                .post(sdpPayload.toString().toRequestBody(jsonMediaType))
-                .build()
-
-            httpClient.newCall(sdpPostReq).execute().use { resp ->
-                if (!resp.isSuccessful) {
-                    val errBody = resp.body?.string() ?: "Sem corpo"
-                    val cv = resp.headers["MS-CV"] ?: ""
-                    // Consulta o /state imediatamente para mostrar o motivo interno exato se o servidor derrubou a sessão
-                    val postFailState = fetchCurrentStateSnapshot(sessionPath)
-                    throw Exception("SDP_OFFER HTTP ${resp.code} (CV: $cv):\nResposta: $errBody\nEstado Pós-SDP: $postFailState")
-                }
-            }
-
-            // 4. Aguarda o SDP Answer da consola Xbox Series X
-            onProgress("SDP Aceito! Recebendo resposta de vídeo da Xbox Series X...")
-            var remoteAnswerSdp = ""
-            for (i in 0 until 25) {
-                delay(1000)
-                val sdpGetReq = Request.Builder()
-                    .url("${session.baseUri}/$sessionPath/sdp")
-                    .addHeader("Authorization", "Bearer ${session.gssvToken}")
-                    .get()
-                    .build()
-
-                httpClient.newCall(sdpGetReq).execute().use { resp ->
-                    if (resp.isSuccessful && resp.code == 200) {
-                        val body = resp.body?.string() ?: ""
-                        if (body.isNotEmpty()) {
-                            val root = JSONObject(body)
-                            val exchObj = root.optJSONObject("exchangeResponse")
-                            if (exchObj != null) {
-                                remoteAnswerSdp = exchObj.optString("sdp", "")
-                            } else {
-                                val exchStr = root.optString("exchangeResponse", "")
-                                if (exchStr.isNotEmpty()) {
-                                    remoteAnswerSdp = JSONObject(exchStr).optString("sdp", "")
-                                }
-                            }
-                        }
-                    }
-                }
-                if (remoteAnswerSdp.isNotEmpty()) break
-            }
-
-            if (remoteAnswerSdp.isEmpty()) {
-                val snap = fetchCurrentStateSnapshot(sessionPath)
-                throw Exception("Timeout aguardando SDP Answer da Xbox (Estado: $snap)")
-            }
-
-            // 5. Envia os candidatos ICE locais
-            onProgress("SDP Answer Recebido! Conectando túnel UDP (ICE)...")
-            val candsArray = JSONArray()
-            for (c in localCandidates) {
-                candsArray.put(JSONObject().apply {
-                    put("candidate", c.sdp)
-                    put("sdpMLineIndex", c.sdpMLineIndex)
-                    put("sdpMid", c.sdpMid)
-                })
-            }
-            candsArray.put(JSONObject().apply {
-                put("candidate", "a=end-of-candidates")
-                put("sdpMLineIndex", 0)
-                put("sdpMid", "0")
-            })
-
-            val iceExchangePayload = JSONObject().apply {
-                put("messageType", "iceExchange")
-                put("candidates", candsArray)
-            }
-
-            val icePostReq = Request.Builder()
-                .url("${session.baseUri}/$sessionPath/ice")
-                .addHeader("Authorization", "Bearer ${session.gssvToken}")
-                .addHeader("Content-Type", "application/json")
-                .post(iceExchangePayload.toString().toRequestBody(jsonMediaType))
-                .build()
-
-            httpClient.newCall(icePostReq).execute().close()
-
-            // 6. Recolhe os candidatos ICE da consola Azure
-            val remoteCandidates = mutableListOf<IceCandidate>()
-            for (i in 0 until 15) {
-                delay(800)
-                val iceGetReq = Request.Builder()
-                    .url("${session.baseUri}/$sessionPath/ice")
-                    .addHeader("Authorization", "Bearer ${session.gssvToken}")
-                    .get()
-                    .build()
-
-                httpClient.newCall(iceGetReq).execute().use { resp ->
-                    if (resp.isSuccessful && resp.code == 200) {
-                        val body = resp.body?.string() ?: ""
-                        if (body.isNotEmpty()) {
-                            val root = JSONObject(body)
-                            val exchArr = root.optJSONArray("exchangeResponse")
-                                ?: root.optJSONObject("exchangeResponse")?.optJSONArray("candidates")
-                                ?: run {
-                                    val str = root.optString("exchangeResponse", "")
-                                    if (str.trim().startsWith("[")) JSONArray(str)
-                                    else if (str.trim().startsWith("{")) JSONObject(str).optJSONArray("candidates")
-                                    else null
-                                }
-
-                            if (exchArr != null) {
-                                for (j in 0 until exchArr.length()) {
-                                    val cObj = exchArr.getJSONObject(j)
-                                    val candStr = cObj.optString("candidate", "").trim()
-                                    if (candStr.isNotEmpty() && !candStr.contains("end-of-candidates")) {
-                                        val sdpMid = cObj.optString("sdpMid", "0")
-                                        val mLine = cObj.optInt("sdpMLineIndex", 0)
-                                        remoteCandidates.add(IceCandidate(sdpMid, mLine, candStr))
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                if (remoteCandidates.isNotEmpty()) break
-            }
-
-            webrtcClient.applyRemoteAnswerAndCandidates(remoteAnswerSdp, remoteCandidates)
-
-            Result.success("STREAM CONECTADO! [$titleId] ($sessionPath)")
-        } catch (e: Exception) {
-            Result.failure(e)
+            request("$path/sdp", "SDP_OFFER", "POST", JSONObject().put("messageType", "offer")
+                .put("requestId", "1").put("sdp", offer).put("configuration", configuration))
+            val answer = (exchange("$path/sdp", "SDP_ANSWER") as? JSONObject)?.optString("sdp")
+                ?.takeIf { it.isNotBlank() } ?: throw IOException("SDP_ANSWER: resposta sem SDP")
+            peer.setRemoteAnswer(answer)
+            onProgress("ICE: Negociando conectividade com o Xbox...")
+            request("$path/ice", "ICE_LOCAL", "POST", CloudProtocol.icePayload(candidates))
+            val remote = CloudProtocol.remoteCandidates(exchange("$path/ice", "ICE_REMOTE"))
+            if (remote.isEmpty()) throw IOException("ICE_REMOTE: o serviço não retornou candidatos")
+            peer.addRemoteCandidates(remote)
+            onProgress("TRANSPORT: Aguardando ICE e canais de controle...")
+            peer.awaitReady()
+            Result.success("Transporte conectado. Aguardando o primeiro quadro de vídeo...")
+        } catch (timeout: kotlinx.coroutines.TimeoutCancellationException) {
+            kotlinx.coroutines.currentCoroutineContext().ensureActive()
+            stop()
+            Result.failure(IOException("TRANSPORT: tempo limite na negociação WebRTC/canais de controle."))
+        } catch (cancelled: CancellationException) {
+            stop()
+            throw cancelled
+        } catch (error: Exception) {
+            stop()
+            Result.failure(error)
         }
     }
 
-    private fun fetchCurrentStateSnapshot(sessionPath: String): String {
-        return try {
-            val req = Request.Builder()
-                .url("${session.baseUri}/$sessionPath/state")
-                .addHeader("Authorization", "Bearer ${session.gssvToken}")
-                .get()
-                .build()
-            httpClient.newCall(req).execute().use { resp ->
-                resp.body?.string() ?: "HTTP ${resp.code}"
+    suspend fun keepAlive() {
+        activePath.get()?.let { request("$it/keepalive", "KEEPALIVE", "POST") }
+    }
+
+    suspend fun stop() {
+        val path = activePath.getAndSet(null) ?: return
+        withContext(NonCancellable + Dispatchers.IO) {
+            withTimeoutOrNull(5000) {
+                try { request(path, "STOP", "DELETE") } catch (_: IOException) { /* Server TTL is the fallback. */ }
             }
-        } catch (e: Exception) {
-            e.message ?: "erro"
         }
     }
 }

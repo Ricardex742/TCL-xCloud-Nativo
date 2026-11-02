@@ -64,6 +64,17 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         onFirstFrameRendered = null
         onRenderError = null
     }
+    /** Android exposes surface/display geometry, but no public API reports TCL AiPQ activation. */
+    fun diagnostics(): String {
+        val surface = renderer?.holder?.surfaceFrame
+        val size = if (surface != null && surface.width() > 0 && surface.height() > 0)
+            "${surface.width()}x${surface.height()}" else "n/d"
+        val mode = display?.mode
+        val output = mode?.let { "${it.physicalWidth}x${it.physicalHeight}@${kotlin.math.round(it.refreshRate).toInt()} Hz" } ?: "n/d"
+        return "Surface $size → janela ${width}x$height | Saída Android: $output\n" +
+            "Escala da Surface: HW solicitada | AiPQ: não verificável pelo app"
+    }
+
     fun release() {
         if (released) return
         clearSession()

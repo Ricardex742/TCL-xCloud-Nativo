@@ -13,7 +13,8 @@ class XCloudWebRtcClient(
     context: Context,
     private val eglBase: EglBase,
     private val onVideoTrackReady: (VideoTrack) -> Unit,
-    private val onConnectionStateChanged: (String) -> Unit
+    private val onConnectionStateChanged: (String) -> Unit,
+    private val onStatistics: (StreamMetrics, InputMetrics) -> Unit = { _, _ -> }
 ) : StreamingPeer {
     private val factory: PeerConnectionFactory
     private var peerConnection: PeerConnection? = null
@@ -27,6 +28,11 @@ class XCloudWebRtcClient(
     private val inputStarted = AtomicBoolean(false)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     @Volatile private var gamepad = GamepadState()
+    private val pumpLock = Any()
+    @Volatile private var inputPump: RealtimeInputPump? = null
+    private val statsCollector = StreamStatsCollector()
+    private val statisticsLock = Any()
+    private var statsJob: Job? = null
 
     init {
         PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(context.applicationContext)
@@ -91,7 +97,9 @@ class XCloudWebRtcClient(
         val h264 = capabilities.filter { it.name.equals("H264", true) }
         if (h264.isEmpty()) throw IOException("VIDEO: o dispositivo não oferece decodificador H.264")
         // Select supported codecs before creating/setLocalDescription. Never forge profile-level-id.
-        video.setCodecPreferences(h264 + capabilities.filter { it.name.equals("rtx", true) })
+        video.setCodecPreferences(h264.sortedBy {
+            when (it.parameters["profile-level-id"]?.take(2)?.lowercase()) { "64" -> 0; "4d" -> 1; else -> 2 }
+        } + capabilities.filter { it.name.equals("rtx", true) })
         listOf("control" to "controlV1", "input" to "1.0", "message" to "messageV1", "chat" to "chatV1").forEach { (name, protocol) ->
             val channel = pc.createDataChannel(name, DataChannel.Init().apply { ordered = true; this.protocol = protocol })
                 ?: throw IOException("CHANNELS: não foi possível criar $name")
@@ -118,7 +126,8 @@ class XCloudWebRtcClient(
             }
             override fun onCreateFailure(error: String?) { offer.completeExceptionally(IOException("SDP: createOffer falhou")) }
         }, MediaConstraints())
-        val description = offer.await()
+        val original = offer.await()
+        val description = SessionDescription(original.type, StreamProfile.receiveSdp(original.description))
         setDescription { observer -> pc.setLocalDescription(observer, description) }
         // A blocked STUN service must not discard usable host candidates.
         if (withTimeoutOrNull(8000) { gatheringComplete.await(); true } != true) {
@@ -143,22 +152,36 @@ class XCloudWebRtcClient(
                 return
             }
             channelsReady.complete(Unit)
-            scope.launch {
-                var sequence = 0
-                val started = System.nanoTime()
+            val pump = RealtimeInputPump(
+                bufferedAmount = { if (closed.get()) Long.MAX_VALUE else input.bufferedAmount() },
+                send = { bytes -> !closed.get() && input.send(DataChannel.Buffer(ByteBuffer.wrap(bytes), true)) },
+                onFailure = { fail("CHANNELS: falha no envio de input") },
+                prioritize = { runCatching { android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DISPLAY) }; Unit }
+            )
+            synchronized(pumpLock) {
+                if (closed.get()) return
+                inputPump = pump
+                pump.update(gamepad)
+                pump.start()
+            }
+            statsJob = scope.launch {
                 while (isActive) {
-                    val bytes = GamepadPacket.encode(gamepad, sequence++, (System.nanoTime() - started) / 1_000_000.0)
-                    if (!input.send(DataChannel.Buffer(ByteBuffer.wrap(bytes), true))) {
-                        fail("CHANNELS: falha no envio de input")
-                        break
+                    synchronized(statisticsLock) {
+                        if (!closed.get()) peerConnection?.getStats { report ->
+                            if (!closed.get()) {
+                                val samples = report.statsMap.values.map { RtcSample(it.id, it.type, it.timestampUs, it.members) }
+                                val metrics = statsCollector.collect(samples)
+                                if (!closed.get()) onStatistics(metrics, inputPump?.metrics ?: InputMetrics())
+                            }
+                        }
                     }
-                    delay(16)
+                    delay(1000)
                 }
             }
         }
     }
 
-    fun updateGamepad(state: GamepadState) { gamepad = state }
+    fun updateGamepad(state: GamepadState) { gamepad = state; inputPump?.update(state) }
 
     override suspend fun setRemoteAnswer(answerSdp: String) {
         val pc = peerConnection ?: throw IOException("TRANSPORT: PeerConnection ausente")
@@ -185,7 +208,10 @@ class XCloudWebRtcClient(
 
     fun close() {
         if (!closed.compareAndSet(false, true)) return
+        synchronized(pumpLock) { inputPump }?.close()
+        statsJob?.cancel()
         scope.cancel()
+        synchronized(statisticsLock) { /* Wait for any getStats request to leave JNI before disposal. */ }
         gatheringComplete.cancel(); connected.cancel(); channelsReady.cancel()
         channels.values.forEach { it.unregisterObserver(); it.close(); it.dispose() }
         channels.clear()

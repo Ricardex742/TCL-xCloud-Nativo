@@ -41,6 +41,8 @@ class MainActivity : Activity() {
     private lateinit var rootLayout: FrameLayout
     private lateinit var surfaceRenderer: AiPqSurfaceRenderer
     private lateinit var hudTextView: TextView
+    private lateinit var statsView: TextView
+    private var statisticsVisible = true
     private lateinit var controlPanel: LinearLayout
     private lateinit var authenticator: XalAuthenticator
     private var webrtcClient: XCloudWebRtcClient? = null
@@ -59,6 +61,14 @@ class MainActivity : Activity() {
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         authenticator = XalAuthenticator(this)
+        val uiMode = getSystemService(Context.UI_MODE_SERVICE) as android.app.UiModeManager
+        if (uiMode.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION) {
+            val display = windowManager.defaultDisplay
+            fun mode(value: android.view.Display.Mode) = com.xcloud.tclnative.renderer.OutputMode(
+                value.modeId, value.physicalWidth, value.physicalHeight, value.refreshRate)
+            com.xcloud.tclnative.renderer.DisplayModePolicy.preferred4k60(mode(display.mode), display.supportedModes.map(::mode))
+                ?.let { id -> window.attributes = window.attributes.apply { preferredDisplayModeId = id } }
+        }
 
         rootLayout = FrameLayout(this).apply {
             setBackgroundColor(Color.BLACK)
@@ -138,6 +148,19 @@ class MainActivity : Activity() {
         rootLayout.addView(queuePanel, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER
         ).apply { marginStart = 48; marginEnd = 48 })
+        statsView = TextView(this).apply {
+            textSize = 12f
+            typeface = android.graphics.Typeface.MONOSPACE
+            setTextColor(Color.WHITE)
+            setBackgroundColor(Color.argb(190, 0, 0, 0))
+            setPadding(14, 10, 14, 10)
+            visibility = View.GONE
+            isFocusable = false
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+        rootLayout.addView(statsView, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.START
+        ).apply { topMargin = (56 * resources.displayMetrics.density).toInt(); marginStart = 12 })
         setContentView(rootLayout)
 
         val savedTicket = authenticator.getSavedRpsTicket()
@@ -394,6 +417,8 @@ class MainActivity : Activity() {
         previous?.cancel()
         val generation = ++playbackGeneration
         controlPanel.visibility = View.GONE
+        statsView.visibility = View.GONE
+        statsView.text = "Estatísticas: aguardando amostras WebRTC..."
         hudTextView.visibility = View.VISIBLE
         hudTextView.text = "PLAY: Solicitando sessão para [$gameName]. Voltar cancela."
         hudTextView.setTextColor(Color.CYAN)
@@ -409,6 +434,7 @@ class MainActivity : Activity() {
                     firstFrame.complete(Unit)
                     hudTextView.text = "Vídeo nativo ativo [$gameName]"
                     hudTextView.setTextColor(Color.GREEN)
+                    statsView.visibility = if (statisticsVisible) View.VISIBLE else View.GONE
                 }
             }
             surfaceRenderer.onRenderError = { error -> transportFailure.complete(error) }
@@ -423,7 +449,16 @@ class MainActivity : Activity() {
                         }
                         if (!firstFrame.isCompleted) hudTextView.text = state
                     }
-                } })
+                } },
+                onStatistics = { metrics, input ->
+                    val text = metrics.overlay(input, "")
+                    runOnUiThread {
+                        if (generation == playbackGeneration) {
+                            statsView.text = text + surfaceRenderer.diagnostics()
+                            statsView.visibility = if (firstFrame.isCompleted && statisticsVisible) View.VISIBLE else View.GONE
+                        }
+                    }
+                })
             webrtcClient = rtc
             try {
                 signaling.startAndConnectWebRtcSession(titleId, rtc, onQueueStatus = { status -> runOnUiThread {
@@ -460,7 +495,10 @@ class MainActivity : Activity() {
                 // The server-side Xbox and the local decoder must both be released before retrying.
                 withContext(NonCancellable) {
                     signaling.stop()
-                    if (generation == playbackGeneration) showQueue(null)
+                    if (generation == playbackGeneration) {
+                        showQueue(null)
+                        statsView.visibility = View.GONE
+                    }
                     surfaceRenderer.clearSession()
                     rtc.close()
                     if (webrtcClient === rtc) webrtcClient = null
@@ -494,6 +532,7 @@ class MainActivity : Activity() {
         ++playbackGeneration
         gameJob?.cancel()
         showQueue(null)
+        statsView.visibility = View.GONE
         hudTextView.text = "Sessão cancelada. Selecione um jogo."
         hudTextView.visibility = View.VISIBLE
         controlPanel.visibility = View.VISIBLE
@@ -575,6 +614,12 @@ class MainActivity : Activity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if ((keyCode == KeyEvent.KEYCODE_INFO || keyCode == KeyEvent.KEYCODE_F10) &&
+            event.repeatCount == 0 && controlPanel.visibility == View.GONE && queuePanel.visibility != View.VISIBLE) {
+            statisticsVisible = !statisticsVisible
+            statsView.visibility = if (statisticsVisible) View.VISIBLE else View.GONE
+            return true
+        }
         if (keyCode == KeyEvent.KEYCODE_BACK && controlPanel.visibility == View.GONE) {
             cancelPlayback()
             return true

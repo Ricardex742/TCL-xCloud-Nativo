@@ -5,6 +5,7 @@ import com.xcloud.tclnative.auth.XCloudSession
 import com.xcloud.tclnative.net.awaitResponse
 import com.xcloud.tclnative.net.checkedBody
 import com.xcloud.tclnative.webrtc.StreamingPeer
+import com.xcloud.tclnative.webrtc.StreamProfile
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -37,7 +38,7 @@ class XCloudSignalingClient(
     private val deviceInfo = JSONObject().put("appInfo", JSONObject().put("env", JSONObject()
         .put("clientAppId", "www.xbox.com").put("clientAppType", "browser").put("clientAppVersion", "26.1.0")))
         .put("dev", JSONObject().put("hw", JSONObject().put("make", "Microsoft").put("model", "Surface Pro"))
-            .put("os", JSONObject().put("name", "windows").put("ver", "10.0"))
+            .put("os", JSONObject().put("name", StreamProfile.OS_NAME).put("ver", "10.0"))
             .put("displayInfo", JSONObject().put("dimensions", JSONObject().put("widthInPixels", 1920).put("heightInPixels", 1080))
                 .put("pixelDensity", JSONObject().put("dpiX", 1).put("dpiY", 1)))).toString()
 
@@ -150,7 +151,7 @@ class XCloudSignalingClient(
                 .put("fallbackRegionNames", org.json.JSONArray()).put("settings", JSONObject()
                     .put("nanoVersion", "V3;WebrtcTransport.dll").put("enableOptionalDataCollection", false)
                     .put("enableTextToSpeech", false).put("highContrast", 0).put("locale", "pt-BR")
-                    .put("useIceConnection", false).put("timezoneOffsetMinutes", -180).put("sdkType", "web").put("osName", "windows"))
+                    .put("useIceConnection", false).put("timezoneOffsetMinutes", -180).put("sdkType", "web").put("osName", StreamProfile.OS_NAME))
             val response = JSONObject(request("/v5/sessions/cloud/play", "PLAY", "POST", play))
             val path = CloudProtocol.sessionUrl(session.baseUri, response.getString("sessionPath")).encodedPath.trimEnd('/')
             activePath.set(path)

@@ -114,6 +114,11 @@ class SignalingTest {
         val result = signaling.startAndConnectWebRtcSession("real-id", peer) {}
         assertTrue(result.exceptionOrNull()?.message, result.isSuccess)
         assertEquals(listOf("connect", "offer", "answer", "postIceAfterAnswer", "remoteIce", "ready"), events.toList())
+        val playRequest = requests.single { it.path == "/v5/sessions/cloud/play" }
+        assertEquals("tizen", JSONObject(playRequest.body.readUtf8()).getJSONObject("settings").getString("osName"))
+        val device = JSONObject(playRequest.getHeader("X-MS-Device-Info")!!).getJSONObject("dev")
+        assertEquals("tizen", device.getJSONObject("os").getString("name"))
+        assertEquals(1920, device.getJSONObject("displayInfo").getJSONObject("dimensions").getInt("widthInPixels"))
         val sdp = JSONObject(requests.single { it.method == "POST" && it.path == "/session/sdp" }.body.readUtf8())
         assertEquals(offer, sdp.getString("sdp"))
         val ice = JSONObject(requests.single { it.method == "POST" && it.path == "/session/ice" }.body.readUtf8())

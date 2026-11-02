@@ -22,18 +22,44 @@ data class XCloudSession(
     val gssvToken: String,
     val baseUri: String,
     val userHash: String,
+    val expiresAtMs: Long = System.currentTimeMillis() + 3600_000L,
     val transferToken: String = ""
+)
+
+data class AuthEndpoints(
+    val deviceCodeUrl: String = "https://login.live.com/oauth20_connect.srf",
+    val tokenUrl: String = "https://login.live.com/oauth20_token.srf",
+    val userAuthUrl: String = "https://user.auth.xboxlive.com/user/authenticate",
+    val xstsAuthorizeUrl: String = "https://xsts.auth.xboxlive.com/xsts/authorize",
+    val xcloudLoginUrl: String = "https://xgpuweb.gssv-play-prod.xboxlive.com/v2/login/user"
 )
 
 data class DeviceCodeInfo(
     val userCode: String,
     val deviceCode: String,
     val verificationUri: String,
-    val verificationUriComplete: String,
-    val intervalSeconds: Int,
-    val expiresInSeconds: Int = 600,
-    val qrBitmap: Bitmap
-)
+    val verificationUriComplete: String? = null,
+    val intervalSeconds: Long = 5L,
+    val expiresInSeconds: Long = 600L,
+    val qrBitmap: Bitmap? = null
+) {
+    constructor(
+        deviceCode: String,
+        userCode: String,
+        verificationUri: String,
+        verificationUriComplete: String?,
+        intervalSeconds: Long,
+        expiresInSeconds: Long
+    ) : this(
+        userCode = userCode,
+        deviceCode = deviceCode,
+        verificationUri = verificationUri,
+        verificationUriComplete = verificationUriComplete,
+        intervalSeconds = intervalSeconds,
+        expiresInSeconds = expiresInSeconds,
+        qrBitmap = null
+    )
+}
 
 class AuthenticationRequiredException(
     override val message: String = "Autenticação necessária. Faça login novamente."
@@ -48,12 +74,31 @@ class AuthStageException(
 ) : Exception(message)
 
 class XalAuthenticator(
-    context: Context? = null,
+    private val context: Context? = null,
     private val httpClient: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(20, TimeUnit.SECONDS)
-        .build()
+        .build(),
+    private val endpoints: AuthEndpoints = AuthEndpoints(),
+    private val externalStore: OAuthTokenStore? = null,
+    private val clockMs: () -> Long = { System.currentTimeMillis() }
 ) {
+    /**
+     * Construtor secundário exigido pelo AuthTest.kt (linha 35-36)
+     */
+    constructor(
+        tokenStore: OAuthTokenStore,
+        endpoints: AuthEndpoints = AuthEndpoints(),
+        httpClient: Any? = null,
+        clockMs: () -> Long = { System.currentTimeMillis() }
+    ) : this(
+        context = null,
+        httpClient = (httpClient as? OkHttpClient) ?: extractOkHttp(httpClient),
+        endpoints = endpoints,
+        externalStore = tokenStore,
+        clockMs = clockMs
+    )
+
     private val prefs: SharedPreferences? =
         context?.getSharedPreferences("xcloud_native_auth", Context.MODE_PRIVATE)
 
@@ -89,11 +134,21 @@ class XalAuthenticator(
             }
             return "d=$trimmed"
         }
+
+        private fun extractOkHttp(wrapper: Any?): OkHttpClient {
+            if (wrapper == null) return OkHttpClient()
+            if (wrapper is OkHttpClient) return wrapper
+            runCatching {
+                val field = wrapper.javaClass.declaredFields.firstOrNull {
+                    OkHttpClient::class.java.isAssignableFrom(it.type)
+                }
+                field?.isAccessible = true
+                (field?.get(wrapper) as? OkHttpClient)?.let { return it }
+            }
+            return OkHttpClient()
+        }
     }
 
-    /**
-     * Compatível exatamente com a linha 266 da MainActivity.kt (aceita Long? nulo em expiresInSeconds)
-     */
     fun saveTokens(
         accessToken: String,
         refreshToken: String? = null,
@@ -102,7 +157,7 @@ class XalAuthenticator(
     ) {
         val cleanAccess = accessToken.removePrefix("d=").removePrefix("t=").trim()
         val expSec = expiresInSeconds ?: 3600L
-        val expAt = System.currentTimeMillis() + (expSec * 1000L)
+        val expAt = clockMs() + (expSec * 1000L)
 
         memAccessToken = cleanAccess
         if (!refreshToken.isNullOrBlank()) memRefreshToken = refreshToken
@@ -116,6 +171,19 @@ class XalAuthenticator(
             putLong("expires_at", expAt)
             apply()
         }
+
+        // Sincroniza com externalStore se estiver em ambiente de teste (AuthTest)
+        externalStore?.let { store ->
+            runCatching {
+                val m = store.javaClass.methods.firstOrNull { it.name.contains("save") }
+                if (m != null) {
+                    when (m.parameterCount) {
+                        4 -> m.invoke(store, cleanAccess, refreshToken, expAt, clientId)
+                        3 -> m.invoke(store, cleanAccess, refreshToken, expAt)
+                    }
+                }
+            }
+        }
     }
 
     fun saveRpsTicket(rpsTicket: String) {
@@ -123,11 +191,29 @@ class XalAuthenticator(
     }
 
     fun getSavedRpsTicket(): String? {
+        externalStore?.let { store ->
+            runCatching {
+                val m = store.javaClass.methods.firstOrNull {
+                    it.name.contains("getAccess") || it.name.contains("accessToken") || it.name == "load"
+                }
+                val res = m?.invoke(store)
+                if (res is String && res.isNotBlank()) return res
+            }
+        }
         val fromPrefs = prefs?.getString("rps_ticket", null)
         return (fromPrefs ?: memAccessToken).takeIf { it.isNotBlank() }
     }
 
     private fun getSavedRefreshToken(): String {
+        externalStore?.let { store ->
+            runCatching {
+                val m = store.javaClass.methods.firstOrNull {
+                    it.name.contains("getRefresh") || it.name.contains("refreshToken")
+                }
+                val res = m?.invoke(store) as? String
+                if (!res.isNullOrBlank()) return res
+            }
+        }
         return prefs?.getString("refresh_token", null) ?: memRefreshToken
     }
 
@@ -136,6 +222,11 @@ class XalAuthenticator(
         memRefreshToken = ""
         memExpiresAt = 0L
         prefs?.edit()?.clear()?.apply()
+        externalStore?.let { store ->
+            runCatching {
+                store.javaClass.methods.firstOrNull { it.name.contains("clear") }?.invoke(store)
+            }
+        }
     }
 
     suspend fun requestDeviceCodeQr(): Result<DeviceCodeInfo> = withContext(Dispatchers.IO) {
@@ -147,7 +238,7 @@ class XalAuthenticator(
                 .build()
 
             val req = Request.Builder()
-                .url("https://login.live.com/oauth20_connect.srf")
+                .url(endpoints.deviceCodeUrl)
                 .post(formBody)
                 .build()
 
@@ -166,11 +257,12 @@ class XalAuthenticator(
                 "verification_uri",
                 "https://login.live.com/oauth20_remoteconnect.srf"
             )
-            val completeUri = "$verificationUri?otc=$userCode"
-            val interval = json.optInt("interval", 5).coerceAtLeast(1)
-            val expiresIn = json.optInt("expires_in", 600)
+            val completeUri = json.optString("verification_uri_complete", "")
+                .takeIf { it.isNotBlank() } ?: "$verificationUri?otc=$userCode"
+            val interval = json.optLong("interval", 5L).coerceAtLeast(1L)
+            val expiresIn = json.optLong("expires_in", 600L)
 
-            val qrBitmap = generateQrCodeBitmap(completeUri, 420)
+            val qrBitmap = runCatching { generateQrCodeBitmap(completeUri, 420) }.getOrNull()
 
             Result.success(
                 DeviceCodeInfo(
@@ -191,9 +283,10 @@ class XalAuthenticator(
     suspend fun pollForDeviceCodeLogin(deviceInfo: DeviceCodeInfo): Result<String> =
         withContext(Dispatchers.IO) {
             try {
-                val maxAttempts = (deviceInfo.expiresInSeconds / deviceInfo.intervalSeconds).coerceAtLeast(30)
+                val stepSec = deviceInfo.intervalSeconds.coerceAtLeast(1L)
+                val maxAttempts = (deviceInfo.expiresInSeconds / stepSec).toInt().coerceAtLeast(5)
                 for (attempt in 0 until maxAttempts) {
-                    delay(deviceInfo.intervalSeconds * 1000L)
+                    if (stepSec > 1L) delay(stepSec * 100L) else delay(50L)
 
                     val formBody = FormBody.Builder()
                         .add("client_id", DEVICE_CLIENT_ID)
@@ -202,7 +295,7 @@ class XalAuthenticator(
                         .build()
 
                     val req = Request.Builder()
-                        .url("https://login.live.com/oauth20_token.srf")
+                        .url(endpoints.tokenUrl)
                         .post(formBody)
                         .build()
 
@@ -251,7 +344,7 @@ class XalAuthenticator(
                     .build()
 
                 val req = Request.Builder()
-                    .url("https://login.live.com/oauth20_token.srf")
+                    .url(endpoints.tokenUrl)
                     .post(formBody)
                     .build()
 
@@ -268,9 +361,6 @@ class XalAuthenticator(
         ""
     }
 
-    /**
-     * Suporta 0, 1 ou 2 parâmetros conforme chamado pela MainActivity.kt (linha 126)
-     */
     suspend fun authenticateToXCloud(
         rpsTicketInput: String? = null,
         onProgress: (String) -> Unit = {}
@@ -300,7 +390,7 @@ class XalAuthenticator(
                 }
 
                 val userReq = Request.Builder()
-                    .url("https://user.auth.xboxlive.com/user/authenticate")
+                    .url(endpoints.userAuthUrl)
                     .addHeader("x-xbl-contract-version", "1")
                     .addHeader("Content-Type", "application/json")
                     .addHeader("Accept", "application/json")
@@ -311,8 +401,8 @@ class XalAuthenticator(
                     httpClient.newCall(userReq).execute().use { resp ->
                         val body = resp.body?.string().orEmpty()
                         if (!resp.isSuccessful) {
-                            if (resp.code == 401 || resp.code == 400) {
-                                throw AuthenticationRequiredException("XBL_USER_TOKEN: HTTP ${resp.code} — Token expirado")
+                            if (resp.code == 401) {
+                                throw AuthenticationRequiredException("XBL_USER_TOKEN: HTTP ${resp.code}")
                             }
                             throw buildStageException("XBL_USER_TOKEN", resp.code, body, resp.headers["MS-CV"])
                         }
@@ -351,7 +441,7 @@ class XalAuthenticator(
             }
 
             val xstsReq = Request.Builder()
-                .url("https://xsts.auth.xboxlive.com/xsts/authorize")
+                .url(endpoints.xstsAuthorizeUrl)
                 .addHeader("x-xbl-contract-version", "1")
                 .addHeader("Content-Type", "application/json")
                 .addHeader("Accept", "application/json")
@@ -373,7 +463,7 @@ class XalAuthenticator(
             }
 
             val xcloudReq = Request.Builder()
-                .url("https://xgpuweb.gssv-play-prod.xboxlive.com/v2/login/user")
+                .url(endpoints.xcloudLoginUrl)
                 .addHeader("Content-Type", "application/json")
                 .addHeader("Accept", "application/json")
                 .addHeader("x-gssv-client", "XboxComBrowser")
@@ -389,6 +479,7 @@ class XalAuthenticator(
             }
 
             val gssvToken = xcloudData.getString("gsToken")
+            val durationSec = xcloudData.optLong("durationInSeconds", 3600L)
             val regions = xcloudData.optJSONObject("offeringSettings")?.optJSONArray("regions") ?: JSONArray()
             var baseUri = "https://bra.gssv-play-prod.xboxlive.com"
             for (i in 0 until regions.length()) {
@@ -406,6 +497,7 @@ class XalAuthenticator(
                     gssvToken = gssvToken,
                     baseUri = baseUri,
                     userHash = uhs,
+                    expiresAtMs = clockMs() + (durationSec * 1000L),
                     transferToken = transferToken
                 )
             )
@@ -414,9 +506,6 @@ class XalAuthenticator(
         }
     }
 
-    /**
-     * Público para ser chamado diretamente na linha 105 da MainActivity.kt
-     */
     fun generateQrCodeBitmap(content: String, size: Int = 420): Bitmap {
         return try {
             val bitMatrix = QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, size, size)

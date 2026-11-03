@@ -43,6 +43,16 @@ jobs:
           echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
           echo "$tool_root/gradle-8.7/bin" >> "$GITHUB_PATH"
 
+      - name: Validar proteção da assinatura
+        shell: bash
+        run: python3 -m unittest discover -s scripts/tests -v
+
+      - name: Preparar assinatura fixa do aplicativo
+        env:
+          XCLOUD_ANDROID_KEYSTORE_BASE64: ${{ secrets.XCLOUD_ANDROID_KEYSTORE_BASE64 }}
+        shell: bash
+        run: python3 scripts/prepare_signing.py
+
       - name: Compilar APK e verificar APIs para Android 10
         shell: bash
         run: |
@@ -60,6 +70,7 @@ jobs:
           PYTEST
           apk=app/build/outputs/apk/debug/app-debug.apk
           "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --verbose "$apk"
+          python3 scripts/verify_apk_signing.py "$apk"
           badging=$("$ANDROID_HOME/build-tools/34.0.0/aapt" dump badging "$apk")
           printf '%s\n' "$badging" | grep -F "package: name='com.xcloud.tclnative'"
           printf '%s\n' "$badging" | grep -Fx "sdkVersion:'24'"
@@ -89,6 +100,7 @@ jobs:
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/outputs/apk/debug/app-debug.apk.sha256
+            app/build/outputs/apk/debug/app-debug.apk.metadata.json
           if-no-files-found: error
 
       - name: Salvar relatório de compatibilidade de APIs

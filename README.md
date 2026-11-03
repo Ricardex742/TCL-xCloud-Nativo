@@ -1,6 +1,8 @@
 # xCLOUD
 Cliente experimental para Xbox Cloud Gaming em Android 10 ou superior, com vídeo nativo por WebRTC e SurfaceViewRenderer. A disponibilidade do jogo depende da conta, da região e da conectividade; o scaler nativo não comprova ativação de AiPQ 4K.
 
+A [versão 0.16.0](docs/stable-signing-0.16.md) fixa o certificado de assinatura dos APKs para permitir atualizações sobre a instalação existente. O Actions precisa do segredo privado `XCLOUD_ANDROID_KEYSTORE_BASE64`; sem ele, ou com outro certificado, o build bloqueia a publicação em vez de gerar uma identidade nova. O APK inclui metadados públicos para conferir assinatura, pacote e versão.
+
 A [versão 0.15.0](docs/input-image-0.15.md) restringe a aba e os selos Game Pass à galeria oficial, resolvendo edições pelo catálogo autenticado. Acrescenta coop local com até quatro jogadores, recepção de vibração do jogo com teste do suporte Android, controle virtual multitoque e toque nativo nos jogos que o anunciam. Nitidez e saturação são opcionais; começam em 0% e 100%, respectivamente, e podem ser ajustadas durante a partida pelo menu de toque.
 
 A [versão 0.14.0](docs/xcloud-0.14.md) reconhece os códigos autenticados XGPULTIMATE/GPULTIMATE e os programas da conta, corrige jogos Game Pass ausentes por divergência entre IDs de edição e acrescenta oito modos de proporção. O aviso verde de sessão fica oculto durante reprodução normal. O aplicativo passa a se chamar **xCLOUD**, com ícone adaptativo, banner para TV e [duas propostas visuais](docs/branding/README.md).
@@ -16,6 +18,8 @@ O [catálogo original 0.10.0](docs/dashboard-0.10.md) introduziu o template forn
 O workflow `build-apk.yml` roda nos pushes da branch `ci/apk-android10-3cc2595` e pode ser executado manualmente nela. Ele prepara JDK 21, Gradle 8.7 e Android SDK 34, executa os testes JVM, verifica APIs incompatíveis com o Android mínimo declarado (API 24, incluindo Android 10), gera o APK debug e verifica sua assinatura. Baixe `TCL-xCloud-App-Debug-Android10` na seção **Artifacts** da execução: ele contém o APK e seu checksum SHA-256. O relatório de lint é salvo separadamente. O módulo instalável é `:app`; os comandos usam esse alvo explicitamente.
 
 Com JDK 21, Gradle 8.7 e Android SDK 34 configurados, use na raiz do repositório:
+
+Para montar o APK, prepare antes a [chave privada de assinatura](docs/stable-signing-0.16.md). Testes JVM/lint podem ser executados separadamente sem a chave. O arquivo privado e a exportação base64 não fazem parte do repositório.
 
 ```bash
 gradle --no-daemon --max-workers=2 :app:testDebugUnitTest :app:assembleDebug :app:lintDebug

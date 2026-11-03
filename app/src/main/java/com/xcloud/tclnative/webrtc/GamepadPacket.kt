@@ -13,16 +13,37 @@ data class GamepadState(
 
 /** Common gamepad report in the negotiated input/1.0 channel (little-endian header). */
 object GamepadPacket {
-    fun metadata(timestampMs: Double): ByteArray = header(15, 8, 0, timestampMs).put(0).array()
-    fun encode(state: GamepadState, sequence: Int, timestampMs: Double): ByteArray {
-        val out = header(38, 2, sequence, timestampMs)
-        out.put(1).put(0).putShort(state.buttons.toShort())
+    fun metadata(timestampMs: Double, maxTouchPoints: Int = 0): ByteArray =
+        header(15, 8, 0, timestampMs).put(maxTouchPoints.coerceIn(0,10).toByte()).array()
+    fun encode(state: GamepadState, sequence: Int, timestampMs: Double): ByteArray = encode(mapOf(0 to state),sequence,timestampMs)
+    fun encode(states: Map<Int,GamepadState>, sequence: Int, timestampMs: Double,
+               pointers: List<NativePointer> = emptyList(), width: Int = 1920, height: Int = 1080): ByteArray {
+        require(states.size<=4 && states.keys.all { it in 0..3 } && pointers.size<=10)
+        val type=(if(states.isEmpty()) 0 else 2) or (if(pointers.isEmpty()) 0 else 4)
+        val out=header(14+(if(states.isEmpty()) 0 else 1+23*states.size)+(if(pointers.isEmpty()) 0 else 2+20*pointers.size),type,sequence,timestampMs)
+        if(states.isNotEmpty()) {
+            out.put(states.size.toByte())
+            states.toSortedMap().forEach { (index,state) ->
+                out.put(index.toByte()).putShort(state.buttons.toShort())
         out.putShort(axis(state.leftX)).putShort(axis(-state.leftY))
             .putShort(axis(state.rightX)).putShort(axis(-state.rightY))
             .putShort(trigger(state.leftTrigger)).putShort(trigger(state.rightTrigger))
             .putInt(1)
         // VirtualPhysicality is the sole big-endian uint32 in this report.
         out.order(ByteOrder.BIG_ENDIAN).putInt(1)
+                out.order(ByteOrder.LITTLE_ENDIAN)
+            }
+        }
+        if(pointers.isNotEmpty()) {
+            out.put(1).put(pointers.size.toByte())
+            pointers.forEach { p ->
+                out.putShort(if(p.type==2) 0 else 1).putShort(if(p.type==2) 0 else 1)
+                    .put((if(p.type==2) 0 else (p.pressure.coerceIn(0f,1f)*255).roundToInt()).toByte())
+                    .putShort(0).putInt(p.id)
+                    .putInt((p.x.coerceIn(0f,1f)*width.coerceAtLeast(1)).roundToInt())
+                    .putInt((p.y.coerceIn(0f,1f)*height.coerceAtLeast(1)).roundToInt()).put(p.type.toByte())
+            }
+        }
         return out.array()
     }
     private fun header(size: Int, type: Int, sequence: Int, time: Double) = ByteBuffer.allocate(size)

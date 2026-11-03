@@ -13,12 +13,12 @@ enum class LibraryTab(val label: String) {
 
 data class PlayRecord(val lastPlayed: Long, val launches: Int)
 
-/** A title's catalog program is membership evidence; its user's tier is a separate claim. */
+/** Cloud access programs (including GPULTIMATE) also cover BYOG; only the official gallery proves membership. */
 object GamePassCatalog {
     fun productKey(id: String) = id.trim().uppercase(Locale.ROOT)
-    fun contains(game: GameTitle, normalizedProducts: Set<String>): Boolean = !game.freeToPlay && (
-        XboxProfile.subscription(game.programs + game.userPrograms)?.let { it != "FREE" } == true ||
-            game.productId?.let { productKey(it) in normalizedProducts } == true)
+    fun contains(game: GameTitle, normalizedProducts: Set<String>, resolvedTitles: Set<String> = emptySet()): Boolean =
+        !game.freeToPlay && (game.productId?.let { productKey(it) in normalizedProducts } == true ||
+            productKey(game.titleId) in resolvedTitles)
 }
 
 /** Only a rendered first frame counts as played; a cancelled cloud queue does not. */
@@ -48,7 +48,8 @@ class GameLibrary(context: Context, accountId: String) {
             .digest(account.toByteArray()).take(12).joinToString("") { "%02x".format(it) }
 
         fun select(games: List<GameTitle>, tab: LibraryTab, favorites: Set<String>, records: Map<String, PlayRecord>,
-                   gamePass: List<String>?, added: List<String>?, query: String = ""): List<GameTitle> {
+                   gamePass: List<String>?, added: List<String>?, query: String = "",
+                   gamePassTitles: Set<String> = emptySet()): List<GameTitle> {
             val selected = when (tab) {
                 LibraryTab.ALL -> games
                 LibraryTab.FAVORITES -> games.filter { it.titleId in favorites }
@@ -56,7 +57,7 @@ class GameLibrary(context: Context, accountId: String) {
                     .sortedByDescending { records[it.titleId]?.lastPlayed }
                 LibraryTab.GAME_PASS -> {
                     val products=(gamePass ?: emptyList()).map(GamePassCatalog::productKey).toSet()
-                    games.filter { GamePassCatalog.contains(it,products) }.sortedBy { it.name.lowercase(Locale.ROOT) }
+                    games.filter { GamePassCatalog.contains(it,products,gamePassTitles) }.sortedBy { it.name.lowercase(Locale.ROOT) }
                 }
                 LibraryTab.ADDED -> ordered(games, added ?: emptyList())
             }

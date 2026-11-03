@@ -16,7 +16,9 @@ class XCloudWebRtcClient(
     private val onConnectionStateChanged: (String) -> Unit,
     private val onStatistics: (StreamMetrics, InputMetrics) -> Unit = { _, _ -> },
     private val lowLatencyVideo: Boolean = true,
-    private val streamResolution: StreamResolution = StreamResolution.HD_1080_HQ
+    private val streamResolution: StreamResolution = StreamResolution.HD_1080_HQ,
+    private val nativeTouch: Boolean = false,
+    private val onRumble: (RumbleCommand) -> Unit = {}
 ) : StreamingPeer {
     private val factory: PeerConnectionFactory
     private var peerConnection: PeerConnection? = null
@@ -24,12 +26,14 @@ class XCloudWebRtcClient(
     private val gatheringComplete = CompletableDeferred<Unit>()
     private val connected = CompletableDeferred<Unit>()
     private val channelsReady = CompletableDeferred<Unit>()
-    private val handshake = ChannelHandshake()
+    private val handshake = ChannelHandshake(nativeTouch,streamResolution.width,streamResolution.height)
     private val channels = java.util.concurrent.ConcurrentHashMap<String, DataChannel>()
     private val closed = AtomicBoolean(false)
     private val inputStarted = AtomicBoolean(false)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    @Volatile private var gamepad = GamepadState()
+    private val gamepads = mutableMapOf<Int,GamepadState>().apply { if(!nativeTouch) put(0,GamepadState()) }
+    @Volatile private var inputWidth=streamResolution.width
+    @Volatile private var inputHeight=streamResolution.height
     private val pumpLock = Any()
     @Volatile private var inputPump: RealtimeInputPump? = null
     private val statsCollector = StreamStatsCollector()
@@ -120,7 +124,16 @@ class XCloudWebRtcClient(
                     else if (channel.state() == DataChannel.State.CLOSED && name != "chat") fail("CHANNELS: $name fechado")
                 }
                 override fun onMessage(buffer: DataChannel.Buffer?) {
-                    if (closed.get() || name != "message" || buffer == null || buffer.binary) return
+                    if (closed.get() || buffer == null) return
+                    if(name=="input" && buffer.binary) {
+                        RemoteInputReport.parse(buffer.data)?.let { report ->
+                            report.width?.let { inputWidth=it; inputPump?.touchWidth=it }
+                            report.height?.let { inputHeight=it; inputPump?.touchHeight=it }
+                            report.rumble?.let(onRumble)
+                        }
+                        return
+                    }
+                    if(name!="message" || buffer.binary) return
                     val bytes = ByteArray(buffer.data.remaining()).also { buffer.data.duplicate().get(it) }
                     val type = runCatching { JSONObject(String(bytes, Charsets.UTF_8).trimEnd('\u0000')).optString("type") }.getOrNull()
                     if (type == "HandshakeAck") dispatch(handshake.onHandshakeAck())
@@ -155,22 +168,25 @@ class XCloudWebRtcClient(
         }
         if (handshake.ready && inputStarted.compareAndSet(false, true)) {
             val input = channels.getValue("input")
-            if (!input.send(DataChannel.Buffer(ByteBuffer.wrap(GamepadPacket.metadata(0.0)), true))) {
+            if (!input.send(DataChannel.Buffer(ByteBuffer.wrap(GamepadPacket.metadata(0.0,if(nativeTouch) 10 else 0)), true))) {
                 fail("CHANNELS: falha ao iniciar input")
                 return
             }
-            channelsReady.complete(Unit)
-            val pump = RealtimeInputPump(
+            synchronized(pumpLock) {
+                if (closed.get()) return
+                gamepads.keys.filter { nativeTouch || it!=0 }.forEach { sendGamepadChanged(it,true) }
+                val pump = RealtimeInputPump(
                 bufferedAmount = { if (closed.get()) Long.MAX_VALUE else input.bufferedAmount() },
                 send = { bytes -> !closed.get() && input.send(DataChannel.Buffer(ByteBuffer.wrap(bytes), true)) },
                 onFailure = { fail("CHANNELS: falha no envio de input") },
-                prioritize = { runCatching { android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DISPLAY) }; Unit }
+                prioritize = { runCatching { android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DISPLAY) }; Unit },
+                initialGamepads = gamepads.keys.toSet()
             )
-            synchronized(pumpLock) {
-                if (closed.get()) return
                 inputPump = pump
-                pump.update(gamepad)
+                pump.touchWidth=inputWidth; pump.touchHeight=inputHeight
+                gamepads.forEach { (index,state) -> pump.update(state,index) }
                 pump.start()
+                channelsReady.complete(Unit)
             }
             statsJob = scope.launch {
                 while (isActive) {
@@ -205,7 +221,32 @@ class XCloudWebRtcClient(
         return scheduled
     }
 
-    fun updateGamepad(state: GamepadState) { gamepad = state; inputPump?.update(state) }
+    private fun sendGamepadChanged(index: Int, added: Boolean) {
+        val bytes=JSONObject().put("message","gamepadChanged").put("gamepadIndex",index).put("wasAdded",added).toString().toByteArray(Charsets.UTF_8)
+        if(channels["control"]?.send(DataChannel.Buffer(ByteBuffer.wrap(bytes),false)) != true && !closed.get()) fail("CHANNELS: falha ao atualizar controle")
+    }
+    fun updateGamepad(state: GamepadState, index: Int = 0) {
+        require(index in 0..3)
+        synchronized(pumpLock) {
+            if(closed.get()) return
+            val added=index !in gamepads
+            gamepads[index]=state
+            if(added && channelsReady.isCompleted) sendGamepadChanged(index,true)
+            inputPump?.update(state,index)
+        }
+    }
+    fun removeGamepad(index: Int) {
+        synchronized(pumpLock) {
+            if(index==0 && !nativeTouch) { gamepads[0]=GamepadState(); inputPump?.update(GamepadState()); return }
+            if(gamepads.remove(index)!=null && channelsReady.isCompleted) sendGamepadChanged(index,false)
+            inputPump?.remove(index)
+        }
+    }
+    fun sendPointers(events: List<NativePointer>) { if(nativeTouch && !closed.get()) inputPump?.pointers(events) }
+    fun resetInput() { synchronized(pumpLock) {
+        gamepads.keys.toList().forEach { gamepads[it]=GamepadState(); inputPump?.update(GamepadState(),it) }
+        inputPump?.releaseTouch()
+    } }
 
     override suspend fun setRemoteAnswer(answerSdp: String) {
         val pc = peerConnection ?: throw IOException("TRANSPORT: PeerConnection ausente")

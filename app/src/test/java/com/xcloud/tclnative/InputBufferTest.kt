@@ -6,6 +6,27 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class InputBufferTest {
+    @Test fun nativePumpKeepsBothPlayersAndDisconnectingOneDoesNotReleaseTheOther() {
+        val received=java.util.concurrent.LinkedBlockingQueue<ByteArray>()
+        val pump=com.xcloud.tclnative.webrtc.RealtimeInputPump({ 0 },{ received.offer(it); true },{ fail("Send failed") })
+        fun next(count: Int): ByteArray {
+            val end=System.nanoTime()+java.util.concurrent.TimeUnit.SECONDS.toNanos(2)
+            while(System.nanoTime()<end) {
+                val data=received.poll(100,java.util.concurrent.TimeUnit.MILLISECONDS) ?: continue
+                if(data[14].toInt()==count) return data
+            }
+            throw AssertionError("No packet with $count players")
+        }
+        try {
+            pump.update(GamepadState(buttons=16),0); pump.update(GamepadState(buttons=32),1)
+            pump.start()
+            val both=java.nio.ByteBuffer.wrap(next(2)).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            assertEquals(16,both.getShort(16).toInt()); assertEquals(32,both.getShort(39).toInt())
+            pump.remove(1)
+            val one=java.nio.ByteBuffer.wrap(next(1)).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            assertEquals(16,one.getShort(16).toInt())
+        } finally { pump.close() }
+    }
     @Test fun quickPressAndReleaseBetweenPeriodicTicksAreBothPreserved() {
         val input = GamepadInputBuffer()
         assertTrue(input.update(GamepadState(buttons = 16)))

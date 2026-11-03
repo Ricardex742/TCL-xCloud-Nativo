@@ -14,6 +14,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.MediaType.Companion.toMediaType
@@ -29,7 +34,7 @@ data class GameTitle(
     val userSubscriptions: List<String> = emptyList(), val heroUrl: String? = null,
     val seriesOptimized: Boolean = false, val xboxTitleId: String? = null,
     val programs: List<String> = emptyList(), val userPrograms: List<String> = emptyList(),
-    val freeToPlay: Boolean = false
+    val freeToPlay: Boolean = false, val supportedInputTypes: Set<String> = emptySet()
 )
 
 class XCloudSignalingClient(
@@ -77,8 +82,29 @@ class XCloudSignalingClient(
                 userSubscriptions = XboxProfile.subscriptionClaims(details?.opt("userSubscriptions")),
                 userPrograms = XboxProfile.subscriptionClaims(details?.opt("userPrograms")),
                 programs = XboxProfile.subscriptionClaims(details?.opt("programs")),
-                freeToPlay = details?.optBoolean("isFreeInStore",false) == true)
+                freeToPlay = details?.optBoolean("isFreeInStore",false) == true,
+                supportedInputTypes = XboxProfile.subscriptionClaims(details?.opt("supportedInputTypes")).toSet())
         }.distinctBy { it.titleId }.sortedBy { it.name.lowercase(java.util.Locale.ROOT) }
+    }
+
+    /** Resolves official Game Pass product/edition IDs to cloud launch IDs, never using access programs. */
+    suspend fun resolveCatalogProducts(products: Set<String>): Set<String> = coroutineScope {
+        val slots=Semaphore(3)
+        val client=httpClient.newBuilder().callTimeout(6,TimeUnit.SECONDS).build()
+        products.map { product -> async {
+            slots.withPermit {
+                try {
+                    val body=JSONObject().put("alternateIds",org.json.JSONArray(listOf(product))).put("alternateIdType","productId")
+                    val response=JSONObject(request("/v2/titles","CATALOG_LOOKUP","POST",body,client))
+                    val results=response.getJSONArray("results")
+                    // The web client's single-product lookup must return one unambiguous title.
+                    if(results.length()!=1 || response.optInt("totalItems",1)>1) return@withPermit emptySet<String>()
+                    (0 until results.length()).mapNotNull { results.optJSONObject(it)?.optString("titleId")
+                        ?.takeIf { id -> id.isNotBlank() && id != "null" } }.toSet()
+                } catch (cancelled: CancellationException) { throw cancelled }
+                catch (_: Exception) { emptySet<String>() }
+            }
+        } }.awaitAll().flatten().toSet()
     }
 
     private suspend fun awaitProvisioned(path: String, titleId: String, onQueueStatus: (QueueStatus?) -> Unit,

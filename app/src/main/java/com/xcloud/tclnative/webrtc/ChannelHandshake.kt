@@ -6,7 +6,7 @@ import java.util.UUID
 data class ChannelMessage(val channel: String, val bytes: ByteArray)
 
 /** Ordered protocol transitions; callbacks for the three channels can arrive in any order. */
-class ChannelHandshake {
+class ChannelHandshake(private val nativeTouch: Boolean = false, private val width: Int = 1920, private val height: Int = 1080) {
     private val opened = mutableSetOf<String>()
     private var acknowledged = false
     private var started = false
@@ -27,17 +27,16 @@ class ChannelHandshake {
     private fun startIfReady(): List<ChannelMessage> {
         if (started || !acknowledged || !opened.containsAll(listOf("message", "control", "input"))) return emptyList()
         started = true
-        return listOf(
-            encode("control", JSONObject().put("message", "authorizationRequest").put("accessKey", "4BDB3609-C1F1-4195-9B37-FEFF45DA8B8E")),
-            encode("control", JSONObject().put("message", "gamepadChanged").put("gamepadIndex", 0).put("wasAdded", true)),
+        return listOf(encode("control", JSONObject().put("message", "authorizationRequest").put("accessKey", "4BDB3609-C1F1-4195-9B37-FEFF45DA8B8E"))) +
+            (if(nativeTouch) emptyList() else listOf(encode("control", JSONObject().put("message", "gamepadChanged").put("gamepadIndex", 0).put("wasAdded", true)))) + listOf(
             config("/streaming/systemUi/configuration", JSONObject().put("version", org.json.JSONArray(listOf(0, 2, 0))).put("systemUis", org.json.JSONArray())),
             config("/streaming/properties/clientappinstallidchanged", JSONObject().put("clientAppInstallId", UUID.randomUUID().toString())),
             config("/streaming/characteristics/orientationchanged", JSONObject().put("orientation", 0)),
-            config("/streaming/characteristics/touchinputenabledchanged", JSONObject().put("touchInputEnabled", false)),
+            config("/streaming/characteristics/touchinputenabledchanged", JSONObject().put("touchInputEnabled", nativeTouch)),
             config("/streaming/characteristics/clientdevicecapabilities", JSONObject()),
             config("/streaming/characteristics/dimensionschanged", JSONObject()
-                .put("horizontal", 1920).put("vertical", 1080).put("preferredWidth", 1920).put("preferredHeight", 1080)
-                .put("safeAreaLeft", 0).put("safeAreaTop", 0).put("safeAreaRight", 1920).put("safeAreaBottom", 1080)
+                .put("horizontal", width).put("vertical", height).put("preferredWidth", width).put("preferredHeight", height)
+                .put("safeAreaLeft", 0).put("safeAreaTop", 0).put("safeAreaRight", width).put("safeAreaBottom", height)
                 .put("supportsCustomResolution", true))
         )
     }

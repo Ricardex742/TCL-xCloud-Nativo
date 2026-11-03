@@ -6,6 +6,9 @@ import com.xcloud.tclnative.webrtc.StreamResolution
 enum class VideoMode(val label: String, val lowLatency: Boolean) {
     LOW_LATENCY("Menor atraso", true), ADAPTIVE("Adaptativo", false)
 }
+enum class TouchMode(val label: String) {
+    AUTO("Automático — escolher no celular"), OFF("Desativado"), VIRTUAL("Controle virtual"), NATIVE("Toque nativo — jogos compatíveis")
+}
 
 enum class VideoAspect(val label: String, val ratio: Double? = null, val stretch: Boolean = false) {
     ORIGINAL("Original — manter proporção"),
@@ -22,7 +25,12 @@ data class PlaybackSettings(
     val videoMode: VideoMode = VideoMode.LOW_LATENCY,
     val resolution: StreamResolution = StreamResolution.HD_1080_HQ,
     val nativeUpscaling: Boolean = true,
-    val aspect: VideoAspect = VideoAspect.RATIO_16_9
+    val aspect: VideoAspect = VideoAspect.RATIO_16_9,
+    val localCoOp: Boolean = false,
+    val rumble: Boolean = true,
+    val touchMode: TouchMode = TouchMode.AUTO,
+    val sharpness: Int = 0,
+    val saturation: Int = 100
 )
 
 class PlaybackSettingsStore(context: Context) {
@@ -33,12 +41,17 @@ class PlaybackSettingsStore(context: Context) {
             VideoMode.entries.firstOrNull { it.name == prefs.getString("video_mode",null) } ?: legacy,
             StreamResolution.entries.firstOrNull { it.name == prefs.getString("resolution",null) } ?: StreamResolution.HD_1080_HQ,
             prefs.getBoolean("native_upscaling",true),
-            VideoAspect.entries.firstOrNull { it.name == prefs.getString("aspect",null) } ?: VideoAspect.RATIO_16_9)
+            VideoAspect.entries.firstOrNull { it.name == prefs.getString("aspect",null) } ?: VideoAspect.RATIO_16_9,
+            prefs.getBoolean("local_coop",false),prefs.getBoolean("rumble",true),
+            TouchMode.entries.firstOrNull { it.name==prefs.getString("touch_mode",null) } ?: TouchMode.AUTO,
+            prefs.getInt("sharpness",0).coerceIn(0,100),prefs.getInt("saturation",100).coerceIn(0,200))
     }
     fun save(settings: PlaybackSettings) {
         prefs.edit().putString("video_mode",settings.videoMode.name).putBoolean("low_latency_video",settings.videoMode.lowLatency)
             .putString("resolution",settings.resolution.name).putBoolean("native_upscaling",settings.nativeUpscaling)
-            .putString("aspect",settings.aspect.name).apply()
+            .putString("aspect",settings.aspect.name).putBoolean("local_coop",settings.localCoOp)
+            .putBoolean("rumble",settings.rumble).putString("touch_mode",settings.touchMode.name)
+            .putInt("sharpness",settings.sharpness.coerceIn(0,100)).putInt("saturation",settings.saturation.coerceIn(0,200)).apply()
     }
 }
 

@@ -48,6 +48,7 @@ class GameDashboardView(
     private val posters = PosterLoader(context, scope)
     private var games = emptyList<GameTitle>()
     private var gamePassProducts: Set<String>? = null
+    private var gamePassTitles = emptySet<String>()
     private var gamePassLoaded = false
     private var added: List<String>? = null
     private var galleriesLoaded = false
@@ -192,14 +193,15 @@ class GameDashboardView(
 
     fun setGames(titles: List<GameTitle>) {
         val products=gamePassProducts?.map(GamePassCatalog::productKey)?.toSet() ?: emptySet()
-        games = titles.map { game -> game.copy(gamePass = GamePassCatalog.contains(game,products)) }
+        games = titles.map { game -> game.copy(gamePass = GamePassCatalog.contains(game,products,gamePassTitles)) }
         val tier = XboxProfile.subscription(titles.flatMap { it.userSubscriptions + it.userPrograms })
         profile = profile.copy(subscription = tier ?: profile.subscription)
         renderProfile(); refresh()
     }
     fun gameById(id: String): GameTitle? = games.firstOrNull { it.titleId == id }
-    fun setGamePassProducts(products: Set<String>?) {
+    fun setGamePassProducts(products: Set<String>?, resolvedTitles: Set<String> = emptySet()) {
         gamePassProducts = products
+        gamePassTitles = resolvedTitles.map(GamePassCatalog::productKey).toSet()
         gamePassLoaded = true
         setGames(games)
     }
@@ -230,7 +232,7 @@ class GameDashboardView(
     }
     fun setSearch(query: String) { searchQuery = query.trim(); refresh(); focusFirstCover() }
     fun refresh() {
-        val visible = GameLibrary.select(games, activeTab, library.favorites, library.records(), gamePassProducts?.toList(), added, searchQuery)
+        val visible = GameLibrary.select(games, activeTab, library.favorites, library.records(), gamePassProducts?.toList(), added, searchQuery,gamePassTitles)
         adapter.submit(visible)
         emptyState.visibility = if (visible.isEmpty()) View.VISIBLE else View.GONE
         emptyState.text = when {

@@ -147,9 +147,10 @@ object ConsoleDialogs {
         dialog.show()
         return dialog
     }
-    fun menu(context: Context, title: String, items: List<ConsoleAction>): ConsoleDialog = ConsoleDialog(context,title).apply {
+    fun menu(context: Context, title: String, items: List<ConsoleAction>, onBack: () -> Unit = {}): ConsoleDialog = ConsoleDialog(context,title).apply {
         items.forEach { addMenuItem(it.label, it.action) }
-        addAction("Voltar") {}
+        addAction("Voltar",onBack)
+        setOnCancelListener { onBack() }
         show()
     }
     fun message(context: Context, title: String, message: String, actions: List<ConsoleAction> = listOf(ConsoleAction("Fechar") {}),

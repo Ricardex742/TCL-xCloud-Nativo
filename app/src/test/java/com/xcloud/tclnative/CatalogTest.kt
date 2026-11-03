@@ -76,7 +76,8 @@ class CatalogTest {
         assertNull(XboxProfile.subscription(listOf("xgpuweb","GPULTIMATE-BYOG")))
         val game=GameTitle("GP","Game","lowercase",programs=listOf("GPULTIMATE"))
         assertNull(XboxProfile.subscription(game.userSubscriptions+game.userPrograms))
-        assertTrue(GamePassCatalog.contains(game,emptySet()))
+        assertFalse(GamePassCatalog.contains(game,emptySet()))
+        assertTrue(GamePassCatalog.contains(game,emptySet(),setOf("GP")))
         val galleryOnly=game.copy(programs=emptyList())
         assertEquals(listOf(galleryOnly),GameLibrary.select(listOf(galleryOnly),LibraryTab.GAME_PASS,
             emptySet(),emptyMap(),listOf("LOWERCASE"),null))

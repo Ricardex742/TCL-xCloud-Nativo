@@ -62,6 +62,16 @@ class ProtocolTest {
         assertTrue(protocol.onHandshakeAck().isEmpty()); assertFalse(protocol.ready)
         assertTrue(protocol.onOpen("input").isNotEmpty()); assertTrue(protocol.ready)
     }
+    @Test fun nativeTouchHandshakeEnablesPointersWithoutInventingAPhysicalController() {
+        val protocol=ChannelHandshake(true,1280,720)
+        listOf("input","message","control").forEach(protocol::onOpen)
+        val messages=protocol.onHandshakeAck().map { JSONObject(String(it.bytes,Charsets.UTF_8)) }
+        assertFalse(messages.any { it.optString("message")=="gamepadChanged" })
+        val touch=messages.single { it.optString("target").endsWith("touchinputenabledchanged") }
+        assertTrue(JSONObject(touch.getString("content")).getBoolean("touchInputEnabled"))
+        val dimensions=JSONObject(messages.single { it.optString("target").endsWith("dimensionschanged") }.getString("content"))
+        assertEquals(1280,dimensions.getInt("horizontal")); assertEquals(720,dimensions.getInt("vertical"))
+    }
     @Test fun metadataAndGamepadPacketsMatchTheWireLayout() {
         val metadata = GamepadPacket.metadata(0.0)
         assertEquals("080000000000000000000000000000", metadata.joinToString("") { "%02x".format(it) })

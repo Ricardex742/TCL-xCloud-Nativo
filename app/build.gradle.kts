@@ -11,8 +11,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 14
-        versionName = "0.14.0-xcloud-branding"
+        versionCode = 15
+        versionName = "0.15.0-input-and-image"
     }
 
     buildTypes {

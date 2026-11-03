@@ -15,6 +15,9 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.view.InputDevice
+import android.hardware.input.InputManager
+import android.content.pm.PackageManager
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -22,6 +25,10 @@ import android.widget.Toast
 import com.xcloud.tclnative.settings.PlaybackSettings
 import com.xcloud.tclnative.settings.PlaybackSettingsStore
 import com.xcloud.tclnative.settings.StatisticsVisibility
+import com.xcloud.tclnative.settings.TouchMode
+import com.xcloud.tclnative.webrtc.ControllerRouter
+import com.xcloud.tclnative.webrtc.ControllerRumble
+import com.xcloud.tclnative.webrtc.GamepadState
 import com.xcloud.tclnative.ui.dashboard.PlaybackSettingsPanel
 import com.xcloud.tclnative.catalog.CatalogCache
 import java.io.File
@@ -62,7 +69,19 @@ class MainActivity : Activity() {
     private val mainScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var gameJob: Job? = null
     @Volatile private var playbackGeneration = 0
-    private var gamepadState = com.xcloud.tclnative.webrtc.GamepadState()
+    private val controllers=ControllerRouter()
+    private var gamepadState: GamepadState
+        get()=controllers.physical(0)
+        set(value) { controllers.update(0,value) }
+    private val rumble by lazy { ControllerRumble(controllers::deviceFor) }
+    private lateinit var touchView: GameTouchView
+    private var currentTouchMode=TouchMode.OFF
+    private var preferredControllerId: Int?=null
+    private val deviceListener=object : InputManager.InputDeviceListener {
+        override fun onInputDeviceAdded(deviceId: Int) {}
+        override fun onInputDeviceChanged(deviceId: Int) { removeController(deviceId) }
+        override fun onInputDeviceRemoved(deviceId: Int) { removeController(deviceId) }
+    }
     private var qrPollingJob: Job? = null
     private lateinit var queuePanel: GameLoadingView
     private var pendingLoadingGame: GameTitle? = null
@@ -157,7 +176,14 @@ class MainActivity : Activity() {
         rootLayout.addView(statsView, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.START
         ).apply { topMargin = (56 * resources.displayMetrics.density).toInt(); marginStart = 12 })
+        touchView=GameTouchView(this,
+            onGamepad={ state -> controllers.virtual(state); if(currentTouchMode==TouchMode.VIRTUAL) publishGamepad(0) },
+            onPointers={ events -> webrtcClient?.sendPointers(events) },
+            coordinates=surfaceRenderer::touchCoordinates,
+            onMenu={ showGameMenu() })
+        rootLayout.addView(touchView,FrameLayout.LayoutParams(-1,-1))
         setContentView(rootLayout)
+        (getSystemService(Context.INPUT_SERVICE) as InputManager).registerInputDeviceListener(deviceListener,null)
 
         renderLoginMenu()
         val savedTicket = authenticator.getSavedRpsTicket()
@@ -269,7 +295,7 @@ class MainActivity : Activity() {
             val library = GameLibrary(this@MainActivity, session.userHash)
             gameLibrary = library
             val view = GameDashboardView(this@MainActivity, library,
-                onPlay = { game -> launchCloudGame(signaling, game) },
+                onPlay = { game -> chooseLaunchMode(signaling, game) },
                 onSearch = { showCatalogSearch() },
                 onOptions = { showSettings(session) },
                 onExit = { showExitDialog() })
@@ -298,9 +324,14 @@ class MainActivity : Activity() {
                 val free = async { catalog.gallery(CatalogService.FREE_TO_PLAY) }
                 val products = included.await()?.map(com.xcloud.tclnative.catalog.GamePassCatalog::productKey)?.toSet()
                 val excluded = free.await()?.map(com.xcloud.tclnative.catalog.GamePassCatalog::productKey)?.toSet()
-                // Incomplete gallery responses add no products; title programs are independent evidence.
+                // Product and edition lookup are both anchored to the official Game Pass gallery.
                 val confirmed = if (products != null && excluded != null) products-excluded else null
                 if (dashboard === view) { view.setGamePassProducts(confirmed); refreshLoadingArt() }
+                if (!confirmed.isNullOrEmpty()) {
+                    val known=allGames.mapNotNull { it.productId?.let(com.xcloud.tclnative.catalog.GamePassCatalog::productKey) }.toSet()
+                    val resolved=signaling.resolveCatalogProducts(confirmed-known)
+                    if (dashboard === view) { view.setGamePassProducts(confirmed,resolved); refreshLoadingArt() }
+                }
             }
             launch {
                 view.setAddedGallery(catalog.gallery(CatalogService.RECENTLY_ADDED))
@@ -320,10 +351,38 @@ class MainActivity : Activity() {
 
     private fun showSettings(session: XCloudSession) {
         PlaybackSettingsPanel(this,settingsStore,
-            changed = { settings -> playbackSettings=settings },
+            changed = ::applyPlaybackSettings,
             subscription = { openAccountPage("https://account.microsoft.com/services") },
             refresh = { renderGameDashboard(session) },
-            logout = { authenticator.clearSession(); renderLoginMenu() }).show()
+            logout = { authenticator.clearSession(); renderLoginMenu() },
+            testRumble = { showRumbleDiagnostics { showSettings(session) } }).show()
+    }
+    private fun applyPlaybackSettings(settings: PlaybackSettings) {
+        playbackSettings=settings
+        surfaceRenderer.setImageAdjustments(settings.sharpness,settings.saturation)
+    }
+    private fun showRumbleDiagnostics(back: () -> Unit) {
+        ConsoleDialogs.message(this,"Vibração do controle",rumble.describe(),listOf(
+            ConsoleAction("Testar agora") { rumble.test(); showRumbleDiagnostics(back) },ConsoleAction("Voltar",back)),onCancel=back)
+    }
+    private fun showGameMenu() {
+        ConsoleDialogs.menu(this,"Partida",listOf(
+            ConsoleAction("Nitidez e saturação") {
+                PlaybackSettingsPanel(this,settingsStore,::applyPlaybackSettings,{}, {}, {}).showImageAdjustments(onBack={})
+            },
+            ConsoleAction("Mostrar / ocultar estatísticas") { cycleStatistics() },
+            ConsoleAction("Voltar ao catálogo") { cancelPlayback() }
+        ))
+    }
+    private fun chooseLaunchMode(signaling: XCloudSignalingClient,game: GameTitle) {
+        if(playbackSettings.touchMode==TouchMode.AUTO && packageManager.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)) {
+            val choices=mutableListOf(
+                ConsoleAction("Jogar com controle") { launchCloudGame(signaling,game,TouchMode.OFF) },
+                ConsoleAction("Jogar com toque — controle virtual") { launchCloudGame(signaling,game,TouchMode.VIRTUAL) }
+            )
+            if("NativeTouch" in game.supportedInputTypes) choices.add(ConsoleAction("Jogar com toque nativo do jogo") { launchCloudGame(signaling,game,TouchMode.NATIVE) })
+            ConsoleDialogs.menu(this,game.name,choices)
+        } else launchCloudGame(signaling,game)
     }
 
     private fun openAccountPage(url: String) {
@@ -354,6 +413,8 @@ class MainActivity : Activity() {
         if (login != null && controlPanel.visibility == View.VISIBLE && login.handleKey(event)) return true
         val view = dashboard
         if (view != null && controlPanel.visibility == View.VISIBLE && queuePanel.visibility != View.VISIBLE) {
+            if(event.action==KeyEvent.ACTION_DOWN && (event.source and InputDevice.SOURCE_GAMEPAD==InputDevice.SOURCE_GAMEPAD ||
+                event.source and InputDevice.SOURCE_JOYSTICK==InputDevice.SOURCE_JOYSTICK)) preferredControllerId=event.deviceId
             if (event.keyCode == KeyEvent.KEYCODE_BACK) {
                 if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) view.back()
                 return true
@@ -363,10 +424,20 @@ class MainActivity : Activity() {
         return super.dispatchKeyEvent(event)
     }
 
-    private fun launchCloudGame(signaling: XCloudSignalingClient, game: GameTitle) {
+    private fun launchCloudGame(signaling: XCloudSignalingClient, game: GameTitle, touchChoice: TouchMode? = null) {
         val titleId = game.titleId
         val gameName = game.name
         val settings = playbackSettings
+        val choice=touchChoice ?: settings.touchMode
+        val nativeSupported="NativeTouch" in game.supportedInputTypes
+        val touchMode=when(choice) {
+            TouchMode.AUTO -> TouchMode.OFF
+            TouchMode.NATIVE -> if(nativeSupported) TouchMode.NATIVE else TouchMode.VIRTUAL
+            else -> choice
+        }
+        if(choice==TouchMode.NATIVE && !nativeSupported) Toast.makeText(this,"Controle virtual ativado: este jogo não informou suporte a toque nativo.",Toast.LENGTH_LONG).show()
+        currentTouchMode=TouchMode.OFF
+        touchView.configure(TouchMode.OFF)
         statistics.beginSession()
         configureVideoOutput(settings)
         val previous = gameJob
@@ -385,14 +456,22 @@ class MainActivity : Activity() {
             val firstFrame = CompletableDeferred<Unit>()
             val transportFailure = CompletableDeferred<Exception>()
             resetController()
+            controllers.beginSession(settings.localCoOp,touchMode!=TouchMode.OFF)
+            InputDevice.getDeviceIds().map { InputDevice.getDevice(it) }.filterNotNull().filter {
+                it.sources and InputDevice.SOURCE_GAMEPAD==InputDevice.SOURCE_GAMEPAD || it.sources and InputDevice.SOURCE_JOYSTICK==InputDevice.SOURCE_JOYSTICK
+            }.sortedWith(compareBy<InputDevice> { it.id!=preferredControllerId }.thenBy { it.id }).forEach { controllers.slot(it.id) }
+            rumble.enabled=settings.rumble
             surfaceRenderer.nativeUpscaling = settings.nativeUpscaling
             surfaceRenderer.aspect = settings.aspect
+            surfaceRenderer.setImageAdjustments(settings.sharpness,settings.saturation)
             surfaceRenderer.minimalPostProcessingRequested = settings.videoMode.lowLatency && Build.VERSION.SDK_INT >= 30
             surfaceRenderer.prepareForSession(settings.resolution.width,settings.resolution.height)
             surfaceRenderer.onFirstFrameRendered = {
                 if (generation == playbackGeneration && !firstFrame.isCompleted) {
                     firstFrame.complete(Unit)
                     finishLoading()
+                    currentTouchMode=touchMode
+                    touchView.configure(touchMode)
                     hudTextView.visibility = View.GONE
                     gameLibrary?.recordPlayed(titleId)
                     hudTextView.text = "Vídeo nativo ativo [$gameName]"
@@ -424,8 +503,11 @@ class MainActivity : Activity() {
                             statsView.visibility = if (firstFrame.isCompleted && statistics.mode != 0) View.VISIBLE else View.GONE
                         }
                     }
-                }, lowLatencyVideo = settings.videoMode.lowLatency, streamResolution = settings.resolution)
+                }, lowLatencyVideo = settings.videoMode.lowLatency, streamResolution = settings.resolution,
+                nativeTouch = touchMode==TouchMode.NATIVE,
+                onRumble = { command -> if(generation==playbackGeneration) rumble.play(command) })
             webrtcClient = rtc
+            if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
             try {
                 signaling.startAndConnectWebRtcSession(titleId, rtc, resolution = settings.resolution, onQueueStatus = { status -> runOnUiThread {
                     if (generation == playbackGeneration) showQueue(status)
@@ -520,6 +602,8 @@ class MainActivity : Activity() {
                     }
                     videoRecoveryDialog?.dismiss()
                     resetController()
+                    currentTouchMode=TouchMode.OFF
+                    touchView.configure(TouchMode.OFF)
                     surfaceRenderer.clearSession()
                     rtc.close()
                     if (webrtcClient === rtc) webrtcClient = null
@@ -558,6 +642,8 @@ class MainActivity : Activity() {
         gameJob?.cancel()
         videoRecoveryDialog?.dismiss()
         resetController()
+        currentTouchMode=TouchMode.OFF
+        touchView.configure(TouchMode.OFF)
         finishLoading()
         statsView.visibility = View.GONE
         hudTextView.text = "Sessão cancelada. Selecione um jogo."
@@ -575,7 +661,19 @@ class MainActivity : Activity() {
     }
 
     private fun gameplayInputEnabled() = controlPanel.visibility == View.GONE &&
-        queuePanel.visibility != View.VISIBLE && videoRecoveryDialog?.isShowing != true && webrtcClient != null
+        queuePanel.visibility != View.VISIBLE && videoRecoveryDialog?.isShowing != true && webrtcClient != null && hasWindowFocus()
+
+    private fun publishGamepad(slot: Int) { webrtcClient?.updateGamepad(controllers.combined(slot),slot) }
+    private fun controllerSlot(deviceId: Int,source: Int): Int? =
+        if(source and InputDevice.SOURCE_GAMEPAD==InputDevice.SOURCE_GAMEPAD || source and InputDevice.SOURCE_JOYSTICK==InputDevice.SOURCE_JOYSTICK)
+            controllers.slot(deviceId) else 0
+    private fun removeController(deviceId: Int) {
+        val slot=controllers.remove(deviceId) ?: return
+        if(slot==0) { shortcutFlushJob?.cancel(); controllerShortcut.reset() }
+        webrtcClient?.removeGamepad(slot)
+        if(slot==0 && currentTouchMode==TouchMode.VIRTUAL) publishGamepad(0)
+        rumble.stop()
+    }
 
     private fun cycleStatistics() {
         statistics.cycle()
@@ -585,10 +683,10 @@ class MainActivity : Activity() {
     private fun applyShortcut(update: ShortcutUpdate) {
         val base = gamepadState.buttons and ControllerShortcut.BOTH.inv()
         if (update.pulse != 0) {
-            webrtcClient?.updateGamepad(gamepadState.copy(buttons = base or update.forwardedButtons or update.pulse))
+            webrtcClient?.updateGamepad(controllers.combined(0,gamepadState.copy(buttons = base or update.forwardedButtons or update.pulse)),0)
         }
         gamepadState = gamepadState.copy(buttons = base or update.forwardedButtons)
-        webrtcClient?.updateGamepad(gamepadState)
+        publishGamepad(0)
         if (update.toggleStatistics) cycleStatistics()
     }
 
@@ -609,13 +707,17 @@ class MainActivity : Activity() {
         shortcutFlushJob?.cancel()
         shortcutFlushJob = null
         controllerShortcut.reset()
-        gamepadState = com.xcloud.tclnative.webrtc.GamepadState()
-        webrtcClient?.updateGamepad(gamepadState)
+        if(::touchView.isInitialized) touchView.releaseInputs()
+        controllers.reset()
+        webrtcClient?.resetInput()
+        rumble.enabled=false; rumble.stop()
     }
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
         if (gameplayInputEnabled() &&
             event.source and android.view.InputDevice.SOURCE_JOYSTICK != 0 && event.action == MotionEvent.ACTION_MOVE) {
+            val slot=controllerSlot(event.deviceId,event.source) ?: return true
+            val previous=controllers.physical(slot)
             fun range(id: Int): com.xcloud.tclnative.webrtc.ControllerAxisRange? =
                 event.device?.getMotionRange(id, event.source)?.let {
                     com.xcloud.tclnative.webrtc.ControllerAxisRange(it.min, it.max, it.flat)
@@ -629,7 +731,7 @@ class MainActivity : Activity() {
                 }
                 return maxOf(read(primary), read(fallback))
             }
-            var buttons = gamepadState.buttons and 0xF0FF
+            var buttons = previous.buttons and 0xF0FF
             val x = stick(MotionEvent.AXIS_HAT_X); val y = stick(MotionEvent.AXIS_HAT_Y)
             if (y < -0.5f) buttons = buttons or 256
             if (y > 0.5f) buttons = buttons or 512
@@ -637,12 +739,12 @@ class MainActivity : Activity() {
             if (x > 0.5f) buttons = buttons or 2048
             val rightX = if (range(MotionEvent.AXIS_Z) == null && range(MotionEvent.AXIS_RX) != null) MotionEvent.AXIS_RX else MotionEvent.AXIS_Z
             val rightY = if (range(MotionEvent.AXIS_RZ) == null && range(MotionEvent.AXIS_RY) != null) MotionEvent.AXIS_RY else MotionEvent.AXIS_RZ
-            gamepadState = gamepadState.copy(buttons = buttons,
+            controllers.update(slot,previous.copy(buttons = buttons,
                 leftX = stick(MotionEvent.AXIS_X, true), leftY = stick(MotionEvent.AXIS_Y, true),
                 rightX = stick(rightX), rightY = stick(rightY),
                 leftTrigger = trigger(MotionEvent.AXIS_LTRIGGER, MotionEvent.AXIS_BRAKE),
-                rightTrigger = trigger(MotionEvent.AXIS_RTRIGGER, MotionEvent.AXIS_GAS))
-            webrtcClient?.updateGamepad(gamepadState)
+                rightTrigger = trigger(MotionEvent.AXIS_RTRIGGER, MotionEvent.AXIS_GAS)))
+            publishGamepad(slot)
             return true
         }
         return super.onGenericMotionEvent(event)
@@ -670,9 +772,10 @@ class MainActivity : Activity() {
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
         val mask = gamepadButton(keyCode)
         if (mask != 0 && gameplayInputEnabled()) {
-            if (handleControllerShortcut(mask, false)) return true
-            gamepadState = gamepadState.copy(buttons = gamepadState.buttons and mask.inv())
-            webrtcClient?.updateGamepad(gamepadState)
+            val slot=controllerSlot(event.deviceId,event.source) ?: return true
+            if (slot==0 && handleControllerShortcut(mask, false)) return true
+            controllers.update(slot,controllers.physical(slot).copy(buttons=controllers.physical(slot).buttons and mask.inv()))
+            publishGamepad(slot)
             return true
         }
         return super.onKeyUp(keyCode, event)
@@ -681,8 +784,11 @@ class MainActivity : Activity() {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (!hasFocus) resetController()
-        else window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
-            View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+        else {
+            rumble.enabled=playbackSettings.rumble && webrtcClient!=null
+            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+        }
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
@@ -699,9 +805,10 @@ class MainActivity : Activity() {
         }
         val mask = gamepadButton(keyCode)
         if (mask != 0 && gameplayInputEnabled()) {
-            if (handleControllerShortcut(mask, true)) return true
-            gamepadState = gamepadState.copy(buttons = gamepadState.buttons or mask)
-            webrtcClient?.updateGamepad(gamepadState)
+            val slot=controllerSlot(event.deviceId,event.source) ?: return true
+            if (slot==0 && handleControllerShortcut(mask, true)) return true
+            controllers.update(slot,controllers.physical(slot).copy(buttons=controllers.physical(slot).buttons or mask))
+            publishGamepad(slot)
             return true
         }
         return super.onKeyDown(keyCode, event)
@@ -710,6 +817,8 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         ++playbackGeneration
         mainScope.cancel()
+        (getSystemService(Context.INPUT_SERVICE) as InputManager).unregisterInputDeviceListener(deviceListener)
+        rumble.enabled=false; rumble.stop()
         dashboard?.close()
         loginView?.close()
         queuePanel.close()

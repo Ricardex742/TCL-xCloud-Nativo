@@ -73,6 +73,15 @@ jobs:
             echo '- Baixe o artefato TCL-xCloud-App-Debug-Android10 abaixo.'
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Verificar shader de imagem com GPU por software
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1 libegl-mesa0 libgl1-mesa-dri
+          python3 scripts/verify_image_filter.py
+          cat app/build/reports/dashboard/image-filter-validation.txt >> "$GITHUB_STEP_SUMMARY"
+
       - name: Salvar o APK gerado para download
         uses: actions/upload-artifact@v4
         with:

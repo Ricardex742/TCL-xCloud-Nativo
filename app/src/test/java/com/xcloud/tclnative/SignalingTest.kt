@@ -164,20 +164,39 @@ class SignalingTest {
         assertEquals("TOPLEVEL-ID", games.single().productId)
         assertEquals("123456", games.single().xboxTitleId)
     }
-    @Test fun authenticatedTierCodesAndCatalogProgramsRecoverGamePassTitlesWithDifferentEditionIds() = runBlocking {
+    @Test fun onlyOfficialProductLookupsRecoverGamePassEditionsEvenWhenEveryGameAdvertisesGpUltimate() = runBlocking {
         server.dispatcher=object : Dispatcher() {
-            override fun dispatch(request: RecordedRequest)=response("""{"results":[
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                if(request.method=="POST") {
+                    val body=JSONObject(request.body.readUtf8())
+                    assertEquals("productId",body.getString("alternateIdType"))
+                    assertEquals(1,body.getJSONArray("alternateIds").length())
+                    val id=body.getJSONArray("alternateIds").getString(0)
+                    return when(id) {
+                        "BUNDLE-FH5" -> response("""{"results":[{"titleId":"FORZAHORIZON5"}]}""")
+                        "BUNDLE-FH6" -> response("""{"results":[{"titleId":"FORZAHORIZON6"}]}""")
+                        "UNFILTERED" -> response("""{"totalItems":2788,"results":[{"titleId":"OWNED"}]}""")
+                        else -> response("{}",503)
+                    }
+                }
+                return response("""{"results":[
                 {"titleId":"FORZAHORIZON5","details":{"productId":"CLOUD-FH5","programs":["GPULTIMATE"],"userSubscriptions":["XGPULTIMATE"]}},
-                {"titleId":"FORZAHORIZON6","details":{"productId":"CLOUD-FH6","programs":["GPULTIMATE"],"userPrograms":["GPULTIMATE"]}},
-                {"titleId":"OWNED","details":{"productId":"OWNED","programs":["BYOG"],"hasEntitlement":true,"userSubscriptions":["XGPULTIMATE"]}},
+                {"titleId":"FORZAHORIZON6","details":{"productId":"CLOUD-FH6","programs":["GPULTIMATE"],"userPrograms":["GPULTIMATE"],"supportedInputTypes":["CustomTouchOverlay","NativeTouch"]}},
+                {"titleId":"OWNED","details":{"productId":"OWNED","programs":["GPULTIMATE"],"userPrograms":["GPULTIMATE"],"hasEntitlement":true,"userSubscriptions":["XGPULTIMATE"]}},
                 {"titleId":"FREE","details":{"productId":"FREE","isFreeInStore":true,"programs":["GPULTIMATE"]}}
             ]}""")
+            }
         }
-        val games=signaling().fetchCatalogGames()
+        val client=signaling()
+        val games=client.fetchCatalogGames()
         assertEquals("ULTIMATE",XboxProfile.subscription(games.flatMap { it.userSubscriptions+it.userPrograms }))
-        fun selected(ids: List<String>?)=GameLibrary.select(games,LibraryTab.GAME_PASS,emptySet(),emptyMap(),ids,null)
-        assertEquals(listOf("FORZAHORIZON5","FORZAHORIZON6"),selected(listOf("BUNDLE-FH5","BUNDLE-FH6")).map { it.titleId })
-        assertEquals(2,selected(null).size)
+        assertEquals(setOf("CustomTouchOverlay","NativeTouch"),games.single { it.titleId=="FORZAHORIZON6" }.supportedInputTypes)
+        fun selected(ids: List<String>?,titles: Set<String> = emptySet())=GameLibrary.select(games,LibraryTab.GAME_PASS,emptySet(),emptyMap(),ids,null,gamePassTitles=titles)
+        assertTrue(selected(listOf("BUNDLE-FH5","BUNDLE-FH6")).isEmpty())
+        val resolved=client.resolveCatalogProducts(setOf("BUNDLE-FH5","BUNDLE-FH6","FAILURE","UNFILTERED"))
+        assertEquals(setOf("FORZAHORIZON5","FORZAHORIZON6"),resolved)
+        assertEquals(listOf("FORZAHORIZON5","FORZAHORIZON6"),selected(listOf("BUNDLE-FH5","BUNDLE-FH6"),resolved).map { it.titleId })
+        assertTrue(selected(null).isEmpty())
         assertFalse(selected(listOf("FREE")).any { it.titleId in setOf("FREE","OWNED") })
     }
     @Test fun catalogHttpFailureDoesNotReturnFakeSuccess() = runBlocking {

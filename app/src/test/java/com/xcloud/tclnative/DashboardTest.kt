@@ -159,7 +159,7 @@ class DashboardTest {
         assertEquals(games[7].titleId, played?.titleId)
         view.close(); controller.pause().stop().destroy()
     }
-    @Test fun authenticatedUserTierSurvivesTheLaterProfileAndArtUpdatesWhilePublicProgramsOnlyMarkMembership() {
+    @Test fun authenticatedUserTierSurvivesProfileUpdatesButOnlyOfficialMembershipMarksTheGames() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()
         val activity=controller.get()
         val view=GameDashboardView(activity,GameLibrary(activity,"tier-claims"),{}, {}, {}, {})
@@ -172,6 +172,8 @@ class DashboardTest {
         fun descendants(node: View): List<View> = listOf(node) + if(node is ViewGroup)
             (0 until node.childCount).flatMap { descendants(node.getChildAt(it)) } else emptyList()
         assertTrue(descendants(view).filterIsInstance<TextView>().any { it.text.toString()=="GAME PASS ULTIMATE" })
+        assertEquals(0,descendants(view).filterIsInstance<RecyclerView>().single().adapter!!.itemCount)
+        view.setGamePassProducts(setOf("OTHER-EDITION-5"),setOf("FH5","FH6")); layout(view,1280,720)
         assertEquals(2,descendants(view).filterIsInstance<RecyclerView>().single().adapter!!.itemCount)
         view.close(); controller.pause().stop().destroy()
     }

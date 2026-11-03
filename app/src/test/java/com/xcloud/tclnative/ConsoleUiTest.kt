@@ -153,6 +153,40 @@ class ConsoleUiTest {
         assertEquals(1,cancelled); assertEquals(0,recovered)
         controller.pause().stop().destroy()
     }
+    @Test fun imageAndControllerChoicesPersistWithoutCyclingValuesWhenOpeningTheirMenus() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        val activity=controller.get().apply { setContentView(FrameLayout(this)) }
+        layout(activity.window.decorView,1280,720)
+        activity.getSharedPreferences("stream_preferences",0).edit().clear().commit()
+        val store=PlaybackSettingsStore(activity)
+        var tested=0
+        val panel=PlaybackSettingsPanel(activity,store,{}, {}, {}, {}, { tested++ })
+        fun choose(dialog: ConsoleDialog,text: String) {
+            all(dialog.body).filterIsInstance<TextView>().single { it.isClickable && it.text.toString().contains(text) }.performClick()
+        }
+        val image=panel.showImageAdjustments()
+        render(image,"green-image-adjustments")
+        assertEquals(0,store.read().sharpness)
+        choose(image,"Nitidez:")
+        choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"25%")
+        choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Saturação:")
+        choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"125%")
+        assertEquals(25,store.read().sharpness); assertEquals(125,store.read().saturation)
+        (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
+        val controls=panel.showControls()
+        render(controls,"green-controller-settings")
+        choose(controls,"Coop local:")
+        choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Ativado —")
+        choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Vibração:")
+        choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Desativada")
+        choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Jogar com toque:")
+        choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Controle virtual")
+        assertTrue(store.read().localCoOp); assertFalse(store.read().rumble)
+        assertEquals(TouchMode.VIRTUAL,store.read().touchMode)
+        choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Testar vibração")
+        assertEquals(1,tested)
+        controller.pause().stop().destroy()
+    }
     @Test fun loginAndQrUseTheNewThemeAndTheRenderedQrStillScans() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()
         val activity=controller.get()

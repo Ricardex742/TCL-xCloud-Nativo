@@ -56,6 +56,14 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     private var frameRateHintRequested = false
     private var videoWidth = 1920
     private var videoHeight = 1080
+    private var sharpness=0
+    private var saturation=100
+    fun setImageAdjustments(sharpness: Int,saturation: Int) {
+        this.sharpness=sharpness.coerceIn(0,100); this.saturation=saturation.coerceIn(0,200)
+        aspectDrawer?.sharpness=this.sharpness; aspectDrawer?.saturation=this.saturation
+    }
+    fun touchCoordinates(x: Float,y: Float): Pair<Float,Float>? = VideoScalingPolicy.touchCoordinates(
+        width,height,videoWidth,videoHeight,nativeUpscaling,aspect,x,y)
     var aspect = VideoAspect.RATIO_16_9
         set(value) {
             field=value
@@ -86,7 +94,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         frameRateHintRequested = false
         renderer?.let { removeView(it); it.release() }
         val id = generation
-        val drawer=AspectVideoDrawer(aspect.stretch).also { aspectDrawer=it }
+        val drawer=AspectVideoDrawer(aspect.stretch).also { it.sharpness=sharpness; it.saturation=saturation; aspectDrawer=it }
         renderer = object : SurfaceViewRenderer(context) {
             override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
                 drawer.layoutAspect=(right-left).toFloat()/(bottom-top).coerceAtLeast(1)
@@ -154,6 +162,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
             if (generation == id && !released) {
                 lastDeliveryMs.set(android.os.SystemClock.elapsedRealtime())
                 drawer?.sourceAspect=frame.rotatedWidth.toFloat()/frame.rotatedHeight.coerceAtLeast(1)
+                drawer?.sourceWidth=frame.rotatedWidth; drawer?.sourceHeight=frame.rotatedHeight
                 view.onFrame(frame)
             }
         }
@@ -185,7 +194,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         val output = mode?.let { "${it.physicalWidth}x${it.physicalHeight}@${kotlin.math.round(it.refreshRate).toInt()} Hz" } ?: "n/d"
         return "Surface $size → janela ${width}x$height | Saída Android: $output\n" +
             "Escala da Surface: ${if (nativeUpscaling) "HW solicitada" else "desativada, sem ampliação na janela"} | Cadência 60 Hz: ${if (frameRateHintRequested) "solicitada" else "n/d"} | Pós-processamento mínimo: ${if (minimalPostProcessingRequested) "solicitado" else "padrão"}\n" +
-            "Proporção: ${aspect.label} | AiPQ: não verificável pelo app"
+            "Proporção: ${aspect.label} | Nitidez: $sharpness% | Saturação: $saturation% | AiPQ: não verificável pelo app"
     }
 
     fun compactDiagnostics(): String {

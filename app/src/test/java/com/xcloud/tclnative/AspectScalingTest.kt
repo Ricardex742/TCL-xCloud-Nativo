@@ -8,6 +8,16 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class AspectScalingTest {
+    @Test fun nativeTouchMappingIgnoresBarsAndFollowsTheCropInsteadOfSendingWrongCoordinates() {
+        fun point(mode: VideoAspect,x: Float,y: Float)=VideoScalingPolicy.touchCoordinates(2400,1080,1920,1080,true,mode,x,y)
+        assertNull(point(VideoAspect.ORIGINAL,100f,500f))
+        assertEquals(.5f,point(VideoAspect.ORIGINAL,1200f,540f)!!.first,0f)
+        assertEquals(0f,point(VideoAspect.ORIGINAL,240f,0f)!!.first,0f)
+        assertEquals(0f,point(VideoAspect.STRETCH,0f,0f)!!.first,0f)
+        assertEquals(.1f,point(VideoAspect.ZOOM,0f,0f)!!.second,.00001f)
+        assertEquals(.9f,point(VideoAspect.ZOOM,2400f,1080f)!!.second,.00001f)
+        assertNull(VideoScalingPolicy.touchCoordinates(1920,1080,1280,720,false,VideoAspect.ORIGINAL,100f,100f))
+    }
     @Test fun wideScreenModesHaveDifferentGeometryAndNativeOffNeverEnlargesEitherDimension() {
         fun viewport(mode: VideoAspect)=VideoScalingPolicy.viewport(2400,1080,1920,1080,true,mode)
         assertEquals(VideoViewport(1920,1080),viewport(VideoAspect.RATIO_16_9))

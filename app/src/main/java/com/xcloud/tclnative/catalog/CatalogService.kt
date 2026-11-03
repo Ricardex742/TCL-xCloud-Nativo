@@ -118,7 +118,6 @@ class CatalogService(
         catch (_: Exception) { null }
     }
     companion object {
-        const val POPULAR = "e7590b22-e299-44db-ae22-25c61405454c"
         const val RECENTLY_ADDED = "44a55037-770f-4bbf-bde5-a9fa27dba1da"
         fun galleryIds(data: JSONArray): List<String> = (0 until data.length()).mapNotNull {
             data.optJSONObject(it)?.optString("id")?.takeIf { id -> id.isNotBlank() }

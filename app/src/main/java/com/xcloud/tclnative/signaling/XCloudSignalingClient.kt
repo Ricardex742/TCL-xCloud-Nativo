@@ -5,7 +5,8 @@ import com.xcloud.tclnative.auth.XCloudSession
 import com.xcloud.tclnative.net.awaitResponse
 import com.xcloud.tclnative.net.checkedBody
 import com.xcloud.tclnative.webrtc.StreamingPeer
-import com.xcloud.tclnative.webrtc.StreamProfile
+import com.xcloud.tclnative.webrtc.StreamResolution
+import com.xcloud.tclnative.catalog.XboxProfile
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -40,11 +41,12 @@ class XCloudSignalingClient(
     private val activePath = AtomicReference<String?>(null)
     private val waitTimeClient = httpClient.newBuilder().callTimeout(3, TimeUnit.SECONDS).build()
     private val jsonType = "application/json; charset=utf-8".toMediaType()
-    private val deviceInfo = JSONObject().put("appInfo", JSONObject().put("env", JSONObject()
+    private var activeResolution = StreamResolution.HD_1080_HQ
+    private fun deviceInfo() = JSONObject().put("appInfo", JSONObject().put("env", JSONObject()
         .put("clientAppId", "www.xbox.com").put("clientAppType", "browser").put("clientAppVersion", "26.1.0")))
         .put("dev", JSONObject().put("hw", JSONObject().put("make", "Microsoft").put("model", "Surface Pro"))
-            .put("os", JSONObject().put("name", StreamProfile.OS_NAME).put("ver", "10.0"))
-            .put("displayInfo", JSONObject().put("dimensions", JSONObject().put("widthInPixels", 1920).put("heightInPixels", 1080))
+            .put("os", JSONObject().put("name", activeResolution.osName).put("ver", "10.0"))
+            .put("displayInfo", JSONObject().put("dimensions", JSONObject().put("widthInPixels", activeResolution.width).put("heightInPixels", activeResolution.height))
                 .put("pixelDensity", JSONObject().put("dpiX", 1).put("dpiY", 1)))).toString()
 
     private suspend fun request(path: String, stage: String, method: String = "GET", body: JSONObject? = null,
@@ -52,7 +54,7 @@ class XCloudSignalingClient(
         val builder = Request.Builder().url(CloudProtocol.sessionUrl(session.baseUri, path))
             .header("Authorization", "Bearer ${session.gssvToken}")
             .header("Accept", "application/json").header("X-Gssv-Client", "XboxComBrowser")
-            .header("X-MS-Device-Info", deviceInfo)
+            .header("X-MS-Device-Info", deviceInfo())
         when (method) {
             "POST" -> builder.post((body?.toString() ?: "").toRequestBody(jsonType))
             "DELETE" -> builder.delete()
@@ -66,14 +68,11 @@ class XCloudSignalingClient(
             val game = results.getJSONObject(index)
             val id = game.optString("titleId").trim().takeIf { it.isNotEmpty() } ?: return@mapNotNull null
             val details = game.optJSONObject("details")
-            val subscriptions = details?.optJSONArray("userSubscriptions")
             GameTitle(id, details?.optString("productTitle")?.takeIf { it.isNotBlank() } ?: id,
                 productId = details?.optString("productId")?.takeIf { it.isNotBlank() && it != "null" }
                     ?: game.optString("productId").takeIf { it.isNotBlank() && it != "null" },
                 xboxTitleId = details?.optString("xboxTitleId")?.takeIf { it.isNotBlank() && it != "null" },
-                userSubscriptions = subscriptions?.let { values -> (0 until values.length()).mapNotNull {
-                    values.optString(it).takeIf { value -> value.isNotBlank() }
-                } } ?: emptyList())
+                userSubscriptions = XboxProfile.subscriptionClaims(details?.opt("userSubscriptions")))
         }.distinctBy { it.titleId }.sortedBy { it.name.lowercase(java.util.Locale.ROOT) }
     }
 
@@ -155,16 +154,18 @@ class XCloudSignalingClient(
     }
 
     suspend fun startAndConnectWebRtcSession(
-        titleId: String, peer: StreamingPeer, onQueueStatus: (QueueStatus?) -> Unit = {}, onProgress: (String) -> Unit
+        titleId: String, peer: StreamingPeer, onQueueStatus: (QueueStatus?) -> Unit = {},
+        resolution: StreamResolution = StreamResolution.HD_1080_HQ, onProgress: (String) -> Unit
     ): Result<String> = withContext(Dispatchers.IO) {
         stop()
+        activeResolution = resolution
         try {
             val play = JSONObject().put("clientSessionId", java.util.UUID.randomUUID().toString())
                 .put("titleId", titleId).put("systemUpdateGroup", "").put("serverId", "")
                 .put("fallbackRegionNames", org.json.JSONArray()).put("settings", JSONObject()
                     .put("nanoVersion", "V3;WebrtcTransport.dll").put("enableOptionalDataCollection", false)
                     .put("enableTextToSpeech", false).put("highContrast", 0).put("locale", "pt-BR")
-                    .put("useIceConnection", false).put("timezoneOffsetMinutes", -180).put("sdkType", "web").put("osName", StreamProfile.OS_NAME))
+                    .put("useIceConnection", false).put("timezoneOffsetMinutes", -180).put("sdkType", "web").put("osName", activeResolution.osName))
             val response = JSONObject(request("/v5/sessions/cloud/play", "PLAY", "POST", play))
             val path = CloudProtocol.sessionUrl(session.baseUri, response.getString("sessionPath")).encodedPath.trimEnd('/')
             activePath.set(path)

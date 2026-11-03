@@ -19,6 +19,8 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.common.HybridBinarizer
 import com.google.zxing.qrcode.QRCodeWriter
 import com.xcloud.tclnative.auth.DeviceCodeInfo
+import com.xcloud.tclnative.settings.*
+import com.xcloud.tclnative.webrtc.StreamResolution
 import com.xcloud.tclnative.ui.dashboard.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -29,6 +31,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import org.robolectric.annotation.LooperMode
+import org.robolectric.shadows.ShadowDialog
 import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
@@ -84,21 +87,55 @@ class ConsoleUiTest {
         assertFalse(back.isShowing); assertEquals(2,results.size)
         controller.pause().stop().destroy()
     }
-    @Test fun accountMenuKeepsAllActionsReachableAndControllerAChoosesExactlyOne() {
+    @Test fun settingsKeepAccountActionsAndExplicitChoicesReachableWithTheController() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()
         val activity=controller.get().apply { setContentView(FrameLayout(this)) }
         layout(activity.window.decorView,1280,720)
-        var chosen=-1
-        val labels=listOf("Pesquisar jogos","Vídeo: menor atraso","Microsoft Rewards — consultar saldo",
-            "Gerenciar assinatura Microsoft","Atualizar catálogo","Trocar conta")
-        val dialog=ConsoleDialogs.menu(activity,"Conta e opções",labels.mapIndexed { i,label -> ConsoleAction(label) { chosen=i } })
-        render(dialog,"green-account-options")
-        val last=all(dialog.body).filterIsInstance<TextView>().single { it.text.toString()=="Trocar conta" }
-        assertFalse(last.defaultFocusHighlightEnabled)
-        assertTrue(last.requestFocus())
-        dialog.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_BUTTON_A))
-        dialog.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP,KeyEvent.KEYCODE_BUTTON_A))
-        assertEquals(5,chosen); assertFalse(dialog.isShowing)
+        activity.getSharedPreferences("stream_preferences",0).edit().clear().commit()
+        val store=PlaybackSettingsStore(activity)
+        val updates=mutableListOf<PlaybackSettings>()
+        var managed=0; var refreshed=0; var loggedOut=0
+        val panel=PlaybackSettingsPanel(activity,store,{ updates.add(it) },{ managed++ },{ refreshed++ },{ loggedOut++ })
+        val dialog=panel.show()
+        render(dialog,"green-settings")
+        assertFalse(all(dialog.body).filterIsInstance<TextView>().any { it.text.contains("Rewards") || it.text.contains("Pesquisar") })
+        fun choose(dialog: ConsoleDialog, text: String) {
+            val item=all(dialog.body).filterIsInstance<TextView>().single { it.isClickable && it.text.toString().contains(text) }
+            assertFalse(item.defaultFocusHighlightEnabled)
+            assertTrue(item.requestFocus())
+            dialog.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_BUTTON_A))
+            dialog.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP,KeyEvent.KEYCODE_BUTTON_A))
+        }
+        choose(dialog,"Vídeo:")
+        val video=ShadowDialog.getLatestDialog() as ConsoleDialog
+        render(video,"green-video-choice")
+        assertTrue(updates.isEmpty()); assertEquals(VideoMode.LOW_LATENCY,store.read().videoMode)
+        choose(video,"Adaptativo")
+        assertEquals(VideoMode.ADAPTIVE,store.read().videoMode)
+        val reopened=ShadowDialog.getLatestDialog() as ConsoleDialog
+        choose(reopened,"Resolução:")
+        val resolution=ShadowDialog.getLatestDialog() as ConsoleDialog
+        render(resolution,"green-resolution-choice")
+        assertEquals(3,all(resolution.body).filterIsInstance<TextView>().count { it.isClickable })
+        choose(resolution,"720p")
+        assertEquals(StreamResolution.HD_720,store.read().resolution)
+        choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Upscaling nativo:")
+        val upscale=ShadowDialog.getLatestDialog() as ConsoleDialog
+        render(upscale,"green-upscaling-choice")
+        choose(upscale,"Desativado —")
+        assertFalse(store.read().nativeUpscaling); assertEquals(3,updates.size)
+        val parent=ShadowDialog.getLatestDialog() as ConsoleDialog
+        choose(parent,"Vídeo:")
+        (ShadowDialog.getLatestDialog() as ConsoleDialog).dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_BUTTON_B))
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals(3,updates.size)
+        val back=ShadowDialog.getLatestDialog() as ConsoleDialog
+        assertTrue(back.isShowing)
+        choose(back,"Gerenciar assinatura"); assertEquals(1,managed)
+        choose(panel.show(),"Atualizar catálogo"); assertEquals(1,refreshed)
+        val last=panel.show()
+        choose(last,"Trocar conta")
+        assertEquals(1,loggedOut); assertFalse(last.isShowing)
         controller.pause().stop().destroy()
     }
     @Test fun themedMessagePreservesTheVideoRecoveryCancelCallback() {

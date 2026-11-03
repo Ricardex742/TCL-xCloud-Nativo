@@ -2,6 +2,7 @@ package com.xcloud.tclnative.renderer
 
 import android.content.Context
 import android.graphics.Color
+import android.view.Gravity
 import android.widget.FrameLayout
 import org.webrtc.EglBase
 import org.webrtc.RendererCommon
@@ -51,12 +52,21 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     @Volatile private var released = false
     var minimalPostProcessingRequested = false
     private var frameRateHintRequested = false
+    private var videoWidth = 1920
+    private var videoHeight = 1080
+    var nativeUpscaling = true
+        set(value) {
+            field = value
+            renderer?.setEnableHardwareScaler(value)
+            updateVideoLayout()
+        }
 
     init { setBackgroundColor(Color.BLACK); keepScreenOn = true }
 
     /** A new renderer has a new first-frame event for every session, including retries. */
-    fun prepareForSession() {
+    fun prepareForSession(expectedWidth: Int = 1920, expectedHeight: Int = 1080) {
         check(!released)
+        videoWidth = expectedWidth; videoHeight = expectedHeight
         lastDeliveryMs.set(Long.MIN_VALUE)
         presentedToken.set(0)
         replaceRenderer()
@@ -73,10 +83,16 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
                 override fun onFirstFrameRendered() {
                     post { if (!released && generation == id) onFirstFrameRendered?.invoke() }
                 }
-                override fun onFrameResolutionChanged(width: Int, height: Int, rotation: Int) {}
+                override fun onFrameResolutionChanged(width: Int, height: Int, rotation: Int) {
+                    post { if (!released && generation == id) {
+                        videoWidth = if (rotation % 180 == 0) width else height
+                        videoHeight = if (rotation % 180 == 0) height else width
+                        updateVideoLayout()
+                    } }
+                }
             })
             view.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT)
-            view.setEnableHardwareScaler(true)
+            view.setEnableHardwareScaler(nativeUpscaling)
             view.disableFpsReduction()
             view.holder.addCallback(object : android.view.SurfaceHolder.Callback {
                 private fun frameRate(holder: android.view.SurfaceHolder) {
@@ -91,6 +107,21 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
                 override fun surfaceDestroyed(holder: android.view.SurfaceHolder) { if (generation == id) frameRateHintRequested = false }
             })
             addView(view, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        }
+        updateVideoLayout()
+    }
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w,h,oldw,oldh)
+        updateVideoLayout()
+    }
+    private fun updateVideoLayout() {
+        val view = renderer ?: return
+        val viewport = VideoScalingPolicy.viewport(width,height,videoWidth,videoHeight,nativeUpscaling)
+        val targetWidth = if (nativeUpscaling) LayoutParams.MATCH_PARENT else viewport.width
+        val targetHeight = if (nativeUpscaling) LayoutParams.MATCH_PARENT else viewport.height
+        val old = view.layoutParams as? LayoutParams
+        if (old == null || old.width != targetWidth || old.height != targetHeight || old.gravity != Gravity.CENTER) {
+            view.layoutParams = LayoutParams(targetWidth,targetHeight,Gravity.CENTER)
         }
     }
     fun attachVideoTrack(track: VideoTrack) {
@@ -137,7 +168,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         val mode = display?.mode
         val output = mode?.let { "${it.physicalWidth}x${it.physicalHeight}@${kotlin.math.round(it.refreshRate).toInt()} Hz" } ?: "n/d"
         return "Surface $size → janela ${width}x$height | Saída Android: $output\n" +
-            "Escala da Surface: HW solicitada | Cadência 60 Hz: ${if (frameRateHintRequested) "solicitada" else "n/d"} | Pós-processamento mínimo: ${if (minimalPostProcessingRequested) "solicitado" else "padrão"}\n" +
+            "Escala da Surface: ${if (nativeUpscaling) "HW solicitada" else "desativada, sem ampliação na janela"} | Cadência 60 Hz: ${if (frameRateHintRequested) "solicitada" else "n/d"} | Pós-processamento mínimo: ${if (minimalPostProcessingRequested) "solicitado" else "padrão"}\n" +
             "AiPQ: não verificável pelo app"
     }
 

@@ -90,25 +90,3 @@ internal class FocusPlate(private val radius: Float, private val inset: Float = 
     override fun setColorFilter(filter: ColorFilter?) {}
     @Deprecated("Deprecated in Java") override fun getOpacity() = PixelFormat.TRANSLUCENT
 }
-
-internal class RewardsMedal : Drawable() {
-    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    override fun draw(canvas: Canvas) {
-        val save = canvas.save()
-        canvas.translate(bounds.left.toFloat(), bounds.top.toFloat())
-        canvas.scale(bounds.width() / 32f, bounds.height() / 32f)
-        paint.style = Paint.Style.STROKE; paint.strokeWidth = 1.6f; paint.color = 0xffb8e3ee.toInt()
-        canvas.drawPath(Path().apply { moveTo(7f, 3f); lineTo(26f, 3f); lineTo(22f, 12f)
-            lineTo(16f, 16f); lineTo(11f, 12f); close() }, paint)
-        canvas.drawArc(2f, 3f, 12f, 14f, 90f, 190f, false, paint)
-        canvas.drawArc(22f, 3f, 32f, 14f, -90f, 190f, false, paint)
-        paint.style = Paint.Style.FILL; paint.color = DashboardTheme.yellow
-        canvas.drawCircle(16f, 22f, 9f, paint)
-        paint.color = 0xffbd8d12.toInt(); paint.textSize = 13f; paint.textAlign = Paint.Align.CENTER
-        canvas.drawText("★", 16f, 27f, paint)
-        canvas.restoreToCount(save)
-    }
-    override fun setAlpha(alpha: Int) {}
-    override fun setColorFilter(filter: ColorFilter?) {}
-    @Deprecated("Deprecated in Java") override fun getOpacity() = PixelFormat.TRANSLUCENT
-}

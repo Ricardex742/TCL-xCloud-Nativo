@@ -3,6 +3,7 @@ package com.xcloud.tclnative
 import com.xcloud.tclnative.auth.XCloudSession
 import com.xcloud.tclnative.signaling.XCloudSignalingClient
 import com.xcloud.tclnative.webrtc.StreamingPeer
+import com.xcloud.tclnative.webrtc.StreamResolution
 import kotlinx.coroutines.*
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.Dispatcher
@@ -135,6 +136,21 @@ class SignalingTest {
         assertTrue(result.exceptionOrNull()!!.message!!.contains("BadIce"))
         assertFalse(result.exceptionOrNull()!!.message!!.contains("must-not-leak"))
         assertFalse(events.contains("ready")); assertEquals(1, requests.count { it.method == "DELETE" })
+    }
+    @Test fun selectedResolutionReachesBothPlaySettingsAndDeviceHeadersAcrossSessions() = runBlocking {
+        val client=signaling()
+        for (resolution in listOf(StreamResolution.HD_720,StreamResolution.HD_1080,StreamResolution.HD_1080_HQ)) {
+            connectSent=false; provisioned=false
+            assertTrue(client.startAndConnectWebRtcSession("real-id",peer,resolution=resolution) {}.isSuccess)
+            val request=requests.last { it.path=="/v5/sessions/cloud/play" }
+            assertEquals(resolution.osName,JSONObject(request.body.clone().readUtf8()).getJSONObject("settings").getString("osName"))
+            val device=JSONObject(request.getHeader("X-MS-Device-Info")!!).getJSONObject("dev")
+            assertEquals(resolution.osName,device.getJSONObject("os").getString("name"))
+            val dimensions=device.getJSONObject("displayInfo").getJSONObject("dimensions")
+            assertEquals(resolution.width,dimensions.getInt("widthInPixels"))
+            assertEquals(resolution.height,dimensions.getInt("heightInPixels"))
+            client.stop()
+        }
     }
     @Test fun failedTransportCannotReturnAConnectedStatus() = runBlocking {
         rejectTransport = true

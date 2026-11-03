@@ -6,12 +6,17 @@ import android.graphics.Canvas
 import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import androidx.recyclerview.widget.RecyclerView
 import com.xcloud.tclnative.catalog.GameLibrary
 import com.xcloud.tclnative.catalog.LibraryTab
 import com.xcloud.tclnative.catalog.XboxProfile
 import com.xcloud.tclnative.signaling.GameTitle
 import com.xcloud.tclnative.ui.dashboard.GameDashboardView
+import com.xcloud.tclnative.ui.dashboard.DashboardTheme
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -81,6 +86,40 @@ class DashboardTest {
         assertEquals("cloud-260", played?.titleId)
         view.close(); controller.pause().stop().destroy()
     }
+    @Test fun greenHeaderHasReadableSubscriptionAndSettingsBesideItAndGamePassFailsClosed() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        val activity=controller.get()
+        var opened=0
+        val view=GameDashboardView(activity,GameLibrary(activity,"settings-header"),{}, {}, { opened++ }, {})
+        activity.setContentView(view); view.setGames(games)
+        fun descendants(node: View): List<View> = listOf(node) + if(node is ViewGroup)
+            (0 until node.childCount).flatMap { descendants(node.getChildAt(it)) } else emptyList()
+        for (tier in listOf(null,"ULTIMATE","FREE")) {
+            view.setProfile(XboxProfile("Xbox User","XboxUser",subscription=tier))
+            layout(view,1280,720)
+            val labels=descendants(view).filterIsInstance<TextView>()
+            assertFalse(labels.any { it.text.contains("pts") || it.text.contains("Rewards") })
+            val expected=when(tier) { null -> "ASSINATURA NÃO INFORMADA"; "FREE" -> "FREE"; else -> "GAME PASS ULTIMATE" }
+            val badge=labels.single { it.text.toString()==expected }
+            assertNull(badge.layout.getEllipsisCount(0).takeIf { it>0 })
+            val gear=labels.single { it.contentDescription=="Configurações" }
+            assertTrue(gear.left>=badge.right)
+            assertTrue(gear.right<=(gear.parent as View).width)
+            gear.requestFocus(); key(view,KeyEvent.KEYCODE_BUTTON_A)
+        }
+        assertEquals(3,opened)
+        val title=descendants(view).filterIsInstance<TextView>().single { it.text.toString().contains("FORZA\nHORIZON 5") }.text as Spanned
+        assertEquals(DashboardTheme.accent,title.getSpans(0,title.length,ForegroundColorSpan::class.java).single().foregroundColor)
+        view.selectTab(LibraryTab.GAME_PASS); layout(view,1280,720)
+        val grid=descendants(view).filterIsInstance<RecyclerView>().single()
+        assertEquals(0,grid.adapter!!.itemCount)
+        view.setGamePassProducts(setOf("product-1","product-3")); layout(view,1280,720)
+        assertEquals(2,grid.adapter!!.itemCount)
+        assertEquals(games[1].titleId,view.selectedGame?.titleId)
+        view.setGamePassProducts(null); layout(view,1280,720)
+        assertEquals(0,grid.adapter!!.itemCount); assertNull(view.selectedGame)
+        view.close(); controller.pause().stop().destroy()
+    }
     @Test fun recentHistoryPersistsPerAccountAcrossCatalogRecreation() {
         val controller = Robolectric.buildActivity(Activity::class.java).setup()
         val activity = controller.get()
@@ -127,7 +166,7 @@ class DashboardTest {
         activity.setContentView(view)
         view.setGames(games)
         view.setGamePassProducts(setOf("product-0", "product-1", "product-3"))
-        view.setProfile(XboxProfile("LUCAS", "LUCAS XBOX", subscription = "ULTIMATE", rewardsPoints = 12550))
+        view.setProfile(XboxProfile("LUCAS", "LUCAS XBOX", subscription = "ULTIMATE"))
         for ((w, h) in listOf(1280 to 948, 1920 to 1080, 3840 to 2160)) {
             layout(view, w, h)
             view.restoreFocus(); layout(view, w, h)

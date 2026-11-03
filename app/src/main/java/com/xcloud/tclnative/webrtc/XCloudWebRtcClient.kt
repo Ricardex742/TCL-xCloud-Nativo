@@ -15,7 +15,8 @@ class XCloudWebRtcClient(
     private val onVideoTrackReady: (VideoTrack) -> Unit,
     private val onConnectionStateChanged: (String) -> Unit,
     private val onStatistics: (StreamMetrics, InputMetrics) -> Unit = { _, _ -> },
-    private val lowLatencyVideo: Boolean = true
+    private val lowLatencyVideo: Boolean = true,
+    private val streamResolution: StreamResolution = StreamResolution.HD_1080_HQ
 ) : StreamingPeer {
     private val factory: PeerConnectionFactory
     private var peerConnection: PeerConnection? = null
@@ -134,7 +135,7 @@ class XCloudWebRtcClient(
             override fun onCreateFailure(error: String?) { offer.completeExceptionally(IOException("SDP: createOffer falhou")) }
         }, MediaConstraints())
         val original = offer.await()
-        val description = SessionDescription(original.type, StreamProfile.receiveSdp(original.description))
+        val description = SessionDescription(original.type, StreamProfile.receiveSdp(original.description, streamResolution))
         setDescription { observer -> pc.setLocalDescription(observer, description) }
         // A blocked STUN service must not discard usable host candidates.
         if (withTimeoutOrNull(8000) { gatheringComplete.await(); true } != true) {

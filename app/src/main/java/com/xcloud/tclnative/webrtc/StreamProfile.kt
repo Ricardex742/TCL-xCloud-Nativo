@@ -1,5 +1,13 @@
 package com.xcloud.tclnative.webrtc
 
+/** Selectors verified in the xCloud web protocol: Android=720p, Windows=1080p, Tizen=1080p HQ. */
+enum class StreamResolution(val label: String, val width: Int, val height: Int, val osName: String,
+                            val minKbps: Int, val maxKbps: Int) {
+    HD_720("720p — mais leve",1280,720,"android",5000,12000),
+    HD_1080("1080p",1920,1080,"windows",10000,20000),
+    HD_1080_HQ("1080p HQ",1920,1080,"tizen",20000,30000)
+}
+
 /** The service selects the actual VBR stream; these are receive-side requests, not a bandwidth guarantee. */
 object StreamProfile {
     const val WIDTH = 1920
@@ -9,7 +17,7 @@ object StreamProfile {
     // xCloud's TV profile is the 1080p HQ selector used by Better xCloud.
     const val OS_NAME = "tizen"
 
-    fun receiveSdp(raw: String): String {
+    fun receiveSdp(raw: String, profile: StreamResolution = StreamResolution.HD_1080_HQ): String {
         val sections = mutableListOf<MutableList<String>>()
         raw.replace("\r\n", "\n").lineSequence().filter { it.isNotBlank() }.forEach { line ->
             if (sections.isEmpty() || line.startsWith("m=")) sections.add(mutableListOf())
@@ -19,7 +27,7 @@ object StreamProfile {
             video.removeAll { it.startsWith("b=AS:") || it.startsWith("b=TIAS:") }
             val connection = video.indexOfLast { it.startsWith("c=") }
             val index = if (connection >= 0) connection + 1 else 1
-            video.addAll(index, listOf("b=AS:$MAX_KBPS", "b=TIAS:${MAX_KBPS * 1000}"))
+            video.addAll(index, listOf("b=AS:${profile.maxKbps}", "b=TIAS:${profile.maxKbps * 1000}"))
             val h264 = video.filter { it.startsWith("a=rtpmap:") && it.substringAfter(' ').startsWith("H264/", true) }
                 .map { it.substringAfter(':').substringBefore(' ') }.toSet()
             h264.forEach { payload ->
@@ -27,7 +35,7 @@ object StreamProfile {
                 val previous = if (fmtp >= 0) video[fmtp].substringAfter(' ').split(';') else emptyList()
                 val kept = previous.map(String::trim).filter { it.isNotEmpty() && !it.startsWith("x-google-min-bitrate=") &&
                     !it.startsWith("x-google-start-bitrate=") && !it.startsWith("x-google-max-bitrate=") }
-                val parameters = kept + listOf("x-google-min-bitrate=$MIN_KBPS", "x-google-start-bitrate=$MIN_KBPS", "x-google-max-bitrate=$MAX_KBPS")
+                val parameters = kept + listOf("x-google-min-bitrate=${profile.minKbps}", "x-google-start-bitrate=${profile.minKbps}", "x-google-max-bitrate=${profile.maxKbps}")
                 val value = "a=fmtp:$payload ${parameters.joinToString(";")}"
                 if (fmtp >= 0) video[fmtp] = value else video.add(value)
             }

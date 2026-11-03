@@ -34,24 +34,46 @@ class CatalogTest {
         val gallery = CatalogService.galleryIds(JSONArray("""[{"title":"Header"},{"id":"C"},{"id":"MISSING"},{"id":"A"},{"id":"C"}]"""))
         val games = listOf(GameTitle("one", "One", "A"), GameTitle("two", "Two", "B"), GameTitle("three", "Three", "C"))
         assertEquals(listOf("three", "one"), GameLibrary.select(games, LibraryTab.ADDED, emptySet(), emptyMap(), null, gallery).map { it.titleId })
-        assertEquals(listOf("three", "one"), GameLibrary.select(games, LibraryTab.POPULAR, emptySet(), emptyMap(), gallery, null).map { it.titleId })
+        assertEquals(listOf("three", "one"), GameLibrary.select(games, LibraryTab.GAME_PASS, emptySet(), emptyMap(), gallery, null).map { it.titleId })
     }
-    @Test fun localRecentAndMostPlayedUseRecordedSessionsAndDoNotMislabelAlphabeticalLists() {
+    @Test fun localHistoryAndFavoritesNeverPopulateGamePassWithoutConfirmedMembership() {
         val games = (1..4).map { GameTitle("$it", "Game $it") }
         val played = mapOf("1" to PlayRecord(100, 4), "3" to PlayRecord(200, 1))
         fun select(tab: LibraryTab) = GameLibrary.select(games, tab, setOf("2"), played, null, null)
         assertEquals(listOf("3", "1"), select(LibraryTab.RECENT).map { it.titleId })
-        assertEquals(listOf("1", "3"), select(LibraryTab.POPULAR).map { it.titleId })
+        assertTrue(select(LibraryTab.GAME_PASS).isEmpty())
         assertEquals(listOf("2"), select(LibraryTab.FAVORITES).map { it.titleId })
         assertTrue(select(LibraryTab.ADDED).isEmpty())
         assertEquals(4, select(LibraryTab.ALL).size)
+    }
+    @Test fun gamePassTabUsesConfirmedProductIdsEvenWhenOwnedAndFreeGamesAreFavoritedOrMarked() {
+        val games=listOf(GameTitle("gp","Included","GP"),GameTitle("owned","Owned","OWNED"),
+            GameTitle("free","Free","FREE",gamePass=true),GameTitle("unresolved","Missing product"))
+        val records=games.associate { it.titleId to PlayRecord(100,9) }
+        fun select(ids: List<String>?)=GameLibrary.select(games,LibraryTab.GAME_PASS,
+            games.map { it.titleId }.toSet(),records,ids,null)
+        assertEquals(listOf("gp"),select(listOf("GP","NOT-STREAMABLE")).map { it.titleId })
+        assertTrue(select(null).isEmpty()); assertTrue(select(emptyList()).isEmpty())
+        assertEquals(listOf("gp"),GameLibrary.select(games,LibraryTab.GAME_PASS,emptySet(),records,
+            listOf("GP"),null,"Included").map { it.titleId })
+    }
+    @Test fun subscriptionClaimsRecognizeActiveObjectsAndIgnoreExpiredOrUnrelatedOfferings() {
+        val claims=XboxProfile.subscriptionClaims(JSONArray("""[
+            {"name":"XboxGamePassUltimate","isActive":false},
+            {"tier":"ultimate","status":"expired"},{"subscriptionId":"free","active":true},
+            {"subscriptions":{"xgpuweb":true}}
+        ]"""))
+        assertEquals("FREE",XboxProfile.subscription(claims))
+        assertEquals("ULTIMATE",XboxProfile.subscription(XboxProfile.subscriptionClaims(
+            JSONObject("""{"subscriptions":[{"subscriptionId":"xgpu","isActive":true}]}"""))))
+        assertNull(XboxProfile.subscription(XboxProfile.subscriptionClaims(JSONObject("""{"xgpuweb":true}"""))))
     }
     @Test fun xboxGamerscoreNeverBecomesMicrosoftRewardsAndOfferingIdDoesNotProveATier() {
         val profile = XboxProfile.parse(JSONObject("""{"profileUsers":[{"settings":[{"id":"Gamertag","value":"XboxUser"},{"id":"GameDisplayName","value":"Lucas"},{"id":"GameDisplayPicRaw","value":"https://example.com/avatar.jpg"},{"id":"Gamerscore","value":"12550"}]}]}"""))
         assertEquals("Lucas", profile.displayName)
         assertEquals("XboxUser", profile.gamertag)
         assertEquals("https://example.com/avatar.jpg", profile.avatarUrl)
-        assertNull(profile.rewardsPoints)
+        assertNull(profile.subscription)
         assertNull(XboxProfile.subscription(listOf("xgpuweb")))
         assertNull(XboxProfile.subscription(emptyList()))
         assertEquals("ULTIMATE", XboxProfile.subscription(listOf("XboxGamePassUltimate")))

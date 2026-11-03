@@ -19,6 +19,10 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import com.xcloud.tclnative.settings.PlaybackSettings
+import com.xcloud.tclnative.settings.PlaybackSettingsStore
+import com.xcloud.tclnative.settings.StatisticsVisibility
+import com.xcloud.tclnative.ui.dashboard.PlaybackSettingsPanel
 import com.xcloud.tclnative.catalog.CatalogCache
 import java.io.File
 import com.xcloud.tclnative.signaling.GameTitle
@@ -49,8 +53,9 @@ class MainActivity : Activity() {
     private lateinit var surfaceRenderer: AiPqSurfaceRenderer
     private lateinit var hudTextView: TextView
     private lateinit var statsView: TextView
-    @Volatile private var statisticsMode = 1 // 0 hidden, 1 compact, 2 complete
-    private var lowLatencyVideo = true
+    private val statistics = StatisticsVisibility()
+    private lateinit var settingsStore: PlaybackSettingsStore
+    private var playbackSettings = PlaybackSettings()
     private lateinit var controlPanel: LinearLayout
     private lateinit var authenticator: XalAuthenticator
     private var webrtcClient: XCloudWebRtcClient? = null
@@ -79,23 +84,17 @@ class MainActivity : Activity() {
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
             View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
         authenticator = XalAuthenticator(this)
-        lowLatencyVideo = getSharedPreferences("stream_preferences", Context.MODE_PRIVATE).getBoolean("low_latency_video", true)
-        if (Build.VERSION.SDK_INT >= 30) window.setPreferMinimalPostProcessing(lowLatencyVideo)
-        val uiMode = getSystemService(Context.UI_MODE_SERVICE) as android.app.UiModeManager
-        if (uiMode.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION) {
-            val display = windowManager.defaultDisplay
-            fun mode(value: android.view.Display.Mode) = com.xcloud.tclnative.renderer.OutputMode(
-                value.modeId, value.physicalWidth, value.physicalHeight, value.refreshRate)
-            com.xcloud.tclnative.renderer.DisplayModePolicy.preferred4k60(mode(display.mode), display.supportedModes.map(::mode))
-                ?.let { id -> window.attributes = window.attributes.apply { preferredDisplayModeId = id } }
-        }
+        settingsStore = PlaybackSettingsStore(this)
+        playbackSettings = settingsStore.read()
+        configureVideoOutput(playbackSettings)
 
         rootLayout = FrameLayout(this).apply {
             setBackgroundColor(Color.BLACK)
         }
 
         surfaceRenderer = AiPqSurfaceRenderer(this)
-        surfaceRenderer.minimalPostProcessingRequested = lowLatencyVideo && Build.VERSION.SDK_INT >= 30
+        surfaceRenderer.minimalPostProcessingRequested = playbackSettings.videoMode.lowLatency && Build.VERSION.SDK_INT >= 30
+        surfaceRenderer.nativeUpscaling = playbackSettings.nativeUpscaling
         rootLayout.addView(
             surfaceRenderer,
             FrameLayout.LayoutParams(
@@ -165,6 +164,20 @@ class MainActivity : Activity() {
             connectToXboxCloud(savedTicket)
         } else if (!savedTicket.isNullOrEmpty()) {
             loginView?.showError("Atualize seu login pelo QR Code para conectar os jogos.")
+        }
+    }
+
+    private fun configureVideoOutput(settings: PlaybackSettings) {
+        if (Build.VERSION.SDK_INT >= 30) window.setPreferMinimalPostProcessing(settings.videoMode.lowLatency)
+        val uiMode = getSystemService(Context.UI_MODE_SERVICE) as android.app.UiModeManager
+        if (uiMode.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION) {
+            val display = windowManager.defaultDisplay
+            fun mode(value: android.view.Display.Mode) = com.xcloud.tclnative.renderer.OutputMode(
+                value.modeId,value.physicalWidth,value.physicalHeight,value.refreshRate)
+            val id = if (settings.nativeUpscaling)
+                com.xcloud.tclnative.renderer.DisplayModePolicy.preferred4k60(mode(display.mode),display.supportedModes.map(::mode))
+            else 0
+            if (id != null) window.attributes = window.attributes.apply { preferredDisplayModeId=id }
         }
     }
 
@@ -257,7 +270,7 @@ class MainActivity : Activity() {
             val view = GameDashboardView(this@MainActivity, library,
                 onPlay = { game -> launchCloudGame(signaling, game) },
                 onSearch = { showCatalogSearch() },
-                onOptions = { showCatalogOptions(session) },
+                onOptions = { showSettings(session) },
                 onExit = { showExitDialog() })
             dashboard = view
             controlPanel.removeAllViews()
@@ -283,13 +296,13 @@ class MainActivity : Activity() {
                 val included = async { catalog.gallery(CatalogService.GAME_PASS) }
                 val free = async { catalog.gallery(CatalogService.FREE_TO_PLAY) }
                 val products = included.await()?.toSet()
-                val excluded = free.await()?.toSet() ?: emptySet()
-                if (dashboard === view) { view.setGamePassProducts(products?.minus(excluded)); refreshLoadingArt() }
+                val excluded = free.await()?.toSet()
+                // Fail closed: unknown membership/exclusions must not populate a Game Pass-only tab.
+                val confirmed = if (products != null && excluded != null) products-excluded else null
+                if (dashboard === view) { view.setGamePassProducts(confirmed); refreshLoadingArt() }
             }
             launch {
-                val popular = async { catalog.gallery(CatalogService.POPULAR) }
-                val added = async { catalog.gallery(CatalogService.RECENTLY_ADDED) }
-                view.setGalleries(popular.await(), added.await())
+                view.setAddedGallery(catalog.gallery(CatalogService.RECENTLY_ADDED))
             }
             launch {
                 authenticator.loadXboxProfile().onSuccess { profile ->
@@ -304,22 +317,12 @@ class MainActivity : Activity() {
         ConsoleDialogs.search(this, view.searchQuery) { query -> view.setSearch(query) }
     }
 
-    private fun showCatalogOptions(session: XCloudSession) {
-        ConsoleDialogs.menu(this,"Conta e opções", listOf(
-            ConsoleAction("Pesquisar jogos") { showCatalogSearch() },
-            ConsoleAction("Vídeo: " + if (lowLatencyVideo) "menor atraso" else "adaptativo") {
-                lowLatencyVideo = !lowLatencyVideo
-                if (Build.VERSION.SDK_INT >= 30) window.setPreferMinimalPostProcessing(lowLatencyVideo)
-                surfaceRenderer.minimalPostProcessingRequested = lowLatencyVideo && Build.VERSION.SDK_INT >= 30
-                getSharedPreferences("stream_preferences", Context.MODE_PRIVATE).edit()
-                    .putBoolean("low_latency_video", lowLatencyVideo).apply()
-                Toast.makeText(this, "Modo de vídeo aplicado à próxima partida.", Toast.LENGTH_SHORT).show()
-            },
-            ConsoleAction("Microsoft Rewards — consultar saldo") { openAccountPage("https://rewards.bing.com/") },
-            ConsoleAction("Gerenciar assinatura Microsoft") { openAccountPage("https://account.microsoft.com/services") },
-            ConsoleAction("Atualizar catálogo") { renderGameDashboard(session) },
-            ConsoleAction("Trocar conta") { authenticator.clearSession(); renderLoginMenu() }
-        ))
+    private fun showSettings(session: XCloudSession) {
+        PlaybackSettingsPanel(this,settingsStore,
+            changed = { settings -> playbackSettings=settings },
+            subscription = { openAccountPage("https://account.microsoft.com/services") },
+            refresh = { renderGameDashboard(session) },
+            logout = { authenticator.clearSession(); renderLoginMenu() }).show()
     }
 
     private fun openAccountPage(url: String) {
@@ -362,6 +365,9 @@ class MainActivity : Activity() {
     private fun launchCloudGame(signaling: XCloudSignalingClient, game: GameTitle) {
         val titleId = game.titleId
         val gameName = game.name
+        val settings = playbackSettings
+        statistics.beginSession()
+        configureVideoOutput(settings)
         val previous = gameJob
         previous?.cancel()
         val generation = ++playbackGeneration
@@ -378,7 +384,9 @@ class MainActivity : Activity() {
             val firstFrame = CompletableDeferred<Unit>()
             val transportFailure = CompletableDeferred<Exception>()
             resetController()
-            surfaceRenderer.prepareForSession()
+            surfaceRenderer.nativeUpscaling = settings.nativeUpscaling
+            surfaceRenderer.minimalPostProcessingRequested = settings.videoMode.lowLatency && Build.VERSION.SDK_INT >= 30
+            surfaceRenderer.prepareForSession(settings.resolution.width,settings.resolution.height)
             surfaceRenderer.onFirstFrameRendered = {
                 if (generation == playbackGeneration && !firstFrame.isCompleted) {
                     firstFrame.complete(Unit)
@@ -387,7 +395,7 @@ class MainActivity : Activity() {
                     gameLibrary?.recordPlayed(titleId)
                     hudTextView.text = "Vídeo nativo ativo [$gameName]"
                     hudTextView.setTextColor(Color.GREEN)
-                    statsView.visibility = if (statisticsMode != 0) View.VISIBLE else View.GONE
+                    statsView.visibility = if (statistics.mode != 0) View.VISIBLE else View.GONE
                 }
             }
             surfaceRenderer.onRenderError = { error -> transportFailure.complete(error) }
@@ -403,20 +411,21 @@ class MainActivity : Activity() {
                         if (!firstFrame.isCompleted) hudTextView.text = state
                     }
                 } },
-                onStatistics = { metrics, input ->
-                    val complete = statisticsMode == 2
-                    val text = if (complete) metrics.overlay(input, "") else metrics.compactOverlay(input)
+                onStatistics = stats@ { metrics, input ->
+                    if (statistics.mode == 0) return@stats
+                    val complete = statistics.mode == 2
+                    val text = if (complete) metrics.overlay(input, "",settings.resolution) else metrics.compactOverlay(input)
                     runOnUiThread {
                         if (generation == playbackGeneration) {
                             statsView.text = text + if (complete) surfaceRenderer.diagnostics() + "\n" +
                                 (webrtcClient?.latencyDiagnostics() ?: "") else surfaceRenderer.compactDiagnostics()
-                            statsView.visibility = if (firstFrame.isCompleted && statisticsMode != 0) View.VISIBLE else View.GONE
+                            statsView.visibility = if (firstFrame.isCompleted && statistics.mode != 0) View.VISIBLE else View.GONE
                         }
                     }
-                }, lowLatencyVideo = lowLatencyVideo)
+                }, lowLatencyVideo = settings.videoMode.lowLatency, streamResolution = settings.resolution)
             webrtcClient = rtc
             try {
-                signaling.startAndConnectWebRtcSession(titleId, rtc, onQueueStatus = { status -> runOnUiThread {
+                signaling.startAndConnectWebRtcSession(titleId, rtc, resolution = settings.resolution, onQueueStatus = { status -> runOnUiThread {
                     if (generation == playbackGeneration) showQueue(status)
                 } }) { progress -> runOnUiThread {
                     if (generation == playbackGeneration && !firstFrame.isCompleted) {
@@ -565,8 +574,8 @@ class MainActivity : Activity() {
         queuePanel.visibility != View.VISIBLE && videoRecoveryDialog?.isShowing != true && webrtcClient != null
 
     private fun cycleStatistics() {
-        statisticsMode = (statisticsMode + 1) % 3
-        statsView.visibility = if (statisticsMode != 0) View.VISIBLE else View.GONE
+        statistics.cycle()
+        statsView.visibility = if (statistics.mode != 0) View.VISIBLE else View.GONE
     }
 
     private fun applyShortcut(update: ShortcutUpdate) {

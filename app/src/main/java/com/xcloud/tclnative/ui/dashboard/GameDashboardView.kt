@@ -31,7 +31,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import java.text.NumberFormat
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -48,7 +47,7 @@ class GameDashboardView(
     private val posters = PosterLoader(context, scope)
     private var games = emptyList<GameTitle>()
     private var gamePassProducts: Set<String>? = null
-    private var popular: List<String>? = null
+    private var gamePassLoaded = false
     private var added: List<String>? = null
     private var galleriesLoaded = false
     private var profile = XboxProfile()
@@ -81,8 +80,11 @@ class GameDashboardView(
     private val accountName = label(26f)
     private val gamertag = label(24f).apply { setTextColor(DashboardTheme.muted) }
     private val subscription = label(20f).apply { gravity = Gravity.CENTER }
-    private val rewards = label(25f)
-    private val medal = ImageView(context).apply { setImageDrawable(RewardsMedal()) }
+    private val settingsButton = DashboardTheme.button(context,"⚙") { onOptions() }.apply {
+        id=generateViewId(); contentDescription="Configurações"
+        typeface=android.graphics.Typeface.DEFAULT
+        setPadding(0,0,0,0)
+    }
     private val connected = View(context).apply { background = rounded(0xff22b444.toInt(), 1000f) }
     private val navigation = FrameLayout(context).apply { clipChildren = false; clipToPadding = false }
     private val tabRow = LinearLayout(context).apply {
@@ -127,7 +129,7 @@ class GameDashboardView(
         addView(headerIcon); addView(headerTitle)
         profilePanel.addView(avatar); profilePanel.addView(avatarLetter)
         profilePanel.addView(connected); profilePanel.addView(accountName); profilePanel.addView(gamertag)
-        profilePanel.addView(subscription); profilePanel.addView(medal); profilePanel.addView(rewards)
+        profilePanel.addView(subscription); profilePanel.addView(settingsButton)
         profilePanel.setOnFocusChangeListener { _, focused ->
             profilePanel.background = if (focused) rounded(0x66325540, 9f) else null
         }
@@ -163,7 +165,7 @@ class GameDashboardView(
         hint("B", "VOLTAR") { back() }
         hint("Y", "FAVORITAR") { toggleSelectedFavorite() }
         hint("X", "BUSCAR", onSearch)
-        hint("☰", "OPÇÕES", onOptions)
+        hint("☰", "CONFIGURAÇÕES", onOptions)
         renderProfile()
         updateTabs()
     }
@@ -196,13 +198,14 @@ class GameDashboardView(
     fun gameById(id: String): GameTitle? = games.firstOrNull { it.titleId == id }
     fun setGamePassProducts(products: Set<String>?) {
         gamePassProducts = products
+        gamePassLoaded = true
         setGames(games)
     }
     fun setMetadataProgress(progress: com.xcloud.tclnative.catalog.CatalogService.Progress) {
         metadataNote.text = when {
             !progress.finished -> "CARREGANDO INFORMAÇÕES E CAPAS: ${progress.covers}/${progress.total}"
             progress.covers == 0 -> "CAPAS INDISPONÍVEIS. START → ATUALIZAR CATÁLOGO."
-            progress.covers < progress.total -> "ALGUMAS CAPAS INDISPONÍVEIS. ATUALIZE PELO MENU."
+            progress.covers < progress.total -> "ALGUMAS CAPAS INDISPONÍVEIS. ATUALIZE NAS CONFIGURAÇÕES."
             else -> ""
         }
     }
@@ -213,21 +216,19 @@ class GameDashboardView(
     private fun renderProfile() {
         accountName.text = profile.displayName.uppercase(Locale.getDefault())
         gamertag.text = profile.gamertag.uppercase(Locale.getDefault())
-        subscription.text = profile.subscription ?: "ASSINATURA —"
+        subscription.text = profile.subscription?.let { if (it == "FREE") "FREE" else "GAME PASS $it" } ?: "ASSINATURA NÃO INFORMADA"
         subscription.background = rounded(0xff256038.toInt(), 3f)
-        rewards.text = profile.rewardsPoints?.let { NumberFormat.getIntegerInstance(Locale("pt", "BR")).format(it) + " pts" } ?: "— pts"
-        rewards.contentDescription = profile.rewardsPoints?.let { "$it pontos Microsoft Rewards" } ?: "Microsoft Rewards: saldo indisponível"
         avatarLetter.text = profile.displayName.take(1).uppercase(Locale.getDefault())
         connected.contentDescription = "Conta autenticada no Xbox Cloud"
-        profilePanel.contentDescription = "${profile.displayName}, ${profile.gamertag}. Abrir opções da conta"
+        profilePanel.contentDescription = "${profile.displayName}, ${profile.gamertag}. Abrir configurações"
         posters.load(avatar, profile.avatarUrl, 256, 256) { ready -> avatarLetter.visibility = if (ready) View.GONE else View.VISIBLE }
     }
-    fun setGalleries(popular: List<String>?, added: List<String>?) {
-        this.popular = popular; this.added = added; galleriesLoaded = true; refresh()
+    fun setAddedGallery(added: List<String>?) {
+        this.added = added; galleriesLoaded = true; refresh()
     }
     fun setSearch(query: String) { searchQuery = query.trim(); refresh(); focusFirstCover() }
     fun refresh() {
-        val visible = GameLibrary.select(games, activeTab, library.favorites, library.records(), popular, added, searchQuery)
+        val visible = GameLibrary.select(games, activeTab, library.favorites, library.records(), gamePassProducts?.toList(), added, searchQuery)
         adapter.submit(visible)
         emptyState.visibility = if (visible.isEmpty()) View.VISIBLE else View.GONE
         emptyState.text = when {
@@ -236,13 +237,14 @@ class GameDashboardView(
             activeTab == LibraryTab.RECENT -> "Sua próxima partida começa aqui.\nOs jogos iniciados neste aparelho aparecerão nesta aba."
             activeTab == LibraryTab.ADDED && !galleriesLoaded -> "Carregando adições recentes…"
             activeTab == LibraryTab.ADDED && added == null -> "Adições recentes indisponíveis no momento.\nOs jogos continuam na aba Todos os jogos."
-            activeTab == LibraryTab.POPULAR && !galleriesLoaded -> "Carregando jogos mais jogados…"
-            activeTab == LibraryTab.POPULAR -> "Seus jogos mais iniciados neste aparelho aparecerão aqui."
+            activeTab == LibraryTab.GAME_PASS && !gamePassLoaded -> "Carregando jogos do Game Pass…"
+            activeTab == LibraryTab.GAME_PASS && gamePassProducts == null -> "Não foi possível confirmar os jogos do Game Pass.\nAtualize o catálogo nas configurações."
+            activeTab == LibraryTab.GAME_PASS -> "Nenhum título do Game Pass disponível nesta lista."
             else -> "Nenhum jogo disponível nesta categoria."
         }
         catalogNote.text = when {
             searchQuery.isNotBlank() -> "BUSCA: $searchQuery  •  ${visible.size} JOGOS"
-            activeTab == LibraryTab.POPULAR && popular == null -> if (galleriesLoaded) "MAIS JOGADOS NESTE APARELHO" else "CARREGANDO…"
+            activeTab == LibraryTab.GAME_PASS && !gamePassLoaded -> "CARREGANDO GAME PASS…"
             else -> "${visible.size} JOGOS"
         }
         val selected = visible.firstOrNull { it.titleId == selectedGame?.titleId } ?: visible.firstOrNull()
@@ -297,7 +299,7 @@ class GameDashboardView(
         val second = words.drop(split).joinToString(" ")
         val title = if (second.isEmpty()) first else "$first\n$second"
         headerTitle.text = SpannableString(title).apply {
-            if (second.isNotEmpty()) setSpan(ForegroundColorSpan(DashboardTheme.yellow), first.length + 1, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            if (second.isNotEmpty()) setSpan(ForegroundColorSpan(DashboardTheme.accent), first.length + 1, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         headerIcon.contentDescription = "Ícone de ${game.name}"
         posters.load(headerIcon, game.tileUrl ?: game.posterUrl, 512, 512)
@@ -367,18 +369,17 @@ class GameDashboardView(
         textSize(headerTitle, 46f)
         if (android.os.Build.VERSION.SDK_INT >= 26) headerTitle.setAutoSizeTextTypeUniformWithConfiguration(
             (24*s).roundToInt().coerceAtLeast(1), (46*s).roundToInt().coerceAtLeast(2), 1, TypedValue.COMPLEX_UNIT_PX)
-        place(profilePanel, w-424*s, headerTop+2*s, 372*s, headerSize)
+        place(profilePanel, w-492*s, headerTop+2*s, 440*s, headerSize)
         val a = 80*s
         place(avatarLetter, 10*s, 12*s, a, a); place(avatar, 10*s, 12*s, a, a)
         place(connected, 10*s+a-19*s, 12*s+a-18*s, 15*s, 15*s)
         val tx = 106*s
-        place(accountName, tx, 0f, 265*s, 34*s)
-        place(gamertag, tx, 30*s, 265*s, 30*s)
-        place(subscription, tx, 68*s, 102*s, 26*s)
-        place(medal, tx+116*s, 65*s, 30*s, 32*s)
-        place(rewards, tx+152*s, 66*s, 112*s, 32*s)
+        place(accountName, tx, 0f, 320*s, 34*s)
+        place(gamertag, tx, 30*s, 320*s, 30*s)
+        place(subscription, tx, 68*s, 250*s, 32*s)
+        place(settingsButton, tx+264*s, 64*s, 60*s, 42*s)
         textSize(accountName, 27f); textSize(gamertag, 24f); textSize(subscription, 20f)
-        textSize(rewards, 25f); textSize(avatarLetter, 28f)
+        textSize(settingsButton, 28f); textSize(avatarLetter, 28f)
         place(metadataNote, 106*s, headerTop+headerSize+5*s, w-210*s, 22*s); textSize(metadataNote, 17f)
         place(navigation, 48*s, navTop, w-84*s, navHeight+3*s)
         val shoulderTop = (navHeight-29*s)/2

@@ -11,8 +11,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 12
-        versionName = "0.12.0-green-console-ui"
+        versionCode = 13
+        versionName = "0.13.0-playback-settings"
     }
 
     buildTypes {

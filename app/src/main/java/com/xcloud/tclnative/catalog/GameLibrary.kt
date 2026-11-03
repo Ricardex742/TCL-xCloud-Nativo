@@ -6,7 +6,7 @@ import org.json.JSONObject
 import java.security.MessageDigest
 
 enum class LibraryTab(val label: String) {
-    RECENT("JOGADOS RECENTEMENTE"), FAVORITES("FAVORITOS"), POPULAR("MAIS JOGADOS"),
+    RECENT("JOGADOS RECENTEMENTE"), FAVORITES("FAVORITOS"), GAME_PASS("GAME PASS"),
     ADDED("ADIÇÕES RECENTES"), ALL("TODOS OS JOGOS")
 }
 
@@ -39,15 +39,13 @@ class GameLibrary(context: Context, accountId: String) {
             .digest(account.toByteArray()).take(12).joinToString("") { "%02x".format(it) }
 
         fun select(games: List<GameTitle>, tab: LibraryTab, favorites: Set<String>, records: Map<String, PlayRecord>,
-                   popular: List<String>?, added: List<String>?, query: String = ""): List<GameTitle> {
+                   gamePass: List<String>?, added: List<String>?, query: String = ""): List<GameTitle> {
             val selected = when (tab) {
                 LibraryTab.ALL -> games
                 LibraryTab.FAVORITES -> games.filter { it.titleId in favorites }
                 LibraryTab.RECENT -> games.filter { it.titleId in records }
                     .sortedByDescending { records[it.titleId]?.lastPlayed }
-                LibraryTab.POPULAR -> if (popular == null) games.filter { it.titleId in records }
-                    .sortedWith(compareByDescending<GameTitle> { records[it.titleId]?.launches }
-                        .thenByDescending { records[it.titleId]?.lastPlayed }) else ordered(games, popular)
+                LibraryTab.GAME_PASS -> ordered(games, gamePass ?: emptyList())
                 LibraryTab.ADDED -> ordered(games, added ?: emptyList())
             }
             return selected.filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }

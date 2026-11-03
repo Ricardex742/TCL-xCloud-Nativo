@@ -53,7 +53,7 @@ class AuthTest {
         enqueue("""{"profileUsers":[{"settings":[{"id":"Gamertag","value":"Player"},{"id":"GameDisplayName","value":"Lucas"},{"id":"Gamerscore","value":"12345"}]}]}""")
         val profile = authenticator.loadXboxProfile().getOrThrow()
         assertEquals("Lucas", profile.displayName)
-        assertNull(profile.rewardsPoints)
+        assertNull(profile.subscription)
         val grant = JSONObject(server.takeRequest().body.readUtf8())
         assertEquals("http://xboxlive.com", grant.getString("RelyingParty"))
         assertEquals("user-token", grant.getJSONObject("Properties").getJSONArray("UserTokens").getString(0))

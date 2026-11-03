@@ -1,6 +1,7 @@
 package com.xcloud.tclnative
 
 import com.xcloud.tclnative.webrtc.StreamProfile
+import com.xcloud.tclnative.webrtc.StreamResolution
 import com.xcloud.tclnative.renderer.DisplayModePolicy
 import com.xcloud.tclnative.renderer.OutputMode
 import org.junit.Assert.*
@@ -49,6 +50,24 @@ class StreamProfileTest {
     @Test fun noVideoDoesNotModifyAudioOnlySdp() {
         val audio = sdp.substringBefore("m=video")
         assertEquals(audio, StreamProfile.receiveSdp(audio))
+    }
+    @Test fun switchingFromHqTo720pReplacesHighBitratesWithoutChangingCodecsOrTransport() {
+        val high=StreamProfile.receiveSdp(sdp,StreamResolution.HD_1080_HQ)
+        val low=StreamProfile.receiveSdp(high,StreamResolution.HD_720)
+        assertTrue(low.contains("b=AS:12000\r\nb=TIAS:12000000"))
+        assertTrue(low.contains("x-google-min-bitrate=5000"))
+        assertTrue(low.contains("x-google-start-bitrate=5000"))
+        assertFalse(low.contains("x-google-min-bitrate=20000"))
+        assertFalse(low.contains("x-google-max-bitrate=30000"))
+        assertFalse(low.contains("b=AS:30000"))
+        assertEquals(sdp.substringBefore("m=video"),low.substringBefore("m=video"))
+        assertTrue(low.contains("a=ice-ufrag:keep-ufrag"))
+        assertTrue(low.contains("profile-level-id=640c1f;packetization-mode=1"))
+        for (profile in StreamResolution.entries) {
+            val once=StreamProfile.receiveSdp(sdp,profile)
+            assertEquals(once,StreamProfile.receiveSdp(once,profile))
+            assertTrue(once.contains("x-google-max-bitrate=${profile.maxKbps}"))
+        }
     }
     @Test fun tvRequestsSupported4k60ButNeverDowngradesTo4k30OrSwitchesAnExisting4k120Mode() {
         val fullHd = OutputMode(1, 1920, 1080, 60f)

@@ -80,6 +80,18 @@ class AuthTest {
         auth().saveTokens("access")
         assertEquals(fresh(), store.token)
     }
+    @Test fun refreshedGrantsKeepTheSameStableXboxLibraryIdentity() = runBlocking {
+        store.token = fresh()
+        val sessions = listOf("grant-one","grant-two").map { hash ->
+            enqueue("""{"Token":"user","DisplayClaims":{"xui":[{"uhs":"$hash"}]}}""")
+            enqueue("""{"Token":"xsts","DisplayClaims":{"xui":[{"xid":"2533274800000001"}]}}""")
+            enqueue("""{"gsToken":"cloud","offeringSettings":{"regions":[{"isDefault":true,"baseUri":"https://region.example"}]}}""")
+            auth().authenticateToXCloud().getOrThrow()
+        }
+        assertNotEquals(sessions[0].userHash,sessions[1].userHash)
+        assertEquals("xuid:2533274800000001",sessions[0].libraryAccountId)
+        assertEquals(sessions[0].libraryAccountId,sessions[1].libraryAccountId)
+    }
     @Test fun expiredTokenIsRefreshedWithItsOriginalClientAndPreservesRefreshIfNotRotated() = runBlocking {
         store.token = fresh().copy(expiresAtMs = 1); now = 100
         enqueue("""{"access_token":"new","expires_in":3600}"""); exchange()

@@ -3,7 +3,7 @@ package com.xcloud.tclnative.catalog
 import org.json.JSONObject
 
 data class XboxProfile(val displayName: String = "PERFIL XBOX", val gamertag: String = "Conta conectada",
-                       val avatarUrl: String? = null, val subscription: String? = null) {
+                       val avatarUrl: String? = null, val subscription: String? = null, val xuid: String? = null) {
     companion object {
         private val claimSeparators=Regex("[^a-z0-9]")
         private val shortTierPrefix=Regex("^(?:xgp|gp)(?=(?:ultimate|premium|standard|essential|core)$)")
@@ -14,7 +14,8 @@ data class XboxProfile(val displayName: String = "PERFIL XBOX", val gamertag: St
             } }.toMap() } ?: emptyMap()
             val tag = settings["Gamertag"]?.takeIf { it.isNotBlank() } ?: "PERFIL XBOX"
             return XboxProfile(settings["GameDisplayName"]?.takeIf { it.isNotBlank() } ?: tag, tag,
-                CatalogService.imageUrl(settings["GameDisplayPicRaw"]))
+                CatalogService.imageUrl(settings["GameDisplayPicRaw"]), xuid = data.optJSONArray("profileUsers")
+                    ?.optJSONObject(0)?.optString("id")?.takeIf { it.matches(Regex("[0-9]{1,20}")) })
             // Gamerscore does not declare a subscription tier.
         }
         fun subscriptionClaims(value: Any?, depth: Int = 0): List<String> {

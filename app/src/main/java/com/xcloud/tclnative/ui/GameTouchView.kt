@@ -59,8 +59,11 @@ class GameTouchView(context: Context,
                 if(type==1 && position==null) return
                 if(type!=1 && old==null) return
                 val (x,y)=position ?: old?.let { it.x to it.y } ?: return
-                val pressure=event.getPressure(i).let { if(it.isFinite()) it.coerceIn(0f,1f) else 1f }
-                val p=NativePointer(pointerId,x,y,type,if(type==2) 0f else pressure)
+                // Many phones provide no pressure measurement (zero); that still means a finger is down.
+                val pressure=event.getPressure(i).let { if(it.isFinite() && it>0) it.coerceAtMost(1f) else 1f }
+                val diameter=event.getTouchMajor(i).takeIf { it.isFinite() && it>0 } ?: 1f
+                val p=NativePointer(pointerId,x,y,type,if(type==2) 0f else pressure,
+                    diameter/width.coerceAtLeast(1),diameter/height.coerceAtLeast(1))
                 if(type==2) native.remove(pointerId) else native[pointerId]=p
                 events.add(p)
             }

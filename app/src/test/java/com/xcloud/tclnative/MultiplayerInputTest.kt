@@ -62,7 +62,7 @@ class MultiplayerInputTest {
         val b=ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
         assertEquals(4,b.short.toInt()); assertEquals(1,b.get(14).toInt()); assertEquals(2,b.get(15).toInt())
         assertEquals(3,b.getInt(23)); assertEquals(320,b.getInt(27)); assertEquals(360,b.getInt(31)); assertEquals(1,b.get(35).toInt())
-        assertEquals(9,b.getInt(43)); assertEquals(2,b.get(55).toInt()); assertEquals(0,b.getShort(36).toInt())
+        assertEquals(9,b.getInt(43)); assertEquals(2,b.get(55).toInt()); assertEquals(1,b.getShort(36).toInt())
         assertEquals(10,GamepadPacket.metadata(0.0,10).last().toInt())
     }
     @Test fun nativeTouchOverflowResynchronizesAndFocusLossReleasesEveryContact() {

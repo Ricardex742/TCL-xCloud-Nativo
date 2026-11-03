@@ -49,10 +49,10 @@ class ProtocolTest {
             val actions = protocol.onHandshakeAck()
             assertTrue(protocol.ready)
             assertEquals("authorizationRequest", JSONObject(String(actions.first().bytes, Charsets.UTF_8)).getString("message"))
-            val dimensions = actions.map { JSONObject(String(it.bytes, Charsets.UTF_8)) }
+            val dimensions = actions.filterNot { it.binary }.map { JSONObject(String(it.bytes, Charsets.UTF_8)) }
                 .single { it.optString("target").endsWith("dimensionschanged") }
             assertEquals(1920, JSONObject(dimensions.getString("content")).getInt("preferredWidth"))
-            assertTrue(actions.all { it.bytes.last() != 0.toByte() })
+            assertTrue(actions.filterNot { it.binary }.all { it.bytes.last() != 0.toByte() })
             assertTrue(protocol.onHandshakeAck().isEmpty()); assertTrue(protocol.onOpen("control").isEmpty())
         }
     }
@@ -65,7 +65,12 @@ class ProtocolTest {
     @Test fun nativeTouchHandshakeEnablesPointersWithoutInventingAPhysicalController() {
         val protocol=ChannelHandshake(true,1280,720)
         listOf("input","message","control").forEach(protocol::onOpen)
-        val messages=protocol.onHandshakeAck().map { JSONObject(String(it.bytes,Charsets.UTF_8)) }
+        val actions=protocol.onHandshakeAck()
+        val metadata=actions.single { it.binary }
+        assertEquals("input",metadata.channel)
+        assertArrayEquals(GamepadPacket.metadata(0.0,10),metadata.bytes)
+        assertTrue(actions.indexOf(metadata)<actions.indexOfFirst { !it.binary && String(it.bytes).contains("touchinputenabledchanged") })
+        val messages=actions.filterNot { it.binary }.map { JSONObject(String(it.bytes,Charsets.UTF_8)) }
         assertFalse(messages.any { it.optString("message")=="gamepadChanged" })
         val touch=messages.single { it.optString("target").endsWith("touchinputenabledchanged") }
         assertTrue(JSONObject(touch.getString("content")).getBoolean("touchInputEnabled"))

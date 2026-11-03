@@ -22,13 +22,39 @@ object GamePassCatalog {
 }
 
 /** Only a rendered first frame counts as played; a cancelled cloud queue does not. */
-class GameLibrary(context: Context, accountId: String) {
-    private val prefs = context.getSharedPreferences("library_" + accountKey(accountId), Context.MODE_PRIVATE)
-    val favorites: Set<String> get() = prefs.getStringSet("favorites", emptySet())?.toSet() ?: emptySet()
-    fun toggleFavorite(id: String): Boolean {
+class GameLibrary(private val context: Context, accountId: String, legacyAccountId: String? = null) {
+    private var prefs = preferences(accountId).let { old ->
+        old.getString("migrated_to", null)?.takeIf { it.matches(Regex("xuid:[0-9]{1,20}")) }
+            ?.let(::preferences) ?: old
+    }
+    init { if (legacyAccountId != null && legacyAccountId != accountId) migrate(preferences(legacyAccountId), accountId) }
+    private fun preferences(account: String) = context.getSharedPreferences("library_" + accountKey(account), Context.MODE_PRIVATE)
+    /** A verified XUID replaces a relying-party hash without discarding this account's old library. */
+    @Synchronized fun bindXboxAccount(xuid: String) {
+        require(xuid.matches(Regex("[0-9]{1,20}")))
+        val account = "xuid:$xuid"
+        val previous = prefs
+        prefs = preferences(account)
+        if (previous !== prefs) migrate(previous, account)
+    }
+    private fun migrate(old: android.content.SharedPreferences, account: String) {
+        val owner = old.getString("migrated_to", null)
+        if (owner != null) return // Never resurrect a removed favorite on the next login.
+        val merged = favorites + (old.getStringSet("favorites", emptySet()) ?: emptySet())
+        val plays = runCatching { JSONObject(prefs.getString("plays", "{}") ?: "{}") }.getOrDefault(JSONObject())
+        val legacy = runCatching { JSONObject(old.getString("plays", "{}") ?: "{}") }.getOrDefault(JSONObject())
+        legacy.keys().forEach { id -> if (!plays.has(id)) plays.put(id, legacy.get(id)) }
+        check(prefs.edit().putStringSet("favorites", merged).putString("plays", plays.toString()).commit())
+        check(old.edit().putString("migrated_to", account).commit())
+    }
+    val favorites: Set<String> @Synchronized get() = prefs.getStringSet("favorites", emptySet())?.toSet() ?: emptySet()
+    @Synchronized fun isFavorite(id: String) = favorites.any { it.equals(id, true) }
+    @Synchronized fun toggleFavorite(id: String): Boolean {
         val next = favorites.toMutableSet()
-        val added = if (id in next) { next.remove(id); false } else { next.add(id); true }
-        prefs.edit().putStringSet("favorites", next).apply()
+        val existing = next.firstOrNull { it.equals(id, true) }
+        val added = if (existing != null) { next.remove(existing); false } else { next.add(id); true }
+        // Complete the disk write before acknowledging the star, including immediate app exits.
+        if (!prefs.edit().putStringSet("favorites", next).commit()) throw java.io.IOException("Não foi possível salvar os favoritos no aparelho.")
         return added
     }
     fun recordPlayed(id: String, now: Long = System.currentTimeMillis()) {
@@ -52,7 +78,7 @@ class GameLibrary(context: Context, accountId: String) {
                    gamePassTitles: Set<String> = emptySet()): List<GameTitle> {
             val selected = when (tab) {
                 LibraryTab.ALL -> games
-                LibraryTab.FAVORITES -> games.filter { it.titleId in favorites }
+                LibraryTab.FAVORITES -> games.filter { game -> favorites.any { it.equals(game.titleId, true) } }
                 LibraryTab.RECENT -> games.filter { it.titleId in records }
                     .sortedByDescending { records[it.titleId]?.lastPlayed }
                 LibraryTab.GAME_PASS -> {

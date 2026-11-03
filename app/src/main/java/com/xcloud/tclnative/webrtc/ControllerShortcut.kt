@@ -1,6 +1,6 @@
 package com.xcloud.tclnative.webrtc
 
-data class ShortcutUpdate(val forwardedButtons: Int, val pulse: Int = 0, val toggleStatistics: Boolean = false)
+data class ShortcutUpdate(val forwardedButtons: Int, val pulse: Int = 0, val openMenu: Boolean = false)
 
 /** Reserve only Menu/View for a short chord window; gameplay buttons and axes are never delayed. */
 class ControllerShortcut {
@@ -18,7 +18,7 @@ class ControllerShortcut {
             held = held or button
             if (!consumed && held == BOTH && pendingAt?.let { nowMs - it <= CHORD_WINDOW_MS } == true) {
                 consumed = true; pendingAt = null; forwarded = 0
-                return ShortcutUpdate(0, toggleStatistics = true)
+                return ShortcutUpdate(0, openMenu = true)
             }
             if (!consumed && pendingAt == null) forwarded = held
             return ShortcutUpdate(forwarded)

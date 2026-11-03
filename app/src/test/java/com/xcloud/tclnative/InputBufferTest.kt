@@ -87,4 +87,20 @@ class InputBufferTest {
         } finally { pump.close() }
         assertEquals(1, failures.get())
     }
+    @Test fun firstNativeTapSurvivesChannelStartupAndStartsAfterMetadataSequenceZero() {
+        val touch=com.xcloud.tclnative.webrtc.NativeTouchBuffer()
+        touch.add(listOf(com.xcloud.tclnative.webrtc.NativePointer(7,.25f,.5f,1)))
+        touch.add(listOf(com.xcloud.tclnative.webrtc.NativePointer(7,.25f,.5f,2,0f)))
+        val received=java.util.concurrent.LinkedBlockingQueue<ByteArray>()
+        val pump=com.xcloud.tclnative.webrtc.RealtimeInputPump({0},{ received.offer(it); true },{ fail("Input failed") },
+            initialGamepads=emptySet(),touch=touch)
+        try {
+            pump.start()
+            val down=java.nio.ByteBuffer.wrap(received.poll(2,java.util.concurrent.TimeUnit.SECONDS)!!).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            val up=java.nio.ByteBuffer.wrap(received.poll(2,java.util.concurrent.TimeUnit.SECONDS)!!).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            assertEquals(4,down.getShort(0).toInt()); assertEquals(1,down.getInt(2)); assertEquals(2,up.getInt(2))
+            assertEquals(7,down.getInt(23)); assertEquals(480,down.getInt(27)); assertEquals(540,down.getInt(31))
+            assertEquals(1,down.get(35).toInt()); assertEquals(2,up.get(35).toInt())
+        } finally { pump.close() }
+    }
 }

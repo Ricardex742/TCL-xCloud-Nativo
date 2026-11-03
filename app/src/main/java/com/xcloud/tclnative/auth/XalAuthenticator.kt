@@ -25,8 +25,11 @@ import java.util.concurrent.TimeUnit
 
 data class XCloudSession(
     val gssvToken: String, val baseUri: String, val userHash: String,
-    val expiresAtMs: Long = System.currentTimeMillis() + 3600_000L, val transferToken: String = ""
-)
+    val expiresAtMs: Long = System.currentTimeMillis() + 3600_000L, val transferToken: String = "",
+    val xuid: String? = null
+) {
+    val libraryAccountId: String get() = xuid?.let { "xuid:$it" } ?: userHash
+}
 data class AuthEndpoints(
     val deviceCodeUrl: String = "https://login.microsoftonline.com/consumers/oauth2/v2.0/devicecode",
     val tokenUrl: String = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token",
@@ -175,6 +178,10 @@ class XalAuthenticator(
         val xsts = JSONObject(post(endpoints.xstsAuthorizeUrl, "AUTH_XSTS", json(JSONObject()
             .put("RelyingParty", "http://gssv.xboxlive.com/").put("TokenType", "JWT").put("Properties", JSONObject()
                 .put("SandboxId", "RETAIL").put("UserTokens", JSONArray().put(user.getString("Token")))))))
+        val xuid = listOf(xsts, user).firstNotNullOfOrNull { response ->
+            response.optJSONObject("DisplayClaims")?.optJSONArray("xui")?.optJSONObject(0)
+                ?.optString("xid")?.takeIf { it.matches(Regex("[0-9]{1,20}")) }
+        }
         onProgress("AUTH_GSSV: Conectando ao xCloud...")
         val cloud = JSONObject(post(endpoints.xcloudLoginUrl, "AUTH_GSSV", json(JSONObject()
             .put("token", xsts.getString("Token")).put("offeringId", "xgpuweb"))))
@@ -184,7 +191,7 @@ class XalAuthenticator(
         profileUserToken = user.getString("Token")
         profileUserHash = hash
         XCloudSession(cloud.getString("gsToken"), region.getString("baseUri").trimEnd('/'), hash,
-            clockMs() + cloud.optLong("durationInSeconds", 3600) * 1000)
+            clockMs() + cloud.optLong("durationInSeconds", 3600) * 1000, xuid = xuid)
     }
 
     /** Optional Xbox profile grant is separate from GSSV/console transfer and never blocks playing. */

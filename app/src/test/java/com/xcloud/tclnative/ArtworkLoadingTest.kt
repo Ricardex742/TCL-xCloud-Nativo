@@ -68,7 +68,9 @@ class ArtworkLoadingTest {
             loader.close()
             val next = PosterLoader(activity, scope)
             val thumbnail = ImageView(activity)
-            next.load(thumbnail, server.url("/new.png").toString())
+            val callbacks=mutableListOf<Boolean>()
+            next.load(thumbnail, server.url("/new.png").toString(),notifyPlaceholder=false) { callbacks.add(it) }
+            assertEquals(listOf(true),callbacks) // A home shortcut must be pinned once, after its icon is ready.
             assertEquals(Color.BLUE, (thumbnail.drawable as BitmapDrawable).bitmap.getPixel(0,0))
             assertEquals(before, server.requestCount) // The loading screen reuses the catalog's cache.
             next.close()

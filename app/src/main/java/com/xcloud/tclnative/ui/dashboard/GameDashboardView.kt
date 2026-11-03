@@ -42,7 +42,8 @@ class GameDashboardView(
     private val onPlay: (GameTitle) -> Unit,
     private val onSearch: () -> Unit,
     private val onOptions: () -> Unit,
-    private val onExit: () -> Unit
+    private val onExit: () -> Unit,
+    private val onFavoritesChanged: () -> Unit = {}
 ) : FrameLayout(context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val posters = PosterLoader(context, scope)
@@ -310,7 +311,11 @@ class GameDashboardView(
     }
     private fun toggleSelectedFavorite() {
         val game = selectedGame ?: return
-        val added = library.toggleFavorite(game.titleId)
+        val added = try { library.toggleFavorite(game.titleId) } catch (error: java.io.IOException) {
+            android.widget.Toast.makeText(context,error.message,android.widget.Toast.LENGTH_LONG).show()
+            return
+        }
+        onFavoritesChanged()
         announceForAccessibility(if (added) "${game.name} adicionado aos favoritos" else "${game.name} removido dos favoritos")
         val position = adapter.items.indexOfFirst { it.titleId == game.titleId }
         if (activeTab == LibraryTab.FAVORITES) { refresh(); focusFirstCover() }
@@ -465,9 +470,9 @@ class GameDashboardView(
             addView(cover); addView(favorite)
         }
         fun bind(game: GameTitle) {
-            contentDescription = game.name + if (game.titleId in library.favorites) ", favorito" else ""
+            contentDescription = game.name + if (library.isFavorite(game.titleId)) ", favorito" else ""
             fallback.text = game.name.uppercase(Locale.getDefault()); textSize(fallback, 27f)
-            favorite.visibility = if (game.titleId in library.favorites) View.VISIBLE else View.GONE
+            favorite.visibility = if (library.isFavorite(game.titleId)) View.VISIBLE else View.GONE
             posters.load(image, game.posterUrl ?: game.tileUrl)
             val s = scale
             badges.bind(game.gamePass, game.seriesOptimized, s)

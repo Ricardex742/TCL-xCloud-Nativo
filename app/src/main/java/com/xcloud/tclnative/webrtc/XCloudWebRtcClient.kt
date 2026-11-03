@@ -35,6 +35,8 @@ class XCloudWebRtcClient(
     @Volatile private var inputWidth=streamResolution.width
     @Volatile private var inputHeight=streamResolution.height
     private val pumpLock = Any()
+    private val pendingTouch = NativeTouchBuffer()
+    @Volatile private var touchEnabled = nativeTouch
     @Volatile private var inputPump: RealtimeInputPump? = null
     private val statsCollector = StreamStatsCollector()
     private val statisticsLock = Any()
@@ -161,17 +163,14 @@ class XCloudWebRtcClient(
     private fun dispatch(messages: List<ChannelMessage>) {
         messages.forEach { message ->
             val channel = channels[message.channel]
-            if (channel == null || !channel.send(DataChannel.Buffer(ByteBuffer.wrap(message.bytes), false))) {
+            if (channel == null || !channel.send(DataChannel.Buffer(ByteBuffer.wrap(message.bytes), message.binary))) {
                 fail("CHANNELS: falha ao enviar configuração ${message.channel}")
                 return
             }
         }
-        if (handshake.ready && inputStarted.compareAndSet(false, true)) {
+        // Only the callback carrying startup metadata may start the pump; a duplicate Ack can race it.
+        if (messages.any { it.channel == "input" && it.binary } && inputStarted.compareAndSet(false, true)) {
             val input = channels.getValue("input")
-            if (!input.send(DataChannel.Buffer(ByteBuffer.wrap(GamepadPacket.metadata(0.0,if(nativeTouch) 10 else 0)), true))) {
-                fail("CHANNELS: falha ao iniciar input")
-                return
-            }
             synchronized(pumpLock) {
                 if (closed.get()) return
                 gamepads.keys.filter { nativeTouch || it!=0 }.forEach { sendGamepadChanged(it,true) }
@@ -180,7 +179,7 @@ class XCloudWebRtcClient(
                 send = { bytes -> !closed.get() && input.send(DataChannel.Buffer(ByteBuffer.wrap(bytes), true)) },
                 onFailure = { fail("CHANNELS: falha no envio de input") },
                 prioritize = { runCatching { android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DISPLAY) }; Unit },
-                initialGamepads = gamepads.keys.toSet()
+                initialGamepads = gamepads.keys.toSet(), touch = pendingTouch
             )
                 inputPump = pump
                 pump.touchWidth=inputWidth; pump.touchHeight=inputHeight
@@ -230,6 +229,8 @@ class XCloudWebRtcClient(
         synchronized(pumpLock) {
             if(closed.get()) return
             val added=index !in gamepads
+            // Reserved menu chords and idle dongles must not announce a controller in a touch-only game.
+            if (nativeTouch && added && state == GamepadState()) return
             gamepads[index]=state
             if(added && channelsReady.isCompleted) sendGamepadChanged(index,true)
             inputPump?.update(state,index)
@@ -242,10 +243,25 @@ class XCloudWebRtcClient(
             inputPump?.remove(index)
         }
     }
-    fun sendPointers(events: List<NativePointer>) { if(nativeTouch && !closed.get()) inputPump?.pointers(events) }
+    fun sendPointers(events: List<NativePointer>) { synchronized(pumpLock) {
+        if(touchEnabled && !closed.get()) {
+            val pump = inputPump
+            if(pump != null) pump.pointers(events) else pendingTouch.add(events)
+        }
+    } }
+    /** Reassert after the stream is ready and allow the native session to fall back to virtual controls. */
+    fun setNativeTouchEnabled(enabled: Boolean): Boolean {
+        if (!nativeTouch || closed.get() || !channelsReady.isCompleted) return false
+        val message = JSONObject().put("type","Message").put("target","/streaming/characteristics/touchinputenabledchanged")
+            .put("id",java.util.UUID.randomUUID().toString()).put("cv","")
+            .put("content",JSONObject().put("touchInputEnabled",enabled).toString()).toString().toByteArray(Charsets.UTF_8)
+        val sent = channels["message"]?.send(DataChannel.Buffer(ByteBuffer.wrap(message),false)) == true
+        if (sent) synchronized(pumpLock) { if(touchEnabled != enabled) pendingTouch.release(); touchEnabled = enabled }
+        return sent
+    }
     fun resetInput() { synchronized(pumpLock) {
         gamepads.keys.toList().forEach { gamepads[it]=GamepadState(); inputPump?.update(GamepadState(),it) }
-        inputPump?.releaseTouch()
+        pendingTouch.release()
     } }
 
     override suspend fun setRemoteAnswer(answerSdp: String) {

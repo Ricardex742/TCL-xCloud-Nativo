@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA" />
 
     <!--
       CORREÇÃO HÍBRIDA (Celular + TV):
@@ -36,6 +37,7 @@
             android:name=".ui.MainActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize"
             android:exported="true"
+            android:launchMode="singleTask"
             android:screenOrientation="landscape">
             
             <!-- Ícone para Celular (LAUNCHER) e Banner para Google TV (LEANBACK_LAUNCHER) -->
@@ -43,6 +45,12 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="xcloud" android:host="play" />
             </intent-filter>
         </activity>
 

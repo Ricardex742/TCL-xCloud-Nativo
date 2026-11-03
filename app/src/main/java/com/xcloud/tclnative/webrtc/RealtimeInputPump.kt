@@ -36,13 +36,13 @@ class RealtimeInputPump(
     private val send: (ByteArray) -> Boolean,
     private val onFailure: () -> Unit,
     private val prioritize: () -> Unit = {},
-    initialGamepads: Set<Int> = setOf(0)
+    initialGamepads: Set<Int> = setOf(0),
+    private val touch: NativeTouchBuffer = NativeTouchBuffer()
 ) {
     private val running = AtomicBoolean(false)
     private val buffers = Array(4) { GamepadInputBuffer() }
     private val active = initialGamepads.toMutableSet()
     private val lock = Any()
-    private val touch = NativeTouchBuffer()
     @Volatile var touchWidth=1920
     @Volatile var touchHeight=1080
     @Volatile private var thread: Thread? = null
@@ -63,7 +63,7 @@ class RealtimeInputPump(
                 val period = 1_000_000_000L / INPUT_HZ
                 val started = System.nanoTime()
                 var deadline = started
-                var sequence = 0
+                var sequence = 1 // Client metadata has already used sequence 0.
                 var skipped = 0L
                 var maxDelay = 0.0
                 var windowStarted = started

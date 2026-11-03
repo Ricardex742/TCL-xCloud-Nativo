@@ -37,7 +37,8 @@ object GamepadPacket {
         if(pointers.isNotEmpty()) {
             out.put(1).put(pointers.size.toByte())
             pointers.forEach { p ->
-                out.putShort(if(p.type==2) 0 else 1).putShort(if(p.type==2) 0 else 1)
+                out.putShort((p.height.coerceIn(0f,1f)*height).roundToInt().coerceIn(1,65535).toShort())
+                    .putShort((p.width.coerceIn(0f,1f)*width).roundToInt().coerceIn(1,65535).toShort())
                     .put((if(p.type==2) 0 else (p.pressure.coerceIn(0f,1f)*255).roundToInt()).toByte())
                     .putShort(0).putInt(p.id)
                     .putInt((p.x.coerceIn(0f,1f)*width.coerceAtLeast(1)).roundToInt())

@@ -14,8 +14,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 16
-        versionName = "0.16.0-stable-signing"
+        versionCode = 17
+        versionName = "0.17.0-favorites-touch-shortcuts"
     }
 
     signingConfigs {

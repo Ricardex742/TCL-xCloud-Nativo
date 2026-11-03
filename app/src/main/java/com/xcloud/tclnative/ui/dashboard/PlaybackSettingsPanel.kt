@@ -13,7 +13,8 @@ class PlaybackSettingsPanel(
     private val subscription: () -> Unit,
     private val refresh: () -> Unit,
     private val logout: () -> Unit,
-    private val testRumble: () -> Unit = {}
+    private val testRumble: () -> Unit = {},
+    private val homeShortcuts: () -> Unit = {}
 ) {
     fun show(): ConsoleDialog {
         val settings=store.read()
@@ -24,6 +25,7 @@ class PlaybackSettingsPanel(
             ConsoleAction("Proporção: ${settings.aspect.label}") { chooseAspect() },
             ConsoleAction("Nitidez e saturação") { showImageAdjustments() },
             ConsoleAction("Controles e toque") { showControls() },
+            ConsoleAction("Atalhos dos favoritos",homeShortcuts),
             ConsoleAction("Gerenciar assinatura Microsoft",subscription),
             ConsoleAction("Atualizar catálogo",refresh),
             ConsoleAction("Trocar conta",logout)

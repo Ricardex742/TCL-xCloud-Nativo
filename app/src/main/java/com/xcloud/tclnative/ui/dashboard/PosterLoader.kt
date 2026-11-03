@@ -24,7 +24,8 @@ internal class PosterLoader(context: Context, private val scope: CoroutineScope)
     private val client = backend.client
     private val slots = backend.slots
     private val jobs = WeakHashMap<ImageView, Job>()
-    fun load(view: ImageView, originalUrl: String?, maxWidth: Int = 720, maxHeight: Int = 1080, onReady: (Boolean) -> Unit = {}) {
+    fun load(view: ImageView, originalUrl: String?, maxWidth: Int = 720, maxHeight: Int = 1080,
+             notifyPlaceholder: Boolean = true, onReady: (Boolean) -> Unit = {}) {
         val url = originalUrl?.let { raw -> runCatching {
             val parsed = raw.toHttpUrl()
             if (parsed.host == "store-images.s-microsoft.com" || parsed.host == "store-images.microsoft.com")
@@ -33,7 +34,7 @@ internal class PosterLoader(context: Context, private val scope: CoroutineScope)
         }.getOrDefault(raw) }
         jobs.remove(view)?.cancel()
         view.setImageDrawable(null)
-        onReady(false)
+        if (notifyPlaceholder || url == null) onReady(false)
         if (url == null) return
         cache.get(url)?.let { view.setImageBitmap(it); onReady(true); return }
         jobs[view] = scope.launch {

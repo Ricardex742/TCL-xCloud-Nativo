@@ -64,4 +64,21 @@ class TouchUiTest {
         assertEquals(listOf(1,2,1,2),events.map { it.type })
         controller.pause().stop().destroy()
     }
+    @Test fun phoneWithoutPressureSensorStillSendsAnActiveNativeFinger() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        val events=mutableListOf<NativePointer>()
+        val view=GameTouchView(controller.get(),{}, { events.addAll(it) },{ x,y -> x/1280 to y/720 },{})
+        controller.get().setContentView(view); view.configure(TouchMode.NATIVE); layout(view)
+        val properties=arrayOf(MotionEvent.PointerProperties().apply { id=3; toolType=MotionEvent.TOOL_TYPE_FINGER })
+        val positions=arrayOf(MotionEvent.PointerCoords().apply { x=600f; y=400f; pressure=0f; touchMajor=20f })
+        MotionEvent.obtain(0,10,MotionEvent.ACTION_DOWN,1,properties,positions,0,0,1f,1f,0,0,0,0).also {
+            assertTrue(view.dispatchTouchEvent(it)); it.recycle()
+        }
+        assertEquals(1f,events.single().pressure,0f)
+        assertTrue(events.single().width>0)
+        view.releaseInputs()
+        assertEquals(listOf(1,2),events.map { it.type })
+        assertEquals(0f,events.last().pressure,0f)
+        controller.pause().stop().destroy()
+    }
 }

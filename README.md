@@ -6,9 +6,9 @@
   <p>
     <a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aci%2Fapk-android10-3cc2595"><img src="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml/badge.svg?branch=ci%2Fapk-android10-3cc2595" alt="Compilação Android" /></a>
     <img src="https://img.shields.io/badge/Android-7.0%2B-54de69?logo=android&logoColor=white" alt="Android 7 ou superior" />
-    <img src="https://img.shields.io/badge/vers%C3%A3o-0.18.0-173d29" alt="Versão 0.18.0" />
+    <img src="https://img.shields.io/badge/vers%C3%A3o-0.19.0-173d29" alt="Versão 0.19.0" />
   </p>
-  <p><a href="#baixar-e-instalar">Baixar</a> · <a href="#telas-do-aplicativo">Telas</a> · <a href="#funcionalidades">Funcionalidades</a> · <a href="#atalhos-dos-jogos-na-tv">Atalhos na TV</a> · <a href="#compilar">Compilar</a></p>
+  <p><a href="#baixar-e-instalar">Baixar</a> · <a href="#telas-do-aplicativo">Telas</a> · <a href="#controles-de-toque-por-jogo">HUDs de toque</a> · <a href="#funcionalidades">Funcionalidades</a> · <a href="#atalhos-dos-jogos-na-tv">Atalhos na TV</a> · <a href="#compilar">Compilar</a></p>
 </div>
 
 ![Catálogo de jogos do xCLOUD](docs/screenshots/catalog.png)
@@ -42,6 +42,33 @@ As telas de interface são capturas das views nativas com perfil e dados de demo
 
 Trecho de uma gravação de gameplay no aplicativo, com o enquadramento recortado para mostrar somente o jogo. A imagem não representa uma medição de fluidez ou desempenho.
 
+## Controles de toque por jogo
+
+No celular, escolha **Jogar com toque • HUD** ao abrir um jogo. O aplicativo seleciona um layout para Fortnite, Call of Duty, Forza, EA SPORTS FC/FIFA e Hades, além de perfis gerais de tiro, corrida, futebol e ação. Os demais títulos usam o controle Xbox virtual; qualquer jogo permite escolher outro layout manualmente.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/hud-fortnite.png" alt="Prévia do HUD de combate do Fortnite" /><br /><strong>Fortnite</strong> — movimento, câmera por arrasto, tiro e troca de armas.</td>
+    <td width="50%"><img src="docs/screenshots/hud-fortnite-build.png" alt="Prévia do HUD de construção do Fortnite" /><br /><strong>Construção</strong> — parede, rampa, piso e teto com comandos Builder Pro.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/hud-call-of-duty.png" alt="Prévia do HUD de tiro com dois botões de disparo" /><br /><strong>Tiro</strong> — mirar, disparar, recarregar, agachar e granadas.</td>
+    <td><img src="docs/screenshots/hud-forza.png" alt="Prévia do HUD de corrida com setas e pedais" /><br /><strong>Corrida</strong> — direção, acelerador, freio e marchas.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/hud-ea-fc.png" alt="Prévia do HUD de futebol com ações de jogo" /><br /><strong>Futebol</strong> — passe, chute, enfiada, corrida e fintas.</td>
+    <td><img src="docs/screenshots/hud-hades.png" alt="Prévia do HUD de Hades com ações de combate" /><br /><strong>Hades</strong> — ataque, especial, feitiço e esquiva.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/hud-settings.png" alt="Configurações do HUD por jogo" /><br /><strong>Ajustes</strong> — layout, tamanho, opacidade e sensibilidade.</td>
+    <td><img src="docs/screenshots/hud-editor.png" alt="Editor de posição, tamanho e ação de cada botão" /><br /><strong>Editor</strong> — arraste, ajuste o tamanho e remapeie cada botão.</td>
+  </tr>
+</table>
+
+São prévias das views do aplicativo sobre um fundo neutro. Os HUDs enviam comandos de controle Xbox: não dependem do toque nativo do jogo e não recriam indicadores de vida, munição ou inventário. Os nomes das ações seguem os comandos padrão; ajustes feitos dentro do jogo podem exigir remapeamento. O toque nativo Xbox permanece uma opção experimental separada.
+
+Durante a partida, abra **⋯ → HUD e controles deste jogo** para escolher o perfil ou editar. No editor, selecione um controle, arraste para mover, use **− / +** para redimensionar e **Ação** para trocar o botão Xbox. **Salvar** mantém os ajustes por jogo no aparelho, inclusive depois de fechar o app; **Cancelar** descarta as alterações. Nos HUDs de tiro, arraste na área livre à direita ou sobre o botão de disparo para mover a câmera.
+
 ## Funcionalidades
 
 | Área | Recursos |
@@ -56,8 +83,8 @@ Trecho de uma gravação de gameplay no aplicativo, com o enquadramento recortad
 | Controle físico | USB, Bluetooth e dongles reconhecidos pelo Android. Navegação por direcional, botões e analógicos. |
 | Coop local | Até quatro jogadores com estados independentes, quando aceitos pelo jogo e pela sessão cloud. |
 | Vibração | Recepção de comandos do jogo e teste de suporte. O controle e o driver Android precisam expor a função de vibração. |
-| Toque | Controle virtual com múltiplos dedos e toque nativo nos títulos que anunciam suporte. |
-| Menu da partida | Atalho pelo controle ou pelo botão de toque, ajustes de imagem, estatísticas, diagnóstico e desconexão da sessão. |
+| Toque | HUDs por jogo, múltiplos dedos, câmera por arrasto, pedais e editor com posição, tamanho, opacidade e ações salvas por título. Toque nativo Xbox experimental nos títulos que anunciam suporte. |
+| Menu da partida | Atalho pelo controle ou pelo botão de toque, ajustes de HUD e imagem, estatísticas, diagnóstico e desconexão da sessão. |
 | Estatísticas | FPS, resolução recebida, bitrate, RTT, jitter, buffer, perdas, descarte e tempo de decodificação. Começam ocultas e são ativadas manualmente. |
 | Recuperação | Solicitação de quadro-chave, recuperação do decoder e da superfície de vídeo, preservando a sessão enquanto possível. |
 | Tela inicial da TV | Atalhos instaláveis por jogo, pedidos de atalhos ao launcher e canal de favoritos nos sistemas compatíveis. |
@@ -118,7 +145,7 @@ gradle --no-daemon --max-workers=2 \
 
 O módulo `shortcut` gera o modelo sem assinatura usado nos atalhos locais; ele é incorporado automaticamente ao aplicativo. Cada aparelho assina seus atalhos com uma chave própria do Android Keystore, separada da chave de atualização do xCLOUD.
 
-O pipeline valida testes, compatibilidade de APIs Android, assinatura do APK, pacotes de controle, fluxo de autenticação/sessão, geração dos atalhos e shaders de imagem. As capturas da interface podem ser reproduzidas pelos testes de UI. Consulte os [detalhes da versão 0.18](docs/tv-compatibility-0.18.md) para a implementação e os limites de validação.
+O pipeline valida testes, compatibilidade de APIs Android, assinatura do APK, pacotes de controle, fluxo de autenticação/sessão, geração dos atalhos e shaders de imagem. As capturas da interface podem ser reproduzidas pelos testes de UI. Consulte os [HUDs da versão 0.19](docs/game-huds-0.19.md) e o [modo de compatibilidade da versão 0.18](docs/tv-compatibility-0.18.md) para a implementação e os limites de validação.
 
 ---
 

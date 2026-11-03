@@ -14,8 +14,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 18
-        versionName = "0.18.0-tv-compatibility"
+        versionCode = 19
+        versionName = "0.19.0-game-huds"
     }
 
     signingConfigs {

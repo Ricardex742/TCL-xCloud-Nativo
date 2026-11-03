@@ -82,6 +82,7 @@ class MainActivity : Activity() {
     private val rumble by lazy { ControllerRumble(controllers::deviceFor) }
     private lateinit var touchView: GameTouchView
     private var currentTouchMode=TouchMode.OFF
+    private val hudStore by lazy { com.xcloud.tclnative.touch.GameHudStore(this) }
     private var preferredControllerId: Int?=null
     private val deviceListener=object : InputManager.InputDeviceListener {
         override fun onInputDeviceAdded(deviceId: Int) {}
@@ -214,6 +215,17 @@ class MainActivity : Activity() {
             onPointers={ events -> webrtcClient?.sendPointers(events) },
             coordinates=surfaceRenderer::touchCoordinates,
             onMenu={ showGameMenu() })
+        touchView.onHudSaved={ settings ->
+            val game=activeGame
+            if(game==null) false else try { hudStore.save(game.titleId,settings); true }
+            catch(error: java.io.IOException) { Toast.makeText(this,error.message,Toast.LENGTH_LONG).show(); false }
+        }
+        touchView.onBindingRequested={ id,binding ->
+            ConsoleDialogs.menu(this,"Ação do botão • ${binding?.label ?: "Escolher"}",
+                com.xcloud.tclnative.touch.HudBinding.entries.map { input ->
+                    ConsoleAction(input.label) { touchView.setEditedBinding(id,input) }
+                })
+        }
         rootLayout.addView(touchView,FrameLayout.LayoutParams(-1,-1))
         setContentView(rootLayout)
         (getSystemService(Context.INPUT_SERVICE) as InputManager).registerInputDeviceListener(deviceListener,null)
@@ -562,19 +574,39 @@ class MainActivity : Activity() {
             statistics={ cycleStatistics() },
             diagnostics={ showCopyableErrorDialog("Vídeo","${Build.MANUFACTURER} ${Build.MODEL} | Android ${Build.VERSION.RELEASE} | ${Build.HARDWARE}\n${surfaceRenderer.diagnostics()}\n${streamHistory.report()}") },
             disconnect={ cancelPlayback() },
-            virtualTouch=if(currentTouchMode==TouchMode.NATIVE) ({
-                if(webrtcClient?.setNativeTouchEnabled(false)==true) { currentTouchMode=TouchMode.VIRTUAL; touchView.configure(TouchMode.VIRTUAL) }
-            }) else null).also { dialog ->
+            hud={ showGameHudSettings() }).also { dialog ->
                 dialog.setOnDismissListener { if(gameMenuDialog===dialog) gameMenuDialog=null }
             }
     }
+    private fun enableGameHud(): Boolean {
+        val game=activeGame ?: return false
+        if(currentTouchMode==TouchMode.NATIVE && webrtcClient?.setNativeTouchEnabled(false)!=true) {
+            Toast.makeText(this,"Aguarde a conexão dos controles para ativar o HUD.",Toast.LENGTH_LONG).show()
+            return false
+        }
+        if(currentTouchMode!=TouchMode.VIRTUAL) {
+            resetController(); currentTouchMode=TouchMode.VIRTUAL
+            touchView.configure(TouchMode.VIRTUAL,game,hudStore.read(game.titleId))
+            rumble.enabled=playbackSettings.rumble
+        }
+        return true
+    }
+    private fun showGameHudSettings() {
+        val game=activeGame ?: return
+        if(!enableGameHud()) return
+        com.xcloud.tclnative.ui.dashboard.GameHudPanel(this,game,hudStore,
+            changed={ touchView.applyHud(it) },edit={ touchView.beginEditing() },
+            hide={ resetController(); currentTouchMode=TouchMode.OFF; touchView.configure(TouchMode.OFF,game); rumble.enabled=playbackSettings.rumble },
+            page={ touchView.showPage(it) }).show()
+    }
     private fun chooseLaunchMode(signaling: XCloudSignalingClient,game: GameTitle) {
         if(playbackSettings.touchMode==TouchMode.AUTO && packageManager.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)) {
+            val layout=hudStore.read(game.titleId).preset ?: com.xcloud.tclnative.touch.GameHud.automatic(game.titleId,game.name)
             val choices=mutableListOf(
-                ConsoleAction("Jogar com controle") { launchCloudGame(signaling,game,TouchMode.OFF) },
-                ConsoleAction("Jogar com toque — controle virtual") { launchCloudGame(signaling,game,TouchMode.VIRTUAL) }
+                ConsoleAction("Jogar com toque • HUD ${layout.label}") { launchCloudGame(signaling,game,TouchMode.VIRTUAL) },
+                ConsoleAction("Jogar com controle") { launchCloudGame(signaling,game,TouchMode.OFF) }
             )
-            if("NativeTouch" in game.supportedInputTypes) choices.add(ConsoleAction("Jogar com toque nativo do jogo") { launchCloudGame(signaling,game,TouchMode.NATIVE) })
+            if("NativeTouch" in game.supportedInputTypes) choices.add(ConsoleAction("Toque nativo Xbox • experimental") { launchCloudGame(signaling,game,TouchMode.NATIVE) })
             ConsoleDialogs.menu(this,game.name,choices)
         } else launchCloudGame(signaling,game)
     }
@@ -674,7 +706,7 @@ class MainActivity : Activity() {
                     firstFrame.complete(Unit)
                     finishLoading()
                     currentTouchMode=touchMode
-                    touchView.configure(touchMode)
+                    touchView.configure(touchMode,game,hudStore.read(titleId))
                     hudTextView.visibility = View.GONE
                     gameLibrary?.recordPlayed(titleId)
                     hudTextView.text = "Vídeo nativo ativo [$gameName]"
@@ -868,7 +900,7 @@ class MainActivity : Activity() {
     }
 
     private fun gameplayInputEnabled() = controlPanel.visibility == View.GONE &&
-        queuePanel.visibility != View.VISIBLE && videoRecoveryDialog?.isShowing != true && webrtcClient != null && hasWindowFocus()
+        queuePanel.visibility != View.VISIBLE && videoRecoveryDialog?.isShowing != true && webrtcClient != null && !touchView.isEditing && hasWindowFocus()
 
     private fun publishGamepad(slot: Int) { webrtcClient?.updateGamepad(controllers.combined(slot),slot) }
     private fun controllerSlot(deviceId: Int,source: Int): Int? =
@@ -999,6 +1031,10 @@ class MainActivity : Activity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if(::touchView.isInitialized && touchView.isEditing && (keyCode==KeyEvent.KEYCODE_BACK || keyCode==KeyEvent.KEYCODE_BUTTON_B)) {
+            if(event.repeatCount==0) touchView.cancelEditing()
+            return true
+        }
         if ((keyCode == KeyEvent.KEYCODE_INFO || keyCode == KeyEvent.KEYCODE_F10) &&
             controlPanel.visibility == View.GONE && queuePanel.visibility != View.VISIBLE) {
             if (event.repeatCount == 0) {
@@ -1007,6 +1043,7 @@ class MainActivity : Activity() {
             return true
         }
         if (keyCode == KeyEvent.KEYCODE_BACK && controlPanel.visibility == View.GONE) {
+            if(touchView.isEditing) { touchView.cancelEditing(); return true }
             if (queuePanel.visibility == View.VISIBLE) cancelPlayback() else if(event.repeatCount == 0) showGameMenu()
             return true
         }

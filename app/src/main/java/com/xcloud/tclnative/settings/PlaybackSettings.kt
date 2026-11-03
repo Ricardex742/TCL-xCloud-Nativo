@@ -8,7 +8,7 @@ enum class VideoMode(val label: String, val lowLatency: Boolean) {
     COMPATIBILITY("Compatibilidade — TVs mais fracas", false)
 }
 enum class TouchMode(val label: String) {
-    AUTO("Automático — escolher no celular"), OFF("Desativado"), VIRTUAL("Controle virtual"), NATIVE("Toque nativo — jogos compatíveis")
+    AUTO("Automático — escolher no celular"), OFF("Desativado"), VIRTUAL("Controle virtual — HUD por jogo"), NATIVE("Toque nativo Xbox — experimental")
 }
 
 enum class VideoAspect(val label: String, val ratio: Double? = null, val stretch: Boolean = false) {
@@ -36,6 +36,13 @@ data class PlaybackSettings(
 
 class PlaybackSettingsStore(context: Context) {
     private val prefs = context.getSharedPreferences("stream_preferences",Context.MODE_PRIVATE)
+    init {
+        if(!prefs.getBoolean("game_hud_migrated",false)) {
+            val editor=prefs.edit().putBoolean("game_hud_migrated",true)
+            if(prefs.getString("touch_mode",null)==TouchMode.NATIVE.name) editor.putString("touch_mode",TouchMode.VIRTUAL.name)
+            editor.apply()
+        }
+    }
     fun read(): PlaybackSettings {
         val legacy = if (prefs.getBoolean("low_latency_video",true)) VideoMode.LOW_LATENCY else VideoMode.ADAPTIVE
         return PlaybackSettings(

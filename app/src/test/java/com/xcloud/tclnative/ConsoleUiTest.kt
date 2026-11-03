@@ -168,10 +168,13 @@ class ConsoleUiTest {
         assertTrue(store.read().nativeUpscaling)
         assertEquals(0,store.read().sharpness); assertEquals(100,store.read().saturation)
         (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
-        var stats=0; var disconnected=0
-        val game=GameMenuPanel.show(activity,{}, {stats++}, {}, {disconnected++})
+        var stats=0; var disconnected=0; var hudOpened=0
+        val game=GameMenuPanel.show(activity,{}, {stats++}, {}, {disconnected++},hud={hudOpened++})
         render(game,"game-menu")
-        all(game.body).filterIsInstance<TextView>().single { it.text.contains("estatísticas") }.performClick()
+        all(game.body).filterIsInstance<TextView>().single { it.text.contains("HUD e controles") }.performClick()
+        assertEquals(1,hudOpened)
+        val statistics=GameMenuPanel.show(activity,{}, {stats++}, {}, {disconnected++},hud={hudOpened++})
+        all(statistics.body).filterIsInstance<TextView>().single { it.text.contains("estatísticas") }.performClick()
         assertEquals(1,stats); assertEquals(0,disconnected)
         val leaving=GameMenuPanel.show(activity,{}, {}, {}, {disconnected++})
         all(leaving.body).filterIsInstance<TextView>().single { it.text.contains("Desconectar sessão") }.performClick()

@@ -1,0 +1,50 @@
+package com.xcloud.tclnative
+
+import android.app.Activity
+import com.xcloud.tclnative.catalog.GameLibrary
+import com.xcloud.tclnative.settings.*
+import com.xcloud.tclnative.touch.*
+import org.junit.Assert.*
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.Robolectric
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk=[28])
+class GameHudStoreTest {
+    @Test fun perGameLayoutsPersistAcrossRecreationWithoutChangingOtherGames() {
+        val first=Robolectric.buildActivity(Activity::class.java).setup()
+        val settings=HudSettings(HudPreset.FORTNITE,75,115,160,
+            mapOf("fire" to HudPlacement(.8f,.4f,1.2f,HudBinding.RT)))
+        GameHudStore(first.get()).save("FORTNITE",settings)
+        first.pause().stop().destroy()
+        val next=Robolectric.buildActivity(Activity::class.java).setup()
+        val store=GameHudStore(next.get())
+        assertEquals(settings,store.read("fortnite"))
+        assertEquals(HudSettings(),store.read("FORZAHORIZON6"))
+        store.save("FORTNITE",HudSettings())
+        assertEquals(HudSettings(),GameHudStore(next.get()).read("FORTNITE"))
+        next.pause().stop().destroy()
+    }
+    @Test fun invalidStoredCoordinatesAreIgnoredAndOutOfRangeValuesAreClamped() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        controller.get().getSharedPreferences("hud_"+GameLibrary.accountKey("CORRUPT"),0).edit().putString("layout",
+            """{"preset":"future","opacity":999,"scale":1,"sensitivity":900,"controls":{"missing":{"x":0.2},"fire":{"x":2,"y":-1,"scale":99}}}""").commit()
+        val restored=GameHudStore(controller.get()).read("CORRUPT")
+        assertNull(restored.preset); assertEquals(100,restored.opacity); assertEquals(75,restored.scale)
+        assertEquals(220,restored.sensitivity); assertFalse("missing" in restored.placements)
+        assertEquals(1f,restored.placements["fire"]!!.x,0f); assertEquals(0f,restored.placements["fire"]!!.y,0f)
+        controller.pause().stop().destroy()
+    }
+    @Test fun oldNativeTouchPreferenceMovesToHudsOnceButAnExplicitExperimentalChoiceIsPreserved() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        controller.get().getSharedPreferences("stream_preferences",0).edit().clear().putString("touch_mode","NATIVE").commit()
+        val store=PlaybackSettingsStore(controller.get())
+        assertEquals(TouchMode.VIRTUAL,store.read().touchMode)
+        store.save(store.read().copy(touchMode=TouchMode.NATIVE))
+        assertEquals(TouchMode.NATIVE,PlaybackSettingsStore(controller.get()).read().touchMode)
+        controller.pause().stop().destroy()
+    }
+}

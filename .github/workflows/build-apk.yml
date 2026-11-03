@@ -112,3 +112,4 @@ jobs:
             app/build/reports/lint-results-debug.*
             app/build/test-results/testDebugUnitTest/
             app/build/reports/dashboard/
+            app/build/reports/huds/

@@ -22,7 +22,7 @@ class GameTouchView(context: Context,
     private val onMenu: () -> Unit
 ) : View(context) {
     private val paint=Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface=DashboardTheme.font(context,true); textAlign=Paint.Align.CENTER }
-    private val icons=HudIcons()
+    private val skin=HudSkin()
     private var automatic=HudPreset.GAMEPAD
     var configuration=HudSettings()
         private set
@@ -40,7 +40,8 @@ class GameTouchView(context: Context,
     private var dragX=0f; private var dragY=0f
     private var editAction: String?=null
     var onHudSaved: (HudSettings) -> Boolean = { true }
-    var onBindingRequested: (String,HudBinding?) -> Unit = { _,_ -> }
+    var onBindingRequested: (String,HudAction?) -> Unit = { _,_ -> }
+    var onGesturesRequested: (String,Map<HudSwipe,HudGesture>) -> Unit = { _,_ -> }
     private val lookReset=Runnable { if(mode==TouchMode.VIRTUAL && !isEditing) publish() }
     init { visibility=GONE; isFocusable=false; contentDescription="HUD de toque e menu da partida" }
     fun configure(mode: TouchMode,game: GameTitle?=null,settings: HudSettings?=null) {
@@ -57,7 +58,7 @@ class GameTouchView(context: Context,
         val oldPage=preset
         releaseInputs(); configuration=settings
         val resolved=settings.preset ?: automatic
-        rebuild(if(resolved==HudPreset.FORTNITE && oldPage==HudPreset.FORTNITE_BUILD) oldPage else resolved); invalidate()
+        rebuild(if(resolved.family==oldPage.family) oldPage else resolved); invalidate()
     }
     fun showPage(page: HudPreset) { releaseInputs(); model.setPage(page); invalidate() }
     private fun rebuild(page: HudPreset=preset) { model=VirtualGamepad(width.coerceAtLeast(1),height.coerceAtLeast(1),page,configuration) }
@@ -72,7 +73,17 @@ class GameTouchView(context: Context,
     fun setEditedBinding(id: String,binding: HudBinding) {
         if(!isEditing) return
         val control=model.controls.firstOrNull { it.id==id } ?: return
-        placement(control) { it.copy(binding=binding) }
+        placement(control) { it.copy(binding=binding,action=null) }
+    }
+    fun setEditedAction(id: String,action: HudAction) {
+        if(!isEditing) return
+        val control=model.controls.firstOrNull { it.id==id } ?: return
+        placement(control) { it.copy(binding=null,action=action) }
+    }
+    fun setEditedGestures(id: String,gestures: Map<HudSwipe,HudGesture>) {
+        if(!isEditing) return
+        val control=model.controls.firstOrNull { it.id==id } ?: return
+        placement(control) { it.copy(gestures=gestures) }
     }
     private fun placement(control: TouchControl,change: (HudPlacement) -> HudPlacement) {
         val old=configuration.placements[control.id] ?: HudPlacement(control.x/width,control.y/height)
@@ -94,11 +105,15 @@ class GameTouchView(context: Context,
     private fun publish() {
         val now=SystemClock.uptimeMillis()
         onGamepad(model.state(now)); removeCallbacks(lookReset)
-        model.nextLookReset(now)?.let { postDelayed(lookReset,(it-now).coerceAtLeast(1)) }
+        model.nextUpdate(now)?.let { postDelayed(lookReset,(it-now).coerceAtLeast(1)) }
         postInvalidateOnAnimation()
     }
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if(isEditing) return editTouch(event)
+        if(mode==TouchMode.VIRTUAL && event.actionMasked==MotionEvent.ACTION_DOWN) {
+            parent?.requestDisallowInterceptTouchEvent(true)
+            if(preset.shooter) requestUnbufferedDispatch(event)
+        }
         val action=event.actionMasked
         val index=event.actionIndex
         val id=event.getPointerId(index)
@@ -138,7 +153,10 @@ class GameTouchView(context: Context,
         } else {
             when(action) {
                 MotionEvent.ACTION_DOWN,MotionEvent.ACTION_POINTER_DOWN -> model.down(id,event.getX(index),event.getY(index),event.eventTime)
-                MotionEvent.ACTION_UP,MotionEvent.ACTION_POINTER_UP -> model.up(id)
+                MotionEvent.ACTION_UP,MotionEvent.ACTION_POINTER_UP -> {
+                    model.move(id,event.getX(index),event.getY(index),event.eventTime)
+                    model.up(id,event.eventTime)
+                }
                 MotionEvent.ACTION_MOVE -> repeat(event.pointerCount) { i ->
                     if(event.getPointerId(i)!=menuPointer) model.move(event.getPointerId(i),event.getX(i),event.getY(i),event.eventTime)
                 }
@@ -154,6 +172,7 @@ class GameTouchView(context: Context,
         y in height*.90f..height*.985f && selected!=null && x in width*.33f..width*.43f -> "smaller"
         y in height*.90f..height*.985f && selected!=null && x in width*.43f..width*.53f -> "larger"
         y in height*.90f..height*.985f && selected!=null && x in width*.53f..width*.69f -> "binding"
+        y in height*.90f..height*.985f && selected!=null && x in width*.69f..width*.82f -> "gestures"
         else -> null
     }
     private fun editTouch(event: MotionEvent): Boolean {
@@ -188,7 +207,8 @@ class GameTouchView(context: Context,
                     "smaller","larger" -> model.controls.firstOrNull { it.id==selected }?.let { control ->
                         placement(control) { it.copy(scale=(it.scale+if(command=="larger") .10f else -.10f).coerceIn(.55f,1.7f)) }
                     }
-                    "binding" -> model.controls.firstOrNull { it.id==selected && it.binding!=null }?.let { onBindingRequested(it.id,it.binding) }
+                    "binding" -> model.controls.firstOrNull { it.id==selected && it.action!=null }?.let { onBindingRequested(it.id,it.action) }
+                    "gestures" -> model.controls.firstOrNull { it.id==selected && it.action!=null }?.let { onGesturesRequested(it.id,it.gestures) }
                 }
             }
             MotionEvent.ACTION_CANCEL -> { editPointer=null; editAction=null }
@@ -201,10 +221,7 @@ class GameTouchView(context: Context,
         val state=model.state(SystemClock.uptimeMillis())
         if(mode==TouchMode.VIRTUAL) {
             model.controls.filter { it.kind!=TouchKind.CAMERA }.forEach { drawControl(canvas,it,state) }
-            if(isEditing) drawEditor(canvas) else {
-                paint.style=Paint.Style.FILL; paint.color=0xbbe7f2e9.toInt(); paint.textSize=height*.020f; paint.textAlign=Paint.Align.CENTER
-                canvas.drawText(preset.label,width*.5f,height*.11f,paint)
-            }
+            if(isEditing) drawEditor(canvas)
         }
         if(!isEditing) {
             paint.style=Paint.Style.FILL; paint.color=0x99101a13.toInt(); canvas.drawCircle(width*.5f,height*.055f,height*.031f,paint)
@@ -215,54 +232,8 @@ class GameTouchView(context: Context,
         }
     }
     private fun drawControl(canvas: Canvas,control: TouchControl,state: GamepadState) {
-        val active=model.held(control)
-        val selected=isEditing && this.selected==control.id
-        val opacity=configuration.opacity.coerceIn(20,100)/100f
-        fun shape() {
-            when(control.shape) {
-                HudShape.CIRCLE -> canvas.drawCircle(control.x,control.y,control.radius,paint)
-                HudShape.PEDAL -> canvas.drawRoundRect(control.x-control.radius*.72f,control.y-control.radius,
-                    control.x+control.radius*.72f,control.y+control.radius,control.radius*.25f,control.radius*.25f,paint)
-                HudShape.SQUARE -> canvas.drawRoundRect(control.x-control.radius,control.y-control.radius,
-                    control.x+control.radius,control.y+control.radius,control.radius*.18f,control.radius*.18f,paint)
-            }
-        }
-        paint.style=Paint.Style.FILL; paint.color=if(active || selected) Color.argb((160*opacity).toInt(),46,135,69) else Color.argb((105*opacity).toInt(),15,24,20)
-        shape()
-        paint.style=Paint.Style.STROKE; paint.strokeWidth=if(selected) height*.005f else maxOf(1f,height*.0023f)
-        paint.color=if(active || selected) DashboardTheme.accent else Color.argb((215*opacity).toInt(),232,241,236)
-        shape()
-        paint.color=Color.argb((255*opacity).toInt(),255,255,255)
-        if(control.kind==TouchKind.LEFT_STICK || control.kind==TouchKind.RIGHT_STICK) {
-            val x=if(control.kind==TouchKind.LEFT_STICK) state.leftX else state.rightX
-            val y=if(control.kind==TouchKind.LEFT_STICK) state.leftY else state.rightY
-            paint.style=Paint.Style.FILL
-            canvas.drawCircle(control.x+x*control.radius*.65f,control.y+y*control.radius*.65f,control.radius*.33f,paint)
-        } else if(control.kind==TouchKind.DPAD) {
-            paint.style=Paint.Style.STROKE; paint.strokeWidth=control.radius*.18f
-            canvas.drawLine(control.x-control.radius*.5f,control.y,control.x+control.radius*.5f,control.y,paint)
-            canvas.drawLine(control.x,control.y-control.radius*.5f,control.x,control.y+control.radius*.5f,paint)
-        } else if(control.icon!=HudIcon.TEXT) icons.draw(canvas,paint,control.icon,control.x,control.y,control.radius*.55f)
-        else {
-            paint.style=Paint.Style.FILL; paint.textSize=control.radius*.75f
-            canvas.drawText(control.label,control.x,control.y-(paint.ascent()+paint.descent())/2,paint)
-        }
-        if(control.icon!=HudIcon.TEXT || control.kind==TouchKind.LEFT_STICK || control.kind==TouchKind.RIGHT_STICK || (control.kind==TouchKind.DPAD && control.label!="+")) {
-            paint.style=Paint.Style.FILL; paint.textSize=minOf(height*.024f,control.radius*.43f); paint.color=Color.argb((255*opacity).toInt(),255,255,255)
-            val textWidth=paint.measureText(control.label)
-            if(textWidth>control.radius*2.9f) paint.textSize*=control.radius*2.9f/textWidth
-            canvas.drawText(control.label,control.x,control.y+control.radius+height*.023f,paint)
-        }
-        if(control.icon!=HudIcon.TEXT && control.binding!=null && control.binding !in setOf(HudBinding.STEER_LEFT,HudBinding.STEER_RIGHT)) {
-            val key=when(control.binding) {
-                HudBinding.MENU -> "☰"; HudBinding.VIEW -> "V"; HudBinding.UP -> "↑"; HudBinding.DOWN -> "↓"
-                HudBinding.LEFT -> "←"; HudBinding.RIGHT -> "→"; else -> control.binding.label
-            }
-            paint.style=Paint.Style.FILL; paint.color=0xc00a120e.toInt()
-            canvas.drawCircle(control.x+control.radius*.72f,control.y+control.radius*.62f,control.radius*.30f,paint)
-            paint.color=Color.WHITE; paint.textSize=control.radius*.34f
-            canvas.drawText(key,control.x+control.radius*.72f,control.y+control.radius*.62f-(paint.ascent()+paint.descent())/2,paint)
-        }
+        skin.draw(canvas,control,preset,state,model.held(control),isEditing && selected==control.id,
+            configuration.opacity,isEditing,model.gestureLabel(control))
     }
     private fun drawEditor(canvas: Canvas) {
         fun button(label: String,left: Float,right: Float,top: Float,bottom: Float,accent: Boolean=false) {
@@ -271,6 +242,8 @@ class GameTouchView(context: Context,
             paint.style=Paint.Style.STROKE; paint.strokeWidth=height*.002f; paint.color=DashboardTheme.accent
             canvas.drawRoundRect(width*left,height*top,width*right,height*bottom,height*.012f,height*.012f,paint)
             paint.style=Paint.Style.FILL; paint.color=Color.WHITE; paint.textSize=height*.027f
+            val available=width*(right-left)*.88f
+            if(paint.measureText(label)>available) paint.textSize*=available/paint.measureText(label)
             canvas.drawText(label,width*(left+right)/2,height*(top+bottom)/2-(paint.ascent()+paint.descent())/2,paint)
         }
         paint.style=Paint.Style.FILL; paint.color=Color.WHITE; paint.textSize=height*.021f
@@ -280,7 +253,10 @@ class GameTouchView(context: Context,
         button("Salvar",.57f,.70f,.035f,.105f,true)
         selected?.let { id -> model.controls.firstOrNull { it.id==id }?.let { control ->
             button("−",.33f,.43f,.90f,.985f); button("+",.43f,.53f,.90f,.985f)
-            if(control.binding!=null) button("Ação: ${control.binding.label}",.53f,.69f,.90f,.985f)
+            if(control.action!=null) {
+                button("Ação: ${control.action.label}",.53f,.69f,.90f,.985f)
+                button("Gestos",.69f,.82f,.90f,.985f)
+            }
         } }
     }
 }

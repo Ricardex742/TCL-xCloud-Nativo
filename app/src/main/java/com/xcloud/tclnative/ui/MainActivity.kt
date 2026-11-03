@@ -220,11 +220,13 @@ class MainActivity : Activity() {
             if(game==null) false else try { hudStore.save(game.titleId,settings); true }
             catch(error: java.io.IOException) { Toast.makeText(this,error.message,Toast.LENGTH_LONG).show(); false }
         }
-        touchView.onBindingRequested={ id,binding ->
-            ConsoleDialogs.menu(this,"Ação do botão • ${binding?.label ?: "Escolher"}",
-                com.xcloud.tclnative.touch.HudBinding.entries.map { input ->
-                    ConsoleAction(input.label) { touchView.setEditedBinding(id,input) }
-                })
+        touchView.onBindingRequested={ id,action ->
+            com.xcloud.tclnative.ui.dashboard.HudActionDialogs.action(this,action) { chosen ->
+                if(chosen!=null) touchView.setEditedAction(id,chosen)
+            }
+        }
+        touchView.onGesturesRequested={ id,gestures ->
+            com.xcloud.tclnative.ui.dashboard.HudActionDialogs.gestures(this,gestures) { touchView.setEditedGestures(id,it) }
         }
         rootLayout.addView(touchView,FrameLayout.LayoutParams(-1,-1))
         setContentView(rootLayout)

@@ -7,7 +7,13 @@ enum class HudPreset(val label: String) {
     GAMEPAD("Controle Xbox"), FORTNITE("Fortnite — combate"), FORTNITE_BUILD("Fortnite — construção"),
     CALL_OF_DUTY("Call of Duty"), SHOOTER("Tiro — padrão"), FORZA("Forza Horizon / Motorsport"),
     RACING("Corrida — padrão"), EA_FC("EA SPORTS FC / FIFA"), FOOTBALL("Futebol — padrão"),
-    HADES("Hades / Hades II"), ACTION("Ação — padrão")
+    HADES("Hades / Hades II"), ACTION("Ação — padrão"),
+    EA_FC_DEFENSE("EA SPORTS FC — defesa"), FOOTBALL_DEFENSE("Futebol — defesa");
+    val family: HudPreset get()=when(this) {
+        FORTNITE_BUILD -> FORTNITE; EA_FC_DEFENSE -> EA_FC; FOOTBALL_DEFENSE -> FOOTBALL; else -> this
+    }
+    val football: Boolean get()=family==EA_FC || family==FOOTBALL
+    val shooter: Boolean get()=family in setOf(FORTNITE,CALL_OF_DUTY,SHOOTER)
 }
 enum class HudBinding(val label: String,val button: Int=0) {
     A("A",16),B("B",32),X("X",64),Y("Y",128),LB("LB",4096),RB("RB",8192),
@@ -19,14 +25,26 @@ enum class HudIcon { TEXT,FIRE,AIM,JUMP,CROUCH,RELOAD,SPRINT,USE,WEAPON,BUILD,WA
     GRENADE,MELEE,ACCELERATE,BRAKE,LEFT,RIGHT,HANDBRAKE,REWIND,CAMERA,GEAR_UP,GEAR_DOWN,
     PASS,SHOOT,THROUGH,CROSS,SWITCH,SHIELD,DASH,ATTACK,SPECIAL,CAST,PAUSE,MAP }
 enum class HudShape { CIRCLE,PEDAL,SQUARE }
+enum class HudSwipe(val label: String) { UP("↑ Cima"),DOWN("↓ Baixo"),LEFT("← Esquerda"),RIGHT("→ Direita") }
+enum class FootballScheme(val label: String) { CLASSIC("Clássico — chute B"),ALTERNATE("Alternativo — chute X") }
+data class HudAction(val keys: Set<HudBinding>) {
+    constructor(vararg keys: HudBinding): this(keys.toSet())
+    val buttons: Int get()=keys.fold(0) { result,key -> result or key.button }
+    val label: String get()=HudBinding.entries.filter { it in keys }.joinToString(" + ") { it.label }
+}
+data class HudGesture(val label: String,val action: HudAction)
 
-data class HudPlacement(val x: Float,val y: Float,val scale: Float=1f,val binding: HudBinding?=null)
+data class HudPlacement(val x: Float,val y: Float,val scale: Float=1f,val binding: HudBinding?=null,
+                        val action: HudAction?=null,val gestures: Map<HudSwipe,HudGesture>?=null)
 data class HudSettings(val preset: HudPreset?=null,val opacity: Int=62,val scale: Int=100,
-                       val sensitivity: Int=100,val placements: Map<String,HudPlacement> = emptyMap())
+                       val sensitivity: Int=100,val placements: Map<String,HudPlacement> = emptyMap(),
+                       val lookDeadzone: Int=12,val footballScheme: FootballScheme=FootballScheme.CLASSIC)
 data class HudElement(val id: String,val label: String,val x: Float,val y: Float,val radius: Float,
                       val kind: TouchKind=TouchKind.BUTTON,val binding: HudBinding?=null,
                       val icon: HudIcon=HudIcon.TEXT,val shape: HudShape=HudShape.CIRCLE,
-                      val dragLook: Boolean=false,val page: HudPreset?=null)
+                      val dragLook: Boolean=false,val page: HudPreset?=null,
+                      val action: HudAction?=binding?.let { HudAction(it) },
+                      val gestures: Map<HudSwipe,HudGesture> = emptyMap())
 
 object GameHud {
     private fun key(value: String)=value.uppercase(Locale.ROOT).replace(Regex("[^A-Z0-9]"),"")
@@ -46,10 +64,11 @@ object GameHud {
             else -> HudPreset.GAMEPAD
         }
     }
-    fun elements(preset: HudPreset): List<HudElement> = buildList {
+    fun elements(preset: HudPreset,settings: HudSettings=HudSettings()): List<HudElement> = buildList {
         fun button(id: String,label: String,x: Float,y: Float,binding: HudBinding,icon: HudIcon=HudIcon.TEXT,
-                   radius: Float=.052f,shape: HudShape=HudShape.CIRCLE,dragLook: Boolean=false,page: HudPreset?=null) {
-            add(HudElement(id,label,x,y,radius,kind=when(binding) { HudBinding.LT -> TouchKind.LEFT_TRIGGER; HudBinding.RT -> TouchKind.RIGHT_TRIGGER; else -> TouchKind.BUTTON },binding=binding,icon=icon,shape=shape,dragLook=dragLook,page=page))
+                   radius: Float=.052f,shape: HudShape=HudShape.CIRCLE,dragLook: Boolean=false,page: HudPreset?=null,
+                   action: HudAction=HudAction(binding),gestures: Map<HudSwipe,HudGesture> = emptyMap()) {
+            add(HudElement(id,label,x,y,radius,kind=when(binding) { HudBinding.LT -> TouchKind.LEFT_TRIGGER; HudBinding.RT -> TouchKind.RIGHT_TRIGGER; else -> TouchKind.BUTTON },binding=binding,icon=icon,shape=shape,dragLook=dragLook,page=page,action=action,gestures=gestures))
         }
         fun stick(id: String,label: String,x: Float,y: Float,kind: TouchKind,radius: Float=.115f) {
             add(HudElement(id,label,x,y,radius,kind=kind))
@@ -92,10 +111,10 @@ object GameHud {
                     button("weapon-next","Próxima",.47f,.86f,HudBinding.RB,HudIcon.WEAPON,.039f)
                     button("build-toggle","Construir",.59f,.84f,HudBinding.B,HudIcon.BUILD,.052f,page=HudPreset.FORTNITE_BUILD)
                 } else {
-                    button("wall","Parede",.91f,.43f,HudBinding.RT,HudIcon.WALL,.070f)
-                    button("stairs","Rampa",.79f,.38f,HudBinding.LT,HudIcon.STAIRS,.056f)
-                    button("floor","Piso",.69f,.57f,HudBinding.RB,HudIcon.FLOOR,.053f)
-                    button("roof","Teto",.78f,.65f,HudBinding.LB,HudIcon.ROOF,.053f)
+                    button("wall","Parede",.91f,.43f,HudBinding.RT,HudIcon.WALL,.070f,HudShape.SQUARE)
+                    button("stairs","Rampa",.79f,.38f,HudBinding.LT,HudIcon.STAIRS,.056f,HudShape.SQUARE)
+                    button("floor","Piso",.69f,.57f,HudBinding.RB,HudIcon.FLOOR,.053f,HudShape.SQUARE)
+                    button("roof","Teto",.78f,.65f,HudBinding.LB,HudIcon.ROOF,.053f,HudShape.SQUARE)
                     button("trap","Armadilha",.59f,.65f,HudBinding.X,HudIcon.BUILD,.048f)
                     button("build-toggle","Combate",.59f,.84f,HudBinding.B,HudIcon.WEAPON,.052f,page=HudPreset.FORTNITE)
                 }
@@ -128,17 +147,40 @@ object GameHud {
                 button("camera","Câmera",.64f,.27f,HudBinding.RB,HudIcon.CAMERA,.043f)
                 button("clutch","Embreagem",.40f,.80f,HudBinding.LB,HudIcon.HANDBRAKE,.044f)
             }
-            HudPreset.EA_FC,HudPreset.FOOTBALL -> {
+            HudPreset.EA_FC,HudPreset.FOOTBALL,HudPreset.EA_FC_DEFENSE,HudPreset.FOOTBALL_DEFENSE -> {
                 stick("move","Mover",.15f,.74f,TouchKind.LEFT_STICK); menus()
-                stick("right","Fintas",.49f,.76f,TouchKind.RIGHT_STICK,.085f)
-                button("pass","Passe",.75f,.78f,HudBinding.A,HudIcon.PASS,.068f)
-                button("shoot","Chute",.91f,.55f,HudBinding.B,HudIcon.SHOOT,.078f)
-                button("through","Enfiada",.75f,.52f,HudBinding.Y,HudIcon.THROUGH,.061f)
-                button("cross","Cruzamento",.62f,.61f,HudBinding.X,HudIcon.CROSS,.052f)
-                button("sprint","Correr",.91f,.83f,HudBinding.RT,HudIcon.SPRINT,.069f)
-                button("switch","Trocar jogador",.10f,.39f,HudBinding.LB,HudIcon.SWITCH,.048f)
-                button("protect","Proteger",.10f,.20f,HudBinding.LT,HudIcon.SHIELD,.043f)
-                button("finesse","Precisão",.63f,.30f,HudBinding.RB,HudIcon.AIM,.044f)
+                val defense=preset!=preset.family
+                val shot=if(settings.footballScheme==FootballScheme.CLASSIC) HudBinding.B else HudBinding.X
+                val cross=if(shot==HudBinding.B) HudBinding.X else HudBinding.B
+                val target=if(defense) preset.family else if(preset==HudPreset.EA_FC) HudPreset.EA_FC_DEFENSE else HudPreset.FOOTBALL_DEFENSE
+                add(HudElement("football-mode",if(defense) "DEFESA" else "ATAQUE",.855f,.28f,.055f,
+                    icon=HudIcon.SWITCH,shape=HudShape.SQUARE,page=target))
+                stick("right",if(defense) "Trocar" else "Fintas",.49f,.78f,TouchKind.RIGHT_STICK,.068f)
+                if(!defense) {
+                    button("pass","Passe",.76f,.80f,HudBinding.A,HudIcon.PASS,.073f,
+                        gestures=mapOf(HudSwipe.UP to HudGesture("Tabela",HudAction(HudBinding.LB,HudBinding.A)),
+                            HudSwipe.DOWN to HudGesture("Passe forte",HudAction(HudBinding.RB,HudBinding.A))))
+                    button("shoot","Chute",.915f,.54f,shot,HudIcon.SHOOT,.087f,gestures=mapOf(
+                        HudSwipe.DOWN to HudGesture("Colocado",HudAction(HudBinding.RB,shot)),
+                        HudSwipe.UP to HudGesture("Cavadinha",HudAction(HudBinding.LB,shot)),
+                        HudSwipe.LEFT to HudGesture("Superchute",HudAction(HudBinding.LB,HudBinding.RB,shot)),
+                        HudSwipe.RIGHT to HudGesture("Superchute",HudAction(HudBinding.LB,HudBinding.RB,shot))))
+                    button("through","Enfiada",.755f,.55f,HudBinding.Y,HudIcon.THROUGH,.069f,
+                        gestures=mapOf(HudSwipe.UP to HudGesture("Lançamento",HudAction(HudBinding.LB,HudBinding.Y))))
+                    button("cross","Cruzar",.64f,.70f,cross,HudIcon.CROSS,.050f)
+                    button("sprint","Correr",.915f,.83f,HudBinding.RT,HudIcon.SPRINT,.079f)
+                    button("protect","Proteger",.11f,.43f,HudBinding.LT,HudIcon.SHIELD,.047f)
+                } else {
+                    button("defend-contain","Marcar",.915f,.83f,HudBinding.A,HudIcon.SHIELD,.079f,
+                        action=HudAction(HudBinding.RT,HudBinding.A))
+                    button("defend-tackle","Bote",.915f,.54f,shot,HudIcon.SHOOT,.087f)
+                    button("defend-slide","Carrinho",.755f,.55f,cross,HudIcon.CROUCH,.069f)
+                    button("defend-switch","Trocar",.76f,.80f,HudBinding.LB,HudIcon.SWITCH,.073f)
+                    button("defend-jockey","Conter",.64f,.70f,HudBinding.LT,HudIcon.SHIELD,.050f,
+                        action=HudAction(HudBinding.LT,HudBinding.RT))
+                    button("defend-press","Pressão",.11f,.43f,HudBinding.RB,HudIcon.SPRINT,.047f)
+                    button("defend-keeper","Goleiro",.63f,.39f,HudBinding.Y,HudIcon.USE,.042f)
+                }
             }
             HudPreset.HADES,HudPreset.ACTION -> {
                 stick("move","Mover",.15f,.75f,TouchKind.LEFT_STICK); menus()

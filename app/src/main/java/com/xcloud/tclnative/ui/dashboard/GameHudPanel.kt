@@ -19,16 +19,33 @@ class GameHudPanel(private val context: Context,private val game: GameTitle,priv
             ConsoleAction("Tamanho dos controles: ${settings.scale}%") { chooseValue("Tamanho dos controles",listOf(75,90,100,115,130,150),settings.scale) { save(settings.copy(scale=it)) } },
             ConsoleAction("Opacidade: ${settings.opacity}%") { chooseValue("Opacidade",listOf(25,40,55,62,75,90,100),settings.opacity) { save(settings.copy(opacity=it)) } }
         )
-        if(effective in setOf(HudPreset.FORTNITE,HudPreset.FORTNITE_BUILD,HudPreset.CALL_OF_DUTY,HudPreset.SHOOTER)) {
+        if(effective.shooter) {
             actions+=ConsoleAction("Sensibilidade do arrasto: ${settings.sensitivity}%") {
-                chooseValue("Sensibilidade da câmera por arrasto",listOf(40,60,80,100,130,160,190,220),settings.sensitivity) { save(settings.copy(sensitivity=it)) }
+                chooseValue("Sensibilidade da câmera por arrasto",listOf(40,60,100,160,220,300,450,650,900,1200),settings.sensitivity) { save(settings.copy(sensitivity=it)) }
             }
+            actions+=ConsoleAction("Compensação da zona morta: ${settings.lookDeadzone}%") {
+                chooseValue("Compensação da zona morta da câmera",listOf(0,8,12,18,25,35),settings.lookDeadzone) { save(settings.copy(lookDeadzone=it)) }
+            }
+        }
+        if(effective.football) {
+            actions+=ConsoleAction("Esquema de futebol: ${settings.footballScheme.label}") {
+                ConsoleDialogs.menu(context,"Esquema de controle do futebol",FootballScheme.entries.map { scheme ->
+                    ConsoleAction(scheme.label) { save(settings.copy(footballScheme=scheme)) }
+                },onBack={ show() })
+            }
+            actions+=ConsoleAction("Mostrar HUD de ataque") { page(effective.family) }
+            actions+=ConsoleAction("Mostrar HUD de defesa") { page(if(effective.family==HudPreset.EA_FC) HudPreset.EA_FC_DEFENSE else HudPreset.FOOTBALL_DEFENSE) }
         }
         if(effective==HudPreset.FORTNITE || effective==HudPreset.FORTNITE_BUILD) {
             actions+=ConsoleAction("Mostrar HUD de combate") { page(HudPreset.FORTNITE) }
             actions+=ConsoleAction("Mostrar HUD de construção") { page(HudPreset.FORTNITE_BUILD) }
         }
         actions+=ConsoleAction("Restaurar HUD deste jogo") { save(HudSettings()) }
+        actions+=ConsoleAction("Guia de gestos e modos") {
+            ConsoleDialogs.message(context,"Gestos e comandos combinados",
+                "No futebol, toque em ATAQUE / DEFESA para trocar os comandos. A troca é manual. No chute: arraste para baixo para colocado, para cima para cavadinha e para os lados para superchute. Marcar combina RT + A.\n\nNo editor, Ação permite combinar botões; Gestos configura cada direção de arrasto. Os comandos seguem o esquema do seu jogo.\n\nNos jogos de tiro, aumente a sensibilidade do HUD e ajuste a compensação da zona morta. A velocidade máxima de giro também depende da sensibilidade de controle configurada dentro do jogo.",
+                listOf(ConsoleAction("Voltar") { show() }),onCancel={ show() })
+        }
         actions+=ConsoleAction("Ocultar HUD",hide)
         return ConsoleDialogs.menu(context,"HUD • ${game.name}",actions)
     }
@@ -38,7 +55,7 @@ class GameHudPanel(private val context: Context,private val game: GameTitle,priv
     }
     private fun choosePreset() {
         val current=store.read(game.titleId)
-        val options=listOf<HudPreset?>(null)+HudPreset.entries.filter { it!=HudPreset.FORTNITE_BUILD }
+        val options=listOf<HudPreset?>(null)+HudPreset.entries.filter { it.family==it }
         val dialog=ConsoleDialog(context,"Layout dos controles")
         dialog.body.addView(dialog.text("Os comandos usam o mapeamento padrão de controle Xbox. Você pode ajustar cada ação no editor e nas configurações do jogo.",20,color=DashboardTheme.muted),LinearLayout.LayoutParams(-1,-2))
         options.forEach { preset ->

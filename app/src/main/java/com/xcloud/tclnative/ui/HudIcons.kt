@@ -8,6 +8,46 @@ import com.xcloud.tclnative.touch.HudIcon
 /** Small vector action icons, drawn in one Android canvas pass with no downloaded skins. */
 internal class HudIcons {
     private val path=Path()
+    fun drawSolid(canvas: Canvas,paint: Paint,icon: HudIcon,x: Float,y: Float,size: Float) {
+        if(icon !in setOf(HudIcon.JUMP,HudIcon.SPRINT,HudIcon.DASH,HudIcon.CROUCH,HudIcon.FIRE,HudIcon.WEAPON,HudIcon.GRENADE)) {
+            draw(canvas,paint,icon,x,y,size); return
+        }
+        canvas.save(); canvas.translate(x,y); canvas.scale(size,size)
+        paint.style=Paint.Style.FILL; paint.strokeCap=Paint.Cap.ROUND; paint.strokeJoin=Paint.Join.ROUND
+        when(icon) {
+            HudIcon.FIRE -> {
+                canvas.rotate(35f); path.reset(); path.moveTo(-.30f,.67f); path.lineTo(-.30f,-.12f); path.lineTo(0f,-.80f)
+                path.lineTo(.30f,-.12f); path.lineTo(.30f,.67f); path.close()
+                path.fillType=Path.FillType.EVEN_ODD; path.addRect(-.30f,.30f,.30f,.39f,Path.Direction.CW)
+                canvas.drawPath(path,paint); path.fillType=Path.FillType.WINDING
+            }
+            HudIcon.WEAPON -> {
+                path.reset(); path.moveTo(-.82f,-.25f); path.lineTo(.64f,-.25f); path.lineTo(.82f,-.48f)
+                path.lineTo(.82f,.12f); path.lineTo(.16f,.12f); path.lineTo(-.10f,.68f); path.lineTo(-.44f,.68f)
+                path.lineTo(-.30f,.12f); path.lineTo(-.82f,.12f); path.close(); canvas.drawPath(path,paint)
+            }
+            HudIcon.GRENADE -> {
+                canvas.drawOval(-.43f,-.22f,.43f,.70f,paint); canvas.drawRoundRect(-.18f,-.55f,.20f,-.1f,.05f,.05f,paint)
+                paint.style=Paint.Style.STROKE; paint.strokeWidth=.14f; canvas.drawCircle(.35f,-.56f,.18f,paint)
+            }
+            else -> {
+                val crouch=icon==HudIcon.CROUCH
+                canvas.drawCircle(.22f,if(crouch) -.45f else -.66f,.19f,paint)
+                paint.style=Paint.Style.STROKE; paint.strokeWidth=.23f
+                fun limb(vararg pts: Float) { path.reset(); path.moveTo(pts[0],pts[1]); for(i in 2 until pts.size step 2) path.lineTo(pts[i],pts[i+1]); canvas.drawPath(path,paint) }
+                if(crouch) {
+                    limb(.12f,-.17f,-.28f,.17f,.32f,.30f,.64f,.70f)
+                    limb(-.28f,.17f,-.62f,.53f,-.15f,.72f); limb(-.03f,-.05f,.65f,.05f)
+                } else {
+                    limb(.08f,-.33f,-.22f,.10f,.27f,.35f,.65f,.66f)
+                    limb(-.22f,.10f,-.62f,.64f,-.90f,.64f)
+                    limb(-.45f,-.15f,-.12f,-.43f,.24f,-.10f,.66f,-.40f)
+                    if(icon!=HudIcon.JUMP) { paint.strokeWidth=.10f; limb(-.95f,-.20f,-.68f,-.20f); limb(-1f,.08f,-.76f,.08f) }
+                }
+            }
+        }
+        canvas.restore()
+    }
     fun draw(canvas: Canvas,paint: Paint,icon: HudIcon,x: Float,y: Float,size: Float) {
         canvas.save(); canvas.translate(x,y); canvas.scale(size,size)
         paint.style=Paint.Style.STROKE; paint.strokeWidth=.13f; paint.strokeCap=Paint.Cap.ROUND; paint.strokeJoin=Paint.Join.ROUND

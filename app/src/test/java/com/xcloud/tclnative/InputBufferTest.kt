@@ -6,6 +6,25 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class InputBufferTest {
+    @Test fun cameraChangesWakeThePumpAndCoalesceWithoutReplayingStaleMotion() {
+        val input=GamepadInputBuffer()
+        assertTrue(input.update(GamepadState(rightX=.2f)))
+        assertTrue(input.hasUrgent()); assertFalse(input.hasEdges())
+        input.update(GamepadState(rightX=.8f))
+        assertEquals(.8f,input.next().rightX,0f); assertFalse(input.hasUrgent())
+        assertTrue(input.update(GamepadState()))
+        assertTrue(input.hasUrgent()); assertEquals(0f,input.next().rightX,0f)
+    }
+    @Test fun quickCompositeTriggerActionsKeepTheirPressAndReleaseSnapshots() {
+        val input=GamepadInputBuffer()
+        input.update(GamepadState(buttons=16,rightTrigger=1f))
+        input.update(GamepadState())
+        val pressed=input.next(); val released=input.next()
+        assertEquals(16,pressed.buttons); assertEquals(1f,pressed.rightTrigger,0f)
+        assertEquals(GamepadState(),released)
+        input.update(GamepadState(leftTrigger=1f)); input.update(GamepadState())
+        assertEquals(1f,input.next().leftTrigger,0f); assertEquals(0f,input.next().leftTrigger,0f)
+    }
     @Test fun nativePumpKeepsBothPlayersAndDisconnectingOneDoesNotReleaseTheOther() {
         val received=java.util.concurrent.LinkedBlockingQueue<ByteArray>()
         val pump=com.xcloud.tclnative.webrtc.RealtimeInputPump({ 0 },{ received.offer(it); true },{ fail("Send failed") })

@@ -35,6 +35,68 @@ import java.time.Duration
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @LooperMode(LooperMode.Mode.PAUSED)
 class GameHudUiTest {
+    @Test fun comboPickerDoesNotApplyIntermediateChoicesAndAllowsClearingASwipe() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        val activity=controller.get().apply { setContentView(FrameLayout(this)) }; layout(activity.window.decorView)
+        fun views(view: View): List<View> = listOf(view)+if(view is ViewGroup)
+            (0 until view.childCount).flatMap { views(view.getChildAt(it)) } else emptyList()
+        fun choose(text: String) {
+            val dialog=ShadowDialog.getLatestDialog() as ConsoleDialog
+            views(dialog.panel).filterIsInstance<TextView>().single { it.isClickable && it.text.toString()==text }.performClick()
+        }
+        var applied: HudAction?=null; var count=0
+        HudActionDialogs.action(activity,HudAction(HudBinding.B)) { applied=it; count++ }
+        choose("○ RB"); assertEquals(0,count)
+        choose("APLICAR B + RB"); assertEquals(HudAction(HudBinding.B,HudBinding.RB),applied)
+        HudActionDialogs.action(activity,applied,allowClear=true) { applied=it; count++ }
+        choose("Remover este gesto"); assertNull(applied); assertEquals(2,count)
+        controller.pause().stop().destroy()
+    }
+    @Test fun mobileShotGestureHoldsItsModifiersThenReleasesAndCancellationNeverFiresLater() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        var state=GamepadState()
+        val view=GameTouchView(controller.get(),{state=it},{fail("HUD used native pointers")},{_,_ -> null},{})
+        controller.get().setContentView(view); view.configure(TouchMode.VIRTUAL,GameTitle("EAFC26","EA SPORTS FC 26")); layout(view)
+        val shot=VirtualGamepad(1280,720,HudPreset.EA_FC).controls.single { it.id=="shoot" }
+        val now=SystemClock.uptimeMillis()
+        event(view,MotionEvent.ACTION_DOWN,now,Triple(0,shot.x,shot.y))
+        event(view,MotionEvent.ACTION_MOVE,now+8,Triple(0,shot.x,shot.y+40))
+        event(view,MotionEvent.ACTION_UP,now+12,Triple(0,shot.x,shot.y+40))
+        assertEquals(8224,state.buttons)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(90))
+        assertEquals(GamepadState(),state)
+        val next=SystemClock.uptimeMillis()
+        event(view,MotionEvent.ACTION_DOWN,next,Triple(0,shot.x,shot.y))
+        event(view,MotionEvent.ACTION_UP,next+1,Triple(0,shot.x,shot.y))
+        view.releaseInputs()
+        assertEquals(GamepadState(),state)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+        assertEquals(GamepadState(),state)
+        controller.pause().stop().destroy()
+    }
+    @Test fun editorCanCombineKeysAndEditGesturesWithoutPublishingActionsUntilGameplayResumes() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        val activity=controller.get(); var state=GamepadState()
+        val view=GameTouchView(activity,{state=it},{},{_,_ -> null},{})
+        activity.setContentView(view); view.configure(TouchMode.VIRTUAL,GameTitle("EAFC","EA SPORTS FC")); layout(view)
+        val pass=VirtualGamepad(1280,720,HudPreset.EA_FC).controls.single { it.id=="pass" }
+        view.beginEditing(); tap(view,pass.x,pass.y)
+        var edits=0
+        view.onGesturesRequested={ id,_ ->
+            edits++; view.setEditedGestures(id,mapOf(HudSwipe.UP to HudGesture("Combinado",HudAction(HudBinding.RB,HudBinding.X))))
+        }
+        tap(view,1280*.75f,720*.94f)
+        assertEquals(1,edits)
+        view.setEditedAction("pass",HudAction(HudBinding.RT,HudBinding.A))
+        assertEquals(GamepadState(),state)
+        val store=GameHudStore(activity)
+        view.onHudSaved={ store.save("EAFC",it); true }
+        tap(view,1280*.635f,720*.07f)
+        assertEquals(HudAction(HudBinding.RT,HudBinding.A),store.read("EAFC").placements["pass"]!!.action)
+        assertEquals(1,store.read("EAFC").placements["pass"]!!.gestures!!.size)
+        assertEquals(GamepadState(),state)
+        controller.pause().stop().destroy()
+    }
     private fun layout(view: View,width: Int=1280,height: Int=720) {
         repeat(2) {
             view.measure(View.MeasureSpec.makeMeasureSpec(width,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(height,View.MeasureSpec.EXACTLY))
@@ -71,20 +133,21 @@ class GameHudUiTest {
         val left=Triple(3,move.x+move.radius,move.y)
         val shooting=Triple(7,fire.x,fire.y)
         val jumping=Triple(11,jump.x,jump.y)
-        event(view,MotionEvent.ACTION_DOWN,0,Triple(3,move.x,move.y))
-        event(view,MotionEvent.ACTION_MOVE,16,left)
-        event(view,MotionEvent.ACTION_POINTER_DOWN or (1 shl 8),16,left,shooting)
-        event(view,MotionEvent.ACTION_POINTER_DOWN or (2 shl 8),16,left,shooting,jumping)
-        event(view,MotionEvent.ACTION_MOVE,32,left,shooting.copy(second=fire.x+12),jumping)
+        val base=SystemClock.uptimeMillis()
+        event(view,MotionEvent.ACTION_DOWN,base,Triple(3,move.x,move.y))
+        event(view,MotionEvent.ACTION_MOVE,base+16,left)
+        event(view,MotionEvent.ACTION_POINTER_DOWN or (1 shl 8),base+16,left,shooting)
+        event(view,MotionEvent.ACTION_POINTER_DOWN or (2 shl 8),base+16,left,shooting,jumping)
+        event(view,MotionEvent.ACTION_MOVE,base+32,left,shooting.copy(second=fire.x+12),jumping)
         assertEquals(1f,state.leftX,.0001f); assertEquals(16,state.buttons)
         assertEquals(1f,state.rightTrigger,0f); assertTrue(state.rightX>0)
         val bytes=java.nio.ByteBuffer.wrap(GamepadPacket.encode(state,1,0.0)).order(java.nio.ByteOrder.LITTLE_ENDIAN)
         assertEquals(16,bytes.getShort(16).toInt()); assertEquals(65535,bytes.getShort(28).toInt() and 65535)
-        event(view,MotionEvent.ACTION_POINTER_UP or (2 shl 8),40,left,shooting,jumping)
+        event(view,MotionEvent.ACTION_POINTER_UP or (2 shl 8),base+40,left,shooting,jumping)
         assertEquals(0,state.buttons); assertEquals(1f,state.rightTrigger,0f)
-        event(view,MotionEvent.ACTION_POINTER_UP or (1 shl 8),48,left,shooting)
+        event(view,MotionEvent.ACTION_POINTER_UP or (1 shl 8),base+48,left,shooting)
         assertEquals(0f,state.rightTrigger,0f); assertEquals(1f,state.leftX,.0001f)
-        event(view,MotionEvent.ACTION_CANCEL,50,left)
+        event(view,MotionEvent.ACTION_CANCEL,base+50,left)
         assertEquals(GamepadState(),state)
         controller.pause().stop().destroy()
     }
@@ -167,11 +230,12 @@ class GameHudUiTest {
     @Test fun actionHudsRenderAtPhoneSizesAndPageChangesKeepTheSavedProfile() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()
         val activity=controller.get()
-        val root=FrameLayout(activity).apply { setBackgroundColor(Color.rgb(24,43,33)) }
+        val root=FrameLayout(activity).apply { setBackgroundColor(Color.rgb(43,49,57)) }
         val view=GameTouchView(activity,{}, {},{_,_ -> null},{})
         root.addView(view,FrameLayout.LayoutParams(-1,-1)); activity.setContentView(root)
         val profiles=mapOf("fortnite" to HudPreset.FORTNITE,"fortnite-build" to HudPreset.FORTNITE_BUILD,
-            "call-of-duty" to HudPreset.CALL_OF_DUTY,"forza" to HudPreset.FORZA,"ea-fc" to HudPreset.EA_FC,"hades" to HudPreset.HADES)
+            "call-of-duty" to HudPreset.CALL_OF_DUTY,"forza" to HudPreset.FORZA,"ea-fc" to HudPreset.EA_FC,
+            "ea-fc-defense" to HudPreset.EA_FC_DEFENSE,"hades" to HudPreset.HADES)
         for((name,preset) in profiles) {
             view.configure(TouchMode.VIRTUAL,GameTitle("DEMO","Demonstração"),HudSettings(preset=preset))
             layout(root); save(root,name)
@@ -182,6 +246,9 @@ class GameHudUiTest {
         view.showPage(HudPreset.FORTNITE_BUILD)
         view.applyHud(view.configuration.copy(opacity=75))
         assertEquals(HudPreset.FORTNITE_BUILD,view.preset)
+        view.configure(TouchMode.VIRTUAL,GameTitle("FC","EA SPORTS FC"),HudSettings())
+        view.showPage(HudPreset.EA_FC_DEFENSE); view.applyHud(view.configuration.copy(opacity=75))
+        assertEquals(HudPreset.EA_FC_DEFENSE,view.preset)
         controller.pause().stop().destroy()
     }
 }

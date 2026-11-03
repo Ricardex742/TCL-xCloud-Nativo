@@ -7,23 +7,42 @@ import java.util.concurrent.locks.LockSupport
 /** Preserve short button presses while coalescing analog motion into its latest position. */
 class GamepadInputBuffer {
     private var latest = GamepadState()
-    private val edges = ArrayDeque<Int>()
+    private data class Edge(val buttons: Int,var leftTrigger: Float,var rightTrigger: Float)
+    private val edges = ArrayDeque<Edge>()
+    private var motionPending=false
     var coalescedEdges = 0L
         private set
     @Synchronized fun update(state: GamepadState): Boolean {
-        val edge = state.buttons != latest.buttons
+        val edge = state.buttons != latest.buttons || (state.leftTrigger>0)!=(latest.leftTrigger>0) || (state.rightTrigger>0)!=(latest.rightTrigger>0)
+        val motion=state.rightX!=latest.rightX || state.rightY!=latest.rightY || state.leftTrigger!=latest.leftTrigger || state.rightTrigger!=latest.rightTrigger
+        motionPending=motionPending || motion
+        // Strength changes within the same held press are analog motion, not a replay queue.
+        if(state.leftTrigger>0 && latest.leftTrigger>0) {
+            val pending=edges.descendingIterator()
+            while(pending.hasNext()) { val e=pending.next(); if(e.leftTrigger==0f) break; e.leftTrigger=state.leftTrigger }
+        }
+        if(state.rightTrigger>0 && latest.rightTrigger>0) {
+            val pending=edges.descendingIterator()
+            while(pending.hasNext()) { val e=pending.next(); if(e.rightTrigger==0f) break; e.rightTrigger=state.rightTrigger }
+        }
         latest = state
         if (edge) {
             if (edges.size >= 8) { coalescedEdges += edges.size; edges.clear() }
-            edges.addLast(state.buttons)
+            edges.addLast(Edge(state.buttons,state.leftTrigger,state.rightTrigger))
         }
-        return edge
+        return edge || motion
     }
     @Synchronized fun hasEdges() = edges.isNotEmpty()
-    @Synchronized fun next() = if (edges.isEmpty()) latest else latest.copy(buttons = edges.removeFirst())
+    @Synchronized fun hasUrgent() = edges.isNotEmpty() || motionPending
+    @Synchronized fun next(): GamepadState {
+        motionPending=false
+        val edge=edges.pollFirst() ?: return latest
+        return latest.copy(buttons=edge.buttons,leftTrigger=edge.leftTrigger,rightTrigger=edge.rightTrigger)
+    }
     @Synchronized fun discardBacklog() {
         coalescedEdges += edges.size
         edges.clear()
+        motionPending=false
     }
 }
 
@@ -72,7 +91,7 @@ class RealtimeInputPump(
                 var backpressured = false
                 while (running.get()) {
                     val now = System.nanoTime()
-                    val hasEdges=synchronized(lock) { active.any { buffers[it].hasEdges() } }
+                    val hasEdges=synchronized(lock) { active.any { buffers[it].hasUrgent() } }
                     if (now < deadline && (backpressured || (!hasEdges && !touch.pending()))) {
                         LockSupport.parkNanos(deadline - now)
                         continue

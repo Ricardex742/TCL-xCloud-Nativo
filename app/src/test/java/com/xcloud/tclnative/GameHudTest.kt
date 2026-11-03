@@ -6,6 +6,84 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class GameHudTest {
+    @Test fun legacyShotRemappingAlsoChangesTheDefaultSwipeModifiers() {
+        val input=VirtualGamepad(1280,720,HudPreset.EA_FC,HudSettings(placements=mapOf(
+            "shoot" to HudPlacement(.91f,.54f,binding=HudBinding.X))))
+        val shot=input.controls.single { it.id=="shoot" }
+        input.down(1,shot.x,shot.y,0); input.move(1,shot.x,shot.y+40,16)
+        assertEquals(8256,input.state(16).buttons)
+    }
+    @Test fun rectangularButtonsAcceptTheirVisibleEdgesAndFitBeforeTheFirstLayout() {
+        VirtualGamepad(1,1,HudPreset.EA_FC)
+        val fc=VirtualGamepad(1280,720,HudPreset.EA_FC)
+        val chip=fc.controls.single { it.id=="football-mode" }
+        fc.down(1,chip.x+chip.radius*1.7f,chip.y,0); fc.up(1,1)
+        assertEquals(HudPreset.EA_FC_DEFENSE,fc.preset)
+        val build=VirtualGamepad(1280,720,HudPreset.FORTNITE_BUILD)
+        val wall=build.controls.single { it.id=="wall" }
+        build.down(2,wall.x+wall.radius*.9f,wall.y+wall.radius*.9f,0)
+        assertEquals(1f,build.state(0).rightTrigger,0f)
+    }
+    @Test fun footballShotSwipesProduceTheActualModifiersInBothConsoleSchemesAndReleaseThem() {
+        for(scheme in FootballScheme.entries) for(direction in HudSwipe.entries) {
+            val input=VirtualGamepad(1280,720,HudPreset.EA_FC,HudSettings(footballScheme=scheme))
+            val control=input.controls.single { it.id=="shoot" }
+            val shot=if(scheme==FootballScheme.CLASSIC) 32 else 64
+            input.down(1,control.x,control.y,0)
+            val x=control.x+if(direction==HudSwipe.LEFT) -40 else if(direction==HudSwipe.RIGHT) 40 else 0
+            val y=control.y+if(direction==HudSwipe.UP) -40 else if(direction==HudSwipe.DOWN) 40 else 0
+            input.move(1,x,y,16)
+            val modifiers=when(direction) { HudSwipe.UP -> 4096; HudSwipe.DOWN -> 8192; else -> 12288 }
+            assertEquals(shot or modifiers,input.state(16).buttons)
+            input.up(1,20)
+            assertEquals(shot or modifiers,input.state(40).buttons)
+            assertNotNull(input.nextUpdate(40))
+            assertEquals(GamepadState(),input.state(81)); assertNull(input.nextUpdate(81))
+        }
+    }
+    @Test fun footballContextChangesLabelsAndActionsWithoutSendingTheModeSwitchToTheGame() {
+        val input=VirtualGamepad(1280,720,HudPreset.EA_FC)
+        val move=input.controls.single { it.id=="move" }
+        input.down(1,move.x,move.y,0); input.move(1,move.x+move.radius,move.y,8)
+        val mode=input.controls.single { it.id=="football-mode" }
+        input.down(2,mode.x,mode.y,9); assertEquals(0,input.state(9).buttons)
+        input.up(2,10)
+        assertEquals(HudPreset.EA_FC_DEFENSE,input.preset)
+        assertEquals(1f,input.state(10).leftX,.0001f)
+        assertFalse(input.controls.any { it.id=="shoot" || it.id=="pass" })
+        val mark=input.controls.single { it.id=="defend-contain" }
+        input.down(3,mark.x,mark.y,11)
+        val state=input.state(11)
+        assertEquals(16,state.buttons); assertEquals(1f,state.rightTrigger,0f)
+        input.up(3,12); assertEquals(0,input.state(12).buttons); assertEquals(0f,input.state(12).rightTrigger,0f)
+        input.clear(); assertEquals(GamepadState(),input.state(13))
+    }
+    @Test fun cameraHasHigherGainAndDeadzoneCompensationAndStopsWithin32ms() {
+        fun swipe(settings: HudSettings): VirtualGamepad = VirtualGamepad(1280,720,HudPreset.CALL_OF_DUTY,settings).apply {
+            down(1,700f,300f,0); move(1,702f,300f,16)
+        }
+        val normal=swipe(HudSettings()); val fast=swipe(HudSettings(sensitivity=1200))
+        val old=2f*2.2f/(720*.0018f*16)
+        assertTrue(normal.state(16).rightX>old)
+        assertEquals(1f,fast.state(16).rightX,.0001f)
+        assertEquals(0f,fast.state(48).rightX,0f)
+        val slow=swipe(HudSettings(lookDeadzone=0))
+        assertTrue(normal.state(16).rightX>slow.state(16).rightX)
+    }
+    @Test fun customCompositeActionsAndGesturesAreIndependentOfOtherHeldControlsAndCancelClearsEverything() {
+        val setting=HudSettings(placements=mapOf("pass" to HudPlacement(.75f,.80f,
+            action=HudAction(HudBinding.RT,HudBinding.A),gestures=mapOf(HudSwipe.UP to HudGesture("Combo",HudAction(HudBinding.RB,HudBinding.B))))))
+        val input=VirtualGamepad(1280,720,HudPreset.EA_FC,setting)
+        val pass=input.controls.single { it.id=="pass" }; val sprint=input.controls.single { it.id=="sprint" }
+        input.down(1,pass.x,pass.y,0); input.down(2,sprint.x,sprint.y,0)
+        assertEquals(1f,input.state(0).rightTrigger,0f)
+        input.move(1,pass.x,pass.y-40,16)
+        assertEquals(8224,input.state(16).buttons)
+        input.up(1,20)
+        assertEquals(1f,input.state(100).rightTrigger,0f)
+        assertEquals(0,input.state(100).buttons)
+        input.clear(); assertEquals(GamepadState(),input.state(101))
+    }
     @Test fun gameFamiliesChooseTheirHudWithoutDependingOnTranslatedCatalogIds() {
         val cases=mapOf("Fortnite" to HudPreset.FORTNITE,"Call of Duty®: Black Ops 7" to HudPreset.CALL_OF_DUTY,
             "Forza Horizon 6 Premium Edition" to HudPreset.FORZA,"Forza Motorsport" to HudPreset.FORZA,

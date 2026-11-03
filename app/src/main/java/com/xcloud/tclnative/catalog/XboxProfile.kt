@@ -5,6 +5,8 @@ import org.json.JSONObject
 data class XboxProfile(val displayName: String = "PERFIL XBOX", val gamertag: String = "Conta conectada",
                        val avatarUrl: String? = null, val subscription: String? = null) {
     companion object {
+        private val claimSeparators=Regex("[^a-z0-9]")
+        private val shortTierPrefix=Regex("^(?:xgp|gp)(?=(?:ultimate|premium|standard|essential|core)$)")
         fun parse(data: JSONObject): XboxProfile {
             val values = data.optJSONArray("profileUsers")?.optJSONObject(0)?.optJSONArray("settings")
             val settings = values?.let { (0 until it.length()).mapNotNull { i -> it.optJSONObject(i)?.let { value ->
@@ -37,7 +39,7 @@ data class XboxProfile(val displayName: String = "PERFIL XBOX", val gamertag: St
             }
         }
         fun subscription(values: List<String>): String? {
-            val normalized = values.map { it.lowercase().replace(Regex("[^a-z0-9]"), "") }
+            val normalized = values.map { it.lowercase().replace(claimSeparators, "").replace(shortTierPrefix, "") }
             return when {
                 normalized.any { it in setOf("ultimate", "xgpu", "xboxgamepassultimate", "gamepassultimate") } -> "ULTIMATE"
                 normalized.any { it in setOf("premium", "gamepasspremium", "xboxgamepasspremium") } -> "PREMIUM"

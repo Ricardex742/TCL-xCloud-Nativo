@@ -56,7 +56,7 @@ class ConsoleDialog(context: Context, heading: String) : Dialog(context, R.style
     init {
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         activity?.let(::setOwnerActivity)
-        panel.addView(text("XBOX CLOUD", 16, true, DashboardTheme.accent), LinearLayout.LayoutParams(-1, -2))
+        panel.addView(text("xCLOUD", 16, true, DashboardTheme.accent), LinearLayout.LayoutParams(-1, -2))
         panel.addView(text(heading, 35, true), LinearLayout.LayoutParams(-1, -2).apply { topMargin=px(5); bottomMargin=px(23) })
         panel.addView(scroll, LinearLayout.LayoutParams(-1, -2, 1f))
         panel.addView(actions, LinearLayout.LayoutParams(-1, -2).apply { topMargin=px(22) })

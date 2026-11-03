@@ -22,7 +22,7 @@ class PlaybackSettingsTest {
         assertEquals(PlaybackSettings(),PlaybackSettingsStore(context).read())
         prefs.edit().putBoolean("low_latency_video",false).commit()
         assertEquals(VideoMode.ADAPTIVE,PlaybackSettingsStore(context).read().videoMode)
-        val chosen=PlaybackSettings(VideoMode.LOW_LATENCY,StreamResolution.HD_720,false)
+        val chosen=PlaybackSettings(VideoMode.LOW_LATENCY,StreamResolution.HD_720,false,VideoAspect.RATIO_18_9)
         PlaybackSettingsStore(context).save(chosen)
         assertEquals(chosen,PlaybackSettingsStore(context).read())
         prefs.edit().putString("video_mode","removed-mode").putString("resolution","unsupported").commit()

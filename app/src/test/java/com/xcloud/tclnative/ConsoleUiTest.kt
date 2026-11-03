@@ -124,11 +124,16 @@ class ConsoleUiTest {
         render(upscale,"green-upscaling-choice")
         choose(upscale,"Desativado —")
         assertFalse(store.read().nativeUpscaling); assertEquals(3,updates.size)
+        choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Proporção:")
+        val aspect=ShadowDialog.getLatestDialog() as ConsoleDialog
+        render(aspect,"green-aspect-choice")
+        choose(aspect,"18:9")
+        assertEquals(VideoAspect.RATIO_18_9,store.read().aspect)
         val parent=ShadowDialog.getLatestDialog() as ConsoleDialog
         choose(parent,"Vídeo:")
         (ShadowDialog.getLatestDialog() as ConsoleDialog).dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_BUTTON_B))
         shadowOf(Looper.getMainLooper()).idle()
-        assertEquals(3,updates.size)
+        assertEquals(4,updates.size)
         val back=ShadowDialog.getLatestDialog() as ConsoleDialog
         assertTrue(back.isShowing)
         choose(back,"Gerenciar assinatura"); assertEquals(1,managed)
@@ -151,6 +156,9 @@ class ConsoleUiTest {
     @Test fun loginAndQrUseTheNewThemeAndTheRenderedQrStillScans() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()
         val activity=controller.get()
+        assertEquals("xCLOUD",activity.packageManager.getApplicationLabel(activity.applicationInfo))
+        assertNotEquals(0,activity.applicationInfo.icon)
+        assertNotEquals(0,activity.applicationInfo.banner)
         var signIns=0; var backs=0
         val view=ConsoleLoginView(activity,{ signIns++ },{ backs++ },{})
         activity.setContentView(view)

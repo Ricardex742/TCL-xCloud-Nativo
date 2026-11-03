@@ -30,7 +30,12 @@ class ConsoleLoginView(context: Context, private val signIn: () -> Unit, private
     private var failed = false
     private var connecting = false
     private var geometry = 0L
-    private val eyebrow = label("XBOX CLOUD GAMING",21).apply { setTextColor(DashboardTheme.accent) }
+    private val eyebrow = label("xCLOUD",29).apply { setTextColor(DashboardTheme.accent) }
+    private val brand = ImageView(context).apply {
+        setImageResource(com.xcloud.tclnative.R.drawable.brand_logo)
+        scaleType=ImageView.ScaleType.FIT_CENTER
+        contentDescription="Logo xCLOUD"
+    }
     private val headline = label("SEUS JOGOS.\nNA SUA TELA.",65).apply { maxLines=2 }
     private val description = label("Seu catálogo Xbox Cloud, com transmissão nativa e navegação pelo controle.",24,false).apply {
         maxLines=3; setTextColor(DashboardTheme.muted)
@@ -58,7 +63,7 @@ class ConsoleLoginView(context: Context, private val signIn: () -> Unit, private
     private val footer = label("A  SELECIONAR       B  VOLTAR",18,false).apply { setTextColor(DashboardTheme.muted) }
     init {
         background=DashboardBackground()
-        listOf(eyebrow,headline,description,card,footer).forEach(::addView)
+        listOf(brand,eyebrow,headline,description,card,footer).forEach(::addView)
         listOf(cardTitle,qr,code,instructions,status,validity,spinner,primary,secondary).forEach(card::addView)
         headline.text=SpannableString("SEUS JOGOS.\nNA SUA TELA.").apply {
             setSpan(ForegroundColorSpan(DashboardTheme.accent),11,length,Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -140,7 +145,7 @@ class ConsoleLoginView(context: Context, private val signIn: () -> Unit, private
             val s=minOf(w/1280f,h/720f); val ox=(w-1280*s)/2; val oy=(h-720*s)/2
             fun root(view: View,x: Int,y: Int,vw: Int,vh: Int) = place(view,ox+x*s,oy+y*s,vw*s,vh*s)
             fun item(view: View,x: Int,y: Int,vw: Int,vh: Int) = place(view,x*s,y*s,vw*s,vh*s)
-            root(eyebrow,80,60,1120,32); root(footer,80,660,1120,30)
+            root(brand,80,24,80,80); root(eyebrow,180,49,1020,42); root(footer,80,660,1120,30)
             if (isQr) {
                 root(card,80,130,1120,480)
                 item(cardTitle,40,28,1040,48); item(qr,48,111,264,264)
@@ -156,7 +161,7 @@ class ConsoleLoginView(context: Context, private val signIn: () -> Unit, private
                 item(primary,29,229,458,66); item(status,34,321,448,65)
                 item(spinner,460,41,25,25)
             }
-            listOf(eyebrow to 21, headline to 65, description to 24, cardTitle to 34, instructions to 22,
+            listOf(eyebrow to 29, headline to 65, description to 24, cardTitle to 34, instructions to 22,
                 code to 44, status to 20, validity to 18, primary to 23, secondary to 23, footer to 18).forEach { (view,size) ->
                 view.setTextSize(TypedValue.COMPLEX_UNIT_PX,size*s)
             }

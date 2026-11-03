@@ -95,6 +95,7 @@ class MainActivity : Activity() {
         surfaceRenderer = AiPqSurfaceRenderer(this)
         surfaceRenderer.minimalPostProcessingRequested = playbackSettings.videoMode.lowLatency && Build.VERSION.SDK_INT >= 30
         surfaceRenderer.nativeUpscaling = playbackSettings.nativeUpscaling
+        surfaceRenderer.aspect = playbackSettings.aspect
         rootLayout.addView(
             surfaceRenderer,
             FrameLayout.LayoutParams(
@@ -106,7 +107,7 @@ class MainActivity : Activity() {
         val androidVer = Build.VERSION.RELEASE
         val socModel = Build.HARDWARE
         hudTextView = TextView(this).apply {
-            text = "xCloud Native [Android $androidVer | SoC: $socModel] | Aguardando sessão"
+            text = "xCLOUD [Android $androidVer | SoC: $socModel] | Aguardando sessão"
             setTextColor(Color.GREEN)
             textSize = 12f
             setBackgroundColor(Color.argb(190, 0, 0, 0))
@@ -295,9 +296,9 @@ class MainActivity : Activity() {
             launch {
                 val included = async { catalog.gallery(CatalogService.GAME_PASS) }
                 val free = async { catalog.gallery(CatalogService.FREE_TO_PLAY) }
-                val products = included.await()?.toSet()
-                val excluded = free.await()?.toSet()
-                // Fail closed: unknown membership/exclusions must not populate a Game Pass-only tab.
+                val products = included.await()?.map(com.xcloud.tclnative.catalog.GamePassCatalog::productKey)?.toSet()
+                val excluded = free.await()?.map(com.xcloud.tclnative.catalog.GamePassCatalog::productKey)?.toSet()
+                // Incomplete gallery responses add no products; title programs are independent evidence.
                 val confirmed = if (products != null && excluded != null) products-excluded else null
                 if (dashboard === view) { view.setGamePassProducts(confirmed); refreshLoadingArt() }
             }
@@ -385,13 +386,14 @@ class MainActivity : Activity() {
             val transportFailure = CompletableDeferred<Exception>()
             resetController()
             surfaceRenderer.nativeUpscaling = settings.nativeUpscaling
+            surfaceRenderer.aspect = settings.aspect
             surfaceRenderer.minimalPostProcessingRequested = settings.videoMode.lowLatency && Build.VERSION.SDK_INT >= 30
             surfaceRenderer.prepareForSession(settings.resolution.width,settings.resolution.height)
             surfaceRenderer.onFirstFrameRendered = {
                 if (generation == playbackGeneration && !firstFrame.isCompleted) {
                     firstFrame.complete(Unit)
                     finishLoading()
-                    hudTextView.visibility = View.VISIBLE
+                    hudTextView.visibility = View.GONE
                     gameLibrary?.recordPlayed(titleId)
                     hudTextView.text = "Vídeo nativo ativo [$gameName]"
                     hudTextView.setTextColor(Color.GREEN)
@@ -455,6 +457,7 @@ class MainActivity : Activity() {
                     val action = recovery.observe(now, health.presentedToken, health.deliveredRecently)
                     if (health.presentedToken != lastToken && recovering) {
                         recovering = false
+                        hudTextView.visibility = View.GONE
                         videoRecoveryDialog?.dismiss()
                         hudTextView.text = "Vídeo nativo ativo [$gameName]"
                         hudTextView.setTextColor(Color.GREEN)
@@ -464,6 +467,7 @@ class MainActivity : Activity() {
                         VideoRecoveryAction.NONE -> Unit
                         VideoRecoveryAction.REQUEST_KEYFRAME -> {
                             recovering = true
+                            hudTextView.visibility = View.VISIBLE
                             hudTextView.text = "Vídeo sem novos quadros. Solicitando atualização da imagem…"
                             hudTextView.setTextColor(Color.YELLOW)
                             rtc.requestVideoKeyframe()

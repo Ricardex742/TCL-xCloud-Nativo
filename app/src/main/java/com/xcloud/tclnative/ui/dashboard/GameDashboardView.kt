@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.core.view.doOnNextLayout
 import com.xcloud.tclnative.catalog.GameLibrary
+import com.xcloud.tclnative.catalog.GamePassCatalog
 import com.xcloud.tclnative.catalog.LibraryTab
 import com.xcloud.tclnative.catalog.XboxProfile
 import com.xcloud.tclnative.signaling.GameTitle
@@ -190,8 +191,9 @@ class GameDashboardView(
     }
 
     fun setGames(titles: List<GameTitle>) {
-        games = titles.map { game -> game.copy(gamePass = gamePassProducts?.let { game.productId in it } ?: game.gamePass) }
-        val tier = XboxProfile.subscription(titles.flatMap { it.userSubscriptions })
+        val products=gamePassProducts?.map(GamePassCatalog::productKey)?.toSet() ?: emptySet()
+        games = titles.map { game -> game.copy(gamePass = GamePassCatalog.contains(game,products)) }
+        val tier = XboxProfile.subscription(titles.flatMap { it.userSubscriptions + it.userPrograms })
         profile = profile.copy(subscription = tier ?: profile.subscription)
         renderProfile(); refresh()
     }
@@ -244,7 +246,7 @@ class GameDashboardView(
         }
         catalogNote.text = when {
             searchQuery.isNotBlank() -> "BUSCA: $searchQuery  •  ${visible.size} JOGOS"
-            activeTab == LibraryTab.GAME_PASS && !gamePassLoaded -> "CARREGANDO GAME PASS…"
+            activeTab == LibraryTab.GAME_PASS && !gamePassLoaded -> "${visible.size} JOGOS • ATUALIZANDO GAME PASS…"
             else -> "${visible.size} JOGOS"
         }
         val selected = visible.firstOrNull { it.titleId == selectedGame?.titleId } ?: visible.firstOrNull()

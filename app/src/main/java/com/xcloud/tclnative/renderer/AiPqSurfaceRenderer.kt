@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Color
 import android.view.Gravity
 import android.widget.FrameLayout
+import com.xcloud.tclnative.settings.VideoAspect
 import org.webrtc.EglBase
 import org.webrtc.RendererCommon
 import org.webrtc.SurfaceViewRenderer
@@ -18,6 +19,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     var onRenderError: ((Exception) -> Unit)? = null
     private var currentTrack: VideoTrack? = null
     private var renderer: SurfaceViewRenderer? = null
+    private var aspectDrawer: AspectVideoDrawer? = null
     private var trackSink: VideoSink? = null
     @Volatile private var generation = 0
     private val lastDeliveryMs = AtomicLong(Long.MIN_VALUE)
@@ -54,6 +56,12 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     private var frameRateHintRequested = false
     private var videoWidth = 1920
     private var videoHeight = 1080
+    var aspect = VideoAspect.RATIO_16_9
+        set(value) {
+            field=value
+            aspectDrawer?.stretch=value.stretch
+            updateVideoLayout()
+        }
     var nativeUpscaling = true
         set(value) {
             field = value
@@ -78,7 +86,13 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         frameRateHintRequested = false
         renderer?.let { removeView(it); it.release() }
         val id = generation
-        renderer = SurfaceViewRenderer(context).also { view ->
+        val drawer=AspectVideoDrawer(aspect.stretch).also { aspectDrawer=it }
+        renderer = object : SurfaceViewRenderer(context) {
+            override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+                drawer.layoutAspect=(right-left).toFloat()/(bottom-top).coerceAtLeast(1)
+                super.onLayout(changed,left,top,right,bottom)
+            }
+        }.also { view ->
             view.init(eglBase.eglBaseContext, object : RendererCommon.RendererEvents {
                 override fun onFirstFrameRendered() {
                     post { if (!released && generation == id) onFirstFrameRendered?.invoke() }
@@ -90,8 +104,8 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
                         updateVideoLayout()
                     } }
                 }
-            })
-            view.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT)
+            },EglBase.CONFIG_PLAIN,drawer)
+            view.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL)
             view.setEnableHardwareScaler(nativeUpscaling)
             view.disableFpsReduction()
             view.holder.addCallback(object : android.view.SurfaceHolder.Callback {
@@ -116,9 +130,9 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     }
     private fun updateVideoLayout() {
         val view = renderer ?: return
-        val viewport = VideoScalingPolicy.viewport(width,height,videoWidth,videoHeight,nativeUpscaling)
-        val targetWidth = if (nativeUpscaling) LayoutParams.MATCH_PARENT else viewport.width
-        val targetHeight = if (nativeUpscaling) LayoutParams.MATCH_PARENT else viewport.height
+        val viewport = VideoScalingPolicy.viewport(width,height,videoWidth,videoHeight,nativeUpscaling,aspect)
+        val targetWidth = viewport.width
+        val targetHeight = viewport.height
         val old = view.layoutParams as? LayoutParams
         if (old == null || old.width != targetWidth || old.height != targetHeight || old.gravity != Gravity.CENTER) {
             view.layoutParams = LayoutParams(targetWidth,targetHeight,Gravity.CENTER)
@@ -134,10 +148,12 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         if (currentTrack === track) return
         detachTrack()
         val view = renderer ?: return
+        val drawer = aspectDrawer
         val id = generation
         val sink = VideoSink { frame ->
             if (generation == id && !released) {
                 lastDeliveryMs.set(android.os.SystemClock.elapsedRealtime())
+                drawer?.sourceAspect=frame.rotatedWidth.toFloat()/frame.rotatedHeight.coerceAtLeast(1)
                 view.onFrame(frame)
             }
         }
@@ -169,7 +185,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         val output = mode?.let { "${it.physicalWidth}x${it.physicalHeight}@${kotlin.math.round(it.refreshRate).toInt()} Hz" } ?: "n/d"
         return "Surface $size → janela ${width}x$height | Saída Android: $output\n" +
             "Escala da Surface: ${if (nativeUpscaling) "HW solicitada" else "desativada, sem ampliação na janela"} | Cadência 60 Hz: ${if (frameRateHintRequested) "solicitada" else "n/d"} | Pós-processamento mínimo: ${if (minimalPostProcessingRequested) "solicitado" else "padrão"}\n" +
-            "AiPQ: não verificável pelo app"
+            "Proporção: ${aspect.label} | AiPQ: não verificável pelo app"
     }
 
     fun compactDiagnostics(): String {

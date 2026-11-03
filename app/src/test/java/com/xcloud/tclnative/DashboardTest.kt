@@ -159,6 +159,22 @@ class DashboardTest {
         assertEquals(games[7].titleId, played?.titleId)
         view.close(); controller.pause().stop().destroy()
     }
+    @Test fun authenticatedUserTierSurvivesTheLaterProfileAndArtUpdatesWhilePublicProgramsOnlyMarkMembership() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        val activity=controller.get()
+        val view=GameDashboardView(activity,GameLibrary(activity,"tier-claims"),{}, {}, {}, {})
+        activity.setContentView(view)
+        view.setGames(listOf(GameTitle("FH5","Forza Horizon 5","EDITION-5",programs=listOf("GPULTIMATE")),
+            GameTitle("FH6","Forza Horizon 6","EDITION-6",userPrograms=listOf("GPULTIMATE"))))
+        view.setProfile(XboxProfile("HAZERFROG","HAZERFROG"))
+        view.setGamePassProducts(setOf("OTHER-EDITION-5"))
+        view.selectTab(LibraryTab.GAME_PASS); layout(view,1280,720)
+        fun descendants(node: View): List<View> = listOf(node) + if(node is ViewGroup)
+            (0 until node.childCount).flatMap { descendants(node.getChildAt(it)) } else emptyList()
+        assertTrue(descendants(view).filterIsInstance<TextView>().any { it.text.toString()=="GAME PASS ULTIMATE" })
+        assertEquals(2,descendants(view).filterIsInstance<RecyclerView>().single().adapter!!.itemCount)
+        view.close(); controller.pause().stop().destroy()
+    }
     @Test fun nativeLayoutRendersAtReferenceAndTvSizesWithEqualPortraitCovers() {
         val controller = Robolectric.buildActivity(Activity::class.java).setup()
         val activity = controller.get()

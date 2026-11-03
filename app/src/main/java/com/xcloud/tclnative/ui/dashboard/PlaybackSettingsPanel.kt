@@ -20,6 +20,7 @@ class PlaybackSettingsPanel(
             ConsoleAction("Vídeo: ${settings.videoMode.label}") { chooseVideo() },
             ConsoleAction("Resolução: ${settings.resolution.label}") { chooseResolution() },
             ConsoleAction("Upscaling nativo: ${if(settings.nativeUpscaling) "Ativado" else "Desativado"}") { chooseUpscaling() },
+            ConsoleAction("Proporção: ${settings.aspect.label}") { chooseAspect() },
             ConsoleAction("Gerenciar assinatura Microsoft",subscription),
             ConsoleAction("Atualizar catálogo",refresh),
             ConsoleAction("Trocar conta",logout)
@@ -57,5 +58,10 @@ class PlaybackSettingsPanel(
             listOf("Ativado — preencher a tela" to current.nativeUpscaling,"Desativado — tamanho original" to !current.nativeUpscaling)) {
             save(current.copy(nativeUpscaling=it==0))
         }
+    }
+    fun chooseAspect(): ConsoleDialog {
+        val current=store.read()
+        return choices("Proporção da imagem","Original preserva o formato recebido. Proporções fixas e Esticar podem deformar; Zoom mantém a proporção e corta as bordas. Upscaling desligado limita a ampliação. Use ↑/↓ ou deslize para ver todas as opções. Aplica-se à próxima partida.",
+            VideoAspect.entries.map { it.label to (it==current.aspect) }) { save(current.copy(aspect=VideoAspect.entries[it])) }
     }
 }

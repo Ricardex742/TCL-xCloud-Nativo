@@ -27,7 +27,9 @@ data class GameTitle(
     val titleId: String, val name: String, val productId: String? = null,
     val posterUrl: String? = null, val tileUrl: String? = null, val gamePass: Boolean = false,
     val userSubscriptions: List<String> = emptyList(), val heroUrl: String? = null,
-    val seriesOptimized: Boolean = false, val xboxTitleId: String? = null
+    val seriesOptimized: Boolean = false, val xboxTitleId: String? = null,
+    val programs: List<String> = emptyList(), val userPrograms: List<String> = emptyList(),
+    val freeToPlay: Boolean = false
 )
 
 class XCloudSignalingClient(
@@ -72,7 +74,10 @@ class XCloudSignalingClient(
                 productId = details?.optString("productId")?.takeIf { it.isNotBlank() && it != "null" }
                     ?: game.optString("productId").takeIf { it.isNotBlank() && it != "null" },
                 xboxTitleId = details?.optString("xboxTitleId")?.takeIf { it.isNotBlank() && it != "null" },
-                userSubscriptions = XboxProfile.subscriptionClaims(details?.opt("userSubscriptions")))
+                userSubscriptions = XboxProfile.subscriptionClaims(details?.opt("userSubscriptions")),
+                userPrograms = XboxProfile.subscriptionClaims(details?.opt("userPrograms")),
+                programs = XboxProfile.subscriptionClaims(details?.opt("programs")),
+                freeToPlay = details?.optBoolean("isFreeInStore",false) == true)
         }.distinctBy { it.titleId }.sortedBy { it.name.lowercase(java.util.Locale.ROOT) }
     }
 

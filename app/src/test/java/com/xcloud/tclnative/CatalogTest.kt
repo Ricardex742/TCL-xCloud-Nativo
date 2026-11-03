@@ -34,7 +34,7 @@ class CatalogTest {
         val gallery = CatalogService.galleryIds(JSONArray("""[{"title":"Header"},{"id":"C"},{"id":"MISSING"},{"id":"A"},{"id":"C"}]"""))
         val games = listOf(GameTitle("one", "One", "A"), GameTitle("two", "Two", "B"), GameTitle("three", "Three", "C"))
         assertEquals(listOf("three", "one"), GameLibrary.select(games, LibraryTab.ADDED, emptySet(), emptyMap(), null, gallery).map { it.titleId })
-        assertEquals(listOf("three", "one"), GameLibrary.select(games, LibraryTab.GAME_PASS, emptySet(), emptyMap(), gallery, null).map { it.titleId })
+        assertEquals(listOf("one", "three"), GameLibrary.select(games, LibraryTab.GAME_PASS, emptySet(), emptyMap(), gallery, null).map { it.titleId })
     }
     @Test fun localHistoryAndFavoritesNeverPopulateGamePassWithoutConfirmedMembership() {
         val games = (1..4).map { GameTitle("$it", "Game $it") }
@@ -67,6 +67,21 @@ class CatalogTest {
         assertEquals("ULTIMATE",XboxProfile.subscription(XboxProfile.subscriptionClaims(
             JSONObject("""{"subscriptions":[{"subscriptionId":"xgpu","isActive":true}]}"""))))
         assertNull(XboxProfile.subscription(XboxProfile.subscriptionClaims(JSONObject("""{"xgpuweb":true}"""))))
+    }
+    @Test fun tierAliasesAreAccountClaimsAndProductProgramsNeverBecomeTheUsersTier() {
+        for (tier in listOf("ULTIMATE","PREMIUM","STANDARD","ESSENTIAL","CORE")) {
+            assertEquals(tier,XboxProfile.subscription(listOf("XGP$tier")))
+            assertEquals(tier,XboxProfile.subscription(listOf("GP$tier")))
+        }
+        assertNull(XboxProfile.subscription(listOf("xgpuweb","GPULTIMATE-BYOG")))
+        val game=GameTitle("GP","Game","lowercase",programs=listOf("GPULTIMATE"))
+        assertNull(XboxProfile.subscription(game.userSubscriptions+game.userPrograms))
+        assertTrue(GamePassCatalog.contains(game,emptySet()))
+        val galleryOnly=game.copy(programs=emptyList())
+        assertEquals(listOf(galleryOnly),GameLibrary.select(listOf(galleryOnly),LibraryTab.GAME_PASS,
+            emptySet(),emptyMap(),listOf("LOWERCASE"),null))
+        assertTrue(GameLibrary.select(listOf(galleryOnly.copy(freeToPlay=true)),LibraryTab.GAME_PASS,
+            emptySet(),emptyMap(),listOf("LOWERCASE"),null).isEmpty())
     }
     @Test fun xboxGamerscoreNeverBecomesMicrosoftRewardsAndOfferingIdDoesNotProveATier() {
         val profile = XboxProfile.parse(JSONObject("""{"profileUsers":[{"settings":[{"id":"Gamertag","value":"XboxUser"},{"id":"GameDisplayName","value":"Lucas"},{"id":"GameDisplayPicRaw","value":"https://example.com/avatar.jpg"},{"id":"Gamerscore","value":"12550"}]}]}"""))

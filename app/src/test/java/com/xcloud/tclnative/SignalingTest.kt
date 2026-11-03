@@ -4,6 +4,7 @@ import com.xcloud.tclnative.auth.XCloudSession
 import com.xcloud.tclnative.signaling.XCloudSignalingClient
 import com.xcloud.tclnative.webrtc.StreamingPeer
 import com.xcloud.tclnative.webrtc.StreamResolution
+import com.xcloud.tclnative.catalog.*
 import kotlinx.coroutines.*
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.Dispatcher
@@ -162,6 +163,22 @@ class SignalingTest {
         assertEquals(listOf("real-id"), games.map { it.titleId }); assertEquals("Real Game", games.single().name)
         assertEquals("TOPLEVEL-ID", games.single().productId)
         assertEquals("123456", games.single().xboxTitleId)
+    }
+    @Test fun authenticatedTierCodesAndCatalogProgramsRecoverGamePassTitlesWithDifferentEditionIds() = runBlocking {
+        server.dispatcher=object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest)=response("""{"results":[
+                {"titleId":"FORZAHORIZON5","details":{"productId":"CLOUD-FH5","programs":["GPULTIMATE"],"userSubscriptions":["XGPULTIMATE"]}},
+                {"titleId":"FORZAHORIZON6","details":{"productId":"CLOUD-FH6","programs":["GPULTIMATE"],"userPrograms":["GPULTIMATE"]}},
+                {"titleId":"OWNED","details":{"productId":"OWNED","programs":["BYOG"],"hasEntitlement":true,"userSubscriptions":["XGPULTIMATE"]}},
+                {"titleId":"FREE","details":{"productId":"FREE","isFreeInStore":true,"programs":["GPULTIMATE"]}}
+            ]}""")
+        }
+        val games=signaling().fetchCatalogGames()
+        assertEquals("ULTIMATE",XboxProfile.subscription(games.flatMap { it.userSubscriptions+it.userPrograms }))
+        fun selected(ids: List<String>?)=GameLibrary.select(games,LibraryTab.GAME_PASS,emptySet(),emptyMap(),ids,null)
+        assertEquals(listOf("FORZAHORIZON5","FORZAHORIZON6"),selected(listOf("BUNDLE-FH5","BUNDLE-FH6")).map { it.titleId })
+        assertEquals(2,selected(null).size)
+        assertFalse(selected(listOf("FREE")).any { it.titleId in setOf("FREE","OWNED") })
     }
     @Test fun catalogHttpFailureDoesNotReturnFakeSuccess() = runBlocking {
         rejectCatalog = true

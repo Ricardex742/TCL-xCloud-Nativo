@@ -1,5 +1,7 @@
-# TCL-xCloud-Nativo
+# xCLOUD
 Cliente experimental para Xbox Cloud Gaming em Android 10 ou superior, com vídeo nativo por WebRTC e SurfaceViewRenderer. A disponibilidade do jogo depende da conta, da região e da conectividade; o scaler nativo não comprova ativação de AiPQ 4K.
+
+A [versão 0.14.0](docs/xcloud-0.14.md) reconhece os códigos autenticados XGPULTIMATE/GPULTIMATE e os programas da conta, corrige jogos Game Pass ausentes por divergência entre IDs de edição e acrescenta oito modos de proporção. O aviso verde de sessão fica oculto durante reprodução normal. O aplicativo passa a se chamar **xCLOUD**, com ícone adaptativo, banner para TV e [duas propostas visuais](docs/branding/README.md).
 
 A [versão 0.13.0](docs/playback-settings-0.13.md) troca Mais jogados por uma aba exclusiva do Game Pass, remove Rewards e coloca Configurações ao lado da assinatura ampliada. Vídeo, resolução (720p, 1080p ou 1080p HQ) e upscaling nativo têm seletores explícitos, com preferências salvas para a próxima partida. As estatísticas começam ocultas em cada jogo: Start + Select ou INFO/F10 ativa e alterna os painéis.
 

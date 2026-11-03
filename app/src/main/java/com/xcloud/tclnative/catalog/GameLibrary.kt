@@ -4,6 +4,7 @@ import android.content.Context
 import com.xcloud.tclnative.signaling.GameTitle
 import org.json.JSONObject
 import java.security.MessageDigest
+import java.util.Locale
 
 enum class LibraryTab(val label: String) {
     RECENT("JOGADOS RECENTEMENTE"), FAVORITES("FAVORITOS"), GAME_PASS("GAME PASS"),
@@ -11,6 +12,14 @@ enum class LibraryTab(val label: String) {
 }
 
 data class PlayRecord(val lastPlayed: Long, val launches: Int)
+
+/** A title's catalog program is membership evidence; its user's tier is a separate claim. */
+object GamePassCatalog {
+    fun productKey(id: String) = id.trim().uppercase(Locale.ROOT)
+    fun contains(game: GameTitle, normalizedProducts: Set<String>): Boolean = !game.freeToPlay && (
+        XboxProfile.subscription(game.programs + game.userPrograms)?.let { it != "FREE" } == true ||
+            game.productId?.let { productKey(it) in normalizedProducts } == true)
+}
 
 /** Only a rendered first frame counts as played; a cancelled cloud queue does not. */
 class GameLibrary(context: Context, accountId: String) {
@@ -45,14 +54,18 @@ class GameLibrary(context: Context, accountId: String) {
                 LibraryTab.FAVORITES -> games.filter { it.titleId in favorites }
                 LibraryTab.RECENT -> games.filter { it.titleId in records }
                     .sortedByDescending { records[it.titleId]?.lastPlayed }
-                LibraryTab.GAME_PASS -> ordered(games, gamePass ?: emptyList())
+                LibraryTab.GAME_PASS -> {
+                    val products=(gamePass ?: emptyList()).map(GamePassCatalog::productKey).toSet()
+                    games.filter { GamePassCatalog.contains(it,products) }.sortedBy { it.name.lowercase(Locale.ROOT) }
+                }
                 LibraryTab.ADDED -> ordered(games, added ?: emptyList())
             }
             return selected.filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
         }
         private fun ordered(games: List<GameTitle>, products: List<String>): List<GameTitle> {
-            val index = products.withIndex().associate { it.value to it.index }
-            return games.filter { it.productId in index }.sortedBy { index[it.productId] }
+            val index = products.map(GamePassCatalog::productKey).withIndex().associate { it.value to it.index }
+            return games.filter { it.productId?.let(GamePassCatalog::productKey) in index }
+                .sortedBy { index[it.productId?.let(GamePassCatalog::productKey)] }
         }
     }
 }

@@ -25,7 +25,7 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
     private val backdrop = ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
     private val shade = View(context).apply { background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
         intArrayOf(0xf5151d17.toInt(), 0xcf121d16.toInt(), 0xa6163821.toInt())) }
-    private val eyebrow = text(19f).apply { text = "XBOX CLOUD GAMING"; setTextColor(DashboardTheme.accent) }
+    private val eyebrow = text(19f).apply { text = "xCLOUD"; setTextColor(DashboardTheme.accent) }
     private val title = text(44f).apply { maxLines = 2 }
     private val poster = ImageView(context).apply {
         scaleType = ImageView.ScaleType.CENTER_CROP

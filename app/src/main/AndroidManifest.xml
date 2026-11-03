@@ -23,7 +23,10 @@
 
     <application
         android:allowBackup="true"
-        android:label="xCloud TCL 4K"
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:banner="@drawable/brand_tv_banner"
         android:supportsRtl="true"
         android:hardwareAccelerated="true"
         android:largeHeap="false"

@@ -50,8 +50,12 @@ class PlaybackSettingsPanel(
     }
     fun chooseVideo(): ConsoleDialog {
         val current=store.read()
-        return choices("Modo de vídeo","Escolha o modo para a próxima partida. Menor atraso reduz buffers; adaptativo permite mais margem para oscilações da rede.",
-            VideoMode.entries.map { it.label to (it==current.videoMode) }) { save(current.copy(videoMode=VideoMode.entries[it])) }
+        return choices("Modo de vídeo","Menor atraso reduz buffers. Adaptativo permite mais margem para a rede. Compatibilidade seleciona 720p, pede até 6 Mbps, prioriza H.264 Baseline e apresenta até 30 quadros/s. A decodificação ainda depende do fluxo recebido. Aplica-se à próxima partida.",
+            VideoMode.entries.map { it.label to (it==current.videoMode) }) {
+            val mode=VideoMode.entries[it]
+            save(if(mode==VideoMode.COMPATIBILITY) current.copy(videoMode=mode,resolution=StreamResolution.HD_720,
+                nativeUpscaling=true,sharpness=0,saturation=100) else current.copy(videoMode=mode))
+        }
     }
     fun chooseResolution(): ConsoleDialog {
         val current=store.read()

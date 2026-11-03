@@ -14,8 +14,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 17
-        versionName = "0.17.0-favorites-touch-shortcuts"
+        versionCode = 18
+        versionName = "0.18.0-tv-compatibility"
     }
 
     signingConfigs {
@@ -67,6 +67,7 @@ val verifyPersistentSigning by tasks.registering {
 tasks.matching { it.name=="validateSigningDebug" }.configureEach { dependsOn(verifyPersistentSigning) }
 
 dependencies {
+    implementation("com.android.tools.build:apksig:8.5.2")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.leanback:leanback:1.0.0")
     implementation("androidx.core:core-ktx:1.12.0")
@@ -80,6 +81,16 @@ dependencies {
     testImplementation("org.json:json:20231013")
     testImplementation("org.robolectric:robolectric:4.14.1")
 }
+
+val shortcutAssets = layout.buildDirectory.dir("generated/shortcutAssets")
+val prepareShortcutTemplate by tasks.registering(Copy::class) {
+    dependsOn(":shortcut:assembleRelease")
+    from(project(":shortcut").layout.buildDirectory.file("outputs/apk/release/shortcut-release-unsigned.apk"))
+    into(shortcutAssets.map { it.dir("game-shortcut") })
+    rename { "template.apk" }
+}
+android.sourceSets.getByName("main").assets.srcDir(shortcutAssets)
+tasks.named("preBuild").configure { dependsOn(prepareShortcutTemplate) }
 
 tasks.withType<Test>().configureEach {
     systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")

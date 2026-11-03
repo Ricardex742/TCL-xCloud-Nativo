@@ -88,11 +88,12 @@ class XCloudSignalingClient(
     }
 
     /** Resolves official Game Pass product/edition IDs to cloud launch IDs, never using access programs. */
-    suspend fun resolveCatalogProducts(products: Set<String>): Set<String> = coroutineScope {
+    suspend fun resolveCatalogProducts(products: Set<String>, beforeRequest: suspend () -> Unit = {}): Set<String> = coroutineScope {
         val slots=Semaphore(3)
         val client=httpClient.newBuilder().callTimeout(6,TimeUnit.SECONDS).build()
         products.map { product -> async {
             slots.withPermit {
+                beforeRequest()
                 try {
                     val body=JSONObject().put("alternateIds",org.json.JSONArray(listOf(product))).put("alternateIdType","productId")
                     val response=JSONObject(request("/v2/titles","CATALOG_LOOKUP","POST",body,client))

@@ -4,7 +4,8 @@ import android.content.Context
 import com.xcloud.tclnative.webrtc.StreamResolution
 
 enum class VideoMode(val label: String, val lowLatency: Boolean) {
-    LOW_LATENCY("Menor atraso", true), ADAPTIVE("Adaptativo", false)
+    LOW_LATENCY("Menor atraso", true), ADAPTIVE("Adaptativo", false),
+    COMPATIBILITY("Compatibilidade — TVs mais fracas", false)
 }
 enum class TouchMode(val label: String) {
     AUTO("Automático — escolher no celular"), OFF("Desativado"), VIRTUAL("Controle virtual"), NATIVE("Toque nativo — jogos compatíveis")

@@ -17,7 +17,10 @@ object StreamProfile {
     // xCloud's TV profile is the 1080p HQ selector used by Better xCloud.
     const val OS_NAME = "tizen"
 
-    fun receiveSdp(raw: String, profile: StreamResolution = StreamResolution.HD_1080_HQ): String {
+    fun receiveSdp(raw: String, profile: StreamResolution = StreamResolution.HD_1080_HQ, compatibility: Boolean = false): String {
+        val minKbps=if(compatibility) 1000 else profile.minKbps
+        val startKbps=if(compatibility) 2500 else profile.minKbps
+        val maxKbps=if(compatibility) 6000 else profile.maxKbps
         val sections = mutableListOf<MutableList<String>>()
         raw.replace("\r\n", "\n").lineSequence().filter { it.isNotBlank() }.forEach { line ->
             if (sections.isEmpty() || line.startsWith("m=")) sections.add(mutableListOf())
@@ -27,7 +30,7 @@ object StreamProfile {
             video.removeAll { it.startsWith("b=AS:") || it.startsWith("b=TIAS:") }
             val connection = video.indexOfLast { it.startsWith("c=") }
             val index = if (connection >= 0) connection + 1 else 1
-            video.addAll(index, listOf("b=AS:${profile.maxKbps}", "b=TIAS:${profile.maxKbps * 1000}"))
+            video.addAll(index, listOf("b=AS:$maxKbps", "b=TIAS:${maxKbps * 1000}"))
             val h264 = video.filter { it.startsWith("a=rtpmap:") && it.substringAfter(' ').startsWith("H264/", true) }
                 .map { it.substringAfter(':').substringBefore(' ') }.toSet()
             h264.forEach { payload ->
@@ -35,7 +38,7 @@ object StreamProfile {
                 val previous = if (fmtp >= 0) video[fmtp].substringAfter(' ').split(';') else emptyList()
                 val kept = previous.map(String::trim).filter { it.isNotEmpty() && !it.startsWith("x-google-min-bitrate=") &&
                     !it.startsWith("x-google-start-bitrate=") && !it.startsWith("x-google-max-bitrate=") }
-                val parameters = kept + listOf("x-google-min-bitrate=${profile.minKbps}", "x-google-start-bitrate=${profile.minKbps}", "x-google-max-bitrate=${profile.maxKbps}")
+                val parameters = kept + listOf("x-google-min-bitrate=$minKbps", "x-google-start-bitrate=$startKbps", "x-google-max-bitrate=$maxKbps")
                 val value = "a=fmtp:$payload ${parameters.joinToString(";")}"
                 if (fmtp >= 0) video[fmtp] = value else video.add(value)
             }

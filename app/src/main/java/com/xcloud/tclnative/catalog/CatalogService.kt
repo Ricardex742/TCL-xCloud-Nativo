@@ -23,7 +23,8 @@ class CatalogService(
     private val baseUrl: String = "https://catalog.gamepass.com",
     private val storeBaseUrl: String = if (baseUrl == "https://catalog.gamepass.com")
         "https://displaycatalog.mp.microsoft.com" else baseUrl,
-    private val cache: CatalogCache? = null
+    private val cache: CatalogCache? = null,
+    private val beforeRequest: suspend () -> Unit = {}
 ) {
     data class Progress(val covers: Int, val total: Int, val finished: Boolean, val failed: Boolean)
     suspend fun hydrate(games: List<GameTitle>, onProgress: suspend (Progress) -> Unit = {},
@@ -39,6 +40,7 @@ class CatalogService(
         coroutineScope {
             chunks.map { batch -> async {
                 slots.withPermit {
+                    beforeRequest()
                     var enriched = batch
                     try {
                         val url = "$storeBaseUrl/v7.0/products".toHttpUrl().newBuilder()
@@ -85,6 +87,7 @@ class CatalogService(
         coroutineScope {
             lookups.map { game -> async {
                 slots.withPermit {
+                    beforeRequest()
                     try {
                         val url = "$storeBaseUrl/v7.0/products/lookup".toHttpUrl().newBuilder()
                             .addQueryParameter("alternateId", "XboxTitleId").addQueryParameter("value", game.xboxTitleId)
@@ -108,6 +111,7 @@ class CatalogService(
             failed || current.any { it.posterUrl == null && it.tileUrl == null }))
     }
     suspend fun gallery(id: String): List<String>? = withContext(Dispatchers.IO) {
+        beforeRequest()
         try {
             val url = "$baseUrl/sigls/v2".toHttpUrl().newBuilder().addQueryParameter("id", id)
                 .addQueryParameter("market", "BR").addQueryParameter("language", "pt-BR").build()

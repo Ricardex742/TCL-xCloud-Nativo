@@ -12,7 +12,8 @@ data class StreamMetrics(
     val droppedFrames: Long? = null, val totalDroppedFrames: Long? = null,
     val lostPackets: Long? = null, val totalLostPackets: Long? = null, val packetLossPercent: Double? = null,
     val codec: String? = null, val decoder: String? = null, val powerEfficient: Boolean? = null,
-    val intervalSeconds: Double? = null
+    val intervalSeconds: Double? = null,
+    val receivedVideoBytes: Long? = null, val decodedFrames: Long? = null
 ) {
     fun compactOverlay(input: InputMetrics): String {
         fun n(value: Double?, decimals: Int = 1) = value?.takeIf(Double::isFinite)
@@ -21,10 +22,10 @@ data class StreamMetrics(
         return "$resolution | ${n(fps, 0)} FPS | ${codec ?: "n/d"} | RX ${n(bitrateMbps)} Mbps\n" +
             "RTT ${n(rttMs)} ms | Jitter ${n(jitterMs)} ms | Buffer ${n(jitterBufferMs)} ms | Decode ${n(decodeMs, 2)} ms\n" +
             "Perda ${n(packetLossPercent, 2)}% (${lostPackets ?: "n/d"} pct) | Quadros desc. ${droppedFrames ?: "n/d"} | Input ${n(input.maxSchedulerDelayMs)} ms / ${input.bufferedBytes} B\n" +
-            "DZ app: câmera/LT/RT 0% | LT ${n(input.sentState.leftTrigger * 100.0)}% RT ${n(input.sentState.rightTrigger * 100.0)}% | Start+Select: detalhes\n"
+            "DZ app: câmera/LT/RT 0% | LT ${n(input.sentState.leftTrigger * 100.0)}% RT ${n(input.sentState.rightTrigger * 100.0)}% | Menu+View: Partida\n"
     }
 
-    fun overlay(input: InputMetrics, renderer: String, profile: StreamResolution = StreamResolution.HD_1080_HQ): String {
+    fun overlay(input: InputMetrics, renderer: String, profile: StreamResolution = StreamResolution.HD_1080_HQ, compatibility: Boolean = false): String {
         fun number(value: Double?, decimals: Int = 1): String = value?.takeIf(Double::isFinite)
             ?.let { String.format(Locale.US, "%.${decimals}f", it) } ?: "n/d"
         val resolution = if (width != null && height != null) "${width}x$height" else "n/d"
@@ -36,7 +37,7 @@ data class StreamMetrics(
             "Decode: ${number(decodeMs, 2)} ms/quadro | ${decoder ?: "decoder n/d"} | $efficiency\n" +
             "Controle: fila ${input.bufferedBytes} B | atraso local máx. ${number(input.maxSchedulerDelayMs, 2)} ms | coalescidos ${input.coalescedEdges} | espera canal ${input.backpressureSkips}\n" +
             "Câmera X/Y: ${number(input.sentState.rightX.toDouble(), 4)}/${number(input.sentState.rightY.toDouble(), 4)} | LT/RT: ${number(input.sentState.leftTrigger * 100.0, 1)}%/${number(input.sentState.rightTrigger * 100.0, 1)}% | DZ app: 0% | Input até 250 Hz\n" +
-            "Pedido: ${profile.label}, ${profile.minKbps/1000}–${profile.maxKbps/1000} Mbps (VBR recebido pode variar) | Start+Select/INFO/F10: alternar\n$renderer"
+            "Pedido: ${profile.label}, ${if(compatibility) "1–6" else "${profile.minKbps/1000}–${profile.maxKbps/1000}"} Mbps (VBR recebido pode variar) | Menu+View: Partida; INFO/F10: estatísticas\n$renderer"
     }
 }
 
@@ -87,7 +88,7 @@ class StreamStatsCollector {
             lostPackets = lost?.toLong(), totalLostPackets = video.number("packetsLost")?.coerceAtLeast(0.0)?.toLong(),
             packetLossPercent = if (received != null && lost != null && received + lost > 0) 100 * lost / (received + lost) else null,
             codec = codec, decoder = video.text("decoderImplementation"), powerEfficient = video.values["powerEfficientDecoder"] as? Boolean,
-            intervalSeconds = seconds
+            intervalSeconds = seconds, receivedVideoBytes = delta("bytesReceived")?.toLong(), decodedFrames = decoded?.toLong()
         )
     }
 }

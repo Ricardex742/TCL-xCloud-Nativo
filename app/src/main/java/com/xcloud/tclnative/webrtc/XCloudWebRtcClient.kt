@@ -18,7 +18,8 @@ class XCloudWebRtcClient(
     private val lowLatencyVideo: Boolean = true,
     private val streamResolution: StreamResolution = StreamResolution.HD_1080_HQ,
     private val nativeTouch: Boolean = false,
-    private val onRumble: (RumbleCommand) -> Unit = {}
+    private val onRumble: (RumbleCommand) -> Unit = {},
+    private val compatibility: Boolean = false
 ) : StreamingPeer {
     private val factory: PeerConnectionFactory
     private var peerConnection: PeerConnection? = null
@@ -112,7 +113,7 @@ class XCloudWebRtcClient(
         if (h264.isEmpty()) throw IOException("VIDEO: o dispositivo não oferece decodificador H.264")
         // Select supported codecs before creating/setLocalDescription. Never forge profile-level-id.
         video.setCodecPreferences(h264.sortedBy {
-            when (it.parameters["profile-level-id"]?.take(2)?.lowercase()) { "64" -> 0; "4d" -> 1; else -> 2 }
+            CodecPreference.rank(it.parameters["profile-level-id"],compatibility || streamResolution==StreamResolution.HD_720)
         } + capabilities.filter { it.name.equals("rtx", true) })
         listOf("control" to "controlV1", "input" to "1.0", "message" to "messageV1", "chat" to "chatV1").forEach { (name, protocol) ->
             val channel = pc.createDataChannel(name, DataChannel.Init().apply { ordered = true; this.protocol = protocol })
@@ -150,7 +151,7 @@ class XCloudWebRtcClient(
             override fun onCreateFailure(error: String?) { offer.completeExceptionally(IOException("SDP: createOffer falhou")) }
         }, MediaConstraints())
         val original = offer.await()
-        val description = SessionDescription(original.type, StreamProfile.receiveSdp(original.description, streamResolution))
+        val description = SessionDescription(original.type, StreamProfile.receiveSdp(original.description, streamResolution,compatibility))
         setDescription { observer -> pc.setLocalDescription(observer, description) }
         // A blocked STUN service must not discard usable host candidates.
         if (withTimeoutOrNull(8000) { gatheringComplete.await(); true } != true) {
@@ -179,7 +180,7 @@ class XCloudWebRtcClient(
                 send = { bytes -> !closed.get() && input.send(DataChannel.Buffer(ByteBuffer.wrap(bytes), true)) },
                 onFailure = { fail("CHANNELS: falha no envio de input") },
                 prioritize = { runCatching { android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DISPLAY) }; Unit },
-                initialGamepads = gamepads.keys.toSet(), touch = pendingTouch
+                initialGamepads = gamepads.keys.toSet(), touch = pendingTouch, inputHz = if(compatibility) 60 else 250
             )
                 inputPump = pump
                 pump.touchWidth=inputWidth; pump.touchHeight=inputHeight

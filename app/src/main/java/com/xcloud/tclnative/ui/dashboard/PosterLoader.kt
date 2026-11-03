@@ -24,6 +24,13 @@ internal class PosterLoader(context: Context, private val scope: CoroutineScope)
     private val client = backend.client
     private val slots = backend.slots
     private val jobs = WeakHashMap<ImageView, Job>()
+    private var paused=false
+    fun pause() {
+        paused=true
+        jobs.forEach { (view,job) -> job.cancel(); view.setImageDrawable(null) }
+        jobs.clear(); cache.evictAll()
+    }
+    fun resume() { paused=false }
     fun load(view: ImageView, originalUrl: String?, maxWidth: Int = 720, maxHeight: Int = 1080,
              notifyPlaceholder: Boolean = true, onReady: (Boolean) -> Unit = {}) {
         val url = originalUrl?.let { raw -> runCatching {
@@ -34,6 +41,7 @@ internal class PosterLoader(context: Context, private val scope: CoroutineScope)
         }.getOrDefault(raw) }
         jobs.remove(view)?.cancel()
         view.setImageDrawable(null)
+        if(paused) { onReady(false); return }
         if (notifyPlaceholder || url == null) onReady(false)
         if (url == null) return
         cache.get(url)?.let { view.setImageBitmap(it); onReady(true); return }
@@ -73,7 +81,8 @@ internal class PosterLoader(context: Context, private val scope: CoroutineScope)
 
 /** One HTTP/disk cache for the application, shared by the catalog and loading screen. */
 private class ArtworkBackend(context: Context) {
-    val cache = object : LruCache<String, Bitmap>(20 * 1024 * 1024) {
+    private val memoryMb=(context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager).memoryClass
+    val cache = object : LruCache<String, Bitmap>((memoryMb/12).coerceIn(4,20) * 1024 * 1024) {
         override fun sizeOf(key: String, value: Bitmap) = value.allocationByteCount
     }
     val client = OkHttpClient.Builder().cache(Cache(File(context.cacheDir, "game_art"), 64L*1024*1024))

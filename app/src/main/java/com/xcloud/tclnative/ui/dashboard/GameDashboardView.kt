@@ -200,6 +200,12 @@ class GameDashboardView(
         renderProfile(); refresh()
     }
     fun gameById(id: String): GameTitle? = games.firstOrNull { it.titleId == id }
+    fun pauseArtwork() { posters.pause() }
+    fun resumeArtwork() {
+        posters.resume(); renderProfile()
+        selectedGame?.let { posters.load(headerIcon,it.tileUrl ?: it.posterUrl,512,512) }
+        adapter.notifyItemRangeChanged(0,adapter.itemCount,"artwork")
+    }
     fun setGamePassProducts(products: Set<String>?, resolvedTitles: Set<String> = emptySet()) {
         gamePassProducts = products
         gamePassTitles = resolvedTitles.map(GamePassCatalog::productKey).toSet()

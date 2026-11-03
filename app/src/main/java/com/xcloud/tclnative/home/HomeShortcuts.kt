@@ -45,6 +45,15 @@ class HomeShortcuts(private val context: Context) {
     fun requestVisible(channel: Long) {
         if (Build.VERSION.SDK_INT >= 26) TvContract.requestChannelBrowsable(context, channel)
     }
+    fun browsableRequest(channel: Long): Intent? {
+        if(Build.VERSION.SDK_INT<26) return null
+        return Intent(TvContract.ACTION_REQUEST_CHANNEL_BROWSABLE).putExtra(TvContract.EXTRA_CHANNEL_ID,channel)
+    }
+    fun isBrowsable(channel: Long): Boolean {
+        if(Build.VERSION.SDK_INT<26) return false
+        return context.contentResolver.query(TvContract.buildChannelUri(channel),arrayOf(TvContract.Channels.COLUMN_BROWSABLE),null,null,null)
+            ?.use { it.moveToFirst() && it.getInt(0)==1 } == true
+    }
 
     @RequiresApi(26)
     private fun syncChannel(games: List<GameTitle>): Long? {

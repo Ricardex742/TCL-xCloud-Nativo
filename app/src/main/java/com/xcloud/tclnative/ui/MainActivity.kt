@@ -102,18 +102,34 @@ class MainActivity : Activity() {
     private var accountJob: Job? = null
     private var currentSignaling: XCloudSignalingClient? = null
     private var currentGames = emptyList<GameTitle>()
+    private val catalogWork = com.xcloud.tclnative.catalog.CatalogWorkGate()
+    private val streamHistory = com.xcloud.tclnative.webrtc.StreamDiagnosticHistory()
     private var activeGame: GameTitle? = null
     private var pendingLaunch = PendingGameLaunch()
     private val homeShortcuts by lazy { HomeShortcuts(this) }
     private val shortcutPosters by lazy { PosterLoader(this,mainScope) }
-    private var homeSyncJob: Job? = null
-    private val homeSyncLock = kotlinx.coroutines.sync.Mutex()
+    private val homeJobs by lazy { com.xcloud.tclnative.home.HomePublicationJobs(mainScope) }
+    private var shortcutInstallJob: Job? = null
+    private var pendingShortcutApk: File? = null
+    private var pendingHomeChannel: Long? = null
+    private var lastShortcutRequest: String? = null
+    private companion object {
+        const val REQUEST_HOME_CHANNEL=4101
+        const val REQUEST_SHORTCUT_INSTALL_PERMISSION=4102
+    }
     private var gameMenuDialog: Dialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         pendingLaunch = PendingGameLaunch(savedInstanceState?.getString("pending_game"))
-        if (savedInstanceState == null) pendingLaunch.receive(intent)
+        lastShortcutRequest=savedInstanceState?.getString("last_shortcut_request")
+        val shortcutRequest=intent.getStringExtra("shortcut_request")
+        if (savedInstanceState == null || (shortcutRequest!=null && shortcutRequest!=lastShortcutRequest)) pendingLaunch.receive(intent)
+        lastShortcutRequest=shortcutRequest ?: lastShortcutRequest
+        pendingHomeChannel=savedInstanceState?.getLong("pending_home_channel",-1)?.takeIf { it>=0 }
+        savedInstanceState?.getString("pending_shortcut_apk")?.takeIf {
+            it.matches(Regex("com[.]xcloud[.]game[.]g[0-9a-f]{24}[.]apk"))
+        }?.let { pendingShortcutApk=File(cacheDir,"game-shortcuts/$it").takeIf(File::isFile) }
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         window.navigationBarColor = Color.BLACK
@@ -215,12 +231,16 @@ class MainActivity : Activity() {
         super.onNewIntent(intent)
         if (pendingLaunch.receive(intent)) {
             setIntent(intent)
+            lastShortcutRequest=intent.getStringExtra("shortcut_request")
             launchPendingShortcut()
         }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putString("pending_game",pendingLaunch.titleId)
+        outState.putString("last_shortcut_request",lastShortcutRequest)
+        outState.putString("pending_shortcut_apk",pendingShortcutApk?.name)
+        outState.putLong("pending_home_channel",pendingHomeChannel ?: -1)
         super.onSaveInstanceState(outState)
     }
 
@@ -364,14 +384,15 @@ class MainActivity : Activity() {
             currentSignaling = signaling
             syncHomeShortcuts()
             launchPendingShortcut()
-            val catalog = CatalogService(cache = CatalogCache(File(cacheDir, "catalog-art-v2.json")))
+            val catalog = CatalogService(cache = CatalogCache(File(cacheDir, "catalog-art-v2.json")),beforeRequest=catalogWork::await)
             launch {
                 catalog.hydrate(allGames, onProgress = { progress -> withContext(Dispatchers.Main) {
                     if (dashboard === view) view.setMetadataProgress(progress)
                 } }) { hydrated -> withContext(Dispatchers.Main) {
                     if (dashboard === view) {
                         currentGames = hydrated
-                        view.setGames(hydrated); refreshLoadingArt(); syncHomeShortcuts()
+                        if(controlPanel.visibility==View.VISIBLE) view.setGames(hydrated)
+                        refreshLoadingArt(); syncHomeShortcuts()
                     }
                 } }
             }
@@ -385,7 +406,7 @@ class MainActivity : Activity() {
                 if (dashboard === view) { view.setGamePassProducts(confirmed); refreshLoadingArt() }
                 if (!confirmed.isNullOrEmpty()) {
                     val known=allGames.mapNotNull { it.productId?.let(com.xcloud.tclnative.catalog.GamePassCatalog::productKey) }.toSet()
-                    val resolved=signaling.resolveCatalogProducts(confirmed-known)
+                    val resolved=signaling.resolveCatalogProducts(confirmed-known,catalogWork::await)
                     if (dashboard === view) { view.setGamePassProducts(confirmed,resolved); refreshLoadingArt() }
                 }
             }
@@ -422,57 +443,108 @@ class MainActivity : Activity() {
     }
     private fun syncHomeShortcuts(requestVisibility: Boolean = false) {
         if (!homeShortcuts.supportsChannel || !homeShortcuts.enabled) return
-        homeSyncJob?.cancel()
-        homeSyncJob = mainScope.launch {
-            if (!requestVisibility) delay(350)
-            homeSyncLock.lock()
+        homeJobs.schedule(requestVisibility) {
             try {
-                val favorites = currentGames.filter { gameLibrary?.isFavorite(it.titleId) == true }
-                val channel = withContext(Dispatchers.IO) { homeShortcuts.sync(favorites) }
-                if (requestVisibility && channel != null) {
-                    homeShortcuts.requestVisible(channel)
-                    Toast.makeText(this@MainActivity,"Favoritos publicados. Ative o canal xCLOUD na tela inicial da TV, se solicitado.",Toast.LENGTH_LONG).show()
-                }
-            } catch (cancelled: CancellationException) { throw cancelled }
-            catch (_: Exception) {
-                if (requestVisibility) ConsoleDialogs.message(this@MainActivity,"Tela inicial da TV",
-                    "O launcher desta TV não permitiu publicar o canal. Verifique se há suporte a canais de aplicativos ou use um launcher compatível.")
-            } finally { homeSyncLock.unlock() }
+                val favorites=currentGames.filter { gameLibrary?.isFavorite(it.titleId)==true }
+                val channel=withContext(Dispatchers.IO) { homeShortcuts.sync(favorites) }
+                if(requestVisibility && channel!=null) requestHomeChannel(channel)
+            } catch(cancelled: CancellationException) { throw cancelled }
+            catch(error: Exception) {
+                if(requestVisibility) ConsoleDialogs.message(this@MainActivity,"Canal da tela inicial",
+                    "A TV não autorizou o canal de favoritos. Use Instalar atalho na TV para criar entradas individuais dos jogos.")
+            }
         }
     }
-
+    private fun requestHomeChannel(channel: Long) {
+        pendingHomeChannel=channel
+        val request=homeShortcuts.browsableRequest(channel) ?: return
+        if(request.resolveActivity(packageManager)!=null) startActivityForResult(request,REQUEST_HOME_CHANNEL)
+        else {
+            homeShortcuts.requestVisible(channel)
+            verifyHomeChannel(channel)
+        }
+    }
+    private fun verifyHomeChannel(channel: Long) {
+        mainScope.launch {
+            val visible=withContext(Dispatchers.IO) { runCatching { homeShortcuts.isBrowsable(channel) }.getOrDefault(false) }
+            pendingHomeChannel=null
+            ConsoleDialogs.message(this@MainActivity,"Canal de favoritos",if(visible)
+                "O sistema autorizou o canal Favoritos xCLOUD. Sua exibição depende da tela inicial da TV. Para criar um aplicativo de acesso direto, use Instalar atalho na TV."
+                else "O canal não ficou visível na tela inicial. Use Instalar atalho na TV: o jogo aparecerá em Aplicativos, inclusive no Google TV.")
+        }
+    }
     private fun showHomeShortcuts() {
-        val favorites = currentGames.filter { gameLibrary?.isFavorite(it.titleId) == true }
-        val actions = mutableListOf<ConsoleAction>()
-        if (homeShortcuts.supportsChannel) {
-            actions += ConsoleAction("Mostrar favoritos na tela inicial da TV") {
-                if (favorites.isEmpty()) ConsoleDialogs.message(this,"Seus favoritos","Adicione jogos com Y antes de criar os atalhos.")
-                else { homeShortcuts.enable(true); syncHomeShortcuts(requestVisibility = true) }
+        val favorites=currentGames.filter { gameLibrary?.isFavorite(it.titleId)==true }
+        val actions=mutableListOf<ConsoleAction>()
+        favorites.forEach { game ->
+            actions+=ConsoleAction("Instalar atalho na TV: ${game.name}") { createInstalledShortcut(game) }
+        }
+        if(homeShortcuts.supportsChannel) {
+            actions+=ConsoleAction("Solicitar canal de favoritos na tela inicial") {
+                if(favorites.isEmpty()) ConsoleDialogs.message(this,"Seus favoritos","Adicione jogos com Y antes de criar os atalhos.")
+                else { homeShortcuts.enable(true); syncHomeShortcuts(requestVisibility=true) }
             }
-            if (homeShortcuts.enabled) actions += ConsoleAction("Remover canal de favoritos da tela inicial") {
-                homeShortcuts.enable(false)
-                homeSyncJob?.cancel()
-                homeSyncJob = mainScope.launch {
-                    homeSyncLock.lock()
-                    try { withContext(Dispatchers.IO) { homeShortcuts.sync(emptyList()) } }
-                    catch (cancelled: CancellationException) { throw cancelled }
-                    catch (_: Exception) { Toast.makeText(this@MainActivity,"Não foi possível remover o canal da TV.",Toast.LENGTH_LONG).show() }
-                    finally { homeSyncLock.unlock() }
-                }
+            if(homeShortcuts.enabled) actions+=ConsoleAction("Remover canal de favoritos") {
+                homeShortcuts.enable(false); homeJobs.cancel()
+                homeJobs.schedule(true) { withContext(Dispatchers.IO) { runCatching { homeShortcuts.sync(emptyList()) } } }
             }
         }
-        if (homeShortcuts.supportsPin) favorites.forEach { game ->
-            actions += ConsoleAction("Criar atalho: ${game.name}") {
-                val image = ImageView(this)
+        if(homeShortcuts.supportsPin) favorites.forEach { game ->
+            actions+=ConsoleAction("Pedir atalho ao launcher: ${game.name}") {
+                val image=ImageView(this)
                 shortcutPosters.load(image,game.tileUrl ?: game.posterUrl,192,192,notifyPlaceholder=false) {
-                    if (!homeShortcuts.pin(game,(image.drawable as? BitmapDrawable)?.bitmap))
-                        Toast.makeText(this,"O launcher não aceitou o atalho.",Toast.LENGTH_LONG).show()
+                    val accepted=homeShortcuts.pin(game,(image.drawable as? BitmapDrawable)?.bitmap)
+                    Toast.makeText(this,if(accepted) "Pedido enviado ao launcher. Confirme na tela inicial." else "O launcher não aceitou o pedido.",Toast.LENGTH_LONG).show()
                 }
             }
         }
-        if (actions.isEmpty()) ConsoleDialogs.message(this,"Atalhos dos favoritos",
-            "Este launcher não oferece atalhos fixados nem canais de favoritos. No Android TV 8 ou superior, use um launcher com suporte a canais de aplicativos.")
+        if(actions.isEmpty()) ConsoleDialogs.message(this,"Atalhos dos favoritos","Adicione jogos aos favoritos com Y para criar seus atalhos.")
         else ConsoleDialogs.menu(this,"Atalhos dos favoritos",actions)
+    }
+    private fun createInstalledShortcut(game: GameTitle) {
+        if(shortcutInstallJob?.isActive==true) return
+        shortcutInstallJob=mainScope.launch {
+            val image=ImageView(this@MainActivity)
+            val waiting=ConsoleDialogs.message(this@MainActivity,"Criando atalho",game.name,
+                listOf(ConsoleAction("Cancelar") { shortcutInstallJob?.cancel() }),onCancel={ shortcutInstallJob?.cancel() })
+            try {
+                val artwork=CompletableDeferred<android.graphics.Bitmap?>()
+                shortcutPosters.load(image,game.tileUrl ?: game.posterUrl,256,256,notifyPlaceholder=false) {
+                    artwork.complete((image.drawable as? BitmapDrawable)?.bitmap)
+                }
+                val bitmap=artwork.await()
+                val apk=withContext(Dispatchers.IO) { com.xcloud.tclnative.home.GameShortcutInstaller(this@MainActivity).create(game,bitmap) }
+                waiting.dismiss()
+                pendingShortcutApk=apk
+                ConsoleDialogs.message(this@MainActivity,"Instalar atalho: ${game.name}",
+                    "Será instalado um pequeno aplicativo que abre este jogo no xCLOUD. Depois, procure o jogo em Aplicativos. No Google TV, adicione-o à fileira de apps favoritos pela própria tela inicial.",
+                    listOf(ConsoleAction("Instalar atalho") { installPendingShortcut() },ConsoleAction("Cancelar") { pendingShortcutApk=null }),
+                    onCancel={ pendingShortcutApk=null })
+            } catch(cancelled: CancellationException) { throw cancelled }
+            catch(error: Exception) { showCopyableErrorDialog("Atalho do jogo",error.message ?: "Não foi possível criar o atalho neste aparelho.") }
+            finally { shortcutPosters.cancel(image); waiting.dismiss() }
+        }
+    }
+    private fun installPendingShortcut() {
+        val apk=pendingShortcutApk?.takeIf(File::isFile) ?: return
+        if(Build.VERSION.SDK_INT>=26 && !packageManager.canRequestPackageInstalls()) {
+            try { startActivityForResult(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                Uri.parse("package:$packageName")),REQUEST_SHORTCUT_INSTALL_PERMISSION) }
+            catch(_: android.content.ActivityNotFoundException) { ConsoleDialogs.message(this,"Permitir instalação","Nas configurações da TV, permita que o xCLOUD instale os atalhos dos jogos.") }
+            return
+        }
+        val uri=androidx.core.content.FileProvider.getUriForFile(this,"$packageName.shortcuts",apk)
+        try { startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri,"application/vnd.android.package-archive")
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)) }
+        catch(_: android.content.ActivityNotFoundException) { ConsoleDialogs.message(this,"Instalador indisponível","A TV não disponibilizou um instalador de aplicativos para o atalho.") }
+    }
+    override fun onActivityResult(requestCode: Int,resultCode: Int,data: Intent?) {
+        super.onActivityResult(requestCode,resultCode,data)
+        if(requestCode==REQUEST_HOME_CHANNEL) pendingHomeChannel?.let(::verifyHomeChannel)
+        if(requestCode==REQUEST_SHORTCUT_INSTALL_PERMISSION) {
+            if(Build.VERSION.SDK_INT<26 || packageManager.canRequestPackageInstalls()) installPendingShortcut()
+            else ConsoleDialogs.message(this,"Instalação não autorizada","O atalho foi criado, mas a permissão de instalação não foi concedida pela TV.")
+        }
     }
     private fun applyPlaybackSettings(settings: PlaybackSettings) {
         playbackSettings=settings
@@ -485,21 +557,16 @@ class MainActivity : Activity() {
     private fun showGameMenu() {
         if (gameMenuDialog?.isShowing == true || webrtcClient == null || queuePanel.visibility == View.VISIBLE) return
         resetController()
-        val actions = mutableListOf(
-            ConsoleAction("Nitidez e saturação") {
-                PlaybackSettingsPanel(this,settingsStore,::applyPlaybackSettings,{}, {}, {}).showImageAdjustments(onBack={ showGameMenu() })
-            },
-            ConsoleAction("Mostrar / ocultar estatísticas") { cycleStatistics() },
-            ConsoleAction("Desconectar sessão e voltar ao catálogo") { cancelPlayback() }
-        )
-        if (currentTouchMode == TouchMode.NATIVE) actions.add(1,ConsoleAction("Usar controle virtual nesta partida") {
-            if (webrtcClient?.setNativeTouchEnabled(false) == true) {
-                currentTouchMode = TouchMode.VIRTUAL; touchView.configure(TouchMode.VIRTUAL)
+        gameMenuDialog = com.xcloud.tclnative.ui.dashboard.GameMenuPanel.show(this,
+            image={ PlaybackSettingsPanel(this,settingsStore,::applyPlaybackSettings,{}, {}, {}).showImageAdjustments(onBack={ showGameMenu() }) },
+            statistics={ cycleStatistics() },
+            diagnostics={ showCopyableErrorDialog("Vídeo","${Build.MANUFACTURER} ${Build.MODEL} | Android ${Build.VERSION.RELEASE} | ${Build.HARDWARE}\n${surfaceRenderer.diagnostics()}\n${streamHistory.report()}") },
+            disconnect={ cancelPlayback() },
+            virtualTouch=if(currentTouchMode==TouchMode.NATIVE) ({
+                if(webrtcClient?.setNativeTouchEnabled(false)==true) { currentTouchMode=TouchMode.VIRTUAL; touchView.configure(TouchMode.VIRTUAL) }
+            }) else null).also { dialog ->
+                dialog.setOnDismissListener { if(gameMenuDialog===dialog) gameMenuDialog=null }
             }
-        })
-        gameMenuDialog = ConsoleDialogs.menu(this,"Partida • Menu + View",actions).also { dialog ->
-            dialog.setOnDismissListener { if (gameMenuDialog === dialog) gameMenuDialog = null }
-        }
     }
     private fun chooseLaunchMode(signaling: XCloudSignalingClient,game: GameTitle) {
         if(playbackSettings.touchMode==TouchMode.AUTO && packageManager.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)) {
@@ -520,6 +587,9 @@ class MainActivity : Activity() {
     }
 
     private fun restoreDashboard() {
+        catalogWork.resume()
+        dashboard?.setGames(currentGames)
+        dashboard?.resumeArtwork()
         controlPanel.visibility = View.VISIBLE
         dashboard?.let { view -> hudTextView.visibility = View.GONE; view.restoreFocus() }
     }
@@ -556,6 +626,10 @@ class MainActivity : Activity() {
         val gameName = game.name
         activeGame = game
         val settings = playbackSettings
+        val compatible=settings.videoMode==com.xcloud.tclnative.settings.VideoMode.COMPATIBILITY
+        streamHistory.clear()
+        catalogWork.pause()
+        dashboard?.pauseArtwork()
         val choice=touchChoice ?: settings.touchMode
         val nativeSupported="NativeTouch" in game.supportedInputTypes
         val touchMode=when(choice) {
@@ -589,6 +663,7 @@ class MainActivity : Activity() {
                 it.sources and InputDevice.SOURCE_GAMEPAD==InputDevice.SOURCE_GAMEPAD || it.sources and InputDevice.SOURCE_JOYSTICK==InputDevice.SOURCE_JOYSTICK
             }.sortedWith(compareBy<InputDevice> { it.id!=preferredControllerId }.thenBy { it.id }).forEach { controllers.slot(it.id) }
             rumble.enabled=settings.rumble
+            surfaceRenderer.compatibility=compatible
             surfaceRenderer.nativeUpscaling = settings.nativeUpscaling
             surfaceRenderer.aspect = settings.aspect
             surfaceRenderer.setImageAdjustments(settings.sharpness,settings.saturation)
@@ -621,9 +696,10 @@ class MainActivity : Activity() {
                     }
                 } },
                 onStatistics = stats@ { metrics, input ->
+                    if(generation==playbackGeneration) streamHistory.add(android.os.SystemClock.elapsedRealtime(),metrics,input)
                     if (statistics.mode == 0) return@stats
                     val complete = statistics.mode == 2
-                    val text = if (complete) metrics.overlay(input, "",settings.resolution) else metrics.compactOverlay(input)
+                    val text = if (complete) metrics.overlay(input, "",settings.resolution,compatible) else metrics.compactOverlay(input)
                     runOnUiThread {
                         if (generation == playbackGeneration) {
                             statsView.text = text + if (complete) surfaceRenderer.diagnostics() + "\n" +
@@ -633,7 +709,7 @@ class MainActivity : Activity() {
                     }
                 }, lowLatencyVideo = settings.videoMode.lowLatency, streamResolution = settings.resolution,
                 nativeTouch = touchMode==TouchMode.NATIVE,
-                onRumble = { command -> if(generation==playbackGeneration) rumble.play(command) })
+                onRumble = { command -> if(generation==playbackGeneration) rumble.play(command) },compatibility=compatible)
             webrtcClient = rtc
             if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
             try {
@@ -657,7 +733,7 @@ class MainActivity : Activity() {
                 } != true) {
                     throw java.io.IOException("VIDEO: transporte conectado, mas nenhum quadro foi renderizado em 20s.")
                 }
-                val recovery = VideoRecoveryPolicy()
+                val recovery = VideoRecoveryPolicy(compatible)
                 var lastToken = -1L
                 var recovering = false
                 var nextKeepAlive = android.os.SystemClock.elapsedRealtime() + 30_000
@@ -665,7 +741,7 @@ class MainActivity : Activity() {
                     withTimeoutOrNull(1000) { transportFailure.await() }?.let { throw it }
                     val now = android.os.SystemClock.elapsedRealtime()
                     val health = surfaceRenderer.probeVideoHealth()
-                    val action = recovery.observe(now, health.presentedToken, health.deliveredRecently)
+                    val action = recovery.observe(now, health.presentedToken, health.deliveredRecently,streamHistory.receivingVideo(now))
                     if (health.presentedToken != lastToken && recovering) {
                         recovering = false
                         hudTextView.visibility = View.GONE

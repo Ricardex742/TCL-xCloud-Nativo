@@ -153,6 +153,31 @@ class ConsoleUiTest {
         assertEquals(1,cancelled); assertEquals(0,recovered)
         controller.pause().stop().destroy()
     }
+    @Test fun compatibilitySelectionPersistsTheLighterPresetAndTheGameMenuHasAnExplicitDisconnect() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        val activity=controller.get().apply { setContentView(FrameLayout(this)) }
+        layout(activity.window.decorView,1280,720)
+        val store=PlaybackSettingsStore(activity)
+        store.save(PlaybackSettings(sharpness=75,saturation=150))
+        val panel=PlaybackSettingsPanel(activity,store,{}, {}, {}, {})
+        val choices=panel.chooseVideo()
+        render(choices,"compatibility-choice")
+        all(choices.body).filterIsInstance<TextView>().single { it.text.contains("Compatibilidade —") }.performClick()
+        assertEquals(VideoMode.COMPATIBILITY,store.read().videoMode)
+        assertEquals(StreamResolution.HD_720,store.read().resolution)
+        assertTrue(store.read().nativeUpscaling)
+        assertEquals(0,store.read().sharpness); assertEquals(100,store.read().saturation)
+        (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
+        var stats=0; var disconnected=0
+        val game=GameMenuPanel.show(activity,{}, {stats++}, {}, {disconnected++})
+        render(game,"game-menu")
+        all(game.body).filterIsInstance<TextView>().single { it.text.contains("estatísticas") }.performClick()
+        assertEquals(1,stats); assertEquals(0,disconnected)
+        val leaving=GameMenuPanel.show(activity,{}, {}, {}, {disconnected++})
+        all(leaving.body).filterIsInstance<TextView>().single { it.text.contains("Desconectar sessão") }.performClick()
+        assertEquals(1,disconnected)
+        controller.pause().stop().destroy()
+    }
     @Test fun imageAndControllerChoicesPersistWithoutCyclingValuesWhenOpeningTheirMenus() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()
         val activity=controller.get().apply { setContentView(FrameLayout(this)) }

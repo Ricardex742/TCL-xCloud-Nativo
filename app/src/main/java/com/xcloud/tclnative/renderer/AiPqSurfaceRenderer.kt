@@ -58,6 +58,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     private var videoHeight = 1080
     private var sharpness=0
     private var saturation=100
+    var compatibility = false
     fun setImageAdjustments(sharpness: Int,saturation: Int) {
         this.sharpness=sharpness.coerceIn(0,100); this.saturation=saturation.coerceIn(0,200)
         aspectDrawer?.sharpness=this.sharpness; aspectDrawer?.saturation=this.saturation
@@ -115,12 +116,12 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
             },EglBase.CONFIG_PLAIN,drawer)
             view.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL)
             view.setEnableHardwareScaler(nativeUpscaling)
-            view.disableFpsReduction()
+            if(compatibility) view.setFpsReduction(30f) else view.disableFpsReduction()
             view.holder.addCallback(object : android.view.SurfaceHolder.Callback {
                 private fun frameRate(holder: android.view.SurfaceHolder) {
                     if (!released && generation == id && android.os.Build.VERSION.SDK_INT >= 30 && holder.surface.isValid) {
                         frameRateHintRequested = runCatching {
-                            holder.surface.setFrameRate(60f, android.view.Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE)
+                            holder.surface.setFrameRate(if(compatibility) 30f else 60f, android.view.Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE)
                         }.isSuccess
                     }
                 }
@@ -193,8 +194,8 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         val mode = display?.mode
         val output = mode?.let { "${it.physicalWidth}x${it.physicalHeight}@${kotlin.math.round(it.refreshRate).toInt()} Hz" } ?: "n/d"
         return "Surface $size → janela ${width}x$height | Saída Android: $output\n" +
-            "Escala da Surface: ${if (nativeUpscaling) "HW solicitada" else "desativada, sem ampliação na janela"} | Cadência 60 Hz: ${if (frameRateHintRequested) "solicitada" else "n/d"} | Pós-processamento mínimo: ${if (minimalPostProcessingRequested) "solicitado" else "padrão"}\n" +
-            "Proporção: ${aspect.label} | Nitidez: $sharpness% | Saturação: $saturation% | AiPQ: não verificável pelo app"
+            "Escala da Surface: ${if (nativeUpscaling) "HW solicitada" else "desativada, sem ampliação na janela"} | Cadência ${if(compatibility) 30 else 60} Hz: ${if (frameRateHintRequested) "solicitada" else "n/d"} | Pós-processamento mínimo: ${if (minimalPostProcessingRequested) "solicitado" else "padrão"}\n" +
+            "Proporção: ${aspect.label} | Nitidez: $sharpness% | Saturação: $saturation% | Apresentação: até ${if(compatibility) 30 else 60} FPS | AiPQ: não verificável pelo app"
     }
 
     fun compactDiagnostics(): String {

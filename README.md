@@ -1,96 +1,125 @@
-# xCLOUD
-Cliente experimental para Xbox Cloud Gaming em Android 10 ou superior, com vídeo nativo por WebRTC e SurfaceViewRenderer. A disponibilidade do jogo depende da conta, da região e da conectividade; o scaler nativo não comprova ativação de AiPQ 4K.
+<div align="center">
+  <img src="app/src/main/res/drawable-nodpi/brand_logo.png" width="112" alt="Logo xCLOUD" />
+  <h1>xCLOUD</h1>
+  <p><strong>Seus jogos. Na sua tela.</strong></p>
+  <p>Cliente Android independente para Xbox Cloud Gaming, com interface para TV e transmissão nativa.</p>
+  <p>
+    <a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aci%2Fapk-android10-3cc2595"><img src="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml/badge.svg?branch=ci%2Fapk-android10-3cc2595" alt="Compilação Android" /></a>
+    <img src="https://img.shields.io/badge/Android-7.0%2B-54de69?logo=android&logoColor=white" alt="Android 7 ou superior" />
+    <img src="https://img.shields.io/badge/vers%C3%A3o-0.18.0-173d29" alt="Versão 0.18.0" />
+  </p>
+  <p><a href="#baixar-e-instalar">Baixar</a> · <a href="#telas-do-aplicativo">Telas</a> · <a href="#funcionalidades">Funcionalidades</a> · <a href="#atalhos-dos-jogos-na-tv">Atalhos na TV</a> · <a href="#compilar">Compilar</a></p>
+</div>
 
-A [versão 0.17.0](docs/favorites-touch-shortcuts-0.17.md) abre o menu Partida com **Menu/Start + View/Select**, acrescenta desconexão explícita, corrige a persistência dos favoritos por conta e a inicialização do toque nativo. **Configurações → Atalhos dos favoritos** publica jogos na tela inicial de launchers compatíveis; abrir um atalho vai diretamente à fila após o login e a validação do catálogo. As estatísticas continuam ocultas por padrão e são ativadas no menu Partida ou com INFO/F10.
+![Catálogo de jogos do xCLOUD](docs/screenshots/catalog.png)
 
-A [versão 0.16.0](docs/stable-signing-0.16.md) fixa o certificado de assinatura dos APKs para permitir atualizações sobre a instalação existente. O Actions precisa do segredo privado `XCLOUD_ANDROID_KEYSTORE_BASE64`; sem ele, ou com outro certificado, o build bloqueia a publicação em vez de gerar uma identidade nova. O APK inclui metadados públicos para conferir assinatura, pacote e versão.
+## Telas do aplicativo
 
-A [versão 0.15.0](docs/input-image-0.15.md) restringe a aba e os selos Game Pass à galeria oficial, resolvendo edições pelo catálogo autenticado. Acrescenta coop local com até quatro jogadores, recepção de vibração do jogo com teste do suporte Android, controle virtual multitoque e toque nativo nos jogos que o anunciam. Nitidez e saturação são opcionais; começam em 0% e 100%, respectivamente, e podem ser ajustadas durante a partida pelo menu de toque.
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/login.png" alt="Tela de entrada do xCLOUD" /><br /><strong>Login</strong> — acesso à conta Microsoft.</td>
+    <td width="50%"><img src="docs/screenshots/qr-login.png" alt="Login Microsoft com QR Code de demonstração" /><br /><strong>QR Code</strong> — autorização pelo celular.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/queue.png" alt="Fila com capa, estimativa e tempo aguardado" /><br /><strong>Fila</strong> — estimativa do serviço e etapas da conexão.</td>
+    <td><img src="docs/screenshots/settings.png" alt="Configurações de vídeo e controles" /><br /><strong>Configurações</strong> — preferências salvas no aparelho.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/compatibility.png" alt="Modos de vídeo, incluindo compatibilidade para TVs mais fracas" /><br /><strong>Vídeo</strong> — menor atraso, adaptativo ou compatibilidade.</td>
+    <td><img src="docs/screenshots/game-menu.png" alt="Menu da partida com diagnóstico e desconexão" /><br /><strong>Partida</strong> — ajustes, estatísticas e desconexão.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/controls.png" alt="Configurações de coop, vibração e toque" /><br /><strong>Controles</strong> — coop local, vibração e toque.</td>
+    <td><img src="docs/screenshots/image.png" alt="Ajustes de nitidez e saturação" /><br /><strong>Imagem</strong> — nitidez e saturação durante a partida.</td>
+  </tr>
+</table>
 
-A [versão 0.14.0](docs/xcloud-0.14.md) reconhece os códigos autenticados XGPULTIMATE/GPULTIMATE e os programas da conta, corrige jogos Game Pass ausentes por divergência entre IDs de edição e acrescenta oito modos de proporção. O aviso verde de sessão fica oculto durante reprodução normal. O aplicativo passa a se chamar **xCLOUD**, com ícone adaptativo, banner para TV e [duas propostas visuais](docs/branding/README.md).
+As telas de interface são capturas das views nativas com perfil e dados de demonstração. O QR Code é ilustrativo. Capas e selos exibidos no uso real dependem dos dados oficiais do catálogo.
 
-A [versão 0.13.0](docs/playback-settings-0.13.md) troca Mais jogados por uma aba exclusiva do Game Pass, remove Rewards e coloca Configurações ao lado da assinatura ampliada. Vídeo, resolução (720p, 1080p ou 1080p HQ) e upscaling nativo têm seletores explícitos, com preferências salvas para a próxima partida. As estatísticas começam ocultas em cada jogo: Start + Select ou INFO/F10 ativa e alterna os painéis.
+### Gameplay
 
-A [versão 0.12.0](docs/green-console-0.12.md) unifica o aplicativo no tema verde: busca, conta, login, QR Code, catálogo e fila usam os mesmos painéis e controles. O destaque de foco padrão do Android é removido das capas para evitar o segundo retângulo sobre o contorno de seleção do aplicativo.
+![Trecho de gameplay transmitido pelo xCLOUD em uma TV](docs/screenshots/gameplay.jpg)
 
-A [versão 0.11.0](docs/art-and-queue-0.11.md) amplia o cabeçalho/perfil, usa o Microsoft Store v7 com fallback e cache para carregar nomes e capas originais, e acrescenta selos Game Pass e X|S conforme os dados oficiais. A fila usa o fundo do jogo e destaca estimativa, tempo aguardado e etapas até chegar o vídeo. A grade mantém seis colunas com rolagem abaixo do cabeçalho maior.
+Trecho de uma gravação de gameplay no aplicativo, com o enquadramento recortado para mostrar somente o jogo. A imagem não representa uma medição de fluidez ou desempenho.
 
-O [catálogo original 0.10.0](docs/dashboard-0.10.md) introduziu o template fornecido, a tipografia condensada e seis colunas de capas. Atualmente usa o tema verde: LB/RB alterna as cinco categorias, Y favorita, X pesquisa e Start abre Configurações. Favoritos/histórico são locais e separados por conta. Perfil e capas são obtidos dos serviços Microsoft; quando a conta não informa o nível, o cabeçalho mostra `ASSINATURA NÃO INFORMADA`.
+## Funcionalidades
 
-O workflow `build-apk.yml` roda nos pushes da branch `ci/apk-android10-3cc2595` e pode ser executado manualmente nela. Ele prepara JDK 21, Gradle 8.7 e Android SDK 34, executa os testes JVM, verifica APIs incompatíveis com o Android mínimo declarado (API 24, incluindo Android 10), gera o APK debug e verifica sua assinatura. Baixe `TCL-xCloud-App-Debug-Android10` na seção **Artifacts** da execução: ele contém o APK e seu checksum SHA-256. O relatório de lint é salvo separadamente. O módulo instalável é `:app`; os comandos usam esse alvo explicitamente.
+| Área | Recursos |
+| --- | --- |
+| Conta | Login Microsoft por QR Code, renovação da sessão salva, perfil, avatar e identificação da assinatura quando informada pelos serviços Xbox. |
+| Biblioteca | Jogados recentemente, favoritos por conta, Game Pass, adições recentes e todos os jogos. Pesquisa por nome e navegação pelo controle. |
+| Catálogo | Nomes e capas originais, cache de imagens e selos Game Pass e X\|S conforme os dados disponíveis. A inclusão no Game Pass usa a galeria oficial, separada do acesso a jogos comprados. |
+| Fila | Fundo do jogo, estimativa de espera, tempo aguardado, etapas de conexão e cancelamento. |
+| Transmissão | Vídeo nativo por WebRTC/H.264, com preferência por decodificação de hardware. Perfis solicitados de 720p, 1080p e 1080p HQ. |
+| Vídeo | Seletores de menor atraso, adaptativo e compatibilidade. Escala nativa, proporção original, 16:9, 18:9, 21:9, 16:10, 4:3, esticar e zoom. |
+| Imagem | Nitidez e saturação opcionais, com aplicação durante a partida. |
+| Controle físico | USB, Bluetooth e dongles reconhecidos pelo Android. Navegação por direcional, botões e analógicos. |
+| Coop local | Até quatro jogadores com estados independentes, quando aceitos pelo jogo e pela sessão cloud. |
+| Vibração | Recepção de comandos do jogo e teste de suporte. O controle e o driver Android precisam expor a função de vibração. |
+| Toque | Controle virtual com múltiplos dedos e toque nativo nos títulos que anunciam suporte. |
+| Menu da partida | Atalho pelo controle ou pelo botão de toque, ajustes de imagem, estatísticas, diagnóstico e desconexão da sessão. |
+| Estatísticas | FPS, resolução recebida, bitrate, RTT, jitter, buffer, perdas, descarte e tempo de decodificação. Começam ocultas e são ativadas manualmente. |
+| Recuperação | Solicitação de quadro-chave, recuperação do decoder e da superfície de vídeo, preservando a sessão enquanto possível. |
+| Tela inicial da TV | Atalhos instaláveis por jogo, pedidos de atalhos ao launcher e canal de favoritos nos sistemas compatíveis. |
+| Atualizações | Certificado fixo para atualizar o aplicativo sem trocar sua identidade de instalação. |
 
-Com JDK 21, Gradle 8.7 e Android SDK 34 configurados, use na raiz do repositório:
+A disponibilidade dos jogos depende da conta, da região e do serviço Xbox Cloud Gaming. Recursos de coop e toque variam por título. A escala nativa usa a Surface Android; o aplicativo não configura o processamento proprietário de imagem de cada TV.
 
-Para montar o APK, prepare antes a [chave privada de assinatura](docs/stable-signing-0.16.md). Testes JVM/lint podem ser executados separadamente sem a chave. O arquivo privado e a exportação base64 não fazem parte do repositório.
+## Baixar e instalar
+
+1. Abra [GitHub Actions nesta branch](https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aci%2Fapk-android10-3cc2595) e escolha a execução bem-sucedida mais recente.
+2. Em **Artifacts**, baixe **TCL-xCloud-App-Debug-Android10** e extraia o arquivo ZIP.
+3. Instale **app-debug.apk** no Android TV, Google TV ou celular. O pacote também inclui checksum e metadados públicos de versão e assinatura.
+4. Abra **xCLOUD**, selecione **Entrar com QR Code** e conclua a autorização Microsoft.
+5. Escolha um jogo e aguarde a fila e a conexão.
+
+O aplicativo declara Android 7.0/API 24 como mínimo. O aparelho precisa oferecer os recursos de vídeo utilizados pelo WebRTC. A partir da versão 0.16, os APKs desta branch usam a mesma assinatura fixa: instale a atualização sobre a versão anterior para manter os dados locais. Desinstalar ou limpar os dados remove login e favoritos.
+
+## Controles e navegação
+
+| Ação | Comando |
+| --- | --- |
+| Navegar | Direcional ou analógico esquerdo |
+| Selecionar / jogar | A |
+| Voltar | B |
+| Alternar categorias | LB / RB |
+| Adicionar ou remover favorito | Y |
+| Pesquisar jogos | X |
+| Abrir configurações no catálogo | Menu / Start ou engrenagem |
+| Abrir o menu da partida | **Menu/Start + View/Select juntos**, no controle do jogador 1 |
+| Alternar estatísticas pelo teclado/TV | INFO / F10 |
+
+Durante a partida, Menu e View pressionados separadamente continuam sendo enviados ao jogo. O botão Voltar do Android abre o menu da partida; use **Desconectar sessão e voltar ao catálogo** para encerrar a conexão.
+
+## Compatibilidade com TVs mais limitadas
+
+Em **Configurações → Vídeo**, selecione **Compatibilidade — TVs mais fracas**. O preset escolhe 720p, ativa a escala nativa e restaura nitidez/saturação para os valores originais. Também prioriza H.264 Baseline, solicita até 6 Mbps, limita a apresentação a 30 quadros/s e reduz a frequência dos relatórios de controle, preservando os eventos de botões.
+
+A resolução e a taxa realmente recebidas dependem da negociação com o serviço. O limite de apresentação reduz o trabalho de renderização; ele não garante que o servidor envie ou que o decoder processe somente 30 quadros/s. Consultas e imagens do catálogo são pausadas durante a partida. O menu **Diagnóstico da partida** reúne amostras locais para distinguir falta de dados de vídeo e ausência de progresso da decodificação.
+
+## Atalhos dos jogos na TV
+
+Em **Configurações → Atalhos dos favoritos**, há três caminhos:
+
+- **Instalar atalho na TV: nome do jogo** — cria um pequeno aplicativo local com ícone e banner do jogo. Confirme a instalação no instalador do Android e, se solicitado, permita que o xCLOUD instale esse atalho. Depois, procure o jogo em **Aplicativos**. No Google TV, adicione essa entrada à fileira de apps favoritos usando a própria tela inicial.
+- **Solicitar canal de favoritos na tela inicial** — publica o canal **Favoritos xCLOUD** e solicita autorização do sistema. Sua exibição depende do launcher. O app verifica a autorização e informa quando o canal não ficou visível.
+- **Pedir atalho ao launcher** — disponível quando a tela inicial oferece a API de atalhos fixados. O pedido ainda precisa ser aceito pelo launcher.
+
+Ao abrir um atalho, o xCLOUD verifica o jogo no catálogo da conta e segue diretamente à fila, concluindo o login antes se necessário. Os atalhos não contêm credenciais. Os atalhos instaláveis podem ser removidos como qualquer aplicativo da TV.
+
+## Compilar
+
+O projeto usa **JDK 21 completo, Gradle 8.7 e Android SDK 34**. Prepare a [assinatura persistente](docs/stable-signing-0.16.md) antes de gerar o APK principal.
 
 ```bash
-gradle --no-daemon --max-workers=2 :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
+gradle --no-daemon --max-workers=2 \
+  :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
 ```
 
-Os testes JVM usam HTTP local e credenciais fictícias: verificam renovação de login, credenciais de transferência, fila, autenticação em `/connect`, ordem SDP/ICE, cancelamento, handshakes e pacotes de gamepad. O workflow falha se não houver testes executados ou se algum falhar/for ignorado. A geração do APK e os testes não comprovam login ou mídia em um dispositivo real. O lint seleciona `NewApi` e `InlinedApi`; não representa aprovação de todas as regras de publicação Android TV.
+O módulo `shortcut` gera o modelo sem assinatura usado nos atalhos locais; ele é incorporado automaticamente ao aplicativo. Cada aparelho assina seus atalhos com uma chave própria do Android Keystore, separada da chave de atualização do xCLOUD.
 
-Durante o teste no aparelho, registre a etapa e o código de erro mostrados na tela:
+O pipeline valida testes, compatibilidade de APIs Android, assinatura do APK, pacotes de controle, fluxo de autenticação/sessão, geração dos atalhos e shaders de imagem. As capturas da interface podem ser reproduzidas pelos testes de UI. Consulte os [detalhes da versão 0.18](docs/tv-compatibility-0.18.md) para a implementação e os limites de validação.
 
-| Etapa | Verificar |
-| --- | --- |
-| `AUTH_DEVICE_CODE` / `AUTH_TOKEN` | Geração, aprovação e expiração do código. |
-| `AUTH_REFRESH` / `AUTH_XBL` / `AUTH_XSTS` / `AUTH_GSSV` | Credencial, código HTTP/OAuth/XErr e acesso da conta à nuvem. |
-| `CATALOG` / `PLAY` / `SESSION_STATE` | Catálogo real e criação da sessão do jogo. |
-| `SDP` / `ICE_LOCAL` / `ICE_REMOTE` / `TRANSPORT` / `CHANNELS` | Negociação e confirmação dos canais. |
-| `VIDEO` | Bytes, quadros recebidos/decodificados e primeiro quadro renderizado. |
+---
 
-O HUD só anuncia vídeo ativo após `onFirstFrameRendered`. Os controles básicos de toque e de gamepad são enviados pelo canal input; vibração e layouts de toque específicos dos jogos ainda não são implementados. Voltar deve encerrar a sessão e permitir abrir outro jogo. Teste também cancelar o QR Code, renovar um login salvo e sair/reabrir o aplicativo. Não compartilhe tokens ou códigos de aprovação nos diagnósticos.
-
-## Inicialização da sessão (0.5.0)
-
-`ReadyToConnect` exige autenticação do console: obtenha a credencial OAuth com o escopo `PURPOSE_XBOX_CLOUD_CONSOLE_TRANSFER_TOKEN`, envie-a em `/connect` e aguarde `Provisioned`. O token GSSV autentica a API de streaming e não substitui essa credencial. O cliente solicita a transferência apenas nessa etapa, preservando o refresh token e seu client ID. Se o login antigo de navegador não tiver refresh token, saia e entre pelo QR Code; não cole tokens nos diagnósticos.
-
-`WaitingForResources` é a fila do serviço. O aplicativo aguarda até 60 minutos, mostra o tempo decorrido e permite cancelar com Voltar. Ele não pode garantir capacidade nem uma posição na fila. Erros e cancelamentos encerram a sessão alocada; durante a reprodução, `/keepalive` é enviado a cada 30 segundos.
-
-O WebRTC configura H.264 antes de gerar a oferta; o SDP enviado é o mesmo instalado localmente, sem falsificar o perfil do decoder. Candidatos IPv4/IPv6 são preservados, incluindo rotas IPv4 extraídas de Teredo. Um STUN público auxilia a travessia de NAT; redes que bloqueiam UDP ou exigem relay ainda precisam de diagnóstico no aparelho. O cliente não inventa credenciais TURN.
-
-O renderizador é inicializado a cada partida e recebe a trilha nativa. A tela só informa vídeo ativo no evento `onFirstFrameRendered`; transporte sem quadro por 20 segundos gera diagnóstico `VIDEO`. Isso não comprova ativação do AiPQ. Controles físicos enviam estados pelo canal input; controles de toque e vibração ainda não estão implementados.
-
-A ordem de provisionamento foi conferida no [Greenlight](https://github.com/unknownskl/greenlight/blob/main/packages/desktop/main/helpers/streammanager.ts) e no [xbox-xcloud-player](https://github.com/unknownskl/xbox-xcloud-player/blob/main/src/example/stream.ts). Os testes locais simulam os estados e o protocolo; Fortnite/Forza e a disponibilidade da conta/região devem ser verificados no dispositivo com o novo APK.
-
-## Login e previsão de fila (0.6.0)
-
-O login QR agora usa o cliente xCloud `1f907974-e22b-4810-a9de-d9647380c97e` e o Device Code Microsoft v2 (`login.microsoftonline.com/consumers/oauth2/v2.0`), com `xboxlive.signin openid profile offline_access`. A renovação normal usa esse mesmo fluxo v2; a troca pelo console transfer token usa `login.live.com/oauth20_token.srf`, o mesmo client ID e o escopo de transferência. O login antigo não pode ser reutilizado para esse escopo: a tela pede um novo QR Code, sem trocar arbitrariamente o client ID de um refresh token existente. A autorização do console é verificada antes de mostrar o catálogo para detectar falhas antes da fila.
-
-Em `WaitingForResources`, a tela central exibe a estimativa retornada por `/v1/waittime/{titleId}`, tempo já aguardado, idade da última confirmação da fila e botão Cancelar. A consulta da previsão tem timeout de 3 segundos e intervalo de 30 segundos. Uma previsão ausente/falha não interrompe a fila e nunca vira uma espera inventada de zero minutos. A última previsão válida é marcada como desatualizada se a atualização falhar. O relógio da interface continua atualizando a cada segundo mesmo enquanto uma chamada HTTP aguarda resposta.
-
-A estimativa é do serviço para aquele jogo, não uma posição individual nem contagem regressiva garantida. A espera máxima desta tentativa é exibida na tela (60 minutos); Voltar ou Cancelar libera a sessão. Sem confirmação de `Provisioned`, o aplicativo não inicia a troca de SDP.
-
-## Perfil HQ, estatísticas e controle (0.7.0)
-
-O padrão agora solicita 1920×1080 HQ pelo seletor de perfil TV (`osName=tizen`, conferido no Better xCloud). A oferta SDP pede mínimo/início de 20.000 kbps e máximo de 30.000 kbps por parâmetros `x-google-*-bitrate`, mais limites de banda `b=AS`/`b=TIAS`. Esses parâmetros são solicitações: o servidor pode ignorá-los e usar VBR ou reduzir a taxa pela rede. O aplicativo não pode garantir um piso real de 20 Mbps. O SDP configurado localmente e o enviado ao Xbox são o mesmo; perfil H.264, ICE, fingerprints, áudio e RTX são preservados. A ordem de codecs favorece perfis H.264 de maior qualidade somente quando o decoder realmente os anuncia.
-
-As estatísticas começam ocultas em cada partida e podem ser ativadas pelo menu Partida, INFO ou F10. A coleta ocorre a cada segundo, fora do envio de controle. Resolução/FPS e decoder vêm de `inbound-rtp`; bitrate usa delta de bytes e o intervalo real entre amostras. O RTT vem do par ICE selecionado e é reavaliado após troca de rota — não mede a latência completa do botão até a imagem. Jitter RTP e tempo de buffer são medidas diferentes e aparecem separadamente. Perda de pacotes e quadros descartados incluem valores por intervalo e acumulados. O tempo de decode usa o delta de `totalDecodeTime` dividido pelos quadros decodificados. Campos não disponíveis ficam como `n/d`; não são convertidos em zeros nem em confirmação de hardware. O nome do decoder e `powerEfficientDecoder`, quando presentes, são exibidos sem inferir AiPQ.
-
-O envio do controle usa uma thread própria com prioridade de exibição e relatórios periódicos de 60 Hz, com despertar antecipado para botões. Movimentos analógicos são coalescidos; toques curtos preservam a sequência pressionar/soltar. Quando o canal acumula dois relatórios, novos estados antigos deixam de ser enfileirados e o envio retoma com o estado atual. Isso limita backlog local e evita bursts de ticks atrasados, preservando o canal ordenado do protocolo. Atraso máximo de agendamento local, bytes pendentes e supressões por congestionamento aparecem no painel. Essas medidas não substituem um teste de latência real nem eliminam congestionamento/retransmissão na rede.
-
-O `SurfaceViewRenderer` já usava `setEnableHardwareScaler(true)`. Em Android TV, o aplicativo agora solicita um modo 3840×2160 próximo de 60 Hz somente se ele estiver na lista de modos suportados; mantém uma saída 4K já ativa a 60 Hz ou mais e não troca por 4K24/30. O painel informa os tamanhos da Surface, janela e saída reportada pelo Android. Isso confirma geometria/configuração de Surface, não processamento proprietário AiPQ: não há API pública usada pelo aplicativo para verificar ou ativar o AiPQ da TCL P755. A preferência de modo de exibição também pode ser recusada pelo sistema. Para investigar atraso na TV, compare os dados com o Modo Jogo e com interpolação de movimento/MEMC desativada nas configurações da própria TV; processamento de imagem extra pode acrescentar latência.
-
-## Câmera/gatilhos sem zona morta e menor atraso (0.8.0)
-
-A [análise da gravação fornecida](docs/video-review-0.8.md) identifica vídeo 1080p60 chegando à saída 4K60, rede sem perda nas amostras, cerca de 25–27 ms de decode e 50–60 ms de buffer. Não equivale a medir input lag completo.
-
-A zona morta adicional do app é 0% no analógico direito e nos gatilhos, mesmo se o driver informar `flat` elevado. Faixas de eixos assinadas/não assinadas são normalizadas; valores pequenos continuam sendo enviados, respeitando a quantização do protocolo. O analógico esquerdo mantém o `flat` do driver. Drift ou zona morta aplicados pelo controle ou pelo jogo não podem ser eliminados por essa opção do app.
-
-O envio passa a até 120 relatórios/s e não reutiliza valores antigos da câmera/gatilhos ao enviar uma transição de botão. O seletor **Vídeo** em Configurações permite escolher Menor atraso ou Adaptativo para a próxima partida. Menor atraso solicita playout de 0–40 ms, pós-processamento mínimo no Android 11+ e o modo oficial de baixa latência do decoder apenas quando declarado como suportado. O decoder anterior é fallback. Nenhuma promessa de tempos menores é feita sem medir no aparelho; buffers menores podem exigir voltar ao modo adaptativo em uma rede instável.
-
-INFO/F10 agora alterna estatísticas compactas, completas e ocultas. O modo completo mostra os valores normalizados enviados pela câmera/gatilhos e o estado do pedido de baixa latência do codec. O upscale continua pelo caminho nativo da Surface para a saída da TV; AiPQ proprietário não é confirmado ou forçado, e não há novo filtro pesado de imagem.
-
-A ponte `org.webrtc.LowLatencyDecoderFactory` usa classes de pacote da dependência 1.1.1. Ao atualizar essa dependência, revalidar construtores/interfaces do wrapper, fallback e reprodução em hardware. Compilar com JDK completo (incluindo `jlink`), não somente JRE.
-
-## GameSir T4 Nova Lite, atalho e recuperação de vídeo (0.9.0)
-
-O envio periódico passa a 250 relatórios/s (intervalo de 4 ms), com a mesma proteção contra congestionamento do canal e sem repetir ticks atrasados. Isso acompanha a capacidade informada do GameSir T4 Nova Lite, mas não configura o firmware do controle nem mede/altera a frequência física entregue pelo receptor USB ou Bluetooth ao Android. Os gatilhos e a câmera continuam sem zona morta adicional no app.
-
-Durante a partida, **Start + Select juntos** alterna compacto → completo → oculto → compacto. A combinação aceita as duas ordens, precisa ocorrer dentro de 150 ms e só dispara outra vez depois de soltar ambos. Start/Select são reservados durante essa janela: um toque isolado preserva pressionar/soltar; segurar um deles o envia ao jogo após a janela. Os outros botões, gatilhos e analógicos não passam por essa espera. INFO/F10 continua disponível. Perder o foco, cancelar ou trocar de sessão libera os comandos pendentes.
-
-O cliente agora acompanha a apresentação de novos quadros durante toda a partida. A verificação usa um callback de desenho por segundo, sem copiar pixels da GPU; uma tela de carregamento estática que continua recebendo quadros não dispara o diagnóstico. Aproximadamente 3,5 segundos sem progresso iniciam pedidos limitados de quadro-chave pelo canal de controle. Após 8 segundos e novamente após 16, o app reinicializa o decoder de hardware se os quadros decodificados pararam, ou recria a Surface se os quadros chegam sem ser apresentados. O reset do decoder ocorre na thread de decodificação, ao receber um quadro-chave, preservando o callback e adotando suas dimensões; a configuração padrão permanece como fallback se o modo de baixa latência for rejeitado.
-
-Essas tentativas preservam áudio, PeerConnection e sessão Xbox, incluindo keepalive. Se a imagem não voltar em cerca de 30 segundos, um diálogo operável pelo controle oferece **Recuperar vídeo** ou **Voltar ao catálogo**. A primeira opção tenta recuperar a imagem na mesma sessão; a segunda encerra a sessão. O retorno de quadros fecha o diálogo automaticamente. Uma trilha de vídeo substituída também é reconectada ao renderizador. A mensagem de quadro-chave segue o [canal de controle do Greenlight](https://github.com/unknownskl/greenlight/blob/main/packages/player/src/client/lib/channel/control.ts).
-
-Os testes JVM cobrem a combinação em ambas as ordens, repetição de tecla, toque isolado, foco, ausência de quadros, recuperação e reset no quadro-chave, incluindo mudança de resolução e fallback. Não reproduzem o hardware da TCL nem o reinício real do Forza Horizon 5. No aparelho, conferir a troca qualidade → desempenho com reinício, confirmar retorno da imagem e testar Start/Select separadamente e juntos.
+Cliente independente, sem afiliação com Microsoft ou Xbox. Nomes, marcas e artes dos jogos pertencem aos respectivos titulares.

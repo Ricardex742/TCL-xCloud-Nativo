@@ -14,7 +14,8 @@ class PlaybackSettingsPanel(
     private val refresh: () -> Unit,
     private val logout: () -> Unit,
     private val testRumble: () -> Unit = {},
-    private val homeShortcuts: () -> Unit = {}
+    private val homeShortcuts: () -> Unit = {},
+    private val lastReport: () -> Unit = {}
 ) {
     fun show(): ConsoleDialog {
         val settings=store.read()
@@ -26,14 +27,18 @@ class PlaybackSettingsPanel(
             ConsoleAction("Proporção: ${settings.aspect.label}") { chooseAspect() },
             ConsoleAction("Nitidez e saturação") { showImageAdjustments() },
             ConsoleAction("Controles e toque") { showControls() },
+            ConsoleAction("Diagnóstico pós-partida: ${if(settings.sessionReport) "Ativado" else "Desativado"}") {
+                choices("Diagnóstico pós-partida","Guarda apenas o último resumo local. O relatório reúne as amostras da sessão sem manter uma lista de toda a partida. As estatísticas durante o jogo continuam ocultas até você ativá-las.",
+                    listOf("Ativado — abrir ao sair do jogo" to settings.sessionReport,"Desativado — consultar nas configurações" to !settings.sessionReport)) {
+                    save(settings.copy(sessionReport=it==0))
+                }
+            },
+            ConsoleAction("Último diagnóstico",lastReport),
             ConsoleAction("Atalhos dos favoritos",homeShortcuts),
             ConsoleAction("Gerenciar assinatura Microsoft",subscription),
             ConsoleAction("Atualizar catálogo",refresh),
             ConsoleAction("Trocar conta",logout)
         ))
-        if(settings.touchMode==TouchMode.WEB_NATIVE) dialog.body.addView(dialog.text(
-            "Modo oficial selecionado: a qualidade é ajustada no site Xbox. As opções de vídeo abaixo se aplicam ao motor nativo.",
-            20,color=DashboardTheme.muted),0)
         return dialog
     }
     fun showHdrStatus(): ConsoleDialog = ConsoleDialogs.message(context,"HDR10: tela e transmissão",
@@ -119,8 +124,8 @@ class PlaybackSettingsPanel(
                 }
             },
             ConsoleAction("Jogar com toque: ${settings.touchMode.label}") {
-                val modes=TouchMode.entries.filter { it!=TouchMode.WEB_NATIVE || context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN) }
-                choices("Jogar com toque","Automático oferece a escolha em celulares. HUD usa nosso motor nativo. Toque nativo experimental usa identificação Android, e a qualidade recebida depende desse perfil. WebView abre o cliente oficial: pode exigir outro login, usa as opções do site e consome mais memória. Disponível em celulares. Aplica-se à próxima partida.",
+                val modes=TouchMode.entries
+                choices("Jogar com toque","Automático oferece a escolha em celulares. O HUD transforma botões da tela em comandos Xbox. Toque nativo envia os contatos diretamente ao jogo quando ele anuncia suporte. Ambas as opções usam o vídeo nativo. Aplica-se à próxima partida.",
                     modes.map { it.label to (it==settings.touchMode) },{ showControls() }) {
                     save(settings.copy(touchMode=modes[it])) { showControls() }
                 }

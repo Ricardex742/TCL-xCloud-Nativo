@@ -48,7 +48,7 @@ class GamepadInputBuffer {
 
 data class InputMetrics(val bufferedBytes: Long = 0, val maxSchedulerDelayMs: Double = 0.0,
                         val backpressureSkips: Long = 0, val coalescedEdges: Long = 0, val sentState: GamepadState = GamepadState(),
-                        val pointerEventsSent: Long=0)
+                        val pointerEventsSent: Long=0,val sentBytes: Long=0)
 
 /** Native sends run independently from decoder/default-coroutine CPU load. Never catch up by replaying old ticks. */
 class RealtimeInputPump(
@@ -110,11 +110,13 @@ class RealtimeInputPump(
                         backpressured=false
                         val states=synchronized(lock) { active.associateWith { buffers[it].next() } }
                         val pointers=touch.next()
-                        if ((states.isNotEmpty() || pointers.isNotEmpty()) && !send(GamepadPacket.encode(states, sequence++, (now - started) / 1_000_000.0,pointers,touchWidth,touchHeight))) {
+                        val packet=if(states.isNotEmpty() || pointers.isNotEmpty()) GamepadPacket.encode(states, sequence++, (now - started) / 1_000_000.0,pointers,touchWidth,touchHeight) else null
+                        if (packet!=null && !send(packet)) {
                             if (running.get()) onFailure()
                             break
                         }
-                        metrics = metrics.copy(sentState = states[0] ?: GamepadState(),pointerEventsSent=metrics.pointerEventsSent+pointers.size)
+                        metrics = metrics.copy(sentState = states[0] ?: GamepadState(),pointerEventsSent=metrics.pointerEventsSent+pointers.size,
+                            sentBytes=metrics.sentBytes+(packet?.size ?: 0))
                     }
                     metrics = metrics.copy(bufferedBytes = queued, maxSchedulerDelayMs = maxDelay,
                         backpressureSkips = skipped, coalescedEdges = synchronized(lock) { buffers.sumOf { it.coalescedEdges } })

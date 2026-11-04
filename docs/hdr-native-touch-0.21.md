@@ -1,3 +1,5 @@
+> Documento histórico da versão 0.21. O cliente WebView foi removido na 0.22; a transmissão permanece no motor nativo. Veja [diagnóstico nativo 0.22](native-diagnostics-0.22.md).
+
 # HDR10, toque oficial e pesquisa — versão 0.21
 
 ## Resultado da análise HDR10

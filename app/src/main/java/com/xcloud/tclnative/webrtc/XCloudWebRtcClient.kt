@@ -44,6 +44,7 @@ class XCloudWebRtcClient(
     private var statsJob: Job? = null
     private val decoderRecovery = DecoderRecoveryController()
     private val decoderLatency = java.util.concurrent.atomic.AtomicReference("Codec LL: aguardando vídeo")
+    fun currentInputMetrics(): InputMetrics = inputPump?.metrics ?: InputMetrics()
     fun latencyDiagnostics(): String = (if (lowLatencyVideo) "Playout solicitado: 0–40 ms" else "Playout: adaptativo") +
         " | " + (if (lowLatencyVideo) decoderLatency.get() else "codec padrão") +
         if(nativeTouch) " | Toque: ${if(touchEnabled) "ativo" else "desativado"}, $inputWidth×$inputHeight, ${inputPump?.metrics?.pointerEventsSent ?: 0} eventos enviados" else ""

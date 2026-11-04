@@ -13,7 +13,9 @@ data class StreamMetrics(
     val lostPackets: Long? = null, val totalLostPackets: Long? = null, val packetLossPercent: Double? = null,
     val codec: String? = null, val decoder: String? = null, val powerEfficient: Boolean? = null,
     val intervalSeconds: Double? = null,
-    val receivedVideoBytes: Long? = null, val decodedFrames: Long? = null
+    val receivedVideoBytes: Long? = null, val decodedFrames: Long? = null,
+    val receivedPackets: Long? = null, val totalReceivedVideoBytes: Long? = null, val videoStreamId: String? = null,
+    val transportReceivedBytes: Long? = null, val transportSentBytes: Long? = null, val transportId: String? = null
 ) {
     fun compactOverlay(input: InputMetrics): String {
         fun n(value: Double?, decimals: Int = 1) = value?.takeIf(Double::isFinite)
@@ -88,7 +90,10 @@ class StreamStatsCollector {
             lostPackets = lost?.toLong(), totalLostPackets = video.number("packetsLost")?.coerceAtLeast(0.0)?.toLong(),
             packetLossPercent = if (received != null && lost != null && received + lost > 0) 100 * lost / (received + lost) else null,
             codec = codec, decoder = video.text("decoderImplementation"), powerEfficient = video.values["powerEfficientDecoder"] as? Boolean,
-            intervalSeconds = seconds, receivedVideoBytes = delta("bytesReceived")?.toLong(), decodedFrames = decoded?.toLong()
+            intervalSeconds = seconds, receivedVideoBytes = delta("bytesReceived")?.toLong(), decodedFrames = decoded?.toLong(),
+            receivedPackets=received?.toLong(),totalReceivedVideoBytes=video.number("bytesReceived")?.takeIf { it>=0 }?.toLong(),
+            videoStreamId=video.id,transportReceivedBytes=transport?.number("bytesReceived")?.takeIf { it>=0 }?.toLong(),
+            transportSentBytes=transport?.number("bytesSent")?.takeIf { it>=0 }?.toLong(),transportId=transport?.id
         )
     }
 }

@@ -6,6 +6,22 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class InputBufferTest {
+    @Test fun diagnosticInputBytesCountOnlyPacketsActuallyAcceptedByTheChannel() {
+        val sent=java.util.concurrent.atomic.AtomicLong()
+        val pump=com.xcloud.tclnative.webrtc.RealtimeInputPump({0},{ sent.addAndGet(it.size.toLong()); true },
+            { fail("Input failed") },initialGamepads=emptySet())
+        try {
+            pump.start()
+            Thread.sleep(30)
+            assertEquals(0L,pump.metrics.sentBytes); assertEquals(0L,sent.get())
+            pump.pointers(listOf(com.xcloud.tclnative.webrtc.NativePointer(1,.25f,.5f,1)))
+            pump.pointers(listOf(com.xcloud.tclnative.webrtc.NativePointer(1,.25f,.5f,2,0f)))
+            val end=System.nanoTime()+java.util.concurrent.TimeUnit.SECONDS.toNanos(2)
+            while(pump.metrics.pointerEventsSent<2 && System.nanoTime()<end) Thread.sleep(1)
+            assertEquals(2L,pump.metrics.pointerEventsSent)
+        } finally { pump.close() }
+        assertEquals(72L,sent.get()); assertEquals(sent.get(),pump.metrics.sentBytes)
+    }
     @Test fun cameraChangesWakeThePumpAndCoalesceWithoutReplayingStaleMotion() {
         val input=GamepadInputBuffer()
         assertTrue(input.update(GamepadState(rightX=.2f)))

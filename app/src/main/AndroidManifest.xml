@@ -4,6 +4,7 @@
     <!-- Permissões críticas com grafia exata em MAIÚSCULAS -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
@@ -41,13 +42,6 @@
             android:authorities="${applicationId}.shortcuts" android:exported="false" android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/shortcut_files" />
         </provider>
-
-        <activity
-            android:name=".ui.OfficialCloudActivity"
-            android:exported="false"
-            android:process=":official_web"
-            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize"
-            android:screenOrientation="landscape" />
 
         <activity
             android:name=".ui.MainActivity"

@@ -9,7 +9,7 @@ enum class VideoMode(val label: String, val lowLatency: Boolean) {
 }
 enum class TouchMode(val label: String) {
     AUTO("Automático — escolher no celular"), OFF("Desativado"), VIRTUAL("Controle virtual — HUD por jogo"),
-    NATIVE("Toque nativo Xbox — experimental"), WEB_NATIVE("Toque oficial Xbox — WebView")
+    NATIVE("Toque nativo Xbox — experimental")
 }
 
 enum class VideoAspect(val label: String, val ratio: Double? = null, val stretch: Boolean = false) {
@@ -32,12 +32,14 @@ data class PlaybackSettings(
     val rumble: Boolean = true,
     val touchMode: TouchMode = TouchMode.AUTO,
     val sharpness: Int = 0,
-    val saturation: Int = 100
+    val saturation: Int = 100,
+    val sessionReport: Boolean = true
 )
 
 class PlaybackSettingsStore(context: Context) {
     private val prefs = context.getSharedPreferences("stream_preferences",Context.MODE_PRIVATE)
     init {
+        if(prefs.getString("touch_mode",null)=="WEB_NATIVE") prefs.edit().putString("touch_mode",TouchMode.NATIVE.name).putBoolean("game_hud_migrated",true).commit()
         if(!prefs.getBoolean("game_hud_migrated",false)) {
             val editor=prefs.edit().putBoolean("game_hud_migrated",true)
             if(prefs.getString("touch_mode",null)==TouchMode.NATIVE.name) editor.putString("touch_mode",TouchMode.VIRTUAL.name)
@@ -53,14 +55,15 @@ class PlaybackSettingsStore(context: Context) {
             VideoAspect.entries.firstOrNull { it.name == prefs.getString("aspect",null) } ?: VideoAspect.RATIO_16_9,
             prefs.getBoolean("local_coop",false),prefs.getBoolean("rumble",true),
             TouchMode.entries.firstOrNull { it.name==prefs.getString("touch_mode",null) } ?: TouchMode.AUTO,
-            prefs.getInt("sharpness",0).coerceIn(0,100),prefs.getInt("saturation",100).coerceIn(0,200))
+            prefs.getInt("sharpness",0).coerceIn(0,100),prefs.getInt("saturation",100).coerceIn(0,200),prefs.getBoolean("session_report",true))
     }
     fun save(settings: PlaybackSettings) {
         prefs.edit().putString("video_mode",settings.videoMode.name).putBoolean("low_latency_video",settings.videoMode.lowLatency)
             .putString("resolution",settings.resolution.name).putBoolean("native_upscaling",settings.nativeUpscaling)
             .putString("aspect",settings.aspect.name).putBoolean("local_coop",settings.localCoOp)
             .putBoolean("rumble",settings.rumble).putString("touch_mode",settings.touchMode.name)
-            .putInt("sharpness",settings.sharpness.coerceIn(0,100)).putInt("saturation",settings.saturation.coerceIn(0,200)).apply()
+            .putInt("sharpness",settings.sharpness.coerceIn(0,100)).putInt("saturation",settings.saturation.coerceIn(0,200))
+            .putBoolean("session_report",settings.sessionReport).apply()
     }
 }
 

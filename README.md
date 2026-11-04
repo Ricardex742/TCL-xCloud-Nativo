@@ -6,7 +6,7 @@
   <p>
     <a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aci%2Fapk-android10-3cc2595"><img src="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml/badge.svg?branch=ci%2Fapk-android10-3cc2595" alt="Compilação Android" /></a>
     <img src="https://img.shields.io/badge/Android-7.0%2B-54de69?logo=android&logoColor=white" alt="Android 7 ou superior" />
-    <img src="https://img.shields.io/badge/vers%C3%A3o-0.21.0-173d29" alt="Versão 0.21.0" />
+    <img src="https://img.shields.io/badge/vers%C3%A3o-0.22.0-173d29" alt="Versão 0.22.0" />
   </p>
   <p><a href="#baixar-e-instalar">Baixar</a> · <a href="#telas-do-aplicativo">Telas</a> · <a href="#controles-de-toque-por-jogo">HUDs de toque</a> · <a href="#funcionalidades">Funcionalidades</a> · <a href="#atalhos-dos-jogos-na-tv">Atalhos na TV</a> · <a href="#compilar">Compilar</a></p>
 </div>
@@ -77,19 +77,25 @@ São prévias das views do aplicativo sobre um fundo neutro. Os HUDs enviam coma
 
 Durante a partida, abra **⋯ → HUD e controles deste jogo** para escolher o perfil ou editar. No editor, selecione um controle, arraste para mover, use **− / +** para redimensionar, **Ação** para combinar botões Xbox e **Gestos** para configurar cada direção de arrasto. **Salvar** mantém os ajustes por jogo no aparelho, inclusive depois de fechar o app; **Cancelar** descarta as alterações.
 
-### Cliente oficial de toque no celular
+### Toque direto no motor nativo
 
-Nos jogos que informam suporte a toque nativo, como Fortnite, a escolha de abertura inclui **Toque oficial Xbox • WebView**. Também é possível selecioná-lo em **Configurações → Controles e toque → Jogar com toque**. Essa opção abre diretamente o jogo no cliente oficial do Xbox; ele cuida do login, fila, vídeo e eventos de toque. Se o catálogo não tiver o identificador de produto, abre a busca do site.
+O modo **Toque nativo Xbox — experimental** envia contatos da tela pelo canal de input do WebRTC, sem navegador embutido. Ele é oferecido para jogos que informam suporte a `NativeTouch`. O HUD virtual continua disponível como outra forma de jogar com toque.
 
-O login Microsoft do cliente web é separado do login do motor nativo. A integração não injeta tokens ou cookies da conta nativa, nem coloca um HUD sobre o jogo. As opções de resolução, filtros e controles do motor nativo pertencem ao modo atual; no modo oficial, valem as opções disponibilizadas pelo site. Use **Sair do jogo** no menu do Xbox para encerrar a sessão cloud; **Voltar ao catálogo** fecha o cliente local.
-
-A WebView é **opcional e mais pesada**. Ela usa o Chromium instalado no Android, sem incluí-lo no APK, e funciona em um processo separado. Ao abrir, o app pausa consultas e libera as capas do catálogo; ao fechar, destrói as views do navegador. O desempenho depende do WebView/Chrome, do decoder, do aparelho e do serviço. Para TVs e dispositivos mais limitados, prefira o motor nativo e seu modo de compatibilidade.
-
-O **toque nativo experimental** do motor próprio recebeu identificação Android da sessão, IDs positivos dos contatos, atualização de dimensões a partir do servidor e um contador de eventos enviados no diagnóstico. O perfil Android pode receber uma qualidade diferente da solicitada. Esses ajustes de interoperabilidade precisam de validação em uma partida real; não demonstram, por si só, que o jogo está processando os toques.
+A compatibilidade do toque direto no Fortnite ainda precisa de validação em uma sessão real. Contar eventos enviados confirma somente o envio local, não que o jogo tenha aceitado os contatos. Consulte os [limites da investigação e do diagnóstico](docs/native-diagnostics-0.22.md).
 
 No futebol, toque no botão **ATAQUE ⇄ DEFESA** para trocar as ações sem interromper o movimento. Essa troca é manual: a sessão cloud não informa a posse de bola ao aplicativo. Escolha o esquema **Clássico — chute B** ou **Alternativo — chute X** nos ajustes do HUD, conforme a configuração do seu jogo. Os gestos de chute combinam RB, LB ou LB + RB com o botão de finalização; não é necessário pressionar esses botões separadamente.
 
 Nos HUDs de tiro, arraste na área livre à direita ou sobre o botão de disparo para mover a câmera. A sensibilidade vai até **1200%** e há compensação ajustável da zona morta. A câmera usa envio antecipado e solicita retorno ao repouso após 32 ms sem novo movimento. A velocidade máxima de giro continua limitada pela sensibilidade de controle configurada dentro do jogo, e a latência total também depende da transmissão.
+
+## Diagnóstico pós-partida
+
+![Relatório pós-partida com dados de demonstração](docs/screenshots/session-report.png)
+
+Ao desconectar uma partida com vídeo, o aplicativo mostra um resumo da transmissão: tempo conectado, resolução e codec recebidos, médias e picos de RTT, perda, jitter, FPS decodificados, bitrate e tempo de decodificação. O relatório registra também pausas observadas pelo monitor de vídeo e tentativas de recuperação, para ajudar a comparar configurações e conexões.
+
+Em **Configurações → Diagnóstico pós-partida**, escolha se ele abre ao sair do jogo. **Último diagnóstico** permite consultá-lo depois, inclusive após reiniciar o app. **Copiar** coloca o resumo na área de transferência para compartilhar manualmente. A coleta mantém agregados de tamanho fixo e guarda apenas o último relatório local; as estatísticas durante a partida continuam ocultas por padrão.
+
+Campos ausentes aparecem como **n/d**, e o índice de qualidade só é calculado com amostras suficientes. RTT não é a latência completa até a imagem; FPS decodificados não são FPS do jogo ou da tela. O relatório não mede velocidade da internet e as pausas são observações do monitor, não uma medição quadro a quadro. A captura acima usa dados de demonstração.
 
 ## Funcionalidades
 
@@ -106,9 +112,10 @@ Nos HUDs de tiro, arraste na área livre à direita ou sobre o botão de disparo
 | Controle físico | USB, Bluetooth e dongles reconhecidos pelo Android. Navegação por direcional, botões e analógicos. |
 | Coop local | Até quatro jogadores com estados independentes, quando aceitos pelo jogo e pela sessão cloud. |
 | Vibração | Recepção de comandos do jogo e teste de suporte. O controle e o driver Android precisam expor a função de vibração. |
-| Toque | HUDs por jogo, múltiplos dedos, câmera por arrasto, pedais, ataque/defesa no futebol, comandos combinados e gestos editáveis. Posição, tamanho, opacidade e ações salvas por título. Toque nativo experimental e opção do cliente oficial em WebView para celulares. |
+| Toque | HUDs por jogo, múltiplos dedos, câmera por arrasto, pedais, ataque/defesa no futebol, comandos combinados e gestos editáveis. Posição, tamanho, opacidade e ações salvas por título. Toque nativo experimental no mesmo motor WebRTC. |
 | Menu da partida | Atalho pelo controle ou pelo botão de toque, ajustes de HUD e imagem, estatísticas, diagnóstico e desconexão da sessão. |
 | Estatísticas | FPS, resolução recebida, bitrate, RTT, jitter, buffer, perdas, descarte e tempo de decodificação. Começam ocultas e são ativadas manualmente. |
+| Pós-partida | Relatório local com médias e picos de rede/vídeo, tráfego informado pelo WebRTC, pausas observadas, recuperações e resumo de input. Último relatório salvo, cópia manual e abertura automática opcional. |
 | Recuperação | Solicitação de quadro-chave, recuperação do decoder e da superfície de vídeo, preservando a sessão enquanto possível. |
 | Tela inicial da TV | Atalhos instaláveis por jogo, pedidos de atalhos ao launcher e canal de favoritos nos sistemas compatíveis. |
 | Atualizações | Certificado fixo para atualizar o aplicativo sem trocar sua identidade de instalação. |
@@ -172,7 +179,7 @@ gradle --no-daemon --max-workers=2 \
 
 O módulo `shortcut` gera o modelo sem assinatura usado nos atalhos locais; ele é incorporado automaticamente ao aplicativo. Cada aparelho assina seus atalhos com uma chave própria do Android Keystore, separada da chave de atualização do xCLOUD.
 
-O pipeline valida testes, compatibilidade de APIs Android, assinatura do APK, pacotes de controle, fluxo de autenticação/sessão, geração dos atalhos e shaders de imagem. As capturas da interface podem ser reproduzidas pelos testes de UI. Consulte a [análise de HDR e toque da versão 0.21](docs/hdr-native-touch-0.21.md), os [gestos e câmera da versão 0.20](docs/mobile-huds-0.20.md) e o [modo de compatibilidade da versão 0.18](docs/tv-compatibility-0.18.md) para a implementação e os limites de validação.
+O pipeline valida testes, compatibilidade de APIs Android, assinatura do APK, pacotes de controle, fluxo de autenticação/sessão, geração dos atalhos e shaders de imagem. As capturas da interface podem ser reproduzidas pelos testes de UI. Consulte o [diagnóstico nativo da versão 0.22](docs/native-diagnostics-0.22.md), a [análise de HDR e toque da versão 0.21](docs/hdr-native-touch-0.21.md), os [gestos e câmera da versão 0.20](docs/mobile-huds-0.20.md) e o [modo de compatibilidade da versão 0.18](docs/tv-compatibility-0.18.md) para a implementação e os limites de validação.
 
 ---
 

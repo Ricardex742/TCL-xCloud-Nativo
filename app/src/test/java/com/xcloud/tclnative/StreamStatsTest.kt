@@ -5,6 +5,19 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class StreamStatsTest {
+    @Test fun diagnosticsUseActualTransportCountersAndTheDecodedVideoSource() {
+        val collector=StreamStatsCollector()
+        fun measured(time: Double,bytes: Long,packets: Long)=samples(video(time,bytes=bytes,packets=packets)).map { s ->
+            if(s.type=="transport") s.copy(values=s.values+mapOf("bytesReceived" to bytes+100,"bytesSent" to 900L)) else s
+        }
+        collector.collect(measured(1_000_000.0,1000,100))
+        val r=collector.collect(measured(2_000_000.0,2000,150))
+        assertEquals("video",r.videoStreamId); assertEquals(2000L,r.totalReceivedVideoBytes)
+        assertEquals(50L,r.receivedPackets); assertEquals(2100L,r.transportReceivedBytes)
+        assertEquals(900L,r.transportSentBytes); assertEquals("transport",r.transportId)
+        val missing=StreamStatsCollector().collect(samples(video(1_000_000.0)))
+        assertNull(missing.transportReceivedBytes); assertNull(missing.transportSentBytes)
+    }
     private fun video(time: Double, bytes: Long = 1_000_000, packets: Long = 1000, lost: Long = 10,
                       frames: Long = 600, dropped: Long = 30, decode: Double = 1.0,
                       buffer: Double = 6.0, emitted: Long = 600, id: String = "video") =

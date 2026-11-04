@@ -23,6 +23,8 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import com.xcloud.tclnative.settings.PlaybackSettings
+import com.xcloud.tclnative.diagnostics.*
+import com.xcloud.tclnative.ui.dashboard.SessionReportPanel
 import com.xcloud.tclnative.settings.PlaybackSettingsStore
 import com.xcloud.tclnative.settings.StatisticsVisibility
 import com.xcloud.tclnative.settings.TouchMode
@@ -105,6 +107,11 @@ class MainActivity : Activity() {
     private var currentGames = emptyList<GameTitle>()
     private val catalogWork = com.xcloud.tclnative.catalog.CatalogWorkGate()
     private val streamHistory = com.xcloud.tclnative.webrtc.StreamDiagnosticHistory()
+    private var reportTracker: SessionReportTracker?=null
+    private val reportStore by lazy { SessionReportStore(applicationContext) }
+    private var lastSessionReport: SessionReport?=null
+    private var postSessionDialog: Dialog?=null
+    @Volatile private var activityVisible=false
     private var activeGame: GameTitle? = null
     private var pendingLaunch = PendingGameLaunch()
     private val homeShortcuts by lazy { HomeShortcuts(this) }
@@ -117,7 +124,6 @@ class MainActivity : Activity() {
     private companion object {
         const val REQUEST_HOME_CHANNEL=4101
         const val REQUEST_SHORTCUT_INSTALL_PERMISSION=4102
-        const val REQUEST_OFFICIAL_CLOUD=4103
     }
     private var gameMenuDialog: Dialog? = null
 
@@ -454,7 +460,30 @@ class MainActivity : Activity() {
             refresh = { renderGameDashboard(session) },
             logout = { authenticator.clearSession(); renderLoginMenu(); syncHomeShortcuts() },
             testRumble = { showRumbleDiagnostics { showSettings(session) } },
-            homeShortcuts = { showHomeShortcuts() }).show()
+            homeShortcuts = { showHomeShortcuts() },lastReport={ showLatestReport() }).show()
+    }
+    private fun showLatestReport() {
+        val report=lastSessionReport ?: reportStore.read()
+        if(report==null) ConsoleDialogs.message(this,"Último diagnóstico","Ainda não há uma partida com vídeo para mostrar.")
+        else postSessionDialog=SessionReportPanel.show(this,report)
+    }
+    private suspend fun finishSessionReport(tracker: SessionReportTracker) {
+        val report=tracker.takeReport()
+        if(report==null) { if(reportTracker===tracker) reportTracker=null; return }
+        lastSessionReport=report
+        try { withContext(Dispatchers.IO) { reportStore.save(report) } }
+        catch(error: java.io.IOException) { if(!isFinishing && !isDestroyed) Toast.makeText(this,error.message,Toast.LENGTH_LONG).show() }
+        val current=reportTracker===tracker
+        if(current) reportTracker=null
+        if(current && activityVisible && !isFinishing && !isDestroyed && activeGame==null &&
+            controlPanel.visibility==View.VISIBLE && settingsStore.read().sessionReport &&
+            (report.durationMs>=5000 || report.end==SessionEnd.FAILURE)) {
+            postSessionDialog?.dismiss()
+            postSessionDialog=SessionReportPanel.show(this,report) {
+                val updated=settingsStore.read().copy(sessionReport=false)
+                settingsStore.save(updated); playbackSettings=updated
+            }
+        }
     }
     private fun syncHomeShortcuts(requestVisibility: Boolean = false) {
         if (!homeShortcuts.supportsChannel || !homeShortcuts.enabled) return
@@ -555,7 +584,6 @@ class MainActivity : Activity() {
     }
     override fun onActivityResult(requestCode: Int,resultCode: Int,data: Intent?) {
         super.onActivityResult(requestCode,resultCode,data)
-        if(requestCode==REQUEST_OFFICIAL_CLOUD) { catalogWork.resume(); dashboard?.resumeArtwork() }
         if(requestCode==REQUEST_HOME_CHANNEL) pendingHomeChannel?.let(::verifyHomeChannel)
         if(requestCode==REQUEST_SHORTCUT_INSTALL_PERMISSION) {
             if(Build.VERSION.SDK_INT<26 || packageManager.canRequestPackageInstalls()) installPendingShortcut()
@@ -611,7 +639,6 @@ class MainActivity : Activity() {
                 ConsoleAction("Jogar com controle") { launchCloudGame(signaling,game,TouchMode.OFF) }
             )
             if("NativeTouch" in game.supportedInputTypes) choices.add(ConsoleAction("Toque nativo Xbox • experimental") { launchCloudGame(signaling,game,TouchMode.NATIVE) })
-            if("NativeTouch" in game.supportedInputTypes) choices.add(ConsoleAction("Toque oficial Xbox • WebView") { launchCloudGame(signaling,game,TouchMode.WEB_NATIVE) })
             ConsoleDialogs.menu(this,game.name,choices)
         } else launchCloudGame(signaling,game)
     }
@@ -659,26 +686,16 @@ class MainActivity : Activity() {
     }
 
     private fun launchCloudGame(signaling: XCloudSignalingClient, game: GameTitle, touchChoice: TouchMode? = null) {
-        if((touchChoice ?: playbackSettings.touchMode)==TouchMode.WEB_NATIVE) {
-            if(!packageManager.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)) {
-                ConsoleDialogs.message(this,"Toque oficial no celular","Para esta TV, prefira o motor nativo. O modo WebView é uma opção para celulares.")
-                return
-            }
-            catalogWork.pause(); dashboard?.pauseArtwork()
-            try {
-                startActivityForResult(Intent(this,OfficialCloudActivity::class.java)
-                    .putExtra("game_name",game.name).putExtra("product_id",game.productId),REQUEST_OFFICIAL_CLOUD)
-            } catch(_: android.content.ActivityNotFoundException) {
-                catalogWork.resume(); dashboard?.resumeArtwork()
-                ConsoleDialogs.message(this,"Cliente oficial indisponível","O modo oficial não pôde ser aberto neste aparelho. Use o motor nativo.")
-            }
-            return
-        }
         val titleId = game.titleId
         val gameName = game.name
         activeGame = game
         val settings = playbackSettings
         val compatible=settings.videoMode==com.xcloud.tclnative.settings.VideoMode.COMPATIBILITY
+        reportTracker?.finish(android.os.SystemClock.elapsedRealtime(),SessionEnd.REPLACED,webrtcClient?.currentInputMetrics())
+        postSessionDialog?.dismiss()
+        val tracker=SessionReportTracker(gameName,"${Build.MANUFACTURER} ${Build.MODEL} • Android ${Build.VERSION.RELEASE}",
+            "${settings.resolution.label} • ${settings.videoMode.label}",if(compatible) 30 else 60)
+        tracker.setVisible(activityVisible); reportTracker=tracker
         streamHistory.clear()
         catalogWork.pause()
         dashboard?.pauseArtwork()
@@ -723,6 +740,7 @@ class MainActivity : Activity() {
             surfaceRenderer.prepareForSession(settings.resolution.width,settings.resolution.height)
             surfaceRenderer.onFirstFrameRendered = {
                 if (generation == playbackGeneration && !firstFrame.isCompleted) {
+                    tracker.begin(android.os.SystemClock.elapsedRealtime(),NetworkSnapshot.read(this@MainActivity))
                     firstFrame.complete(Unit)
                     finishLoading()
                     currentTouchMode=touchMode
@@ -748,7 +766,10 @@ class MainActivity : Activity() {
                     }
                 } },
                 onStatistics = stats@ { metrics, input ->
-                    if(generation==playbackGeneration) streamHistory.add(android.os.SystemClock.elapsedRealtime(),metrics,input)
+                    if(generation==playbackGeneration) {
+                        val now=android.os.SystemClock.elapsedRealtime()
+                        streamHistory.add(now,metrics,input); tracker.add(now,metrics,input)
+                    }
                     if (statistics.mode == 0) return@stats
                     val complete = statistics.mode == 2
                     val text = if (complete) metrics.overlay(input, "",settings.resolution,compatible) else metrics.compactOverlay(input)
@@ -764,6 +785,7 @@ class MainActivity : Activity() {
                 onRumble = { command -> if(generation==playbackGeneration) rumble.play(command) },compatibility=compatible)
             webrtcClient = rtc
             if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
+            var failed=false
             try {
                 signaling.startAndConnectWebRtcSession(titleId, rtc, resolution = settings.resolution, nativeTouch=touchMode==TouchMode.NATIVE, onQueueStatus = { status -> runOnUiThread {
                     if (generation == playbackGeneration) showQueue(status)
@@ -793,7 +815,9 @@ class MainActivity : Activity() {
                     withTimeoutOrNull(1000) { transportFailure.await() }?.let { throw it }
                     val now = android.os.SystemClock.elapsedRealtime()
                     val health = surfaceRenderer.probeVideoHealth()
-                    val action = recovery.observe(now, health.presentedToken, health.deliveredRecently,streamHistory.receivingVideo(now))
+                    val receiving=streamHistory.receivingVideo(now)
+                    val action = recovery.observe(now, health.presentedToken, health.deliveredRecently,receiving)
+                    tracker.observe(now,health.presentedToken,receiving,action)
                     if (health.presentedToken != lastToken && recovering) {
                         recovering = false
                         hudTextView.visibility = View.GONE
@@ -843,7 +867,8 @@ class MainActivity : Activity() {
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                if (generation == playbackGeneration) {
+                failed=true
+                if (generation == playbackGeneration && (!firstFrame.isCompleted || !settingsStore.read().sessionReport)) {
                     val details = error.message ?: "Falha na sessão"
                     hudTextView.text = details
                     hudTextView.setTextColor(Color.RED)
@@ -852,7 +877,7 @@ class MainActivity : Activity() {
             } finally {
                 // The server-side Xbox and the local decoder must both be released before retrying.
                 withContext(NonCancellable) {
-                    signaling.stop()
+                    tracker.finish(android.os.SystemClock.elapsedRealtime(),if(failed) SessionEnd.FAILURE else SessionEnd.USER,rtc.currentInputMetrics())
                     if (generation == playbackGeneration) {
                         finishLoading()
                         statsView.visibility = View.GONE
@@ -864,7 +889,9 @@ class MainActivity : Activity() {
                     surfaceRenderer.clearSession()
                     rtc.close()
                     if (webrtcClient === rtc) webrtcClient = null
-                    if (generation == playbackGeneration) restoreDashboard()
+                    signaling.stop()
+                    if (generation == playbackGeneration) { activeGame=null; restoreDashboard() }
+                    finishSessionReport(tracker)
                 }
             }
         }
@@ -895,6 +922,7 @@ class MainActivity : Activity() {
     }
 
     private fun cancelPlayback() {
+        reportTracker?.finish(android.os.SystemClock.elapsedRealtime(),SessionEnd.USER,webrtcClient?.currentInputMetrics())
         ++playbackGeneration
         gameJob?.cancel()
         activeGame = null
@@ -1078,7 +1106,12 @@ class MainActivity : Activity() {
         return super.onKeyDown(keyCode, event)
     }
 
+    override fun onStart() { super.onStart(); activityVisible=true; reportTracker?.setVisible(true) }
+    override fun onStop() { activityVisible=false; reportTracker?.setVisible(false); super.onStop() }
+
     override fun onDestroy() {
+        reportTracker?.finish(android.os.SystemClock.elapsedRealtime(),SessionEnd.APP_CLOSED,webrtcClient?.currentInputMetrics())
+        postSessionDialog?.dismiss()
         ++playbackGeneration
         mainScope.cancel()
         (getSystemService(Context.INPUT_SERVICE) as InputManager).unregisterInputDeviceListener(deviceListener)

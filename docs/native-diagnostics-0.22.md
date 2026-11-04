@@ -40,7 +40,7 @@ O monitor consulta o vídeo aproximadamente a cada segundo; seus episódios não
 
 ### Índice de qualidade
 
-É uma estimativa local de 0 a 100, calculada somente com pelo menos três amostras de RTT, perda, jitter, FPS e decodificação e cinco segundos observados. Parte de 100 e aplica penalidades limitadas por RTT acima de 30 ms, perda, jitter acima de 2 ms, FPS abaixo da apresentação solicitada e decode acima de 12 ms/quadro. A apresentação solicitada é de 30 FPS em compatibilidade e 60 nos outros modos.
+É uma estimativa local de 0 a 100, calculada somente com pelo menos três amostras de RTT, perda, jitter, FPS e decodificação e cinco segundos observados. Parte de 100 e aplica penalidades limitadas por RTT acima de 30 ms, perda, jitter acima de 2 ms, FPS abaixo da apresentação solicitada e decode acima de 12 ms/quadro. Pausas de apresentação observadas também reduzem o índice, até 40 pontos conforme sua proporção do tempo medido, mesmo quando o decoder ainda informa FPS altos. A apresentação solicitada é de 30 FPS em compatibilidade e 60 nos outros modos.
 
 Não é uma nota oficial do Xbox ou XStreaming, teste de velocidade ou garantia de fluidez. Dados ausentes permanecem `n/d`; não são substituídos por números de uma conexão saudável. O relatório apresenta observações e sugestões de comparação, sem atribuir automaticamente a causa à rede ou ao aparelho.
 

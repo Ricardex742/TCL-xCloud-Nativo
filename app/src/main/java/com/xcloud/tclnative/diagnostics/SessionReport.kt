@@ -147,7 +147,8 @@ class SessionReportTracker(private val game: String,private val device: String,p
             (100-minOf(30.0,(avg(ReportMetric.RTT)-30).coerceAtLeast(0.0)*.4)-minOf(30.0,avg(ReportMetric.LOSS)*15)-
                 minOf(15.0,(avg(ReportMetric.JITTER)-2).coerceAtLeast(0.0)*2)-
                 minOf(15.0,(fpsTarget-avg(ReportMetric.FPS)-2).coerceAtLeast(0.0)*2.5)-
-                minOf(10.0,(avg(ReportMetric.DECODE)-12).coerceAtLeast(0.0)*1.5)).roundToInt().coerceIn(0,100)
+                minOf(10.0,(avg(ReportMetric.DECODE)-12).coerceAtLeast(0.0)*1.5)-
+                minOf(40.0,100.0*stallMs/(observed*1000))).roundToInt().coerceIn(0,100)
         }
         report=SessionReport(game.take(256),device.take(180),network,profile.take(180),fpsTarget,(now-began).coerceAtLeast(0),
             (observed*1000).toLong(),samples,wallClock(),end,metrics,resolution,codec,decoder,efficient,video.value(),down.value(),up.value(),

@@ -103,4 +103,15 @@ class SessionReportTest {
         repeat(6) { i -> healthy.add((i+1)*1000L,sample(),InputMetrics()); partial.add((i+1)*1000L,sample().copy(decodeMs=null),InputMetrics()) }
         assertEquals(100,finish(healthy,6000).score); assertNull(finish(partial,6000).score)
     }
+    @Test fun presentationPausesReduceTheEstimateEvenWhenTheDecoderKeepsReportingHealthyFps() {
+        val t=tracker(); t.begin(0,"Ethernet")
+        repeat(10) { i ->
+            val now=(i+1)*1000L
+            t.add(now,sample(),InputMetrics())
+            t.observe(now,1,true,VideoRecoveryAction.NONE)
+        }
+        val r=finish(t,10000)
+        assertEquals(9000L,r.stalledMs); assertEquals(60,r.score)
+        assertTrue(r.findings().any { it.contains("sem progresso da imagem") })
+    }
 }

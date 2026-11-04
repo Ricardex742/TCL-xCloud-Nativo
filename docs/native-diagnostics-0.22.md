@@ -1,5 +1,7 @@
 # Motor nativo e diagnóstico pós-partida — 0.22
 
+> Registro da investigação na 0.22. A análise direta posterior do cliente oficial e os ajustes da 0.23 estão em [Toque nativo e SDK oficial](native-touch-official-sdk.md). A validação em uma partida no celular continua pendente.
+
 ## Toque e execução
 
 O streaming usa exclusivamente o motor Android/WebRTC/H.264. A Activity do cliente WebView, seu processo separado e a opção de abertura foram removidos. Instalações que haviam selecionado `WEB_NATIVE` migram para `NATIVE`, preservando as demais preferências e a assinatura fixa do aplicativo.

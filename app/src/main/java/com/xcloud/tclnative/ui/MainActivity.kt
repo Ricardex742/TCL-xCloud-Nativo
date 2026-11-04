@@ -222,6 +222,7 @@ class MainActivity : Activity() {
             onPointers={ events -> webrtcClient?.sendPointers(events) },
             coordinates=surfaceRenderer::touchCoordinates,
             onMenu={ showGameMenu() })
+        surfaceRenderer.onDisplayDimensionsChanged = { webrtcClient?.updateDisplayDimensions(it) }
         touchView.onHudSaved={ settings ->
             val game=activeGame
             if(game==null) false else try { hudStore.save(game.titleId,settings); true }
@@ -784,6 +785,7 @@ class MainActivity : Activity() {
                 nativeTouch = touchMode==TouchMode.NATIVE,
                 onRumble = { command -> if(generation==playbackGeneration) rumble.play(command) },compatibility=compatible)
             webrtcClient = rtc
+            surfaceRenderer.displayDimensions()?.let(rtc::updateDisplayDimensions)
             if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
             var failed=false
             try {

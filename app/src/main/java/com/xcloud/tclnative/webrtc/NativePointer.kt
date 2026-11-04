@@ -2,6 +2,10 @@ package com.xcloud.tclnative.webrtc
 
 import java.util.ArrayDeque
 
+data class TouchInputDimensions(val width: Int, val height: Int) {
+    init { require(width in 1..16384 && height in 1..16384) }
+}
+
 data class NativePointer(val id: Int, val x: Float, val y: Float, val type: Int, val pressure: Float = 1f,
                          val width: Float = 1f/1920, val height: Float = 1f/1080) {
     init { require(id in 0..32 && type in 1..3 && x.isFinite() && y.isFinite() && pressure.isFinite() &&

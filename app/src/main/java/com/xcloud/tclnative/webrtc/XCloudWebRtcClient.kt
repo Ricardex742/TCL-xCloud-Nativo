@@ -27,14 +27,13 @@ class XCloudWebRtcClient(
     private val gatheringComplete = CompletableDeferred<Unit>()
     private val connected = CompletableDeferred<Unit>()
     private val channelsReady = CompletableDeferred<Unit>()
-    private val handshake = ChannelHandshake(nativeTouch,streamResolution.width,streamResolution.height)
+    private val handshake = ChannelHandshake(nativeTouch)
     private val channels = java.util.concurrent.ConcurrentHashMap<String, DataChannel>()
     private val closed = AtomicBoolean(false)
     private val inputStarted = AtomicBoolean(false)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val gamepads = mutableMapOf<Int,GamepadState>().apply { if(!nativeTouch) put(0,GamepadState()) }
-    @Volatile private var inputWidth=streamResolution.width
-    @Volatile private var inputHeight=streamResolution.height
+    @Volatile private var inputDimensions: TouchInputDimensions? = null
     private val pumpLock = Any()
     private val pendingTouch = NativeTouchBuffer()
     @Volatile private var touchEnabled = nativeTouch
@@ -47,7 +46,7 @@ class XCloudWebRtcClient(
     fun currentInputMetrics(): InputMetrics = inputPump?.metrics ?: InputMetrics()
     fun latencyDiagnostics(): String = (if (lowLatencyVideo) "Playout solicitado: 0–40 ms" else "Playout: adaptativo") +
         " | " + (if (lowLatencyVideo) decoderLatency.get() else "codec padrão") +
-        if(nativeTouch) " | Toque: ${if(touchEnabled) "ativo" else "desativado"}, $inputWidth×$inputHeight, ${inputPump?.metrics?.pointerEventsSent ?: 0} eventos enviados" else ""
+        if(nativeTouch) " | Toque: ${if(touchEnabled) "ativo" else "desativado"}, ${inputDimensions?.let { "${it.width}×${it.height}" } ?: "aguardando metadata"}, ${inputPump?.metrics?.pointerEventsSent ?: 0} eventos enviados" else ""
 
     init {
         PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(context.applicationContext)
@@ -132,10 +131,11 @@ class XCloudWebRtcClient(
                     if (closed.get() || buffer == null) return
                     if(name=="input" && buffer.binary) {
                         RemoteInputReport.parse(buffer.data)?.let { report ->
-                            val changed=(report.width!=null && report.width!=inputWidth) || (report.height!=null && report.height!=inputHeight)
-                            report.width?.let { inputWidth=it; inputPump?.touchWidth=it }
-                            report.height?.let { inputHeight=it; inputPump?.touchHeight=it }
-                            if(nativeTouch && changed) sendTouchDimensions()
+                            if (report.width != null && report.height != null) synchronized(pumpLock) {
+                                val dimensions = TouchInputDimensions(report.width,report.height)
+                                inputDimensions = dimensions
+                                inputPump?.setTouchDimensions(dimensions)
+                            }
                             report.rumble?.let(onRumble)
                         }
                         return
@@ -184,10 +184,10 @@ class XCloudWebRtcClient(
                 send = { bytes -> !closed.get() && input.send(DataChannel.Buffer(ByteBuffer.wrap(bytes), true)) },
                 onFailure = { fail("CHANNELS: falha no envio de input") },
                 prioritize = { runCatching { android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DISPLAY) }; Unit },
-                initialGamepads = gamepads.keys.toSet(), touch = pendingTouch, inputHz = if(compatibility) 60 else 250
+                initialGamepads = gamepads.keys.toSet(), touch = pendingTouch, inputHz = if(compatibility) 60 else 250,
+                initialTouchDimensions = inputDimensions
             )
                 inputPump = pump
-                pump.touchWidth=inputWidth; pump.touchHeight=inputHeight
                 gamepads.forEach { (index,state) -> pump.update(state,index) }
                 pump.start()
                 channelsReady.complete(Unit)
@@ -257,8 +257,13 @@ class XCloudWebRtcClient(
     } }
     private fun sendTouchDimensions() {
         if(closed.get() || !handshake.ready || channels["message"]?.state()!=DataChannel.State.OPEN) return
-        val message=ChannelHandshake.dimensions(inputWidth,inputHeight)
+        val message=ChannelHandshake.dimensions(handshake.displayDimensions ?: return)
         channels["message"]?.send(DataChannel.Buffer(ByteBuffer.wrap(message.bytes),false))
+    }
+    fun updateDisplayDimensions(dimensions: ClientDisplayDimensions) {
+        if (handshake.displayDimensions == dimensions) return
+        handshake.displayDimensions = dimensions
+        sendTouchDimensions()
     }
     /** Reassert after the stream is ready and allow the native session to fall back to virtual controls. */
     fun setNativeTouchEnabled(enabled: Boolean): Boolean {

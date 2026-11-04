@@ -37,12 +37,13 @@ object GamepadPacket {
         if(pointers.isNotEmpty()) {
             out.put(1).put(pointers.size.toByte())
             pointers.forEach { p ->
-                out.putShort((p.height.coerceIn(0f,1f)*height).roundToInt().coerceIn(1,65535).toShort())
-                    .putShort((p.width.coerceIn(0f,1f)*width).roundToInt().coerceIn(1,65535).toShort())
-                    .put((if(p.type==2) 0 else (p.pressure.coerceIn(0f,1f)*255).roundToInt()).toByte())
+                // Match DataView's integer conversion in the official reliable input serializer.
+                out.putShort((p.height.coerceIn(0f,1f)*height).toInt().coerceIn(0,65535).toShort())
+                    .putShort((p.width.coerceIn(0f,1f)*width).toInt().coerceIn(0,65535).toShort())
+                    .put((if(p.type==2) 0 else (p.pressure.coerceIn(0f,1f)*255).toInt()).toByte())
                     .putShort(0).putInt(p.id)
-                    .putInt((p.x.coerceIn(0f,1f)*width.coerceAtLeast(1)).roundToInt())
-                    .putInt((p.y.coerceIn(0f,1f)*height.coerceAtLeast(1)).roundToInt()).put(p.type.toByte())
+                    .putInt((p.x.coerceIn(0f,1f)*width.coerceAtLeast(1)).toInt())
+                    .putInt((p.y.coerceIn(0f,1f)*height.coerceAtLeast(1)).toInt()).put(p.type.toByte())
             }
         }
         return out.array()

@@ -42,7 +42,9 @@ class ProtocolTest {
     }
     @Test fun handshakeWaitsForAckAndAllChannelsAndConfiguresOnlyOnce() {
         listOf(listOf("message", "control", "input"), listOf("input", "message", "control"), listOf("control", "input", "message")).forEach { order ->
-            val protocol = ChannelHandshake()
+            val protocol = ChannelHandshake().apply {
+                displayDimensions=ClientDisplayDimensions.fromPixels(1920,1080,1920,1080,160f,160f)
+            }
             val beforeAck = order.flatMap(protocol::onOpen)
             assertFalse(protocol.ready); assertEquals(1, beforeAck.size)
             assertEquals("Handshake", JSONObject(String(beforeAck.single().bytes, Charsets.UTF_8)).getString("type"))
@@ -63,7 +65,9 @@ class ProtocolTest {
         assertTrue(protocol.onOpen("input").isNotEmpty()); assertTrue(protocol.ready)
     }
     @Test fun nativeTouchHandshakeEnablesPointersWithoutInventingAPhysicalController() {
-        val protocol=ChannelHandshake(true,1280,720)
+        val protocol=ChannelHandshake(true).apply {
+            displayDimensions=ClientDisplayDimensions.fromPixels(1280,720,1280,720,320f,320f)
+        }
         listOf("input","message","control").forEach(protocol::onOpen)
         val actions=protocol.onHandshakeAck()
         val metadata=actions.single { it.binary }
@@ -75,7 +79,8 @@ class ProtocolTest {
         val touch=messages.single { it.optString("target").endsWith("touchinputenabledchanged") }
         assertTrue(JSONObject(touch.getString("content")).getBoolean("touchInputEnabled"))
         val dimensions=JSONObject(messages.single { it.optString("target").endsWith("dimensionschanged") }.getString("content"))
-        assertEquals(1280,dimensions.getInt("horizontal")); assertEquals(720,dimensions.getInt("vertical"))
+        assertEquals(101,dimensions.getInt("horizontal")); assertEquals(57,dimensions.getInt("vertical"))
+        assertEquals(1280,dimensions.getInt("preferredWidth")); assertEquals(720,dimensions.getInt("preferredHeight"))
     }
     @Test fun metadataAndGamepadPacketsMatchTheWireLayout() {
         val metadata = GamepadPacket.metadata(0.0)

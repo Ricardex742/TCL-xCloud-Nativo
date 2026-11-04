@@ -9,7 +9,8 @@ class InputBufferTest {
     @Test fun diagnosticInputBytesCountOnlyPacketsActuallyAcceptedByTheChannel() {
         val sent=java.util.concurrent.atomic.AtomicLong()
         val pump=com.xcloud.tclnative.webrtc.RealtimeInputPump({0},{ sent.addAndGet(it.size.toLong()); true },
-            { fail("Input failed") },initialGamepads=emptySet())
+            { fail("Input failed") },initialGamepads=emptySet(),
+            initialTouchDimensions=com.xcloud.tclnative.webrtc.TouchInputDimensions(1920,1080))
         try {
             pump.start()
             Thread.sleep(30)
@@ -128,7 +129,8 @@ class InputBufferTest {
         touch.add(listOf(com.xcloud.tclnative.webrtc.NativePointer(7,.25f,.5f,2,0f)))
         val received=java.util.concurrent.LinkedBlockingQueue<ByteArray>()
         val pump=com.xcloud.tclnative.webrtc.RealtimeInputPump({0},{ received.offer(it); true },{ fail("Input failed") },
-            initialGamepads=emptySet(),touch=touch)
+            initialGamepads=emptySet(),touch=touch,
+            initialTouchDimensions=com.xcloud.tclnative.webrtc.TouchInputDimensions(1920,1080))
         try {
             pump.start()
             val down=java.nio.ByteBuffer.wrap(received.poll(2,java.util.concurrent.TimeUnit.SECONDS)!!).order(java.nio.ByteOrder.LITTLE_ENDIAN)

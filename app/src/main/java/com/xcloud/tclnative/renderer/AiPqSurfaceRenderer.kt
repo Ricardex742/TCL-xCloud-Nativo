@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.view.Gravity
 import android.widget.FrameLayout
 import com.xcloud.tclnative.settings.VideoAspect
+import com.xcloud.tclnative.webrtc.ClientDisplayDimensions
 import org.webrtc.EglBase
 import org.webrtc.RendererCommon
 import org.webrtc.SurfaceViewRenderer
@@ -17,6 +18,8 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     val eglBase: EglBase = EglBase.create()
     var onFirstFrameRendered: (() -> Unit)? = null
     var onRenderError: ((Exception) -> Unit)? = null
+    var onDisplayDimensionsChanged: ((ClientDisplayDimensions) -> Unit)? = null
+    private var lastDisplayDimensions: ClientDisplayDimensions? = null
     private var currentTrack: VideoTrack? = null
     private var renderer: SurfaceViewRenderer? = null
     private var aspectDrawer: AspectVideoDrawer? = null
@@ -65,6 +68,13 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     }
     fun touchCoordinates(x: Float,y: Float): Pair<Float,Float>? = VideoScalingPolicy.touchCoordinates(
         width,height,videoWidth,videoHeight,nativeUpscaling,aspect,x,y)
+    fun displayDimensions(): ClientDisplayDimensions? {
+        if (width <= 0 || height <= 0) return null
+        val viewport = VideoScalingPolicy.viewport(width,height,videoWidth,videoHeight,nativeUpscaling,aspect)
+        val metrics = resources.displayMetrics
+        return ClientDisplayDimensions.fromPixels(width,height,viewport.width,viewport.height,
+            metrics.xdpi,metrics.ydpi,metrics.densityDpi.toFloat())
+    }
     var aspect = VideoAspect.RATIO_16_9
         set(value) {
             field=value
@@ -138,6 +148,12 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         updateVideoLayout()
     }
     private fun updateVideoLayout() {
+        displayDimensions()?.let { dimensions ->
+            if (dimensions != lastDisplayDimensions) {
+                lastDisplayDimensions = dimensions
+                onDisplayDimensionsChanged?.invoke(dimensions)
+            }
+        }
         val view = renderer ?: return
         val viewport = VideoScalingPolicy.viewport(width,height,videoWidth,videoHeight,nativeUpscaling,aspect)
         val targetWidth = viewport.width

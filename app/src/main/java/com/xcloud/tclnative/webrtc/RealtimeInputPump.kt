@@ -58,15 +58,15 @@ class RealtimeInputPump(
     private val prioritize: () -> Unit = {},
     initialGamepads: Set<Int> = setOf(0),
     private val touch: NativeTouchBuffer = NativeTouchBuffer(),
-    private val inputHz: Int = INPUT_HZ
+    private val inputHz: Int = INPUT_HZ,
+    initialTouchDimensions: TouchInputDimensions? = null
 ) {
     init { require(inputHz in 60..INPUT_HZ) }
     private val running = AtomicBoolean(false)
     private val buffers = Array(4) { GamepadInputBuffer() }
     private val active = initialGamepads.toMutableSet()
     private val lock = Any()
-    @Volatile var touchWidth=1920
-    @Volatile var touchHeight=1080
+    @Volatile private var touchDimensions = initialTouchDimensions
     @Volatile private var thread: Thread? = null
     @Volatile var metrics = InputMetrics()
         private set
@@ -76,6 +76,10 @@ class RealtimeInputPump(
     }
     fun remove(index: Int) { synchronized(lock) { active.remove(index); buffers[index].update(GamepadState()); buffers[index].discardBacklog() } }
     fun pointers(events: List<NativePointer>) { touch.add(events); thread?.let(LockSupport::unpark) }
+    fun setTouchDimensions(dimensions: TouchInputDimensions) {
+        touchDimensions = dimensions
+        thread?.let(LockSupport::unpark)
+    }
     fun releaseTouch() { touch.release(); thread?.let(LockSupport::unpark) }
     fun start() {
         check(running.compareAndSet(false, true))
@@ -92,15 +96,16 @@ class RealtimeInputPump(
                 var backpressured = false
                 while (running.get()) {
                     val now = System.nanoTime()
+                    val dimensions = touchDimensions
                     val hasEdges=synchronized(lock) { active.any { buffers[it].hasUrgent() } }
-                    if (now < deadline && (backpressured || (!hasEdges && !touch.pending()))) {
+                    if (now < deadline && (backpressured || (!hasEdges && (dimensions == null || !touch.pending())))) {
                         LockSupport.parkNanos(deadline - now)
                         continue
                     }
                     maxDelay = maxOf(maxDelay, (now - deadline).coerceAtLeast(0) / 1_000_000.0)
                     val queued = bufferedAmount()
                     val gamepadBytes=synchronized(lock) { if(active.isEmpty()) 0 else 1+23*active.size }
-                    val contactCount=touch.nextCount()
+                    val contactCount=if(dimensions == null) 0 else touch.nextCount()
                     val maximum=maxOf(MAX_BUFFERED_BYTES,2L*(14+gamepadBytes+(if(contactCount==0) 0 else 2+20*contactCount)))
                     if (queued >= maximum) {
                         backpressured=true
@@ -109,8 +114,10 @@ class RealtimeInputPump(
                     } else {
                         backpressured=false
                         val states=synchronized(lock) { active.associateWith { buffers[it].next() } }
-                        val pointers=touch.next()
-                        val packet=if(states.isNotEmpty() || pointers.isNotEmpty()) GamepadPacket.encode(states, sequence++, (now - started) / 1_000_000.0,pointers,touchWidth,touchHeight) else null
+                        // Coordinates have no meaning until ServerMetadata establishes their scale.
+                        val pointers=if(dimensions == null) emptyList() else touch.next()
+                        val packet=if(states.isNotEmpty() || pointers.isNotEmpty()) GamepadPacket.encode(states, sequence++,
+                            (now - started) / 1_000_000.0,pointers,dimensions?.width ?: 1,dimensions?.height ?: 1) else null
                         if (packet!=null && !send(packet)) {
                             if (running.get()) onFailure()
                             break

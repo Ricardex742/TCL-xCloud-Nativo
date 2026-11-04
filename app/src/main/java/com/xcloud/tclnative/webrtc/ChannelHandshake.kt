@@ -6,10 +6,11 @@ import java.util.UUID
 data class ChannelMessage(val channel: String, val bytes: ByteArray, val binary: Boolean = false)
 
 /** Ordered protocol transitions; callbacks for the three channels can arrive in any order. */
-class ChannelHandshake(private val nativeTouch: Boolean = false, private val width: Int = 1920, private val height: Int = 1080) {
+class ChannelHandshake(private val nativeTouch: Boolean = false) {
     private val opened = mutableSetOf<String>()
     private var acknowledged = false
     private var started = false
+    @Volatile var displayDimensions: ClientDisplayDimensions? = null
     val ready: Boolean @Synchronized get() = started
 
     @Synchronized fun onOpen(channel: String): List<ChannelMessage> {
@@ -35,20 +36,17 @@ class ChannelHandshake(private val nativeTouch: Boolean = false, private val wid
             config("/streaming/properties/clientappinstallidchanged", JSONObject().put("clientAppInstallId", UUID.randomUUID().toString())),
             config("/streaming/characteristics/orientationchanged", JSONObject().put("orientation", 0)),
             config("/streaming/characteristics/touchinputenabledchanged", JSONObject().put("touchInputEnabled", nativeTouch)),
-            config("/streaming/characteristics/clientdevicecapabilities", JSONObject()),
-            dimensions(width,height)
-        )
+            config("/streaming/characteristics/clientdevicecapabilities", JSONObject())
+        ) + listOfNotNull(displayDimensions?.let(::dimensions))
     }
     private fun config(target: String, content: JSONObject) = encode("message", JSONObject()
         .put("type", "Message").put("target", target).put("id", UUID.randomUUID().toString()).put("cv", "")
         .put("content", content.toString()))
 
     companion object {
-        fun dimensions(width: Int,height: Int) = encode("message",JSONObject().put("type","Message")
+        fun dimensions(display: ClientDisplayDimensions) = encode("message",JSONObject().put("type","Message")
             .put("target","/streaming/characteristics/dimensionschanged").put("id",UUID.randomUUID().toString()).put("cv","")
-            .put("content",JSONObject().put("horizontal",width).put("vertical",height)
-                .put("preferredWidth",width).put("preferredHeight",height).put("safeAreaLeft",0).put("safeAreaTop",0)
-                .put("safeAreaRight",width).put("safeAreaBottom",height).put("supportsCustomResolution",true).toString()))
+            .put("content",display.content().toString()))
         fun encode(channel: String, json: JSONObject) = ChannelMessage(channel, json.toString().toByteArray(Charsets.UTF_8))
     }
 }

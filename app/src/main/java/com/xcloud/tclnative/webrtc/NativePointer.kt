@@ -4,7 +4,7 @@ import java.util.ArrayDeque
 
 data class NativePointer(val id: Int, val x: Float, val y: Float, val type: Int, val pressure: Float = 1f,
                          val width: Float = 1f/1920, val height: Float = 1f/1080) {
-    init { require(id in 0..31 && type in 1..3 && x.isFinite() && y.isFinite() && pressure.isFinite() &&
+    init { require(id in 0..32 && type in 1..3 && x.isFinite() && y.isFinite() && pressure.isFinite() &&
         width.isFinite() && height.isFinite() && width >= 0 && height >= 0) }
 }
 

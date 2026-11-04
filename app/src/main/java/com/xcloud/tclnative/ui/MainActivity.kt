@@ -117,6 +117,7 @@ class MainActivity : Activity() {
     private companion object {
         const val REQUEST_HOME_CHANNEL=4101
         const val REQUEST_SHORTCUT_INSTALL_PERMISSION=4102
+        const val REQUEST_OFFICIAL_CLOUD=4103
     }
     private var gameMenuDialog: Dialog? = null
 
@@ -554,6 +555,7 @@ class MainActivity : Activity() {
     }
     override fun onActivityResult(requestCode: Int,resultCode: Int,data: Intent?) {
         super.onActivityResult(requestCode,resultCode,data)
+        if(requestCode==REQUEST_OFFICIAL_CLOUD) { catalogWork.resume(); dashboard?.resumeArtwork() }
         if(requestCode==REQUEST_HOME_CHANNEL) pendingHomeChannel?.let(::verifyHomeChannel)
         if(requestCode==REQUEST_SHORTCUT_INSTALL_PERMISSION) {
             if(Build.VERSION.SDK_INT<26 || packageManager.canRequestPackageInstalls()) installPendingShortcut()
@@ -609,6 +611,7 @@ class MainActivity : Activity() {
                 ConsoleAction("Jogar com controle") { launchCloudGame(signaling,game,TouchMode.OFF) }
             )
             if("NativeTouch" in game.supportedInputTypes) choices.add(ConsoleAction("Toque nativo Xbox • experimental") { launchCloudGame(signaling,game,TouchMode.NATIVE) })
+            if("NativeTouch" in game.supportedInputTypes) choices.add(ConsoleAction("Toque oficial Xbox • WebView") { launchCloudGame(signaling,game,TouchMode.WEB_NATIVE) })
             ConsoleDialogs.menu(this,game.name,choices)
         } else launchCloudGame(signaling,game)
     }
@@ -656,6 +659,21 @@ class MainActivity : Activity() {
     }
 
     private fun launchCloudGame(signaling: XCloudSignalingClient, game: GameTitle, touchChoice: TouchMode? = null) {
+        if((touchChoice ?: playbackSettings.touchMode)==TouchMode.WEB_NATIVE) {
+            if(!packageManager.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)) {
+                ConsoleDialogs.message(this,"Toque oficial no celular","Para esta TV, prefira o motor nativo. O modo WebView é uma opção para celulares.")
+                return
+            }
+            catalogWork.pause(); dashboard?.pauseArtwork()
+            try {
+                startActivityForResult(Intent(this,OfficialCloudActivity::class.java)
+                    .putExtra("game_name",game.name).putExtra("product_id",game.productId),REQUEST_OFFICIAL_CLOUD)
+            } catch(_: android.content.ActivityNotFoundException) {
+                catalogWork.resume(); dashboard?.resumeArtwork()
+                ConsoleDialogs.message(this,"Cliente oficial indisponível","O modo oficial não pôde ser aberto neste aparelho. Use o motor nativo.")
+            }
+            return
+        }
         val titleId = game.titleId
         val gameName = game.name
         activeGame = game
@@ -747,7 +765,7 @@ class MainActivity : Activity() {
             webrtcClient = rtc
             if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
             try {
-                signaling.startAndConnectWebRtcSession(titleId, rtc, resolution = settings.resolution, onQueueStatus = { status -> runOnUiThread {
+                signaling.startAndConnectWebRtcSession(titleId, rtc, resolution = settings.resolution, nativeTouch=touchMode==TouchMode.NATIVE, onQueueStatus = { status -> runOnUiThread {
                     if (generation == playbackGeneration) showQueue(status)
                 } }) { progress -> runOnUiThread {
                     if (generation == playbackGeneration && !firstFrame.isCompleted) {

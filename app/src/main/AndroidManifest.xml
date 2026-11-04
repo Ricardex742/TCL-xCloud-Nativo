@@ -43,6 +43,13 @@
         </provider>
 
         <activity
+            android:name=".ui.OfficialCloudActivity"
+            android:exported="false"
+            android:process=":official_web"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize"
+            android:screenOrientation="landscape" />
+
+        <activity
             android:name=".ui.MainActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize"
             android:exported="true"

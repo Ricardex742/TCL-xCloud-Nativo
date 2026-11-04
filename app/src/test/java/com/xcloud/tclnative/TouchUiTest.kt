@@ -25,6 +25,25 @@ import java.io.File
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @LooperMode(LooperMode.Mode.PAUSED)
 class TouchUiTest {
+    @Test fun androidPointerZeroAnd31BecomeIndependentPositiveContactsThroughMoveAndCancel() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        val received=mutableListOf<NativePointer>()
+        val view=GameTouchView(controller.get(),{}, {received.addAll(it)}, {x,y -> x/1280 to y/720},{})
+        controller.get().setContentView(view); view.configure(TouchMode.NATIVE); layout(view)
+        fun event(action: Int,ids: List<Int>) {
+            val props=ids.map { MotionEvent.PointerProperties().apply { id=it; toolType=MotionEvent.TOOL_TYPE_FINGER } }.toTypedArray()
+            val points=ids.map { MotionEvent.PointerCoords().apply { x=300f+it; y=400f; pressure=1f } }.toTypedArray()
+            MotionEvent.obtain(0,10,action,ids.size,props,points,0,0,1f,1f,0,0,0,0).also { view.dispatchTouchEvent(it); it.recycle() }
+        }
+        event(MotionEvent.ACTION_DOWN,listOf(0))
+        event(MotionEvent.ACTION_POINTER_DOWN or (1 shl 8),listOf(0,31))
+        event(MotionEvent.ACTION_MOVE,listOf(0,31))
+        event(MotionEvent.ACTION_POINTER_UP or (1 shl 8),listOf(0,31))
+        event(MotionEvent.ACTION_CANCEL,listOf(0))
+        assertEquals(listOf(1,32,1,32,32,1),received.map { it.id })
+        assertEquals(listOf(1,1,3,3,2,2),received.map { it.type })
+        controller.pause().stop().destroy()
+    }
     private fun layout(view: View) {
         repeat(2) {
             view.measure(View.MeasureSpec.makeMeasureSpec(1280,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(720,View.MeasureSpec.EXACTLY))

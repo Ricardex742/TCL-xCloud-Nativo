@@ -49,10 +49,13 @@ class XCloudSignalingClient(
     private val waitTimeClient = httpClient.newBuilder().callTimeout(3, TimeUnit.SECONDS).build()
     private val jsonType = "application/json; charset=utf-8".toMediaType()
     private var activeResolution = StreamResolution.HD_1080_HQ
+    private var mobileTouchSession=false
+    private val activeOsName: String get()=if(mobileTouchSession) "android" else activeResolution.osName
     private fun deviceInfo() = JSONObject().put("appInfo", JSONObject().put("env", JSONObject()
         .put("clientAppId", "www.xbox.com").put("clientAppType", "browser").put("clientAppVersion", "26.1.0")))
-        .put("dev", JSONObject().put("hw", JSONObject().put("make", "Microsoft").put("model", "Surface Pro"))
-            .put("os", JSONObject().put("name", activeResolution.osName).put("ver", "10.0"))
+        .put("dev", JSONObject().put("hw", JSONObject().put("make", if(mobileTouchSession) "Android" else "Microsoft")
+                .put("model", if(mobileTouchSession) "Android phone" else "Surface Pro"))
+            .put("os", JSONObject().put("name", activeOsName).put("ver", "10.0"))
             .put("displayInfo", JSONObject().put("dimensions", JSONObject().put("widthInPixels", activeResolution.width).put("heightInPixels", activeResolution.height))
                 .put("pixelDensity", JSONObject().put("dpiX", 1).put("dpiY", 1)))).toString()
 
@@ -187,17 +190,18 @@ class XCloudSignalingClient(
 
     suspend fun startAndConnectWebRtcSession(
         titleId: String, peer: StreamingPeer, onQueueStatus: (QueueStatus?) -> Unit = {},
-        resolution: StreamResolution = StreamResolution.HD_1080_HQ, onProgress: (String) -> Unit
+        resolution: StreamResolution = StreamResolution.HD_1080_HQ, nativeTouch: Boolean=false, onProgress: (String) -> Unit
     ): Result<String> = withContext(Dispatchers.IO) {
         stop()
         activeResolution = resolution
+        mobileTouchSession=nativeTouch
         try {
             val play = JSONObject().put("clientSessionId", java.util.UUID.randomUUID().toString())
                 .put("titleId", titleId).put("systemUpdateGroup", "").put("serverId", "")
                 .put("fallbackRegionNames", org.json.JSONArray()).put("settings", JSONObject()
                     .put("nanoVersion", "V3;WebrtcTransport.dll").put("enableOptionalDataCollection", false)
                     .put("enableTextToSpeech", false).put("highContrast", 0).put("locale", "pt-BR")
-                    .put("useIceConnection", false).put("timezoneOffsetMinutes", -180).put("sdkType", "web").put("osName", activeResolution.osName))
+                    .put("useIceConnection", false).put("timezoneOffsetMinutes", -180).put("sdkType", "web").put("osName", activeOsName))
             val response = JSONObject(request("/v5/sessions/cloud/play", "PLAY", "POST", play))
             val path = CloudProtocol.sessionUrl(session.baseUri, response.getString("sessionPath")).encodedPath.trimEnd('/')
             activePath.set(path)

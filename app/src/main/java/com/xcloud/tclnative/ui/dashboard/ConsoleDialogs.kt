@@ -145,6 +145,13 @@ object ConsoleDialogs {
         dialog.addAction("Buscar") { onSearch(field.text.toString()) }
         dialog.focusFirst(field)
         dialog.show()
+        if(context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN)) {
+            dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+            field.post {
+                if(dialog.isShowing) (context.getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager)
+                    .showSoftInput(field,android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+            }
+        }
         return dialog
     }
     fun menu(context: Context, title: String, items: List<ConsoleAction>, onBack: () -> Unit = {}): ConsoleDialog = ConsoleDialog(context,title).apply {

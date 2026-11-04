@@ -45,7 +45,8 @@ class XCloudWebRtcClient(
     private val decoderRecovery = DecoderRecoveryController()
     private val decoderLatency = java.util.concurrent.atomic.AtomicReference("Codec LL: aguardando vídeo")
     fun latencyDiagnostics(): String = (if (lowLatencyVideo) "Playout solicitado: 0–40 ms" else "Playout: adaptativo") +
-        " | " + (if (lowLatencyVideo) decoderLatency.get() else "codec padrão")
+        " | " + (if (lowLatencyVideo) decoderLatency.get() else "codec padrão") +
+        if(nativeTouch) " | Toque: ${if(touchEnabled) "ativo" else "desativado"}, $inputWidth×$inputHeight, ${inputPump?.metrics?.pointerEventsSent ?: 0} eventos enviados" else ""
 
     init {
         PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(context.applicationContext)
@@ -130,8 +131,10 @@ class XCloudWebRtcClient(
                     if (closed.get() || buffer == null) return
                     if(name=="input" && buffer.binary) {
                         RemoteInputReport.parse(buffer.data)?.let { report ->
+                            val changed=(report.width!=null && report.width!=inputWidth) || (report.height!=null && report.height!=inputHeight)
                             report.width?.let { inputWidth=it; inputPump?.touchWidth=it }
                             report.height?.let { inputHeight=it; inputPump?.touchHeight=it }
+                            if(nativeTouch && changed) sendTouchDimensions()
                             report.rumble?.let(onRumble)
                         }
                         return
@@ -187,6 +190,7 @@ class XCloudWebRtcClient(
                 gamepads.forEach { (index,state) -> pump.update(state,index) }
                 pump.start()
                 channelsReady.complete(Unit)
+                if(nativeTouch) sendTouchDimensions()
             }
             statsJob = scope.launch {
                 while (isActive) {
@@ -250,6 +254,11 @@ class XCloudWebRtcClient(
             if(pump != null) pump.pointers(events) else pendingTouch.add(events)
         }
     } }
+    private fun sendTouchDimensions() {
+        if(closed.get() || !handshake.ready || channels["message"]?.state()!=DataChannel.State.OPEN) return
+        val message=ChannelHandshake.dimensions(inputWidth,inputHeight)
+        channels["message"]?.send(DataChannel.Buffer(ByteBuffer.wrap(message.bytes),false))
+    }
     /** Reassert after the stream is ready and allow the native session to fall back to virtual controls. */
     fun setNativeTouchEnabled(enabled: Boolean): Boolean {
         if (!nativeTouch || closed.get() || !channelsReady.isCompleted) return false

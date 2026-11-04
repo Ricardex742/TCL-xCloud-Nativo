@@ -33,6 +33,34 @@ import java.io.File
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @LooperMode(LooperMode.Mode.PAUSED)
 class DashboardTest {
+    @Test fun magnifierOpensThePhoneKeyboardAndSearchesTheCatalogWithoutStartingAGame() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        val activity=controller.get()
+        shadowOf(activity.packageManager).setSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN,true)
+        var played=0; var options=0
+        lateinit var view: GameDashboardView
+        view=GameDashboardView(activity,GameLibrary(activity,"phone-search"),{played++},{
+            com.xcloud.tclnative.ui.dashboard.ConsoleDialogs.search(activity,view.searchQuery) { view.setSearch(it) }
+        },{options++},{})
+        activity.setContentView(view); view.setGames(games); layout(view,1280,720)
+        val magnifier=(0 until view.childCount).map(view::getChildAt).single { it.contentDescription=="Pesquisar jogos" }
+        assertTrue(magnifier.right<=106)
+        assertTrue(magnifier.width>=80)
+        magnifier.performClick(); shadowOf(Looper.getMainLooper()).idle()
+        val dialog=org.robolectric.shadows.ShadowDialog.getLatestDialog() as com.xcloud.tclnative.ui.dashboard.ConsoleDialog
+        fun all(node: View): List<View> = listOf(node)+if(node is ViewGroup)
+            (0 until node.childCount).flatMap { all(node.getChildAt(it)) } else emptyList()
+        val field=all(dialog.body).filterIsInstance<android.widget.EditText>().single()
+        assertTrue(field.hasFocus())
+        val ime=activity.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+        assertTrue(shadowOf(ime).isSoftInputVisible)
+        field.setText("Halo Infinite"); field.onEditorAction(android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH)
+        layout(view,1280,720)
+        assertEquals("Halo Infinite",view.searchQuery)
+        val grid=all(view).filterIsInstance<RecyclerView>().single()
+        assertEquals(1,grid.adapter!!.itemCount); assertEquals(0,played); assertEquals(0,options)
+        view.close(); controller.pause().stop().destroy()
+    }
     private val games = listOf("Forza Horizon 5", "33 Immortals", "Battlefield 1", "Diablo IV",
         "Gears of War", "Delta Force", "Sea of Thieves", "Halo Infinite", "Grounded", "Minecraft",
         "Microsoft Flight Simulator", "Indiana Jones").mapIndexed { i, name -> GameTitle("game-$i", name, "product-$i", seriesOptimized = i % 2 == 0) }

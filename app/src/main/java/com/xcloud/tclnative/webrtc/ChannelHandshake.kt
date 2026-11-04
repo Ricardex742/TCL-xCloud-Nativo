@@ -36,10 +36,7 @@ class ChannelHandshake(private val nativeTouch: Boolean = false, private val wid
             config("/streaming/characteristics/orientationchanged", JSONObject().put("orientation", 0)),
             config("/streaming/characteristics/touchinputenabledchanged", JSONObject().put("touchInputEnabled", nativeTouch)),
             config("/streaming/characteristics/clientdevicecapabilities", JSONObject()),
-            config("/streaming/characteristics/dimensionschanged", JSONObject()
-                .put("horizontal", width).put("vertical", height).put("preferredWidth", width).put("preferredHeight", height)
-                .put("safeAreaLeft", 0).put("safeAreaTop", 0).put("safeAreaRight", width).put("safeAreaBottom", height)
-                .put("supportsCustomResolution", true))
+            dimensions(width,height)
         )
     }
     private fun config(target: String, content: JSONObject) = encode("message", JSONObject()
@@ -47,6 +44,11 @@ class ChannelHandshake(private val nativeTouch: Boolean = false, private val wid
         .put("content", content.toString()))
 
     companion object {
+        fun dimensions(width: Int,height: Int) = encode("message",JSONObject().put("type","Message")
+            .put("target","/streaming/characteristics/dimensionschanged").put("id",UUID.randomUUID().toString()).put("cv","")
+            .put("content",JSONObject().put("horizontal",width).put("vertical",height)
+                .put("preferredWidth",width).put("preferredHeight",height).put("safeAreaLeft",0).put("safeAreaTop",0)
+                .put("safeAreaRight",width).put("safeAreaBottom",height).put("supportsCustomResolution",true).toString()))
         fun encode(channel: String, json: JSONObject) = ChannelMessage(channel, json.toString().toByteArray(Charsets.UTF_8))
     }
 }

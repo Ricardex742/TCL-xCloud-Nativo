@@ -153,6 +153,20 @@ class SignalingTest {
             client.stop()
         }
     }
+    @Test fun nativeTouchUsesAndroidIdentityAndNextControllerSessionRestoresItsSelectedProfile() = runBlocking {
+        val client=signaling()
+        assertTrue(client.startAndConnectWebRtcSession("FORTNITE",peer,nativeTouch=true) {}.isSuccess)
+        val mobile=requests.last { it.path=="/v5/sessions/cloud/play" }
+        assertEquals("android",JSONObject(mobile.body.clone().readUtf8()).getJSONObject("settings").getString("osName"))
+        val device=JSONObject(mobile.getHeader("X-MS-Device-Info")!!).getJSONObject("dev")
+        assertEquals("android",device.getJSONObject("os").getString("name"))
+        assertFalse(device.getJSONObject("hw").getString("model").contains("Surface"))
+        client.stop(); connectSent=false; provisioned=false
+        assertTrue(client.startAndConnectWebRtcSession("real-id",peer) {}.isSuccess)
+        val tv=requests.last { it.path=="/v5/sessions/cloud/play" }
+        assertEquals("tizen",JSONObject(tv.body.clone().readUtf8()).getJSONObject("settings").getString("osName"))
+        client.stop()
+    }
     @Test fun failedTransportCannotReturnAConnectedStatus() = runBlocking {
         rejectTransport = true
         assertTrue(signaling().startAndConnectWebRtcSession("real-id", peer) {}.isFailure)

@@ -139,7 +139,8 @@ class GameTouchView(context: Context,
                 val (x,y)=position ?: old?.let { it.x to it.y } ?: return
                 val pressure=event.getPressure(i).let { if(it.isFinite() && it>0) it.coerceAtMost(1f) else 1f }
                 val diameter=event.getTouchMajor(i).takeIf { it.isFinite() && it>0 } ?: 1f
-                val p=NativePointer(pointerId,x,y,type,if(type==2) 0f else pressure,
+                // Android ids start at zero; DOM PointerEvents use stable positive contact ids.
+                val p=NativePointer(pointerId+1,x,y,type,if(type==2) 0f else pressure,
                     diameter/width.coerceAtLeast(1),diameter/height.coerceAtLeast(1))
                 if(type==2) native.remove(pointerId) else native[pointerId]=p
                 events.add(p)

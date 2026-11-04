@@ -47,7 +47,8 @@ class GamepadInputBuffer {
 }
 
 data class InputMetrics(val bufferedBytes: Long = 0, val maxSchedulerDelayMs: Double = 0.0,
-                        val backpressureSkips: Long = 0, val coalescedEdges: Long = 0, val sentState: GamepadState = GamepadState())
+                        val backpressureSkips: Long = 0, val coalescedEdges: Long = 0, val sentState: GamepadState = GamepadState(),
+                        val pointerEventsSent: Long=0)
 
 /** Native sends run independently from decoder/default-coroutine CPU load. Never catch up by replaying old ticks. */
 class RealtimeInputPump(
@@ -113,7 +114,7 @@ class RealtimeInputPump(
                             if (running.get()) onFailure()
                             break
                         }
-                        metrics = metrics.copy(sentState = states[0] ?: GamepadState())
+                        metrics = metrics.copy(sentState = states[0] ?: GamepadState(),pointerEventsSent=metrics.pointerEventsSent+pointers.size)
                     }
                     metrics = metrics.copy(bufferedBytes = queued, maxSchedulerDelayMs = maxDelay,
                         backpressureSkips = skipped, coalescedEdges = synchronized(lock) { buffers.sumOf { it.coalescedEdges } })

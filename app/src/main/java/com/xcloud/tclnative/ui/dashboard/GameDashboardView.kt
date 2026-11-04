@@ -88,6 +88,7 @@ class GameDashboardView(
         typeface=android.graphics.Typeface.DEFAULT
         setPadding(0,0,0,0)
     }
+    private val searchButton = SearchButton(context,onSearch)
     private val connected = View(context).apply { background = rounded(0xff22b444.toInt(), 1000f) }
     private val navigation = FrameLayout(context).apply { clipChildren = false; clipToPadding = false }
     private val tabRow = LinearLayout(context).apply {
@@ -130,6 +131,7 @@ class GameDashboardView(
         headerIcon.background = rounded(0xff334139.toInt(), 8f); headerIcon.clipToOutline = true
         headerTitle.maxLines = 2; headerTitle.setLineSpacing(0f, .96f)
         addView(headerIcon); addView(headerTitle)
+        addView(searchButton)
         profilePanel.addView(avatar); profilePanel.addView(avatarLetter)
         profilePanel.addView(connected); profilePanel.addView(accountName); profilePanel.addView(gamertag)
         profilePanel.addView(subscription); profilePanel.addView(settingsButton)
@@ -137,6 +139,8 @@ class GameDashboardView(
             profilePanel.background = if (focused) rounded(0x66325540, 9f) else null
         }
         addView(profilePanel)
+        searchButton.nextFocusRightId=profilePanel.id
+        profilePanel.nextFocusLeftId=searchButton.id
         navigation.addView(tabRow); navigation.addView(lb); navigation.addView(rb)
         lb.background = rounded(0xff252527.toInt(), 6f, Color.LTGRAY)
         rb.background = rounded(0xff252527.toInt(), 6f, Color.LTGRAY)
@@ -161,6 +165,7 @@ class GameDashboardView(
             }))
         }
         addView(navigation)
+        searchButton.nextFocusDownId=tabs.first().id
         grid.adapter = adapter
         addView(grid); addView(emptyState)
         addView(footer); addView(catalogNote); addView(metadataNote)
@@ -380,6 +385,7 @@ class GameDashboardView(
         val navTop = headerTop+headerSize+30*s
         val top = navTop+navHeight+18*s
         place(headerIcon, 106*s, headerTop, headerSize, headerSize)
+        place(searchButton, 8*s, headerTop+14*s, 88*s, 88*s)
         place(headerTitle, 242*s, headerTop+8*s, 465*s, 110*s)
         textSize(headerTitle, 46f)
         if (android.os.Build.VERSION.SDK_INT >= 26) headerTitle.setAutoSizeTextTypeUniformWithConfiguration(

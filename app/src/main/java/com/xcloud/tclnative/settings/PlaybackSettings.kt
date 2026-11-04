@@ -8,7 +8,8 @@ enum class VideoMode(val label: String, val lowLatency: Boolean) {
     COMPATIBILITY("Compatibilidade — TVs mais fracas", false)
 }
 enum class TouchMode(val label: String) {
-    AUTO("Automático — escolher no celular"), OFF("Desativado"), VIRTUAL("Controle virtual — HUD por jogo"), NATIVE("Toque nativo Xbox — experimental")
+    AUTO("Automático — escolher no celular"), OFF("Desativado"), VIRTUAL("Controle virtual — HUD por jogo"),
+    NATIVE("Toque nativo Xbox — experimental"), WEB_NATIVE("Toque oficial Xbox — WebView")
 }
 
 enum class VideoAspect(val label: String, val ratio: Double? = null, val stretch: Boolean = false) {

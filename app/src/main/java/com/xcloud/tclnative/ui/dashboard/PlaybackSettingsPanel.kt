@@ -18,9 +18,10 @@ class PlaybackSettingsPanel(
 ) {
     fun show(): ConsoleDialog {
         val settings=store.read()
-        return ConsoleDialogs.menu(context,"Configurações",listOf(
+        val dialog=ConsoleDialogs.menu(context,"Configurações",listOf(
             ConsoleAction("Vídeo: ${settings.videoMode.label}") { chooseVideo() },
             ConsoleAction("Resolução: ${settings.resolution.label}") { chooseResolution() },
+            ConsoleAction("HDR10: verificar tela e transmissão") { showHdrStatus() },
             ConsoleAction("Upscaling nativo: ${if(settings.nativeUpscaling) "Ativado" else "Desativado"}") { chooseUpscaling() },
             ConsoleAction("Proporção: ${settings.aspect.label}") { chooseAspect() },
             ConsoleAction("Nitidez e saturação") { showImageAdjustments() },
@@ -30,7 +31,13 @@ class PlaybackSettingsPanel(
             ConsoleAction("Atualizar catálogo",refresh),
             ConsoleAction("Trocar conta",logout)
         ))
+        if(settings.touchMode==TouchMode.WEB_NATIVE) dialog.body.addView(dialog.text(
+            "Modo oficial selecionado: a qualidade é ajustada no site Xbox. As opções de vídeo abaixo se aplicam ao motor nativo.",
+            20,color=DashboardTheme.muted),0)
+        return dialog
     }
+    fun showHdrStatus(): ConsoleDialog = ConsoleDialogs.message(context,"HDR10: tela e transmissão",
+        com.xcloud.tclnative.renderer.HdrStatus.report(context),listOf(ConsoleAction("Voltar") { show() }),onCancel={ show() })
     private fun save(settings: PlaybackSettings, after: () -> Unit = { show() }) { store.save(settings); changed(settings); after() }
     private fun choices(title: String, description: String, entries: List<Pair<String,Boolean>>,
                         onBack: () -> Unit = { show() }, select: (Int) -> Unit): ConsoleDialog {
@@ -112,9 +119,10 @@ class PlaybackSettingsPanel(
                 }
             },
             ConsoleAction("Jogar com toque: ${settings.touchMode.label}") {
-                choices("Jogar com toque","Automático oferece a escolha em celulares. Controle virtual usa botões na tela; Toque nativo depende do suporte informado pelo jogo. Aplica-se à próxima partida.",
-                    TouchMode.entries.map { it.label to (it==settings.touchMode) },{ showControls() }) {
-                    save(settings.copy(touchMode=TouchMode.entries[it])) { showControls() }
+                val modes=TouchMode.entries.filter { it!=TouchMode.WEB_NATIVE || context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN) }
+                choices("Jogar com toque","Automático oferece a escolha em celulares. HUD usa nosso motor nativo. Toque nativo experimental usa identificação Android, e a qualidade recebida depende desse perfil. WebView abre o cliente oficial: pode exigir outro login, usa as opções do site e consome mais memória. Disponível em celulares. Aplica-se à próxima partida.",
+                    modes.map { it.label to (it==settings.touchMode) },{ showControls() }) {
+                    save(settings.copy(touchMode=modes[it])) { showControls() }
                 }
             },
             ConsoleAction("Testar vibração / verificar suporte",testRumble)

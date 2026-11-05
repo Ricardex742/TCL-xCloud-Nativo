@@ -6,6 +6,17 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class SessionReportTest {
+    @Test fun reportCapturesFinalTouchFallbackAndInputDimensionsAndFreezesThem() {
+        val t=tracker(); t.begin(0,"Wi-Fi")
+        var details="xCLOUD 0.24 • Toque nativo: ativo; espaço de input: 1280×720"
+        t.inputDetails={ details }
+        t.add(1000,sample(),InputMetrics(pointerEventsSent=27))
+        details="xCLOUD 0.24 • Toque nativo: desativado para HUD; espaço de input: 1280×720"
+        val r=finish(t,2000)
+        assertEquals(details,r.inputDetails); assertTrue(r.text().contains("desativado para HUD"))
+        details="outro modo"
+        assertSame(r,t.finish(3000,SessionEnd.USER)); assertTrue(r.inputDetails!!.contains("1280×720"))
+    }
     private fun tracker()=SessionReportTracker("Jogo","Dispositivo","720p",60) { 123456L }
     private fun sample(rtt: Double=30.0,seconds: Double=1.0)=StreamMetrics(
         rttMs=rtt,jitterMs=2.0,packetLossPercent=0.0,fps=60.0,bitrateMbps=8.0,decodeMs=4.0,

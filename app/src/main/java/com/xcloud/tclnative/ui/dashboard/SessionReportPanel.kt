@@ -59,7 +59,8 @@ object SessionReportPanel {
         dialog.body.addView(dialog.text("Recebido WebRTC: ${SessionReport.bytes(report.receivedBytes)} • Enviado: ${SessionReport.bytes(report.uploadedBytes)}\n"+
             "Vídeo RTP: ${SessionReport.bytes(report.videoBytes)} • Input: ${SessionReport.bytes(report.inputBytes)}\n"+
             "Descartes observados: ${report.droppedFrames ?: "n/d"} • Sem progresso: ${SessionReport.duration(report.stalledMs)} (${report.stalledEvents} episódios)\n"+
-            "Apresentação solicitada: ${report.presentationFps} FPS • Decoder: ${report.decoder ?: "n/d"}",19,color=DashboardTheme.muted).apply { isFocusable=true; isFocusableInTouchMode=true; DashboardTheme.customFocus(this) })
+            "Apresentação solicitada: ${report.presentationFps} FPS • Decoder: ${report.decoder ?: "n/d"}"+
+            (report.inputDetails?.let { "\n$it" } ?: ""),19,color=DashboardTheme.muted).apply { isFocusable=true; isFocusableInTouchMode=true; DashboardTheme.customFocus(this) })
         report.findings().forEach { finding -> dialog.body.addView(dialog.text("• $finding",20).apply { isFocusable=true; isFocusableInTouchMode=true; DashboardTheme.customFocus(this) },LinearLayout.LayoutParams(-1,-2).apply { topMargin=dialog.px(8) }) }
         dialog.body.addView(dialog.text("Índice estimado. FPS decodificados não são FPS do jogo ou da tela. Rede e pausas refletem as amostras disponíveis; enlace Wi-Fi não mede velocidade de internet.",17,color=DashboardTheme.muted),
             LinearLayout.LayoutParams(-1,-2).apply { topMargin=dialog.px(12) })

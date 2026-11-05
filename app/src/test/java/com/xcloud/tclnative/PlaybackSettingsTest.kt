@@ -29,13 +29,12 @@ class PlaybackSettingsTest {
         prefs.edit().putString("video_mode","removed-mode").putString("resolution","unsupported").commit()
         assertEquals(chosen.copy(resolution=StreamResolution.HD_1080_HQ),PlaybackSettingsStore(context).read())
     }
-    @Test fun disablingUpscalingKeeps720pSmallButStillFitsOversizedVideoWithoutCropping() {
-        assertEquals(VideoViewport(1920,1080),VideoScalingPolicy.viewport(1920,1080,1280,720,true))
-        assertEquals(VideoViewport(1280,720),VideoScalingPolicy.viewport(1920,1080,1280,720,false))
-        assertEquals(VideoViewport(1280,720),VideoScalingPolicy.viewport(1280,720,1920,1080,false))
-        assertEquals(VideoViewport(1920,1080),VideoScalingPolicy.viewport(3840,2160,1920,1080,false))
-        assertEquals(VideoViewport(405,720),VideoScalingPolicy.viewport(1280,720,1080,1920,false))
-        assertEquals(VideoViewport(1,1),VideoScalingPolicy.viewport(0,0,0,0,false))
+    @Test fun layoutFitsSmallAndOversizedSourcesWithoutCroppingOrDependingOnHardwareScaling() {
+        assertEquals(VideoViewport(1920,1080),VideoScalingPolicy.viewport(1920,1080,1280,720))
+        assertEquals(VideoViewport(1280,720),VideoScalingPolicy.viewport(1280,720,1920,1080))
+        assertEquals(VideoViewport(3840,2160),VideoScalingPolicy.viewport(3840,2160,1920,1080))
+        assertEquals(VideoViewport(405,720),VideoScalingPolicy.viewport(1280,720,1080,1920))
+        assertEquals(VideoViewport(1,1),VideoScalingPolicy.viewport(0,0,0,0))
     }
     @Test fun statisticsRequireManualActivationAndEveryNewGameStartsHidden() {
         val visibility=StatisticsVisibility()

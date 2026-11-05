@@ -6,7 +6,7 @@
   <p>
     <a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aci%2Fapk-android10-3cc2595"><img src="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml/badge.svg?branch=ci%2Fapk-android10-3cc2595" alt="Compilação Android" /></a>
     <img src="https://img.shields.io/badge/Android-7.0%2B-54de69?logo=android&logoColor=white" alt="Android 7 ou superior" />
-    <img src="https://img.shields.io/badge/vers%C3%A3o-0.23.0-173d29" alt="Versão 0.22.0" />
+    <img src="https://img.shields.io/badge/vers%C3%A3o-0.24.0-173d29" alt="Versão 0.24.0" />
   </p>
   <p><a href="#baixar-e-instalar">Baixar</a> · <a href="#telas-do-aplicativo">Telas</a> · <a href="#controles-de-toque-por-jogo">HUDs de toque</a> · <a href="#funcionalidades">Funcionalidades</a> · <a href="#atalhos-dos-jogos-na-tv">Atalhos na TV</a> · <a href="#compilar">Compilar</a></p>
 </div>
@@ -179,7 +179,7 @@ gradle --no-daemon --max-workers=2 \
 
 O módulo `shortcut` gera o modelo sem assinatura usado nos atalhos locais; ele é incorporado automaticamente ao aplicativo. Cada aparelho assina seus atalhos com uma chave própria do Android Keystore, separada da chave de atualização do xCLOUD.
 
-O pipeline valida testes, compatibilidade de APIs Android, assinatura do APK, pacotes de controle, fluxo de autenticação/sessão, geração dos atalhos e shaders de imagem. As capturas da interface podem ser reproduzidas pelos testes de UI. Consulte a [comparação direta com o SDK oficial na versão 0.23](docs/native-touch-official-sdk.md), o [diagnóstico nativo da versão 0.22](docs/native-diagnostics-0.22.md), a [análise de HDR e toque da versão 0.21](docs/hdr-native-touch-0.21.md), os [gestos e câmera da versão 0.20](docs/mobile-huds-0.20.md) e o [modo de compatibilidade da versão 0.18](docs/tv-compatibility-0.18.md) para a implementação e os limites de validação.
+O pipeline valida testes, compatibilidade de APIs Android, assinatura do APK, pacotes de controle, fluxo de autenticação/sessão, geração dos atalhos e shaders de imagem. As capturas da interface podem ser reproduzidas pelos testes de UI. Consulte o [retorno do teste no celular e ajustes da versão 0.24](docs/touch-source-and-scaling-0.24.md), a [comparação direta com o SDK oficial na versão 0.23](docs/native-touch-official-sdk.md), o [diagnóstico nativo da versão 0.22](docs/native-diagnostics-0.22.md), a [análise de HDR e toque da versão 0.21](docs/hdr-native-touch-0.21.md), os [gestos e câmera da versão 0.20](docs/mobile-huds-0.20.md) e o [modo de compatibilidade da versão 0.18](docs/tv-compatibility-0.18.md) para a implementação e os limites de validação.
 
 ---
 

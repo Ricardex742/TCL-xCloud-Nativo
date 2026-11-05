@@ -64,7 +64,7 @@ class ProtocolTest {
         assertTrue(protocol.onHandshakeAck().isEmpty()); assertFalse(protocol.ready)
         assertTrue(protocol.onOpen("input").isNotEmpty()); assertTrue(protocol.ready)
     }
-    @Test fun nativeTouchHandshakeEnablesPointersWithoutInventingAPhysicalController() {
+    @Test fun nativeTouchHandshakeRegistersTheLogicalTouchSlotBeforeEnablingPointers() {
         val protocol=ChannelHandshake(true).apply {
             displayDimensions=ClientDisplayDimensions.fromPixels(1280,720,1280,720,320f,320f)
         }
@@ -75,7 +75,8 @@ class ProtocolTest {
         assertArrayEquals(GamepadPacket.metadata(0.0,10),metadata.bytes)
         assertTrue(actions.indexOf(metadata)<actions.indexOfFirst { !it.binary && String(it.bytes).contains("touchinputenabledchanged") })
         val messages=actions.filterNot { it.binary }.map { JSONObject(String(it.bytes,Charsets.UTF_8)) }
-        assertFalse(messages.any { it.optString("message")=="gamepadChanged" })
+        val connected=messages.single { it.optString("message")=="gamepadChanged" }
+        assertEquals(0,connected.getInt("gamepadIndex")); assertTrue(connected.getBoolean("wasAdded"))
         val touch=messages.single { it.optString("target").endsWith("touchinputenabledchanged") }
         assertTrue(JSONObject(touch.getString("content")).getBoolean("touchInputEnabled"))
         val dimensions=JSONObject(messages.single { it.optString("target").endsWith("dimensionschanged") }.getString("content"))

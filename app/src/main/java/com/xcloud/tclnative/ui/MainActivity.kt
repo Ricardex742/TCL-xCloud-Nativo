@@ -785,6 +785,8 @@ class MainActivity : Activity() {
                 nativeTouch = touchMode==TouchMode.NATIVE,
                 onRumble = { command -> if(generation==playbackGeneration) rumble.play(command) },compatibility=compatible)
             webrtcClient = rtc
+            val appVersion=packageManager.getPackageInfo(packageName,0).versionName ?: "n/d"
+            tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}" }
             surfaceRenderer.displayDimensions()?.let(rtc::updateDisplayDimensions)
             if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
             var failed=false

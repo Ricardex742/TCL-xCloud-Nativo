@@ -1,5 +1,7 @@
 # Toque nativo e análise direta do cliente oficial — 0.23
 
+> O teste no aparelho relatado após esta entrega continuou sem toque funcional e mostrou imagem pequena. A investigação seguinte identificou a omissão do registro do slot virtual 0 e o limite local de ampliação. Veja [retorno do teste e versão 0.24](touch-source-and-scaling-0.24.md). A correção completa do Fortnite continua sem demonstração em partida.
+
 A versão `0.23.0-native-touch-protocol` corrige divergências verificadas no protocolo do motor Android/WebRTC. **Ainda não demonstra que o toque funciona no Fortnite em uma partida real.** Não houve login no cliente oficial, sessão autenticada de comparação ou celular conectado nesta investigação.
 
 ## Acesso e fontes oficiais

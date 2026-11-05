@@ -10,6 +10,21 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 
 class NativeTouchProtocolTest {
+    @Test fun logicalTouchSlotIsRegisteredOnceAndSurvivesPhysicalGamepadChanges() {
+        // The isolated official TAK bridge + source manager emits [{index:0,added:true}].
+        val handshake=ChannelHandshake(true)
+        listOf("message","input","control").forEach(handshake::onOpen)
+        val changes=handshake.onHandshakeAck().filter { !it.binary }.map { JSONObject(String(it.bytes)) }
+            .filter { it.optString("message")=="gamepadChanged" }
+        assertEquals(1,changes.size)
+        assertEquals(0,changes.single().getInt("gamepadIndex")); assertTrue(changes.single().getBoolean("wasAdded"))
+        val connections=GamepadConnections()
+        // HUD fallback / a physical source using slot zero must reuse the existing logical slot.
+        assertFalse(connections.add(0)); assertFalse(connections.remove(0)); assertFalse(connections.add(0))
+        assertTrue(connections.add(1)); assertFalse(connections.add(1)); assertTrue(connections.remove(1))
+        assertFalse(connections.remove(1)); assertFalse(connections.remove(0))
+        assertTrue(handshake.onHandshakeAck().isEmpty())
+    }
     @Test fun fractionalContactsMatchTheOfficialReliableV8SerializerFixture() {
         // Official web SDK 10.7.0, generateInputReport(version=8), timestamp normalized to 10ms.
         // See docs/native-touch-official-sdk.md for source hashes and reproduction inputs.

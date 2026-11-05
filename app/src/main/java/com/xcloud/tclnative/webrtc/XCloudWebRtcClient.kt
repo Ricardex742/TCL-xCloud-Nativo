@@ -33,6 +33,7 @@ class XCloudWebRtcClient(
     private val inputStarted = AtomicBoolean(false)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val gamepads = mutableMapOf<Int,GamepadState>().apply { if(!nativeTouch) put(0,GamepadState()) }
+    private val gamepadConnections = GamepadConnections()
     @Volatile private var inputDimensions: TouchInputDimensions? = null
     private val pumpLock = Any()
     private val pendingTouch = NativeTouchBuffer()
@@ -44,6 +45,9 @@ class XCloudWebRtcClient(
     private val decoderRecovery = DecoderRecoveryController()
     private val decoderLatency = java.util.concurrent.atomic.AtomicReference("Codec LL: aguardando vídeo")
     fun currentInputMetrics(): InputMetrics = inputPump?.metrics ?: InputMetrics()
+    fun inputDiagnostics(): String = if(nativeTouch)
+        "Toque nativo: ${if(touchEnabled) "sinalizado ativo" else "desativado para HUD"}; espaço de input: ${inputDimensions?.let { "${it.width}×${it.height}" } ?: "aguardando metadata"}; slot virtual 0: ${if(channelsReady.isCompleted) "registro enviado" else "aguardando canal"}"
+        else "Input Xbox: controle/HUD"
     fun latencyDiagnostics(): String = (if (lowLatencyVideo) "Playout solicitado: 0–40 ms" else "Playout: adaptativo") +
         " | " + (if (lowLatencyVideo) decoderLatency.get() else "codec padrão") +
         if(nativeTouch) " | Toque: ${if(touchEnabled) "ativo" else "desativado"}, ${inputDimensions?.let { "${it.width}×${it.height}" } ?: "aguardando metadata"}, ${inputPump?.metrics?.pointerEventsSent ?: 0} eventos enviados" else ""
@@ -178,7 +182,7 @@ class XCloudWebRtcClient(
             val input = channels.getValue("input")
             synchronized(pumpLock) {
                 if (closed.get()) return
-                gamepads.keys.filter { nativeTouch || it!=0 }.forEach { sendGamepadChanged(it,true) }
+                gamepads.keys.forEach { if(gamepadConnections.add(it)) sendGamepadChanged(it,true) }
                 val pump = RealtimeInputPump(
                 bufferedAmount = { if (closed.get()) Long.MAX_VALUE else input.bufferedAmount() },
                 send = { bytes -> !closed.get() && input.send(DataChannel.Buffer(ByteBuffer.wrap(bytes), true)) },
@@ -235,17 +239,17 @@ class XCloudWebRtcClient(
         synchronized(pumpLock) {
             if(closed.get()) return
             val added=index !in gamepads
-            // Reserved menu chords and idle dongles must not announce a controller in a touch-only game.
+            // Reserved menu chords and idle dongles must not start physical reports in a touch-only game.
             if (nativeTouch && added && state == GamepadState()) return
             gamepads[index]=state
-            if(added && channelsReady.isCompleted) sendGamepadChanged(index,true)
+            if(added && channelsReady.isCompleted && gamepadConnections.add(index)) sendGamepadChanged(index,true)
             inputPump?.update(state,index)
         }
     }
     fun removeGamepad(index: Int) {
         synchronized(pumpLock) {
             if(index==0 && !nativeTouch) { gamepads[0]=GamepadState(); inputPump?.update(GamepadState()); return }
-            if(gamepads.remove(index)!=null && channelsReady.isCompleted) sendGamepadChanged(index,false)
+            if(gamepads.remove(index)!=null && channelsReady.isCompleted && gamepadConnections.remove(index)) sendGamepadChanged(index,false)
             inputPump?.remove(index)
         }
     }

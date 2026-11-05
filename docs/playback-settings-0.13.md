@@ -12,7 +12,7 @@ Start no catálogo ou a engrenagem abre Configurações. O painel reúne vídeo,
 | --- | --- |
 | Vídeo | Menor atraso solicita buffers reduzidos e baixa latência quando suportada; Adaptativo permite mais margem para oscilações. |
 | Resolução | 720p (1280×720, perfil Android), 1080p (1920×1080, perfil Windows) e 1080p HQ (1920×1080, perfil Tizen). |
-| Upscaling nativo | Ativado preenche a janela pela Surface Android; desativado centraliza o vídeo sem ampliá-lo na janela. Vídeo maior que a janela é reduzido para caber. |
+| Upscaling nativo | Na 0.13, desativar centralizava o vídeo sem ampliá-lo. Desde a 0.24, os dois modos ajustam a imagem à janela; a opção controla a solicitação de escala da Surface Android. Veja [correção da escala](touch-source-and-scaling-0.24.md). |
 
 Os seletores de resolução seguem o [contrato usado pelo Better xCloud](https://github.com/redphx/better-xcloud/blob/main/src/utils/network.ts). O pedido usa o perfil no corpo de criação e no cabeçalho de dispositivo, além das dimensões correspondentes. As faixas solicitadas no SDP são 5–12 Mbps em 720p, 10–20 Mbps em 1080p e 20–30 Mbps em HQ. Não obrigam o servidor a entregar esses valores: jogo, serviço e rede determinam o vídeo recebido. 1080p HQ tem a mesma resolução de 1080p, com outro perfil de qualidade. Não há opção de transmissão 4K ou resolução arbitrária sem suporte confirmado.
 

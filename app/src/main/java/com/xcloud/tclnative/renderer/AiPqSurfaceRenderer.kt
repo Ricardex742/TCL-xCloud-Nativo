@@ -67,10 +67,10 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         aspectDrawer?.sharpness=this.sharpness; aspectDrawer?.saturation=this.saturation
     }
     fun touchCoordinates(x: Float,y: Float): Pair<Float,Float>? = VideoScalingPolicy.touchCoordinates(
-        width,height,videoWidth,videoHeight,nativeUpscaling,aspect,x,y)
+        width,height,videoWidth,videoHeight,aspect,x,y)
     fun displayDimensions(): ClientDisplayDimensions? {
         if (width <= 0 || height <= 0) return null
-        val viewport = VideoScalingPolicy.viewport(width,height,videoWidth,videoHeight,nativeUpscaling,aspect)
+        val viewport = VideoScalingPolicy.viewport(width,height,videoWidth,videoHeight,aspect)
         val metrics = resources.displayMetrics
         return ClientDisplayDimensions.fromPixels(width,height,viewport.width,viewport.height,
             metrics.xdpi,metrics.ydpi,metrics.densityDpi.toFloat())
@@ -155,7 +155,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
             }
         }
         val view = renderer ?: return
-        val viewport = VideoScalingPolicy.viewport(width,height,videoWidth,videoHeight,nativeUpscaling,aspect)
+        val viewport = VideoScalingPolicy.viewport(width,height,videoWidth,videoHeight,aspect)
         val targetWidth = viewport.width
         val targetHeight = viewport.height
         val old = view.layoutParams as? LayoutParams
@@ -210,7 +210,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         val mode = display?.mode
         val output = mode?.let { "${it.physicalWidth}x${it.physicalHeight}@${kotlin.math.round(it.refreshRate).toInt()} Hz" } ?: "n/d"
         return "Surface $size → janela ${width}x$height | Saída Android: $output\n" +
-            "Escala da Surface: ${if (nativeUpscaling) "HW solicitada" else "desativada, sem ampliação na janela"} | Cadência ${if(compatibility) 30 else 60} Hz: ${if (frameRateHintRequested) "solicitada" else "n/d"} | Pós-processamento mínimo: ${if (minimalPostProcessingRequested) "solicitado" else "padrão"}\n" +
+            "Escala da Surface: ${if (nativeUpscaling) "HW solicitada" else "HW desativada"}; imagem ajustada à janela | Cadência ${if(compatibility) 30 else 60} Hz: ${if (frameRateHintRequested) "solicitada" else "n/d"} | Pós-processamento mínimo: ${if (minimalPostProcessingRequested) "solicitado" else "padrão"}\n" +
             "Proporção: ${aspect.label} | Nitidez: $sharpness% | Saturação: $saturation% | Apresentação: até ${if(compatibility) 30 else 60} FPS | AiPQ: não verificável pelo app"
     }
 

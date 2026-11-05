@@ -76,14 +76,14 @@ class PlaybackSettingsPanel(
     }
     fun chooseUpscaling(): ConsoleDialog {
         val current=store.read()
-        return choices("Upscaling nativo","Ativado: preenche a tela com a escala da Surface Android. Desativado: mantém o vídeo sem ampliação na janela, podendo deixar barras. O AiPQ e o processamento da TV são ajustados na própria TV. Aplica-se à próxima partida.",
-            listOf("Ativado — preencher a tela" to current.nativeUpscaling,"Desativado — tamanho original" to !current.nativeUpscaling)) {
+        return choices("Upscaling nativo","A imagem se ajusta à janela nos dois modos, respeitando a proporção escolhida. Ativado solicita a escala da Surface Android; desativado usa a escala do renderer. O processamento da TV é ajustado na própria TV. Aplica-se à próxima partida.",
+            listOf("Ativado — escala da Surface" to current.nativeUpscaling,"Desativado — escala do renderer" to !current.nativeUpscaling)) {
             save(current.copy(nativeUpscaling=it==0))
         }
     }
     fun chooseAspect(): ConsoleDialog {
         val current=store.read()
-        return choices("Proporção da imagem","Original preserva o formato recebido. Proporções fixas e Esticar podem deformar; Zoom mantém a proporção e corta as bordas. Upscaling desligado limita a ampliação. Use ↑/↓ ou deslize para ver todas as opções. Aplica-se à próxima partida.",
+        return choices("Proporção da imagem","Original preserva o formato recebido e usa o maior tamanho que cabe na janela. 16:9 pode deixar barras em telas largas. Proporções fixas e Esticar podem deformar; Zoom mantém a proporção e corta as bordas. Use ↑/↓ ou deslize para ver todas as opções. Aplica-se à próxima partida.",
             VideoAspect.entries.map { it.label to (it==current.aspect) }) { save(current.copy(aspect=VideoAspect.entries[it])) }
     }
     fun showImageAdjustments(onBack: () -> Unit = { show() }): ConsoleDialog {

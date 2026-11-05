@@ -47,6 +47,9 @@ class SessionReportUiTest {
         val original=demo(); SessionReportStore(c.get()).save(original)
         c.pause().stop().destroy(); c=Robolectric.buildActivity(Activity::class.java).setup()
         val context=c.get(); assertEquals(original,SessionReportStore(context).read())
+        val withInput=original.copy(inputDetails="xCLOUD 0.24 • Entrada inicial: nativo • desativado para HUD • 1280×720")
+        SessionReportStore(context).save(withInput)
+        assertEquals(withInput,SessionReportStore(context).read())
         for(invalid in listOf("bad JSON","{\"schema\":2}","{\"schema\":1,\"end\":\"UNKNOWN\"}")) {
             context.getSharedPreferences("session_diagnostic",0).edit().putString("last",invalid).commit()
             assertNull(SessionReportStore(context).read())
@@ -54,10 +57,12 @@ class SessionReportUiTest {
         c.pause().stop().destroy()
     }
     @Test fun reportCanBeCopiedAndAutoDisplayDisabledWithoutChangingOtherSettings() {
-        val c=Robolectric.buildActivity(Activity::class.java).setup(); val a=c.get(); val r=demo()
+        val c=Robolectric.buildActivity(Activity::class.java).setup(); val a=c.get()
+        val r=demo().copy(inputDetails="Toque nativo: desativado para HUD; espaço de input: 1280×720")
         val store=PlaybackSettingsStore(a); val original=PlaybackSettings(resolution=StreamResolution.HD_720,saturation=125)
         store.save(original)
         var d=SessionReportPanel.show(a,r)
+        assertTrue(all(d.body).filterIsInstance<TextView>().any { it.text.contains("desativado para HUD") })
         label(d.panel,"COPIAR").performClick()
         assertEquals(r.text(),(a.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).primaryClip!!.getItemAt(0).text.toString())
         d=SessionReportPanel.show(a,r) { store.save(store.read().copy(sessionReport=false)) }

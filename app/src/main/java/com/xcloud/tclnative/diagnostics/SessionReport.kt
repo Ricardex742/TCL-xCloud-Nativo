@@ -18,7 +18,7 @@ data class SessionReport(
     val efficient: Boolean?,val videoBytes: Long?,val receivedBytes: Long?,val uploadedBytes: Long?,val inputBytes: Long,
     val droppedFrames: Long?,val pointerEvents: Long,val inputWaits: Long,val inputCoalesced: Long,
     val stalledMs: Long,val stalledEvents: Long,val stalledWithoutDataMs: Long,val stalledWithDataMs: Long,
-    val recovery: Map<VideoRecoveryAction,Int>,val score: Int?
+    val recovery: Map<VideoRecoveryAction,Int>,val score: Int?,val inputDetails: String? = null
 ) {
     val quality: String get()=when { score==null -> "Dados parciais"; score>=90 -> "Excelente"; score>=75 -> "Boa"; score>=60 -> "Regular"; else -> "Atenção" }
     fun findings(): List<String> = buildList {
@@ -37,6 +37,7 @@ data class SessionReport(
         append("xCLOUD • Diagnóstico pós-partida\n$game\n$device\n$network\n")
         append("Tempo conectado: ${duration(durationMs)} | Observado: ${duration(observedMs)} | $samples amostras\n")
         append("${end.label} | Pedido: $requestedProfile | Apresentação solicitada: $presentationFps FPS\n")
+        inputDetails?.let { append("$it\n") }
         append("Recebido: ${resolution ?: "n/d"} | ${codec ?: "n/d"} | ${decoder ?: "n/d"}\n")
         append("Índice estimado: ${score?.toString() ?: "n/d"}/100 • $quality\n\n")
         ReportMetric.entries.forEach { key ->
@@ -67,6 +68,7 @@ data class SessionReport(
 /** Constant memory per session: aggregates, counters and watchdog observations, not per-second lists. */
 class SessionReportTracker(private val game: String,private val device: String,private val profile: String,
                            private val fpsTarget: Int,private val wallClock: () -> Long = System::currentTimeMillis) {
+    @Volatile var inputDetails: (() -> String)? = null
     private class Aggregate {
         var sum=0.0; var weight=0.0; var low=Double.POSITIVE_INFINITY; var high=0.0; var count=0L
         fun add(v: Double?,w: Double) { if(v==null || !v.isFinite() || v<0 || !w.isFinite() || w<=0) return
@@ -153,7 +155,7 @@ class SessionReportTracker(private val game: String,private val device: String,p
         report=SessionReport(game.take(256),device.take(180),network,profile.take(180),fpsTarget,(now-began).coerceAtLeast(0),
             (observed*1000).toLong(),samples,wallClock(),end,metrics,resolution,codec,decoder,efficient,video.value(),down.value(),up.value(),
             input.sentBytes,dropped.takeIf { droppedKnown },input.pointerEventsSent,input.backpressureSkips,input.coalescedEdges,
-            stallMs,stallEvents,noDataMs,withDataMs,recovery.toMap(),score)
+            stallMs,stallEvents,noDataMs,withDataMs,recovery.toMap(),score,inputDetails?.invoke()?.take(512))
         return report
     }
     @Synchronized fun takeReport(): SessionReport? { val ready=report ?: return null; if(delivered) return null; delivered=true; return ready }

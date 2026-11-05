@@ -35,7 +35,7 @@ class SessionReportStore(context: Context) {
             .put("observed",r.observedMs).put("samples",r.samples).put("endedAt",r.endedAtMs).put("end",r.end.name)
             .put("resolution",r.resolution).put("codec",r.codec).put("decoder",r.decoder).put("efficient",r.efficient)
             .put("videoBytes",r.videoBytes).put("receivedBytes",r.receivedBytes).put("uploadedBytes",r.uploadedBytes)
-            .put("inputBytes",r.inputBytes).put("dropped",r.droppedFrames).put("pointers",r.pointerEvents)
+            .put("inputBytes",r.inputBytes).put("inputDetails",r.inputDetails?.take(512)).put("dropped",r.droppedFrames).put("pointers",r.pointerEvents)
             .put("waits",r.inputWaits).put("coalesced",r.inputCoalesced).put("stallMs",r.stalledMs)
             .put("stalls",r.stalledEvents).put("noData",r.stalledWithoutDataMs).put("withData",r.stalledWithDataMs).put("score",r.score)
         val metrics=JSONObject()
@@ -64,7 +64,7 @@ class SessionReportStore(context: Context) {
                     SessionEnd.entries.firstOrNull { it.name==d.optString("end") } ?: return null,metrics,s("resolution",48),s("codec",80),s("decoder",160),
                     if(d.has("efficient")) d.optBoolean("efficient") else null,l("videoBytes"),l("receivedBytes"),l("uploadedBytes"),n("inputBytes"),
                     l("dropped"),n("pointers"),n("waits"),n("coalesced"),n("stallMs"),n("stalls"),n("noData"),n("withData"),recovery,
-                    if(d.has("score")) d.optInt("score").takeIf { it in 0..100 } else null)
+                    if(d.has("score")) d.optInt("score").takeIf { it in 0..100 } else null,s("inputDetails",512))
             }
         }
     } catch(_: Exception) { null } }

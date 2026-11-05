@@ -28,8 +28,9 @@ class ChannelHandshake(private val nativeTouch: Boolean = false) {
     private fun startIfReady(): List<ChannelMessage> {
         if (started || !acknowledged || !opened.containsAll(listOf("message", "control", "input"))) return emptyList()
         started = true
-        return listOf(encode("control", JSONObject().put("message", "authorizationRequest").put("accessKey", "4BDB3609-C1F1-4195-9B37-FEFF45DA8B8E"))) +
-            (if(nativeTouch) emptyList() else listOf(encode("control", JSONObject().put("message", "gamepadChanged").put("gamepadIndex", 0).put("wasAdded", true)))) + listOf(
+        return listOf(encode("control", JSONObject().put("message", "authorizationRequest").put("accessKey", "4BDB3609-C1F1-4195-9B37-FEFF45DA8B8E")),
+            // The official TAK source registers logical slot zero, including for NativeTouch.
+            encode("control", JSONObject().put("message", "gamepadChanged").put("gamepadIndex", 0).put("wasAdded", true)),
             // The server must learn maxTouchPoints before touchInputEnabled, as in the web client.
             ChannelMessage("input", GamepadPacket.metadata(0.0, if(nativeTouch) 10 else 0), true),
             config("/streaming/systemUi/configuration", JSONObject().put("version", org.json.JSONArray(listOf(0, 2, 0))).put("systemUis", org.json.JSONArray())),

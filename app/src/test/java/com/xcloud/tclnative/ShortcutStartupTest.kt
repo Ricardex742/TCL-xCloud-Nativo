@@ -167,6 +167,7 @@ class ShortcutStartupTest {
         }; start() }; TestShortcutActivity.server=server
         val c=Robolectric.buildActivity(TestShortcutActivity::class.java).create().start().resume().visible()
         try {
+            assertEquals(android.media.AudioManager.STREAM_MUSIC,c.get().volumeControlStream)
             val transition=all(root(c.get())).filterIsInstance<SessionTransitionView>().single()
             val deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(5)
             val logo=all(transition).filterIsInstance<ImageView>().single { it.contentDescription=="Logo xCLOUD" }

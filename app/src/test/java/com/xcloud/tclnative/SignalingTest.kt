@@ -153,15 +153,22 @@ class SignalingTest {
             client.stop()
         }
     }
-    @Test fun nativeTouchUsesAndroidIdentityAndNextControllerSessionRestoresItsSelectedProfile() = runBlocking {
+    @Test fun nativeTouchKeepsEverySelectedVideoProfileAndNextControllerSessionWorks() = runBlocking {
         val client=signaling()
-        assertTrue(client.startAndConnectWebRtcSession("FORTNITE",peer,nativeTouch=true) {}.isSuccess)
-        val mobile=requests.last { it.path=="/v5/sessions/cloud/play" }
-        assertEquals("android",JSONObject(mobile.body.clone().readUtf8()).getJSONObject("settings").getString("osName"))
-        val device=JSONObject(mobile.getHeader("X-MS-Device-Info")!!).getJSONObject("dev")
-        assertEquals("android",device.getJSONObject("os").getString("name"))
-        assertFalse(device.getJSONObject("hw").getString("model").contains("Surface"))
-        client.stop(); connectSent=false; provisioned=false
+        for(resolution in StreamResolution.entries) {
+            connectSent=false; provisioned=false
+            assertTrue(client.startAndConnectWebRtcSession("FORTNITE",peer,resolution=resolution,nativeTouch=true) {}.isSuccess)
+            val mobile=requests.last { it.path=="/v5/sessions/cloud/play" }
+            assertEquals(resolution.osName,JSONObject(mobile.body.clone().readUtf8()).getJSONObject("settings").getString("osName"))
+            val device=JSONObject(mobile.getHeader("X-MS-Device-Info")!!).getJSONObject("dev")
+            assertEquals(resolution.osName,device.getJSONObject("os").getString("name"))
+            assertEquals(resolution.width,device.getJSONObject("displayInfo").getJSONObject("dimensions").getInt("widthInPixels"))
+            assertEquals(resolution.height,device.getJSONObject("displayInfo").getJSONObject("dimensions").getInt("heightInPixels"))
+            assertFalse(device.getJSONObject("hw").getString("model").contains("Surface"))
+            assertTrue(client.profileDiagnostics().contains(resolution.osName))
+            client.stop()
+        }
+        connectSent=false; provisioned=false
         assertTrue(client.startAndConnectWebRtcSession("real-id",peer) {}.isSuccess)
         val tv=requests.last { it.path=="/v5/sessions/cloud/play" }
         assertEquals("tizen",JSONObject(tv.body.clone().readUtf8()).getJSONObject("settings").getString("osName"))

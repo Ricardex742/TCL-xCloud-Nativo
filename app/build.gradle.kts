@@ -14,8 +14,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 27
-        versionName = "0.27.0-session-transitions"
+        versionCode = 28
+        versionName = "0.28.0-stream-quality-and-audio"
     }
 
     signingConfigs {

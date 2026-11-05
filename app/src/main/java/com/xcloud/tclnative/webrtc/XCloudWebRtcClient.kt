@@ -4,6 +4,7 @@ import android.content.Context
 import kotlinx.coroutines.*
 import org.json.JSONObject
 import org.webrtc.*
+import org.webrtc.audio.JavaAudioDeviceModule
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.concurrent.CopyOnWriteArrayList
@@ -44,7 +45,14 @@ class XCloudWebRtcClient(
     private var statsJob: Job? = null
     private val decoderRecovery = DecoderRecoveryController()
     private val decoderLatency = java.util.concurrent.atomic.AtomicReference("Codec LL: aguardando vídeo")
+    private val audioLock=Any()
+    private val audioTracks=mutableSetOf<AudioTrack>()
+    private val audioSession=GameAudioSession(context) { gain -> synchronized(audioLock) {
+        if(!closed.get()) audioTracks.forEach { it.setVolume(gain) }
+    } }
     fun currentInputMetrics(): InputMetrics = inputPump?.metrics ?: InputMetrics()
+    fun audioDiagnostics()=audioSession.diagnostics()
+    fun resumeAudio() { if(synchronized(audioLock) { audioTracks.isNotEmpty() }) audioSession.requestFocus() }
     fun inputDiagnostics(): String = if(nativeTouch)
         "Toque nativo: ${if(touchEnabled) "sinalizado ativo" else "desativado para HUD"}; espaço de input: ${inputDimensions?.let { "${it.width}×${it.height}" } ?: "aguardando metadata"}; slot virtual 0: ${if(channelsReady.isCompleted) "registro enviado" else "aguardando canal"}"
         else "Input Xbox: controle/HUD"
@@ -56,10 +64,22 @@ class XCloudWebRtcClient(
         PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(context.applicationContext)
             .setFieldTrials(VideoLatencyPolicy.fieldTrials(lowLatencyVideo))
             .setEnableInternalTracer(false).createInitializationOptions())
-        factory = PeerConnectionFactory.builder()
+        val audio=JavaAudioDeviceModule.builder(context.applicationContext)
+            .setAudioAttributes(GameAudioSession.attributes()).setUseStereoOutput(true).setEnableVolumeLogger(false)
+            .setAudioTrackStateCallback(object: JavaAudioDeviceModule.AudioTrackStateCallback {
+                override fun onWebRtcAudioTrackStart() { audioSession.playing=true }
+                override fun onWebRtcAudioTrackStop() { audioSession.playing=false }
+            })
+            .setAudioTrackErrorCallback(object: JavaAudioDeviceModule.AudioTrackErrorCallback {
+                override fun onWebRtcAudioTrackInitError(message: String) { audioSession.error="inicialização: ${message.take(180)}" }
+                override fun onWebRtcAudioTrackStartError(code: JavaAudioDeviceModule.AudioTrackStartErrorCode,message: String) { audioSession.error="início: $code" }
+                override fun onWebRtcAudioTrackError(message: String) { audioSession.error="reprodução: ${message.take(180)}" }
+            }).createAudioDeviceModule()
+        try { factory = PeerConnectionFactory.builder().setAudioDeviceModule(audio)
             .setVideoDecoderFactory(LowLatencyDecoderFactory(eglBase.eglBaseContext, lowLatencyVideo, decoderRecovery) { decoderLatency.set(it) })
             .setVideoEncoderFactory(DefaultVideoEncoderFactory(eglBase.eglBaseContext, true, true))
             .createPeerConnectionFactory()
+        } finally { audio.release() } // The factory owns its own native reference after construction.
     }
 
     private fun fail(message: String) {
@@ -104,8 +124,17 @@ class XCloudWebRtcClient(
                 if (closed.get()) return
                 track?.setEnabled(true)
                 if (track is VideoTrack) onVideoTrackReady(track)
+                if (track is AudioTrack) {
+                    synchronized(audioLock) {
+                        if(closed.get()) return
+                        audioTracks.add(track); track.setVolume(audioSession.gain)
+                    }
+                    audioSession.requestFocus()
+                }
             }
-            override fun onAddStream(stream: MediaStream?) { receive(stream?.videoTracks?.firstOrNull()) }
+            override fun onAddStream(stream: MediaStream?) {
+                receive(stream?.videoTracks?.firstOrNull()); stream?.audioTracks?.forEach(::receive)
+            }
             override fun onAddTrack(receiver: RtpReceiver?, streams: Array<out MediaStream>?) { receive(receiver?.track()) }
             override fun onTrack(transceiver: RtpTransceiver?) { receive(transceiver?.receiver?.track()) }
         }) ?: throw IOException("TRANSPORT: falha ao criar PeerConnection")
@@ -309,6 +338,8 @@ class XCloudWebRtcClient(
 
     fun close() {
         if (!closed.compareAndSet(false, true)) return
+        synchronized(audioLock) { audioTracks.clear() }
+        audioSession.close()
         synchronized(pumpLock) { inputPump }?.close()
         statsJob?.cancel()
         scope.cancel()

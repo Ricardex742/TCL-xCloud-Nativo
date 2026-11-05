@@ -155,7 +155,7 @@ class SessionReportTracker(private val game: String,private val device: String,p
         report=SessionReport(game.take(256),device.take(180),network,profile.take(180),fpsTarget,(now-began).coerceAtLeast(0),
             (observed*1000).toLong(),samples,wallClock(),end,metrics,resolution,codec,decoder,efficient,video.value(),down.value(),up.value(),
             input.sentBytes,dropped.takeIf { droppedKnown },input.pointerEventsSent,input.backpressureSkips,input.coalescedEdges,
-            stallMs,stallEvents,noDataMs,withDataMs,recovery.toMap(),score,inputDetails?.invoke()?.take(512))
+            stallMs,stallEvents,noDataMs,withDataMs,recovery.toMap(),score,inputDetails?.invoke()?.take(1024))
         return report
     }
     @Synchronized fun takeReport(): SessionReport? { val ready=report ?: return null; if(delivered) return null; delivered=true; return ready }

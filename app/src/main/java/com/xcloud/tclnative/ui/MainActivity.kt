@@ -144,6 +144,7 @@ open class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        volumeControlStream=android.media.AudioManager.STREAM_MUSIC
         pendingLaunch = PendingGameLaunch(savedInstanceState?.getString("pending_game"))
         lastShortcutRequest=savedInstanceState?.getString("last_shortcut_request")
         val shortcutRequest=intent.getStringExtra("shortcut_request")
@@ -678,7 +679,7 @@ open class MainActivity : Activity() {
         gameMenuDialog = com.xcloud.tclnative.ui.dashboard.GameMenuPanel.show(this,
             image={ PlaybackSettingsPanel(this,settingsStore,::applyPlaybackSettings,{}, {}, {}).showImageAdjustments(onBack={ showGameMenu() }) },
             statistics={ cycleStatistics() },
-            diagnostics={ showCopyableErrorDialog("Vídeo","${Build.MANUFACTURER} ${Build.MODEL} | Android ${Build.VERSION.RELEASE} | ${Build.HARDWARE}\n${surfaceRenderer.diagnostics()}\n${streamHistory.report()}") },
+            diagnostics={ showCopyableErrorDialog("Áudio e vídeo","${Build.MANUFACTURER} ${Build.MODEL} | Android ${Build.VERSION.RELEASE} | ${Build.HARDWARE}\n${surfaceRenderer.diagnostics()}\n${currentSignaling?.profileDiagnostics() ?: ""}\n${webrtcClient?.audioDiagnostics() ?: ""}\n${streamHistory.report()}") },
             disconnect={ cancelPlayback() },
             hud={ showGameHudSettings() }).also { dialog ->
                 dialog.setOnDismissListener { if(gameMenuDialog===dialog) gameMenuDialog=null }
@@ -883,7 +884,7 @@ open class MainActivity : Activity() {
                 onRumble = { command -> if(generation==playbackGeneration) rumble.play(command) },compatibility=compatible)
             webrtcClient = rtc
             val appVersion=packageManager.getPackageInfo(packageName,0).versionName ?: "n/d"
-            tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}" }
+            tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}\n${signaling.profileDiagnostics()}\n${rtc.audioDiagnostics()}" }
             surfaceRenderer.displayDimensions()?.let(rtc::updateDisplayDimensions)
             if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
             var failed=false
@@ -1236,7 +1237,7 @@ open class MainActivity : Activity() {
         return super.onKeyDown(keyCode, event)
     }
 
-    override fun onStart() { super.onStart(); activityVisible=true; reportTracker?.setVisible(true) }
+    override fun onStart() { super.onStart(); activityVisible=true; reportTracker?.setVisible(true); webrtcClient?.resumeAudio() }
     override fun onStop() { activityVisible=false; reportTracker?.setVisible(false); super.onStop() }
 
     override fun onDestroy() {

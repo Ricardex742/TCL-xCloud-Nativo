@@ -50,7 +50,9 @@ class XCloudSignalingClient(
     private val jsonType = "application/json; charset=utf-8".toMediaType()
     private var activeResolution = StreamResolution.HD_1080_HQ
     private var mobileTouchSession=false
-    private val activeOsName: String get()=if(mobileTouchSession) "android" else activeResolution.osName
+    // Quality and input are independent: NativeTouch must not replace a selected HD profile with Android/720p.
+    private val activeOsName: String get()=activeResolution.osName
+    fun profileDiagnostics()="Perfil de vídeo solicitado: ${activeResolution.width}×${activeResolution.height} • $activeOsName"
     private fun deviceInfo() = JSONObject().put("appInfo", JSONObject().put("env", JSONObject()
         .put("clientAppId", "www.xbox.com").put("clientAppType", "browser").put("clientAppVersion", "26.1.0")))
         .put("dev", JSONObject().put("hw", JSONObject().put("make", if(mobileTouchSession) "Android" else "Microsoft")

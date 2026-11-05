@@ -6,7 +6,7 @@
   <p>
     <a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aci%2Fapk-android10-3cc2595"><img src="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml/badge.svg?branch=ci%2Fapk-android10-3cc2595" alt="Compilação Android" /></a>
     <img src="https://img.shields.io/badge/Android-7.0%2B-54de69?logo=android&logoColor=white" alt="Android 7 ou superior" />
-    <img src="https://img.shields.io/badge/vers%C3%A3o-0.27.0-173d29" alt="Versão 0.27.0" />
+    <img src="https://img.shields.io/badge/vers%C3%A3o-0.28.0-173d29" alt="Versão 0.28.0" />
   </p>
   <p><a href="#baixar-e-instalar">Baixar</a> · <a href="#telas-do-aplicativo">Telas</a> · <a href="#controles-de-toque-por-jogo">HUDs de toque</a> · <a href="#funcionalidades">Funcionalidades</a> · <a href="#atalhos-dos-jogos-na-tv">Atalhos na TV</a> · <a href="#compilar">Compilar</a></p>
 </div>
@@ -85,6 +85,8 @@ Durante a partida, abra **⋯ → HUD e controles deste jogo** para escolher o p
 
 ### Toque direto no motor nativo
 
+A seleção de 720p, 1080p ou 1080p HQ também se aplica ao toque nativo. O perfil solicitado e a resolução recebida aparecem separadamente no diagnóstico: a saída final continua dependendo do serviço, do jogo e da proporção negociada. Veja os [ajustes de qualidade e áudio da versão 0.28](docs/stream-quality-audio-0.28.md).
+
 O modo **Toque nativo Xbox — experimental** envia contatos da tela pelo canal de input do WebRTC, sem navegador embutido. Ele é oferecido para jogos que informam suporte a `NativeTouch`. O HUD virtual continua disponível como outra forma de jogar com toque.
 
 Em **Automático — detectar dispositivo e jogo**, TVs usam controle físico. Celulares com tela de toque iniciam com toque nativo quando o catálogo autenticado anuncia suporte; nos demais jogos, usam o HUD virtual. **Exclusivo — controle virtual** mantém o HUD no celular mesmo em jogos com toque nativo, e **Desativado — controle físico** preserva a escolha de jogar sem toque. Catálogo e atalhos usam a mesma regra.
@@ -113,7 +115,8 @@ Campos ausentes aparecem como **n/d**, e o índice de qualidade só é calculado
 | Biblioteca | Jogados recentemente, favoritos por conta, Game Pass, adições recentes e todos os jogos. Pesquisa por nome e navegação pelo controle. |
 | Catálogo | Nomes e capas originais, cache de imagens e selos Game Pass e X\|S conforme os dados disponíveis. A inclusão no Game Pass usa a galeria oficial, separada do acesso a jogos comprados. |
 | Fila | Fundo do jogo, estimativa de espera, tempo aguardado, etapas de conexão e cancelamento. |
-| Transmissão | Vídeo nativo por WebRTC/H.264, com preferência por decodificação de hardware. Perfis solicitados de 720p, 1080p e 1080p HQ. |
+| Transmissão | Vídeo nativo por WebRTC/H.264, com preferência por decodificação de hardware. Perfis solicitados de 720p, 1080p e 1080p HQ, preservados também no toque nativo. |
+| Áudio | Saída configurada como mídia/jogo, estéreo solicitado, teclas de volume no canal de mídia e foco de áudio com liberação ao encerrar. Volume e foco disponíveis no diagnóstico. |
 | Vídeo | Seletores de menor atraso, adaptativo e compatibilidade. Escala nativa, proporção original, 16:9, 18:9, 21:9, 16:10, 4:3, esticar e zoom. |
 | Imagem | Nitidez e saturação opcionais, com aplicação durante a partida. |
 | HDR10 | Diagnóstico do suporte anunciado pela tela, separado do formato do streaming. O motor nativo atual usa H.264 SDR de 8 bits e não ativa HDR10 real. |

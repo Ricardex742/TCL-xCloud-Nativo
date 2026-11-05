@@ -19,6 +19,8 @@ O catálogo abre em **Voltar a jogar**, que consulta os últimos jogos da conta 
 
 As [notas técnicas da versão 0.30](docs/resume-catalog-frame-generation-0.30.md) descrevem a abertura do catálogo e a análise de interpolação de quadros e conexão de controles à nuvem.
 
+A [investigação de 5/11/2026](docs/xbox-nano-gamesir-frame-generation-research.md) confirma a prévia oficial de conexão Wi-Fi do Xbox Nano e distingue seus requisitos das conexões do GameSir Nova Lite. Também examina a integração de geração de quadros e seus limites em hardware modesto; esses recursos não foram adicionados ao aplicativo.
+
 ## Telas do aplicativo
 
 <table>

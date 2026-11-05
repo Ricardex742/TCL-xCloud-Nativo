@@ -1,5 +1,7 @@
 # Abertura do catálogo e análise de recursos — 0.30
 
+> Atualização de 5/11/2026: a [investigação com acesso à internet](xbox-nano-gamesir-frame-generation-research.md) confirmou oficialmente a prévia Wi-Fi cloud connect do Xbox Nano nos EUA e verificou os limites para GameSir e interpolação. A análise abaixo registra o estado anterior, em que o Xbox Wire estava bloqueado neste ambiente.
+
 ## Abertura em Voltar a jogar
 
 Ao construir o catálogo, a aba inicial é **Voltar a jogar**, com o último histórico confirmado da conta enquanto ocorre a atualização. Um histórico vazio ou indisponível continua exibindo o estado correspondente, sem trocar automaticamente para outra categoria. LB/RB permitem acessar as demais abas. O retorno para uma view de catálogo já existente preserva a categoria que estava selecionada.

@@ -46,7 +46,7 @@ class DashboardArtworkTest {
     }
     private fun await(condition: () -> Boolean) {
         val end=System.nanoTime()+TimeUnit.SECONDS.toNanos(8)
-        while(!condition() && System.nanoTime()<end) { shadowOf(Looper.getMainLooper()).idle(); Thread.sleep(10) }
+        while(!condition() && System.nanoTime()<end) { shadowOf(Looper.getMainLooper()).idleFor(16,TimeUnit.MILLISECONDS); Thread.sleep(10) }
         assertTrue(condition())
     }
     @Test fun coldCatalogUsesVisibleThumbnailsAndMetadataAndFavoritesDoNotReloadThem() {

@@ -45,16 +45,25 @@ internal object DashboardTheme {
 
 internal class DashboardBackground : Drawable() {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    override fun draw(canvas: Canvas) {
+    private var gradient: Shader?=null
+    private var glow: Shader?=null
+    private val ribbon=Path()
+    override fun onBoundsChange(bounds: Rect) {
         val w = bounds.width().toFloat(); val h = bounds.height().toFloat()
-        paint.shader = LinearGradient(0f, 0f, w, h, intArrayOf(0xff1b211d.toInt(), 0xff18261e.toInt(),
+        if(w<=0 || h<=0) return
+        gradient = LinearGradient(0f, 0f, w, h, intArrayOf(0xff1b211d.toInt(), 0xff18261e.toInt(),
             0xff102c1a.toInt()), floatArrayOf(0f, .55f, 1f), Shader.TileMode.CLAMP)
+        ribbon.reset(); ribbon.moveTo(.16f*w,h); ribbon.lineTo(.39f*w,.71f*h)
+        ribbon.lineTo(.56f*w,.71f*h); ribbon.lineTo(.34f*w,h); ribbon.close()
+        glow=RadialGradient(w,h,.82f*w,intArrayOf(0x443c994d,Color.TRANSPARENT),null,Shader.TileMode.CLAMP)
+    }
+    override fun draw(canvas: Canvas) {
+        paint.shader=gradient
         canvas.drawRect(bounds, paint)
         paint.shader = null
         paint.color = 0xff244832.toInt()
-        canvas.drawPath(Path().apply { moveTo(.16f*w, h); lineTo(.39f*w, .71f*h)
-            lineTo(.56f*w, .71f*h); lineTo(.34f*w, h); close() }, paint)
-        paint.shader = RadialGradient(w, h, .82f*w, intArrayOf(0x443c994d, Color.TRANSPARENT), null, Shader.TileMode.CLAMP)
+        canvas.drawPath(ribbon, paint)
+        paint.shader=glow
         canvas.drawRect(bounds, paint)
         paint.shader = null
     }

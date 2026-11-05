@@ -15,7 +15,8 @@ import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicBoolean
 
 class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
-    val eglBase: EglBase = EglBase.create()
+    private val egl = lazy { EglBase.create() }
+    val eglBase: EglBase get()=egl.value
     var onFirstFrameRendered: (() -> Unit)? = null
     var onRenderError: ((Exception) -> Unit)? = null
     var onDisplayDimensionsChanged: ((ClientDisplayDimensions) -> Unit)? = null
@@ -230,6 +231,6 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         released = true
         renderer?.release()
         renderer = null
-        eglBase.release()
+        if(egl.isInitialized()) eglBase.release()
     }
 }

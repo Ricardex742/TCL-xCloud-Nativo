@@ -49,7 +49,7 @@ class GameDashboardView(
     private val onFavoritesChanged: () -> Unit = {}
 ) : FrameLayout(context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private val posters = PosterLoader(context, scope)
+    private val posters = PosterLoader(context, scope,frameBound=true)
     private var games = emptyList<GameTitle>()
     private var gamePassProducts: Set<String>? = null
     private var gamePassTitles = emptySet<String>()
@@ -67,20 +67,22 @@ class GameDashboardView(
     private var coverHeight = 1
     private var coverArtSize = ArtworkSize(192,320)
     private var headerArtJob: Job? = null
+    private var metadataJob: Job? = null
+    private var pendingMetadata: List<GameTitle>? = null
     private var coverVerticalPadding = 8f
     private var lastGeometry = 0L
     private var closed = false
     private var focusRequest = 0
     private val tabs = mutableListOf<TextView>()
     private val tabPlates = mutableListOf<FocusPlate>()
-    private val headerIcon = ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
+    private val headerIcon = FixedArtworkView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
     private val headerTitle = label(44f)
     private val profilePanel = FrameLayout(context).apply {
         id = generateViewId(); isFocusable = true; isClickable = true
         DashboardTheme.customFocus(this)
         setOnClickListener { onOptions() }
     }
-    private val avatar = ImageView(context).apply {
+    private val avatar = FixedArtworkView(context).apply {
         scaleType = ImageView.ScaleType.CENTER_CROP
         background = rounded(0xff53655a.toInt(), 1000f); clipToOutline = true
     }
@@ -203,6 +205,20 @@ class GameDashboardView(
     }
 
     fun setGames(titles: List<GameTitle>) {
+        metadataJob?.cancel(); metadataJob=null; pendingMetadata=null
+        applyGames(titles)
+    }
+    fun updateMetadata(titles: List<GameTitle>) {
+        pendingMetadata=titles
+        if(metadataJob?.isActive==true) return
+        metadataJob=scope.launch {
+            delay(180)
+            val latest=pendingMetadata
+            pendingMetadata=null; metadataJob=null
+            if(!closed && latest!=null) applyGames(latest)
+        }
+    }
+    private fun applyGames(titles: List<GameTitle>) {
         val products=gamePassProducts?.map(GamePassCatalog::productKey)?.toSet() ?: emptySet()
         games = titles.map { game -> game.copy(gamePass = GamePassCatalog.contains(game,products,gamePassTitles)) }
         val tier = XboxProfile.subscription(titles.flatMap { it.userSubscriptions + it.userPrograms })
@@ -211,7 +227,10 @@ class GameDashboardView(
         refresh()
     }
     fun gameById(id: String): GameTitle? = games.firstOrNull { it.titleId == id }
-    fun pauseArtwork() { headerArtJob?.cancel(); posters.pause() }
+    fun pauseArtwork() {
+        metadataJob?.cancel(); metadataJob=null; pendingMetadata=null
+        headerArtJob?.cancel(); posters.pause()
+    }
     fun resumeArtwork() {
         posters.resume(); renderProfile()
         selectedGame?.let { loadHeaderArtwork(it) }
@@ -313,7 +332,8 @@ class GameDashboardView(
     private fun updateSelected(game: GameTitle?) {
         val previous = selectedGame
         selectedGame = game
-        if (previous == game && headerTitle.text.isNotEmpty()) return
+        if (previous?.titleId==game?.titleId && previous?.name==game?.name && previous?.tileUrl==game?.tileUrl &&
+            previous?.posterUrl==game?.posterUrl && headerTitle.text.isNotEmpty()) return
         headerArtJob?.cancel()
         if (game == null) { headerTitle.text = "SUA BIBLIOTECA"; posters.load(headerIcon, null); return }
         val words = game.name.uppercase(Locale.getDefault()).split(Regex("\\s+"))
@@ -466,7 +486,7 @@ class GameDashboardView(
         override fun onBindViewHolder(holder: CoverHolder, position: Int) {
             val game = items[position]
             val card = holder.card
-            card.layoutParams = RecyclerView.LayoutParams(LayoutParams.MATCH_PARENT, coverHeight)
+            if(card.layoutParams?.height!=coverHeight) card.layoutParams = RecyclerView.LayoutParams(LayoutParams.MATCH_PARENT, coverHeight)
             card.bind(game)
             card.nextFocusUpId = if (position < COLUMNS) tabs[activeTab.ordinal].id else View.NO_ID
             card.setOnFocusChangeListener { _, focused ->
@@ -497,7 +517,7 @@ class GameDashboardView(
             clipToOutline = true
         }
         private val fallback = label(29f).apply { gravity = Gravity.CENTER; maxLines = 4; setPadding(12, 12, 12, 12) }
-        val image = ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
+        val image = FixedArtworkView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
         private val badges = GameBadgesView(context)
         private val favorite = label(22f).apply {
             text = "★"; gravity = Gravity.CENTER; setTextColor(DashboardTheme.yellow)
@@ -506,6 +526,7 @@ class GameDashboardView(
         var focused = false
             set(value) { field = value; invalidate() }
         private val outline = Paint(Paint.ANTI_ALIAS_FLAG)
+        private var geometryScale=-1f
         init {
             isFocusable = true; isFocusableInTouchMode = true; isClickable = true
             DashboardTheme.customFocus(this)
@@ -517,10 +538,14 @@ class GameDashboardView(
         }
         fun bind(game: GameTitle) {
             bindFavorite(game)
-            fallback.text = game.name.uppercase(Locale.getDefault()); textSize(fallback, 27f)
+            val name=game.name.uppercase(Locale.getDefault())
+            if(fallback.text.toString()!=name) fallback.text=name
             if(isAttachedToWindow) bindArtwork(game)
             val s = scale
             badges.bind(game.gamePass, game.seriesOptimized, s)
+            if(geometryScale==s) return
+            geometryScale=s
+            textSize(fallback,27f)
             badges.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, (52*s).roundToInt(), Gravity.BOTTOM)
             cover.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT).apply {
                 setMargins((10*s).roundToInt(), coverVerticalPadding.roundToInt(), (10*s).roundToInt(), coverVerticalPadding.roundToInt())

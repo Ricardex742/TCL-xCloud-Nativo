@@ -125,7 +125,7 @@ class PlaybackSettingsPanel(
             },
             ConsoleAction("Jogar com toque: ${settings.touchMode.label}") {
                 val modes=TouchMode.entries
-                choices("Jogar com toque","Automático oferece a escolha em celulares. O HUD transforma botões da tela em comandos Xbox. Toque nativo envia os contatos diretamente ao jogo quando ele anuncia suporte. Ambas as opções usam o vídeo nativo. Aplica-se à próxima partida.",
+                choices("Jogar com toque","Na TV, o jogo abre com controle físico, sem HUD de toque. No celular, Automático prioriza o toque nativo nos jogos compatíveis e usa HUD nos demais. Exclusivo — controle virtual força o HUD; Desativado usa controle físico. Aplica-se à próxima partida.",
                     modes.map { it.label to (it==settings.touchMode) },{ showControls() }) {
                     save(settings.copy(touchMode=modes[it])) { showControls() }
                 }

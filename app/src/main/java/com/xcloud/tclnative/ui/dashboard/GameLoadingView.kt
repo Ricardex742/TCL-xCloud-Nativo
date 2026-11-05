@@ -22,12 +22,12 @@ enum class LoadingPhase { QUEUED, PREPARING, CONNECTING, VIDEO }
 class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameLayout(context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val art = PosterLoader(context, scope)
-    private val backdrop = ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
+    private val backdrop = FixedArtworkView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
     private val shade = View(context).apply { background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
         intArrayOf(0xf5151d17.toInt(), 0xcf121d16.toInt(), 0xa6163821.toInt())) }
     private val eyebrow = text(19f).apply { text = "xCLOUD"; setTextColor(DashboardTheme.accent) }
     private val title = text(44f).apply { maxLines = 2 }
-    private val poster = ImageView(context).apply {
+    private val poster = FixedArtworkView(context).apply {
         scaleType = ImageView.ScaleType.CENTER_CROP
         background = rounded(0xff304036.toInt()); clipToOutline = true
     }
@@ -81,6 +81,7 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
         setColor(color); cornerRadius = 9f; setStroke(1, 0xff3c5b46.toInt())
     }
     fun begin(value: GameTitle, nowMs: Long = System.nanoTime()/1_000_000) {
+        art.resume()
         queue = null; phase = LoadingPhase.PREPARING; startedAt = nowMs
         setGame(value); visibility = View.VISIBLE
         render(nowMs)
@@ -159,7 +160,10 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
             else "A partida será exibida assim que o vídeo estiver pronto."
     }
     fun cancelFromController() { cancelButton.performClick() }
-    fun dismiss() { visibility = View.GONE; queue = null }
+    fun dismiss() {
+        visibility = View.GONE; queue = null
+        art.pause(); lastBackdrop=null; lastPoster=null
+    }
     private fun currentScale() = minOf(width/1280f, height/720f).takeIf { it > 0 } ?: 1f
     private fun place(view: View, x: Float, y: Float, w: Float, h: Float) {
         view.layoutParams = LayoutParams(w.roundToInt(), h.roundToInt()).apply { leftMargin=x.roundToInt(); topMargin=y.roundToInt() }

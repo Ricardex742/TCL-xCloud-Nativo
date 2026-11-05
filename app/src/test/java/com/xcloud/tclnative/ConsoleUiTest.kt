@@ -208,7 +208,7 @@ class ConsoleUiTest {
         choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Vibração:")
         choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Desativada")
         choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Jogar com toque:")
-        choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Controle virtual")
+        choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Exclusivo — controle virtual")
         assertTrue(store.read().localCoOp); assertFalse(store.read().rumble)
         assertEquals(TouchMode.VIRTUAL,store.read().touchMode)
         choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Testar vibração")

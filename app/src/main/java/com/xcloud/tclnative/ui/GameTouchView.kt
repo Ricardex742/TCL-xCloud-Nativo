@@ -50,7 +50,7 @@ class GameTouchView(context: Context,
         if(settings!=null) configuration=settings
         this.mode=mode
         rebuild(configuration.preset ?: automatic)
-        val menuOnly=game!=null && context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN)
+        val menuOnly=game!=null && com.xcloud.tclnative.settings.InputDeviceProfile.read(context).touchDevice
         visibility=if(mode==TouchMode.OFF && !menuOnly) GONE else VISIBLE
         invalidate()
     }

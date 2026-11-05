@@ -1,5 +1,7 @@
 # Toque confirmado no aparelho e catálogo mais leve — 0.25
 
+> Retorno posterior: o usuário ainda encontrou travamento no menu com a 0.25. Os ajustes seguintes e os limites de validação estão em [menu, atalhos e entrada por dispositivo — 0.26](device-aware-startup-0.26.md).
+
 ## Resultado real da 0.24
 
 O usuário confirmou que conseguiu jogar Fortnite com toque nativo na `0.24.0-touch-source-and-scaling`, em um LGE LM-K200 com Android 10. O relatório dessa partida registra 5min46s conectado, 345 amostras, toque nativo sinalizado ativo, registro do slot virtual 0 enviado e 9.203 eventos aceitos pelo canal, sem esperas de input. O relato do funcionamento no jogo é a evidência de sucesso no aparelho; o contador isolado continuaria sendo apenas uma medida do envio local.

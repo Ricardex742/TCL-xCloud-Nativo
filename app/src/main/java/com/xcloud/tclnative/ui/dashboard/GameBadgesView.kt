@@ -12,6 +12,7 @@ import kotlin.math.roundToInt
 
 /** Badges describe the selected Store product, never inferred from the user's subscription. */
 internal class GameBadgesView(context: Context) : FrameLayout(context) {
+    private var geometryScale=-1f
     private val pass = TextView(context).apply {
         text = "GAME\nPASS"; gravity = Gravity.CENTER; includeFontPadding = false
         typeface = DashboardTheme.font(context); setTextColor(Color.BLACK)
@@ -32,6 +33,15 @@ internal class GameBadgesView(context: Context) : FrameLayout(context) {
         visibility = if (gamePass || optimized) View.VISIBLE else View.GONE
         pass.visibility = if (gamePass) View.VISIBLE else View.GONE
         series.visibility = if (optimized) View.VISIBLE else View.GONE
+        // Badge offsets depend on Game Pass presence as well as scale.
+        val offset=(if(gamePass) 47 else 8)*scale
+        (series.layoutParams as? LayoutParams)?.let { params ->
+            if(geometryScale==scale && params.leftMargin!=offset.roundToInt()) {
+                params.leftMargin=offset.roundToInt(); series.layoutParams=params
+            }
+        }
+        if(geometryScale==scale) return
+        geometryScale=scale
         pass.setTextSize(TypedValue.COMPLEX_UNIT_PX, 13*scale)
         pass.setLineSpacing(0f, .85f)
         series.setTextSize(TypedValue.COMPLEX_UNIT_PX, 24*scale)

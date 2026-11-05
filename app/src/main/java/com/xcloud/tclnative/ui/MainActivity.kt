@@ -28,6 +28,8 @@ import com.xcloud.tclnative.ui.dashboard.SessionReportPanel
 import com.xcloud.tclnative.settings.PlaybackSettingsStore
 import com.xcloud.tclnative.settings.StatisticsVisibility
 import com.xcloud.tclnative.settings.TouchMode
+import com.xcloud.tclnative.settings.DeviceInputPolicy
+import com.xcloud.tclnative.settings.InputDeviceProfile
 import com.xcloud.tclnative.webrtc.ControllerRouter
 import com.xcloud.tclnative.webrtc.ControllerRumble
 import com.xcloud.tclnative.webrtc.GamepadState
@@ -62,7 +64,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.*
 import kotlinx.coroutines.launch
 
-class MainActivity : Activity() {
+open class MainActivity : Activity() {
+    protected open fun createAuthenticator() = XalAuthenticator(this)
+    protected open fun createCatalogService(cache: CatalogCache? = null, beforeRequest: suspend () -> Unit = {}) =
+        CatalogService(cache=cache,beforeRequest=beforeRequest)
 
     private lateinit var rootLayout: FrameLayout
     private lateinit var surfaceRenderer: AiPqSurfaceRenderer
@@ -104,6 +109,10 @@ class MainActivity : Activity() {
     private var loginView: ConsoleLoginView? = null
     private var accountJob: Job? = null
     private var currentSignaling: XCloudSignalingClient? = null
+    private var currentSession: XCloudSession? = null
+    private var accountStatus: TextView? = null
+    private var loadingArtJob: Job? = null
+    private val catalogCache by lazy { CatalogCache(File(cacheDir,"catalog-art-v2.json")) }
     private var currentGames = emptyList<GameTitle>()
     private val catalogWork = com.xcloud.tclnative.catalog.CatalogWorkGate()
     private val streamHistory = com.xcloud.tclnative.webrtc.StreamDiagnosticHistory()
@@ -143,7 +152,7 @@ class MainActivity : Activity() {
         window.navigationBarColor = Color.BLACK
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
             View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-        authenticator = XalAuthenticator(this)
+        authenticator = createAuthenticator()
         settingsStore = PlaybackSettingsStore(this)
         playbackSettings = settingsStore.read()
         configureVideoOutput(playbackSettings)
@@ -240,12 +249,13 @@ class MainActivity : Activity() {
         setContentView(rootLayout)
         (getSystemService(Context.INPUT_SERVICE) as InputManager).registerInputDeviceListener(deviceListener,null)
 
-        renderLoginMenu()
         val savedTicket = authenticator.getSavedRpsTicket()
         if (!savedTicket.isNullOrEmpty() && authenticator.supportsConsoleTransfer()) {
+            renderSessionRestore()
             connectToXboxCloud(savedTicket)
-        } else if (!savedTicket.isNullOrEmpty()) {
-            loginView?.showError("Atualize seu login pelo QR Code para conectar os jogos.")
+        } else {
+            renderLoginMenu()
+            if(!savedTicket.isNullOrEmpty()) loginView?.showError("Atualize seu login pelo QR Code para conectar os jogos.")
         }
     }
 
@@ -266,18 +276,17 @@ class MainActivity : Activity() {
         super.onSaveInstanceState(outState)
     }
 
-    private fun launchPendingShortcut() {
-        val signaling = currentSignaling ?: return // Login/catalog loading retain the pending game.
-        if (pendingLaunch.titleId == null) return
+    private fun launchPendingShortcut(): Boolean {
+        val signaling = currentSignaling ?: return false // Login/catalog loading retain the pending game.
+        if (pendingLaunch.titleId == null) return false
         val game = pendingLaunch.consume(currentGames)
         if (game == null) {
             ConsoleDialogs.message(this,"Atalho indisponível","Este jogo não está disponível no catálogo desta conta. Atualize o catálogo nas configurações.")
         } else if (activeGame?.titleId != game.titleId || gameJob?.isActive != true) {
-            // TV shortcuts go directly to the queue; phone shortcuts use the saved input preference.
-            val mode = if (playbackSettings.touchMode == TouchMode.AUTO &&
-                packageManager.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)) TouchMode.VIRTUAL else playbackSettings.touchMode
-            launchCloudGame(signaling,game,mode)
+            launchCloudGame(signaling,game)
+            return true
         }
+        return false
     }
 
     private fun configureVideoOutput(settings: PlaybackSettings) {
@@ -302,6 +311,8 @@ class MainActivity : Activity() {
         loginView?.close()
         gameLibrary = null
         currentSignaling = null
+        currentSession = null
+        accountStatus = null
         currentGames = emptyList()
         controlPanel.removeAllViews()
         controlPanel.setPadding(0,0,0,0)
@@ -316,6 +327,30 @@ class MainActivity : Activity() {
         controlPanel.addView(view, LinearLayout.LayoutParams(-1,-1))
         controlPanel.visibility = View.VISIBLE
         hudTextView.visibility = View.GONE
+    }
+
+    private fun renderSessionRestore() {
+        loginView?.close(); loginView=null
+        controlPanel.removeAllViews()
+        controlPanel.gravity=Gravity.CENTER
+        controlPanel.addView(android.widget.ProgressBar(this))
+        accountStatus=TextView(this).apply {
+            text=if(pendingLaunch.titleId!=null) "Preparando o jogo do atalho…" else "Restaurando sua sessão…"
+            setTextColor(Color.WHITE); textSize=22f; gravity=Gravity.CENTER
+            setPadding(24,24,24,24)
+        }.also { controlPanel.addView(it) }
+        controlPanel.visibility=View.VISIBLE; hudTextView.visibility=View.GONE
+    }
+    private fun accountProgress(message: String) {
+        loginView?.showConnecting(message); accountStatus?.text=message
+    }
+    private fun accountFailure(error: Throwable, retry: () -> Unit) {
+        if(error is com.xcloud.tclnative.auth.AuthenticationRequiredException) {
+            authenticator.clearSession(); renderLoginMenu()
+            loginView?.showError("Sua sessão precisa ser renovada. Entre pelo QR Code para continuar.")
+        } else if(loginView!=null) loginView?.showError("Não foi possível conectar: ${error.message}")
+        else ConsoleDialogs.message(this,"Conexão não concluída","Não foi possível restaurar a conexão agora. Seu login salvo foi preservado.",
+            listOf(ConsoleAction("Tentar novamente",retry),ConsoleAction("Entrar novamente") { renderLoginMenu() }))
     }
 
     private fun startQrCodeLoginFlow() {
@@ -340,23 +375,23 @@ class MainActivity : Activity() {
 
     private fun connectToXboxCloud(rpsTicket: String) {
         accountJob?.cancel()
-        val view = loginView ?: return
-        view.showConnecting("Conectando sua conta ao Xbox…")
+        val view = loginView
+        accountProgress("Conectando sua conta ao Xbox…")
         accountJob = mainScope.launch {
             authenticator.authenticateToXCloud(rpsTicket).onSuccess { session ->
                 try {
                     authenticator.getConsoleTransferToken()
                 } catch (cancelled: CancellationException) { throw cancelled }
                 catch (error: Exception) {
-                    if (loginView === view) view.showError("Não foi possível autorizar os jogos: ${error.message}")
+                    if (loginView === view) accountFailure(error) { connectToXboxCloud(rpsTicket) }
                     return@launch
                 }
                 if (loginView !== view) return@launch
-                view.showConnecting("Conta conectada. Carregando seu catálogo…")
+                currentSession=session
+                accountProgress(if(pendingLaunch.titleId!=null) "Preparando o jogo do atalho…" else "Conta conectada. Carregando seu catálogo…")
                 renderGameDashboard(session)
             }.onFailure { error ->
-                if (error is com.xcloud.tclnative.auth.AuthenticationRequiredException) authenticator.clearSession()
-                if (loginView === view) view.showError("Falha na autenticação: ${error.message}")
+                if (loginView === view) accountFailure(error) { connectToXboxCloud(rpsTicket) }
             }
         }
     }
@@ -367,15 +402,17 @@ class MainActivity : Activity() {
                 ConsoleAction("Continuar") {}, ConsoleAction("Sair") { finish() }))
     }
 
-    private fun renderGameDashboard(session: XCloudSession) {
+    private fun renderGameDashboard(session: XCloudSession, validatedGames: List<GameTitle>? = null) {
         dashboardJob?.cancel()
         val signaling = XCloudSignalingClient(session, transferTokenProvider = { authenticator.getConsoleTransferToken() })
         dashboardJob = mainScope.launch {
-            val allGames = try { signaling.fetchCatalogGames() }
+            val allGames = try {
+                val raw=validatedGames ?: signaling.fetchCatalogGames()
+                withContext(Dispatchers.IO) { catalogCache.restore(raw) }
+            }
             catch (cancelled: CancellationException) { throw cancelled }
             catch (error: Exception) {
-                loginView?.showError("Não foi possível carregar o catálogo. Tente novamente.")
-                showCopyableErrorDialog("Catálogo", error.message ?: "Catálogo indisponível")
+                accountFailure(error) { renderGameDashboard(session,validatedGames) }
                 return@launch
             }
             dashboard?.close()
@@ -384,6 +421,12 @@ class MainActivity : Activity() {
                 GameLibrary(this@MainActivity, session.libraryAccountId, session.userHash)
             }
             gameLibrary = library
+            currentGames=allGames; currentSignaling=signaling
+            if(launchPendingShortcut()) {
+                loginView?.close(); loginView=null; accountStatus=null
+                return@launch // No catalog/grid or background galleries while the shortcut enters its game.
+            }
+            accountStatus=null
             val view = GameDashboardView(this@MainActivity, library,
                 onPlay = { game -> chooseLaunchMode(signaling, game) },
                 onSearch = { showCatalogSearch() },
@@ -406,14 +449,14 @@ class MainActivity : Activity() {
             currentSignaling = signaling
             syncHomeShortcuts()
             launchPendingShortcut()
-            val catalog = CatalogService(cache = CatalogCache(File(cacheDir, "catalog-art-v2.json")),beforeRequest=catalogWork::await)
+            val catalog = createCatalogService(catalogCache,catalogWork::await)
             launch {
                 catalog.hydrate(allGames, onProgress = { progress -> withContext(Dispatchers.Main) {
                     if (dashboard === view) view.setMetadataProgress(progress)
                 } }) { hydrated -> withContext(Dispatchers.Main) {
                     if (dashboard === view) {
                         currentGames = hydrated
-                        if(controlPanel.visibility==View.VISIBLE) view.setGames(hydrated)
+                        if(controlPanel.visibility==View.VISIBLE) view.updateMetadata(hydrated)
                         refreshLoadingArt(); syncHomeShortcuts()
                     }
                 } }
@@ -536,6 +579,8 @@ class MainActivity : Activity() {
         }
         if(homeShortcuts.supportsPin) favorites.forEach { game ->
             actions+=ConsoleAction("Pedir atalho ao launcher: ${game.name}") {
+                val snapshot=currentGames
+                mainScope.launch(Dispatchers.IO) { catalogCache.save(snapshot) }
                 val image=ImageView(this)
                 shortcutPosters.load(image,game.tileUrl ?: game.posterUrl,192,192,notifyPlaceholder=false) {
                     val accepted=homeShortcuts.pin(game,(image.drawable as? BitmapDrawable)?.bitmap)
@@ -549,6 +594,8 @@ class MainActivity : Activity() {
     private fun createInstalledShortcut(game: GameTitle) {
         if(shortcutInstallJob?.isActive==true) return
         shortcutInstallJob=mainScope.launch {
+            val snapshot=currentGames
+            withContext(Dispatchers.IO) { catalogCache.save(snapshot) }
             val image=ImageView(this@MainActivity)
             val waiting=ConsoleDialogs.message(this@MainActivity,"Criando atalho",game.name,
                 listOf(ConsoleAction("Cancelar") { shortcutInstallJob?.cancel() }),onCancel={ shortcutInstallJob?.cancel() })
@@ -633,15 +680,7 @@ class MainActivity : Activity() {
             page={ touchView.showPage(it) }).show()
     }
     private fun chooseLaunchMode(signaling: XCloudSignalingClient,game: GameTitle) {
-        if(playbackSettings.touchMode==TouchMode.AUTO && packageManager.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)) {
-            val layout=hudStore.read(game.titleId).preset ?: com.xcloud.tclnative.touch.GameHud.automatic(game.titleId,game.name)
-            val choices=mutableListOf(
-                ConsoleAction("Jogar com toque • HUD ${layout.label}") { launchCloudGame(signaling,game,TouchMode.VIRTUAL) },
-                ConsoleAction("Jogar com controle") { launchCloudGame(signaling,game,TouchMode.OFF) }
-            )
-            if("NativeTouch" in game.supportedInputTypes) choices.add(ConsoleAction("Toque nativo Xbox • experimental") { launchCloudGame(signaling,game,TouchMode.NATIVE) })
-            ConsoleDialogs.menu(this,game.name,choices)
-        } else launchCloudGame(signaling,game)
+        launchCloudGame(signaling,game)
     }
 
     private fun openAccountPage(url: String) {
@@ -653,6 +692,10 @@ class MainActivity : Activity() {
 
     private fun restoreDashboard() {
         catalogWork.resume()
+        if(dashboard==null) {
+            currentSession?.let { renderGameDashboard(it,currentGames) }
+            return
+        }
         dashboard?.setGames(currentGames)
         dashboard?.resumeArtwork()
         controlPanel.visibility = View.VISIBLE
@@ -701,13 +744,7 @@ class MainActivity : Activity() {
         catalogWork.pause()
         dashboard?.pauseArtwork()
         val choice=touchChoice ?: settings.touchMode
-        val nativeSupported="NativeTouch" in game.supportedInputTypes
-        val touchMode=when(choice) {
-            TouchMode.AUTO -> TouchMode.OFF
-            TouchMode.NATIVE -> if(nativeSupported) TouchMode.NATIVE else TouchMode.VIRTUAL
-            else -> choice
-        }
-        if(choice==TouchMode.NATIVE && !nativeSupported) Toast.makeText(this,"Controle virtual ativado: este jogo não informou suporte a toque nativo.",Toast.LENGTH_LONG).show()
+        val touchMode=DeviceInputPolicy.resolve(InputDeviceProfile.read(this),choice,game)
         currentTouchMode=TouchMode.OFF
         touchView.configure(TouchMode.OFF)
         statistics.beginSession()
@@ -904,6 +941,20 @@ class MainActivity : Activity() {
     private fun beginLoading(game: GameTitle) {
         pendingLoadingGame = game
         queuePanel.begin(game)
+        loadingArtJob?.cancel()
+        if(game.posterUrl==null && game.tileUrl==null) loadingArtJob=mainScope.launch {
+            // Resolve only this validated title; bulk catalog work remains paused while playing.
+            createCatalogService().hydrate(listOf(game)) { enriched -> withContext(Dispatchers.Main) {
+                val fresh=enriched.firstOrNull() ?: return@withContext
+                if(fresh.posterUrl==null && fresh.tileUrl==null) return@withContext
+                if(pendingLoadingGame?.titleId==game.titleId) {
+                    currentGames=currentGames.map { if(it.titleId==game.titleId) fresh else it }
+                    refreshLoadingArt()
+                    val snapshot=currentGames
+                    withContext(Dispatchers.IO) { catalogCache.save(snapshot) }
+                }
+            } }
+        }
         queueTicker?.cancel()
         queueTicker = mainScope.launch {
             while (isActive && pendingLoadingGame != null) {
@@ -914,10 +965,11 @@ class MainActivity : Activity() {
     }
     private fun refreshLoadingArt() {
         val pending = pendingLoadingGame ?: return
-        dashboard?.gameById(pending.titleId)?.let { game -> pendingLoadingGame = game; queuePanel.setGame(game) }
+        currentGames.firstOrNull { it.titleId==pending.titleId }?.let { game -> pendingLoadingGame = game; queuePanel.setGame(game) }
     }
     private fun finishLoading() {
         pendingLoadingGame = null
+        loadingArtJob?.cancel(); loadingArtJob=null
         queueTicker?.cancel(); queueTicker = null
         queuePanel.dismiss()
     }

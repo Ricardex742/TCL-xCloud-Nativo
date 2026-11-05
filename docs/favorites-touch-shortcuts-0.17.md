@@ -1,5 +1,7 @@
 # xCLOUD 0.17.0
 
+> A seleção automática de entrada e a inicialização por atalho descritas aqui foram atualizadas na [versão 0.26](device-aware-startup-0.26.md): celulares passam a preferir toque nativo nos jogos compatíveis, e TVs iniciam com controle físico.
+
 Durante a partida, **Menu/Start + View/Select** no controle do jogador 1 abre o painel Partida. Aperte os dois juntos; separados, continuam funcionando no jogo. A janela da combinação é de 150 ms e os botões consumidos não são encaminhados ao Xbox. B/Voltar fecha o painel. O botão Voltar do Android durante a partida também abre o painel, permitindo sair sem encerrar por acidente.
 
 O painel reúne nitidez/saturação, ativação manual das estatísticas e **Desconectar sessão e voltar ao catálogo**. A desconexão cancela a fila/keep-alive, envia DELETE para a sessão Xbox e libera WebRTC/decoder; iniciar outro jogo aguarda essa limpeza. INFO/F10 continua alternando as estatísticas. Start + Select passa a abrir o menu, substituindo o antigo atalho direto de estatísticas.

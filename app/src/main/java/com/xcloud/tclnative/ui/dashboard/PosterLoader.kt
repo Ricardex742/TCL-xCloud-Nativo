@@ -21,17 +21,19 @@ import java.util.concurrent.atomic.AtomicInteger
 
 /** UI bindings reuse identical requests; background work is shared and cancelled after the last consumer. */
 internal class PosterLoader(context: Context, private val scope: CoroutineScope,
-                            private val backend: ArtworkBackend = ArtworkBackend.get(context)) {
+                            private val backend: ArtworkBackend = ArtworkBackend.get(context), frameBound: Boolean=false) {
     private class Binding(val request: ArtworkRequest, var onReady: (Boolean) -> Unit) {
         var job: Job? = null
         var ready=false
+        var queued=false
     }
     private val bindings=WeakHashMap<ImageView,Binding>()
     private var paused=false
+    private val deliveries=if(frameBound) ArtworkFrameQueue() else null
     fun pause() {
         paused=true
         bindings.forEach { (view,binding) -> binding.job?.cancel(); view.setImageDrawable(null) }
-        bindings.clear(); backend.cache.evictAll()
+        bindings.clear(); deliveries?.clear(); backend.cache.evictAll()
     }
     fun resume() { paused=false }
     fun load(view: ImageView, originalUrl: String?, maxWidth: Int = 720, maxHeight: Int = 1080,
@@ -42,13 +44,13 @@ internal class PosterLoader(context: Context, private val scope: CoroutineScope,
         if(previous?.request==request) {
             previous.onReady=onReady
             if(previous.ready) { onReady(true); return }
-            if(previous.job?.isActive==true) { if(notifyPlaceholder) onReady(false); return }
+            if(previous.queued || previous.job?.isActive==true) { if(notifyPlaceholder) onReady(false); return }
         }
         bindings.remove(view)?.job?.cancel()
         val binding=Binding(request,onReady)
         bindings[view]=binding
         backend.cache.get(request)?.let {
-            binding.ready=true; view.setImageBitmap(it); onReady(true); return
+            deliver(view,binding,it); return
         }
         view.setImageDrawable(null)
         if(notifyPlaceholder) onReady(false)
@@ -57,8 +59,7 @@ internal class PosterLoader(context: Context, private val scope: CoroutineScope,
             try {
                 val bitmap=shared.result.await()
                 if(isActive && bindings[view]===binding) {
-                    if(bitmap!=null) { binding.ready=true; view.setImageBitmap(bitmap) }
-                    binding.onReady(bitmap!=null)
+                    if(bitmap!=null) deliver(view,binding,bitmap) else binding.onReady(false)
                 }
             } finally {
                 backend.release(request,shared)
@@ -66,8 +67,17 @@ internal class PosterLoader(context: Context, private val scope: CoroutineScope,
             }
         }
     }
-    fun cancel(view: ImageView) { bindings.remove(view)?.job?.cancel(); view.setImageDrawable(null) }
-    fun close() { bindings.values.toList().forEach { it.job?.cancel() }; bindings.clear() }
+    private fun deliver(view: ImageView,binding: Binding,bitmap: Bitmap) {
+        binding.queued=true
+        val action={
+            if(!paused && bindings[view]===binding) {
+                binding.queued=false; binding.ready=true; view.setImageBitmap(bitmap); binding.onReady(true)
+            }
+        }
+        deliveries?.post(view,action) ?: action()
+    }
+    fun cancel(view: ImageView) { bindings.remove(view)?.job?.cancel(); deliveries?.remove(view); view.setImageDrawable(null) }
+    fun close() { bindings.values.toList().forEach { it.job?.cancel() }; bindings.clear(); deliveries?.clear() }
 }
 
 /** One bounded HTTP/memory cache and background dispatcher for catalog and loading-screen images. */

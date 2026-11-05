@@ -8,7 +8,7 @@ enum class VideoMode(val label: String, val lowLatency: Boolean) {
     COMPATIBILITY("Compatibilidade — TVs mais fracas", false)
 }
 enum class TouchMode(val label: String) {
-    AUTO("Automático — escolher no celular"), OFF("Desativado"), VIRTUAL("Controle virtual — HUD por jogo"),
+    AUTO("Automático — detectar dispositivo e jogo"), OFF("Desativado — controle físico"), VIRTUAL("Exclusivo — controle virtual"),
     NATIVE("Toque nativo Xbox — experimental")
 }
 

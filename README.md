@@ -6,7 +6,7 @@
   <p>
     <a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aci%2Fapk-android10-3cc2595"><img src="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml/badge.svg?branch=ci%2Fapk-android10-3cc2595" alt="Compilação Android" /></a>
     <img src="https://img.shields.io/badge/Android-7.0%2B-54de69?logo=android&logoColor=white" alt="Android 7 ou superior" />
-    <img src="https://img.shields.io/badge/vers%C3%A3o-0.25.0-173d29" alt="Versão 0.25.0" />
+    <img src="https://img.shields.io/badge/vers%C3%A3o-0.26.0-173d29" alt="Versão 0.26.0" />
   </p>
   <p><a href="#baixar-e-instalar">Baixar</a> · <a href="#telas-do-aplicativo">Telas</a> · <a href="#controles-de-toque-por-jogo">HUDs de toque</a> · <a href="#funcionalidades">Funcionalidades</a> · <a href="#atalhos-dos-jogos-na-tv">Atalhos na TV</a> · <a href="#compilar">Compilar</a></p>
 </div>
@@ -80,6 +80,8 @@ Durante a partida, abra **⋯ → HUD e controles deste jogo** para escolher o p
 ### Toque direto no motor nativo
 
 O modo **Toque nativo Xbox — experimental** envia contatos da tela pelo canal de input do WebRTC, sem navegador embutido. Ele é oferecido para jogos que informam suporte a `NativeTouch`. O HUD virtual continua disponível como outra forma de jogar com toque.
+
+Em **Automático — detectar dispositivo e jogo**, TVs usam controle físico. Celulares com tela de toque iniciam com toque nativo quando o catálogo autenticado anuncia suporte; nos demais jogos, usam o HUD virtual. **Exclusivo — controle virtual** mantém o HUD no celular mesmo em jogos com toque nativo, e **Desativado — controle físico** preserva a escolha de jogar sem toque. Catálogo e atalhos usam a mesma regra.
 
 O usuário confirmou o funcionamento do toque direto no Fortnite com a versão 0.24, em um LGE LM-K200 com Android 10. Essa sessão real valida o resultado nesse aparelho; outros dispositivos e títulos continuam exigindo teste. Contar eventos enviados, por si só, confirma apenas o envio local. Consulte a [validação no aparelho e análise do diagnóstico](docs/catalog-performance-0.25.md).
 
@@ -167,6 +169,8 @@ Em **Configurações → Atalhos dos favoritos**, há três caminhos:
 - **Pedir atalho ao launcher** — disponível quando a tela inicial oferece a API de atalhos fixados. O pedido ainda precisa ser aceito pelo launcher.
 
 Ao abrir um atalho, o xCLOUD verifica o jogo no catálogo da conta e segue diretamente à fila, concluindo o login antes se necessário. Os atalhos não contêm credenciais. Os atalhos instaláveis podem ser removidos como qualquer aplicativo da TV.
+
+Com sessão salva, o app mostra a preparação do jogo enquanto restaura a conexão, sem exibir a tela de login nem montar a grade inteira. A fila usa a capa em cache ou consulta somente a arte do jogo escolhido quando ela falta. Uma sessão que exige renovação continua solicitando login pelo QR Code. Veja os [ajustes de menu, atalhos e entrada automática da versão 0.26](docs/device-aware-startup-0.26.md).
 
 ## Compilar
 

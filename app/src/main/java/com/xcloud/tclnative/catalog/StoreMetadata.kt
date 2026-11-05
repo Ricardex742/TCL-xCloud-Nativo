@@ -68,7 +68,7 @@ class CatalogCache(private val file: File) {
     fun restore(games: List<GameTitle>): List<GameTitle> = try {
         if (!file.exists() || file.length() > 10*1024*1024) games else StoreMetadata.merge(games, JSONObject(file.readText()))
     } catch (_: Exception) { games }
-    fun save(games: List<GameTitle>) {
+    @Synchronized fun save(games: List<GameTitle>) {
         try {
             val products = JSONArray()
             games.filter { it.productId != null && (it.posterUrl != null || it.tileUrl != null) }.forEach { game ->

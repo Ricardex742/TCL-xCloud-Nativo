@@ -32,6 +32,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -62,6 +65,8 @@ class GameDashboardView(
         private set
     private var scale = 1f
     private var coverHeight = 1
+    private var coverArtSize = ArtworkSize(192,320)
+    private var headerArtJob: Job? = null
     private var coverVerticalPadding = 8f
     private var lastGeometry = 0L
     private var closed = false
@@ -201,14 +206,15 @@ class GameDashboardView(
         val products=gamePassProducts?.map(GamePassCatalog::productKey)?.toSet() ?: emptySet()
         games = titles.map { game -> game.copy(gamePass = GamePassCatalog.contains(game,products,gamePassTitles)) }
         val tier = XboxProfile.subscription(titles.flatMap { it.userSubscriptions + it.userPrograms })
-        profile = profile.copy(subscription = tier ?: profile.subscription)
-        renderProfile(); refresh()
+        val updated=profile.copy(subscription=tier ?: profile.subscription)
+        if(updated!=profile) { profile=updated; renderProfile() }
+        refresh()
     }
     fun gameById(id: String): GameTitle? = games.firstOrNull { it.titleId == id }
-    fun pauseArtwork() { posters.pause() }
+    fun pauseArtwork() { headerArtJob?.cancel(); posters.pause() }
     fun resumeArtwork() {
         posters.resume(); renderProfile()
-        selectedGame?.let { posters.load(headerIcon,it.tileUrl ?: it.posterUrl,512,512) }
+        selectedGame?.let { loadHeaderArtwork(it) }
         adapter.notifyItemRangeChanged(0,adapter.itemCount,"artwork")
     }
     fun setGamePassProducts(products: Set<String>?, resolvedTitles: Set<String> = emptySet()) {
@@ -226,8 +232,8 @@ class GameDashboardView(
         }
     }
     fun setProfile(value: XboxProfile) {
-        profile = value.copy(subscription = value.subscription ?: profile.subscription)
-        renderProfile()
+        val updated=value.copy(subscription=value.subscription ?: profile.subscription)
+        if(updated!=profile) { profile=updated; renderProfile() }
     }
     private fun renderProfile() {
         accountName.text = profile.displayName.uppercase(Locale.getDefault())
@@ -237,7 +243,8 @@ class GameDashboardView(
         avatarLetter.text = profile.displayName.take(1).uppercase(Locale.getDefault())
         connected.contentDescription = "Conta autenticada no Xbox Cloud"
         profilePanel.contentDescription = "${profile.displayName}, ${profile.gamertag}. Abrir configurações"
-        posters.load(avatar, profile.avatarUrl, 256, 256) { ready -> avatarLetter.visibility = if (ready) View.GONE else View.VISIBLE }
+        val size=ArtworkSize.forDisplay((80*scale).roundToInt(),(80*scale).roundToInt())
+        posters.load(avatar, profile.avatarUrl, size.width, size.height) { ready -> avatarLetter.visibility = if (ready) View.GONE else View.VISIBLE }
     }
     fun setAddedGallery(added: List<String>?) {
         this.added = added; galleriesLoaded = true; refresh()
@@ -307,6 +314,7 @@ class GameDashboardView(
         val previous = selectedGame
         selectedGame = game
         if (previous == game && headerTitle.text.isNotEmpty()) return
+        headerArtJob?.cancel()
         if (game == null) { headerTitle.text = "SUA BIBLIOTECA"; posters.load(headerIcon, null); return }
         val words = game.name.uppercase(Locale.getDefault()).split(Regex("\\s+"))
         val split = if (words.size <= 1) words.size else if (words[0].length >= 10) 1 else
@@ -318,7 +326,12 @@ class GameDashboardView(
             if (second.isNotEmpty()) setSpan(ForegroundColorSpan(DashboardTheme.accent), first.length + 1, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         headerIcon.contentDescription = "Ícone de ${game.name}"
-        posters.load(headerIcon, game.tileUrl ?: game.posterUrl, 512, 512)
+        // Fast D-pad navigation updates text immediately and loads art only after focus settles.
+        headerArtJob=scope.launch { delay(120); if(selectedGame?.titleId==game.titleId) loadHeaderArtwork(game) }
+    }
+    private fun loadHeaderArtwork(game: GameTitle) {
+        val size=ArtworkSize.forDisplay((116*scale).roundToInt(),(116*scale).roundToInt())
+        posters.load(headerIcon,game.tileUrl ?: game.posterUrl,size.width,size.height)
     }
     private fun toggleSelectedFavorite() {
         val game = selectedGame ?: return
@@ -378,6 +391,7 @@ class GameDashboardView(
         coverVerticalPadding = 7*s
         val coverWidth = (w-150*s)/COLUMNS - 20*s
         coverHeight = (coverWidth*1.52f+2*coverVerticalPadding).roundToInt().coerceAtLeast(1)
+        coverArtSize=ArtworkSize.forDisplay(coverWidth.roundToInt(),(coverWidth*1.52f).roundToInt())
         val footerTop = h-42*s
         val headerTop = 20*s
         val headerSize = 116*s
@@ -385,6 +399,7 @@ class GameDashboardView(
         val navTop = headerTop+headerSize+30*s
         val top = navTop+navHeight+18*s
         place(headerIcon, 106*s, headerTop, headerSize, headerSize)
+        selectedGame?.let(::loadHeaderArtwork)
         place(searchButton, 8*s, headerTop+14*s, 88*s, 88*s)
         place(headerTitle, 242*s, headerTop+8*s, 465*s, 110*s)
         textSize(headerTitle, 46f)
@@ -422,6 +437,7 @@ class GameDashboardView(
                 .apply { marginEnd = (25*s).roundToInt() }
         }
         place(catalogNote, w-380*s, footerTop+s, 320*s, 32*s); textSize(catalogNote, 18f)
+        renderProfile()
         adapter.notifyDataSetChanged()
     }
 
@@ -432,6 +448,12 @@ class GameDashboardView(
         override fun getItemCount() = items.size
         fun submit(next: List<GameTitle>) {
             val before = items
+            // Hydration usually changes metadata without changing order; avoid a full diff for each batch.
+            if(before.size==next.size && before.indices.all { before[it].titleId==next[it].titleId }) {
+                items=next
+                before.indices.filter { before[it]!=next[it] }.forEach { notifyItemChanged(it,"metadata") }
+                return
+            }
             val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
                 override fun getOldListSize() = before.size
                 override fun getNewListSize() = next.size
@@ -453,6 +475,18 @@ class GameDashboardView(
             }
             card.setOnClickListener { updateSelected(game); onPlay(game) }
         }
+        override fun onBindViewHolder(holder: CoverHolder, position: Int, payloads: MutableList<Any>) {
+            when {
+                payloads.isNotEmpty() && payloads.all { it=="favorite" } -> holder.card.bindFavorite(items[position])
+                payloads.isNotEmpty() && payloads.all { it=="artwork" } -> if(holder.card.isAttachedToWindow) holder.card.bindArtwork(items[position])
+                else -> onBindViewHolder(holder,position)
+            }
+        }
+        override fun onViewAttachedToWindow(holder: CoverHolder) {
+            val position=holder.bindingAdapterPosition
+            if(position!=RecyclerView.NO_POSITION) holder.card.bindArtwork(items[position])
+        }
+        override fun onViewDetachedFromWindow(holder: CoverHolder) { posters.cancel(holder.card.image) }
         override fun onViewRecycled(holder: CoverHolder) { posters.cancel(holder.card.image) }
     }
     private class CoverHolder(val card: GameCard) : RecyclerView.ViewHolder(card)
@@ -482,10 +516,9 @@ class GameDashboardView(
             addView(cover); addView(favorite)
         }
         fun bind(game: GameTitle) {
-            contentDescription = game.name + if (library.isFavorite(game.titleId)) ", favorito" else ""
+            bindFavorite(game)
             fallback.text = game.name.uppercase(Locale.getDefault()); textSize(fallback, 27f)
-            favorite.visibility = if (library.isFavorite(game.titleId)) View.VISIBLE else View.GONE
-            posters.load(image, game.posterUrl ?: game.tileUrl)
+            if(isAttachedToWindow) bindArtwork(game)
             val s = scale
             badges.bind(game.gamePass, game.seriesOptimized, s)
             badges.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, (52*s).roundToInt(), Gravity.BOTTOM)
@@ -495,6 +528,13 @@ class GameDashboardView(
             favorite.layoutParams = LayoutParams((31*s).roundToInt(), (31*s).roundToInt(), Gravity.TOP or Gravity.END)
                 .apply { topMargin = (16*s).roundToInt(); marginEnd = (18*s).roundToInt() }
             textSize(favorite, 23f)
+        }
+        fun bindFavorite(game: GameTitle) {
+            contentDescription = game.name + if(library.isFavorite(game.titleId)) ", favorito" else ""
+            favorite.visibility=if(library.isFavorite(game.titleId)) View.VISIBLE else View.GONE
+        }
+        fun bindArtwork(game: GameTitle) {
+            posters.load(image,game.posterUrl ?: game.tileUrl,coverArtSize.width,coverArtSize.height)
         }
         override fun dispatchDraw(canvas: Canvas) {
             super.dispatchDraw(canvas)

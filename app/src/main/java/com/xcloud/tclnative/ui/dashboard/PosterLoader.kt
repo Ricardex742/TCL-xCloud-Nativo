@@ -12,86 +12,147 @@ import kotlinx.coroutines.sync.withPermit
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.Call
 import java.io.File
 import java.util.WeakHashMap
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
-/** Bounded cache/parallelism, cancelled recycled requests and no image work on the UI thread. */
-internal class PosterLoader(context: Context, private val scope: CoroutineScope) {
-    private val backend = ArtworkBackend.get(context)
-    private val cache = backend.cache
-    private val client = backend.client
-    private val slots = backend.slots
-    private val jobs = WeakHashMap<ImageView, Job>()
+/** UI bindings reuse identical requests; background work is shared and cancelled after the last consumer. */
+internal class PosterLoader(context: Context, private val scope: CoroutineScope,
+                            private val backend: ArtworkBackend = ArtworkBackend.get(context)) {
+    private class Binding(val request: ArtworkRequest, var onReady: (Boolean) -> Unit) {
+        var job: Job? = null
+        var ready=false
+    }
+    private val bindings=WeakHashMap<ImageView,Binding>()
     private var paused=false
     fun pause() {
         paused=true
-        jobs.forEach { (view,job) -> job.cancel(); view.setImageDrawable(null) }
-        jobs.clear(); cache.evictAll()
+        bindings.forEach { (view,binding) -> binding.job?.cancel(); view.setImageDrawable(null) }
+        bindings.clear(); backend.cache.evictAll()
     }
     fun resume() { paused=false }
     fun load(view: ImageView, originalUrl: String?, maxWidth: Int = 720, maxHeight: Int = 1080,
              notifyPlaceholder: Boolean = true, onReady: (Boolean) -> Unit = {}) {
-        val url = originalUrl?.let { raw -> runCatching {
-            val parsed = raw.toHttpUrl()
-            if (parsed.host == "store-images.s-microsoft.com" || parsed.host == "store-images.microsoft.com")
-                parsed.newBuilder().setQueryParameter("w", maxWidth.toString()).setQueryParameter("h", maxHeight.toString())
-                    .setQueryParameter("q", "90").build().toString() else raw
-        }.getOrDefault(raw) }
-        jobs.remove(view)?.cancel()
+        if(paused || originalUrl==null) { cancel(view); onReady(false); return }
+        val request=ArtworkRequest.create(originalUrl,maxWidth,maxHeight)
+        val previous=bindings[view]
+        if(previous?.request==request) {
+            previous.onReady=onReady
+            if(previous.ready) { onReady(true); return }
+            if(previous.job?.isActive==true) { if(notifyPlaceholder) onReady(false); return }
+        }
+        bindings.remove(view)?.job?.cancel()
+        val binding=Binding(request,onReady)
+        bindings[view]=binding
+        backend.cache.get(request)?.let {
+            binding.ready=true; view.setImageBitmap(it); onReady(true); return
+        }
         view.setImageDrawable(null)
-        if(paused) { onReady(false); return }
-        if (notifyPlaceholder || url == null) onReady(false)
-        if (url == null) return
-        cache.get(url)?.let { view.setImageBitmap(it); onReady(true); return }
-        jobs[view] = scope.launch {
-            val bitmap = withContext(Dispatchers.IO) {
-                slots.withPermit {
-                    cache.get(url) ?: try {
-                        client.newCall(Request.Builder().url(url).build()).awaitResponse().use { response ->
-                            if (!response.isSuccessful) return@use null
-                            val source = response.body?.source() ?: return@use null
-                            source.request(8L*1024*1024 + 1)
-                            if (source.buffer.size > 8L*1024*1024) return@use null
-                            val bytes = source.readByteArray()
-                            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-                            var sample = 1
-                            while (bounds.outWidth / sample > maxWidth*2 || bounds.outHeight / sample > maxHeight*2) sample *= 2
-                            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply {
-                                inSampleSize = sample; inPreferredConfig = Bitmap.Config.RGB_565
-                            })?.also { cache.put(url, it) }
-                        }
-                    } catch (cancelled: CancellationException) { throw cancelled }
-                    catch (_: Exception) { null }
+        if(notifyPlaceholder) onReady(false)
+        binding.job=scope.launch {
+            val shared=backend.acquire(request)
+            try {
+                val bitmap=shared.result.await()
+                if(isActive && bindings[view]===binding) {
+                    if(bitmap!=null) { binding.ready=true; view.setImageBitmap(bitmap) }
+                    binding.onReady(bitmap!=null)
                 }
-            }
-            if (isActive) {
-                if (bitmap != null) view.setImageBitmap(bitmap)
-                onReady(bitmap != null)
+            } finally {
+                backend.release(request,shared)
+                binding.job=null
             }
         }
     }
-    fun cancel(view: ImageView) { jobs.remove(view)?.cancel(); view.setImageDrawable(null) }
-    fun close() {
-        jobs.values.toList().forEach { it.cancel() }; jobs.clear()
-    }
+    fun cancel(view: ImageView) { bindings.remove(view)?.job?.cancel(); view.setImageDrawable(null) }
+    fun close() { bindings.values.toList().forEach { it.job?.cancel() }; bindings.clear() }
 }
 
-/** One HTTP/disk cache for the application, shared by the catalog and loading screen. */
-private class ArtworkBackend(context: Context) {
-    private val memoryMb=(context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager).memoryClass
-    val cache = object : LruCache<String, Bitmap>((memoryMb/12).coerceIn(4,20) * 1024 * 1024) {
-        override fun sizeOf(key: String, value: Bitmap) = value.allocationByteCount
+/** One bounded HTTP/memory cache and background dispatcher for catalog and loading-screen images. */
+internal class ArtworkBackend(context: Context,
+                              val policy: ArtworkPolicy = devicePolicy(context),
+                              private val client: OkHttpClient = OkHttpClient.Builder()
+                                  .cache(Cache(File(context.cacheDir,"game_art"),64L*1024*1024))
+                                  .callTimeout(12,TimeUnit.SECONDS).build()) {
+    val cache=object : LruCache<ArtworkRequest,Bitmap>(policy.memoryCacheBytes) {
+        override fun sizeOf(key: ArtworkRequest,value: Bitmap)=value.allocationByteCount
     }
-    val client = OkHttpClient.Builder().cache(Cache(File(context.cacheDir, "game_art"), 64L*1024*1024))
-        .callTimeout(12, TimeUnit.SECONDS).build()
-    val slots = Semaphore(4)
+    private val workerId=AtomicInteger()
+    private val dispatcher=Executors.newFixedThreadPool(policy.parallelism) { runnable ->
+        Thread({ android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND); runnable.run() },
+            "xCloud-Art-${workerId.incrementAndGet()}").apply { isDaemon=true }
+    }.asCoroutineDispatcher()
+    private val work=CoroutineScope(SupervisorJob()+dispatcher)
+    private val slots=Semaphore(policy.parallelism)
+    internal class Shared {
+        lateinit var result: Deferred<Bitmap?>
+        var consumers=0
+        @Volatile var call: Call?=null
+    }
+    private val inFlight=mutableMapOf<ArtworkRequest,Shared>()
+    @Synchronized fun acquire(request: ArtworkRequest): Shared {
+        val shared=inFlight.getOrPut(request) {
+            Shared().also { entry -> entry.result=work.async(start=CoroutineStart.LAZY) {
+                slots.withPermit { cache.get(request) ?: fetch(request,entry) }
+            } }
+        }
+        shared.consumers++; shared.result.start()
+        return shared
+    }
+    @Synchronized fun release(request: ArtworkRequest,shared: Shared) {
+        if(inFlight[request]!==shared) return
+        if(--shared.consumers==0) {
+            inFlight.remove(request); shared.result.cancel()
+            shared.call?.cancel() // Also interrupts body reads after awaitResponse has returned headers.
+        }
+    }
+    private suspend fun fetch(request: ArtworkRequest,shared: Shared): Bitmap? = try {
+        val call=client.newCall(Request.Builder().url(request.url).build())
+        shared.call=call
+        currentCoroutineContext().ensureActive()
+        call.awaitResponse().use { response ->
+            if(!response.isSuccessful) return@use null
+            val source=response.body?.source() ?: return@use null
+            source.request(MAX_IMAGE_BYTES+1)
+            if(source.buffer.size>MAX_IMAGE_BYTES) return@use null
+            val bytes=source.readByteArray()
+            currentCoroutineContext().ensureActive()
+            val bounds=BitmapFactory.Options().apply { inJustDecodeBounds=true }
+            BitmapFactory.decodeByteArray(bytes,0,bytes.size,bounds)
+            if(bounds.outWidth<=0 || bounds.outHeight<=0) return@use null
+            val target=request.size.fit(bounds.outWidth,bounds.outHeight)
+            var sample=1
+            while(bounds.outWidth/(sample*2)>=target.width && bounds.outHeight/(sample*2)>=target.height) sample*=2
+            val decoded=BitmapFactory.decodeByteArray(bytes,0,bytes.size,BitmapFactory.Options().apply {
+                inSampleSize=sample; inPreferredConfig=Bitmap.Config.RGB_565
+            }) ?: return@use null
+            val fitted=if(decoded.width>request.size.width || decoded.height>request.size.height) {
+                val size=request.size.fit(decoded.width,decoded.height)
+                Bitmap.createScaledBitmap(decoded,size.width,size.height,true).also { if(it!==decoded) decoded.recycle() }
+            } else decoded
+            currentCoroutineContext().ensureActive()
+            cache.put(request,fitted)
+            fitted
+        }
+    } catch(cancelled: CancellationException) { throw cancelled }
+      catch(_: Exception) { null }
+      finally { shared.call?.cancel(); shared.call=null }
+
+    @Synchronized internal fun close() {
+        inFlight.values.forEach { it.call?.cancel() }
+        work.cancel(); dispatcher.close(); client.cache?.close()
+    }
     companion object {
-        @Volatile private var instance: ArtworkBackend? = null
-        fun get(context: Context) = instance ?: synchronized(this) {
-            instance ?: ArtworkBackend(context.applicationContext).also { instance = it }
+        private const val MAX_IMAGE_BYTES=8L*1024*1024
+        private fun devicePolicy(context: Context): ArtworkPolicy {
+            val manager=context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+            return ArtworkPolicy.forDevice(manager.memoryClass,manager.isLowRamDevice,Runtime.getRuntime().availableProcessors())
+        }
+        @Volatile private var instance: ArtworkBackend?=null
+        fun get(context: Context)=instance ?: synchronized(this) {
+            instance ?: ArtworkBackend(context.applicationContext).also { instance=it }
         }
     }
 }

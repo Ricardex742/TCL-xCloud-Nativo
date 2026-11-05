@@ -209,7 +209,10 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
             "${surface.width()}x${surface.height()}" else "n/d"
         val mode = display?.mode
         val output = mode?.let { "${it.physicalWidth}x${it.physicalHeight}@${kotlin.math.round(it.refreshRate).toInt()} Hz" } ?: "n/d"
+        val layout=renderer?.let { "${it.width}x${it.height}" } ?: "n/d"
+        val expected=VideoScalingPolicy.viewport(width,height,videoWidth,videoHeight,aspect)
         return "Surface $size → janela ${width}x$height | Saída Android: $output\n" +
+            "Layout do vídeo: $layout | Área calculada: ${expected.width}x${expected.height} | Quadro do renderer: ${videoWidth}x$videoHeight\n" +
             "Escala da Surface: ${if (nativeUpscaling) "HW solicitada" else "HW desativada"}; imagem ajustada à janela | Cadência ${if(compatibility) 30 else 60} Hz: ${if (frameRateHintRequested) "solicitada" else "n/d"} | Pós-processamento mínimo: ${if (minimalPostProcessingRequested) "solicitado" else "padrão"}\n" +
             "Proporção: ${aspect.label} | Nitidez: $sharpness% | Saturação: $saturation% | Apresentação: até ${if(compatibility) 30 else 60} FPS | AiPQ: não verificável pelo app"
     }

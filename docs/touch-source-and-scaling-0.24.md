@@ -1,6 +1,6 @@
 # Retorno do teste no celular: fonte de toque e escala — 0.24
 
-A versão `0.24.0-touch-source-and-scaling` corrige o limite local que deixava a imagem pequena e passa a registrar a fonte virtual usada pelo toque nativo. **O funcionamento do Fortnite ainda precisa ser verificado em uma nova partida no celular.** Os testes de protocolo não substituem essa verificação.
+A versão `0.24.0-touch-source-and-scaling` corrige o limite local que deixava a imagem pequena e passa a registrar a fonte virtual usada pelo toque nativo. **Atualização posterior: o usuário confirmou o funcionamento do toque nativo no Fortnite, no LGE LM-K200 com Android 10, em uma sessão de 5min46s.** Veja a [análise desse relatório e a versão 0.25](catalog-performance-0.25.md). Essa validação no aparelho não estabelece suporte universal a outros dispositivos ou títulos.
 
 ## Evidência recebida
 

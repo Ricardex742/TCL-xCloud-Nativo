@@ -7,11 +7,14 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Looper
 import android.widget.ImageView
 import com.xcloud.tclnative.ui.dashboard.PosterLoader
+import com.xcloud.tclnative.ui.dashboard.ArtworkBackend
+import com.xcloud.tclnative.ui.dashboard.ArtworkPolicy
 import kotlinx.coroutines.*
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
+import okhttp3.OkHttpClient
 import okio.Buffer
 import org.junit.Assert.*
 import org.junit.Test
@@ -24,17 +27,112 @@ import org.robolectric.annotation.GraphicsMode
 import org.robolectric.annotation.LooperMode
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.CountDownLatch
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @LooperMode(LooperMode.Mode.PAUSED)
 class ArtworkLoadingTest {
-    private fun png(color: Int): ByteArray {
-        val bitmap = Bitmap.createBitmap(32, 48, Bitmap.Config.ARGB_8888).apply { eraseColor(color) }
+    @Test fun recyclingTheLastConsumerInterruptsASlowBodyAndLetsTheNextCoverStart() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup(); val activity=controller.get()
+        val server=MockWebServer().apply { start() }
+        val blue=png(Color.BLUE)
+        server.dispatcher=object: Dispatcher() {
+            override fun dispatch(request: RecordedRequest)=MockResponse().setBody(Buffer().write(blue)).apply {
+                if(request.path=="/slow.png") throttleBody(1,2,TimeUnit.SECONDS)
+            }
+        }
+        val bodyStarted=CountDownLatch(1)
+        val client=OkHttpClient.Builder().eventListener(object: okhttp3.EventListener() {
+            override fun responseBodyStart(call: okhttp3.Call) { bodyStarted.countDown() }
+        }).build()
+        val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
+        val backend=ArtworkBackend(activity,ArtworkPolicy(4*1024*1024,1),client)
+        val loader=PosterLoader(activity,scope,backend)
+        try {
+            val image=ImageView(activity)
+            loader.load(image,server.url("/slow.png").toString(),192,320)
+            await { bodyStarted.count==0L }
+            assertNotNull(server.takeRequest(1,TimeUnit.SECONDS))
+            loader.load(image,server.url("/new.png").toString(),192,320)
+            val next=server.takeRequest(1,TimeUnit.SECONDS)
+            assertNotNull("A cancelled slow body must not hold the only artwork worker",next)
+            assertEquals("/new.png",next!!.path)
+            await { image.drawable is BitmapDrawable }
+            assertEquals(Color.BLUE,(image.drawable as BitmapDrawable).bitmap.getPixel(0,0))
+        } finally { loader.close(); scope.cancel(); backend.close(); server.shutdown(); controller.pause().stop().destroy() }
+    }
+    private fun png(color: Int,width: Int=32,height: Int=48): ByteArray {
+        val bitmap = Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888).apply { eraseColor(color) }
         return ByteArrayOutputStream().use { stream ->
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream); bitmap.recycle(); stream.toByteArray()
         }
+    }
+    @Test fun repeatedBindingsShareOneRequestAndCancellingOneViewKeepsTheOtherAlive() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup(); val activity=controller.get()
+        val server=MockWebServer().apply { start() }
+        val blue=png(Color.BLUE)
+        server.enqueue(MockResponse().setBody(Buffer().write(blue)).setBodyDelay(300,TimeUnit.MILLISECONDS))
+        val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
+        val backend=ArtworkBackend(activity,ArtworkPolicy(4*1024*1024,2),OkHttpClient())
+        val loader=PosterLoader(activity,scope,backend)
+        val first=ImageView(activity)
+        val second=object: ImageView(activity) {
+            var updates=0
+            override fun setImageBitmap(bitmap: Bitmap?) { updates++; super.setImageBitmap(bitmap) }
+            override fun setImageDrawable(drawable: android.graphics.drawable.Drawable?) { updates++; super.setImageDrawable(drawable) }
+        }
+        try {
+            val url=server.url("/shared.png").toString()
+            loader.load(first,url,192,320); loader.load(second,url,192,320)
+            await { server.requestCount==1 }
+            loader.cancel(first)
+            repeat(20) { loader.load(second,url,192,320) }
+            await { second.drawable is BitmapDrawable }
+            assertNull(first.drawable); assertEquals(1,server.requestCount)
+            val bitmap=(second.drawable as BitmapDrawable).bitmap
+            val before=second.updates
+            repeat(20) { loader.load(second,url,192,320) }
+            assertEquals(before,second.updates)
+            assertSame(bitmap,(second.drawable as BitmapDrawable).bitmap)
+            assertEquals(Color.BLUE,bitmap.getPixel(0,0))
+        } finally { loader.close(); scope.cancel(); backend.close(); server.shutdown(); controller.pause().stop().destroy() }
+    }
+
+    @Test fun coldCoversRespectParallelismAndDecodeToThumbnailSizeWhileTheUiKeepsRunning() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup(); val activity=controller.get()
+        val server=MockWebServer().apply { start() }
+        val blue=png(Color.BLUE,720,1080)
+        val release=CountDownLatch(1)
+        server.dispatcher=object: Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                release.await(5,TimeUnit.SECONDS)
+                return MockResponse().setBody(Buffer().write(blue))
+            }
+        }
+        val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
+        val backend=ArtworkBackend(activity,ArtworkPolicy(4*1024*1024,2),OkHttpClient())
+        val loader=PosterLoader(activity,scope,backend)
+        val images=List(4) { ImageView(activity) }
+        try {
+            images.forEachIndexed { i,image -> loader.load(image,server.url("/$i.png").toString(),192,320) }
+            await { server.requestCount>=2 }
+            assertNotNull(server.takeRequest(1,TimeUnit.SECONDS)); assertNotNull(server.takeRequest(1,TimeUnit.SECONDS))
+            assertNull("Only two downloads may occupy the cold-load budget",server.takeRequest(200,TimeUnit.MILLISECONDS))
+            var uiRan=false
+            android.os.Handler(Looper.getMainLooper()).post { uiRan=true }
+            shadowOf(Looper.getMainLooper()).idle(); assertTrue(uiRan)
+            release.countDown()
+            await { images.all { it.drawable is BitmapDrawable } }
+            assertEquals(4,server.requestCount)
+            images.forEach {
+                val bitmap=(it.drawable as BitmapDrawable).bitmap
+                assertTrue(bitmap.width<=192 && bitmap.height<=320)
+                assertTrue(bitmap.allocationByteCount<=192*320*4)
+                assertEquals(Color.BLUE,bitmap.getPixel(0,0))
+            }
+        } finally { release.countDown(); loader.close(); scope.cancel(); backend.close(); server.shutdown(); controller.pause().stop().destroy() }
     }
     private fun await(condition: () -> Boolean) {
         val deadline = System.nanoTime()+TimeUnit.SECONDS.toNanos(5)

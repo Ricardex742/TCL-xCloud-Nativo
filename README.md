@@ -6,7 +6,7 @@
   <p>
     <a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aci%2Fapk-android10-3cc2595"><img src="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml/badge.svg?branch=ci%2Fapk-android10-3cc2595" alt="Compilação Android" /></a>
     <img src="https://img.shields.io/badge/Android-7.0%2B-54de69?logo=android&logoColor=white" alt="Android 7 ou superior" />
-    <img src="https://img.shields.io/badge/vers%C3%A3o-0.24.0-173d29" alt="Versão 0.24.0" />
+    <img src="https://img.shields.io/badge/vers%C3%A3o-0.25.0-173d29" alt="Versão 0.25.0" />
   </p>
   <p><a href="#baixar-e-instalar">Baixar</a> · <a href="#telas-do-aplicativo">Telas</a> · <a href="#controles-de-toque-por-jogo">HUDs de toque</a> · <a href="#funcionalidades">Funcionalidades</a> · <a href="#atalhos-dos-jogos-na-tv">Atalhos na TV</a> · <a href="#compilar">Compilar</a></p>
 </div>
@@ -81,7 +81,7 @@ Durante a partida, abra **⋯ → HUD e controles deste jogo** para escolher o p
 
 O modo **Toque nativo Xbox — experimental** envia contatos da tela pelo canal de input do WebRTC, sem navegador embutido. Ele é oferecido para jogos que informam suporte a `NativeTouch`. O HUD virtual continua disponível como outra forma de jogar com toque.
 
-A compatibilidade do toque direto no Fortnite ainda precisa de validação em uma sessão real. Contar eventos enviados confirma somente o envio local, não que o jogo tenha aceitado os contatos. Consulte os [limites da investigação e do diagnóstico](docs/native-diagnostics-0.22.md).
+O usuário confirmou o funcionamento do toque direto no Fortnite com a versão 0.24, em um LGE LM-K200 com Android 10. Essa sessão real valida o resultado nesse aparelho; outros dispositivos e títulos continuam exigindo teste. Contar eventos enviados, por si só, confirma apenas o envio local. Consulte a [validação no aparelho e análise do diagnóstico](docs/catalog-performance-0.25.md).
 
 No futebol, toque no botão **ATAQUE ⇄ DEFESA** para trocar as ações sem interromper o movimento. Essa troca é manual: a sessão cloud não informa a posse de bola ao aplicativo. Escolha o esquema **Clássico — chute B** ou **Alternativo — chute X** nos ajustes do HUD, conforme a configuração do seu jogo. Os gestos de chute combinam RB, LB ou LB + RB com o botão de finalização; não é necessário pressionar esses botões separadamente.
 
@@ -179,7 +179,7 @@ gradle --no-daemon --max-workers=2 \
 
 O módulo `shortcut` gera o modelo sem assinatura usado nos atalhos locais; ele é incorporado automaticamente ao aplicativo. Cada aparelho assina seus atalhos com uma chave própria do Android Keystore, separada da chave de atualização do xCLOUD.
 
-O pipeline valida testes, compatibilidade de APIs Android, assinatura do APK, pacotes de controle, fluxo de autenticação/sessão, geração dos atalhos e shaders de imagem. As capturas da interface podem ser reproduzidas pelos testes de UI. Consulte o [retorno do teste no celular e ajustes da versão 0.24](docs/touch-source-and-scaling-0.24.md), a [comparação direta com o SDK oficial na versão 0.23](docs/native-touch-official-sdk.md), o [diagnóstico nativo da versão 0.22](docs/native-diagnostics-0.22.md), a [análise de HDR e toque da versão 0.21](docs/hdr-native-touch-0.21.md), os [gestos e câmera da versão 0.20](docs/mobile-huds-0.20.md) e o [modo de compatibilidade da versão 0.18](docs/tv-compatibility-0.18.md) para a implementação e os limites de validação.
+O pipeline valida testes, compatibilidade de APIs Android, assinatura do APK, pacotes de controle, fluxo de autenticação/sessão, geração dos atalhos e shaders de imagem. As capturas da interface podem ser reproduzidas pelos testes de UI. Consulte a [validação do toque no celular e otimização do catálogo na versão 0.25](docs/catalog-performance-0.25.md), o [retorno do teste no celular e ajustes da versão 0.24](docs/touch-source-and-scaling-0.24.md), a [comparação direta com o SDK oficial na versão 0.23](docs/native-touch-official-sdk.md), o [diagnóstico nativo da versão 0.22](docs/native-diagnostics-0.22.md), a [análise de HDR e toque da versão 0.21](docs/hdr-native-touch-0.21.md), os [gestos e câmera da versão 0.20](docs/mobile-huds-0.20.md) e o [modo de compatibilidade da versão 0.18](docs/tv-compatibility-0.18.md) para a implementação e os limites de validação.
 
 ---
 

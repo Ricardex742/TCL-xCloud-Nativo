@@ -14,8 +14,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 28
-        versionName = "0.28.0-stream-quality-and-audio"
+        versionCode = 29
+        versionName = "0.29.0-cloud-history-and-shortcuts"
     }
 
     signingConfigs {

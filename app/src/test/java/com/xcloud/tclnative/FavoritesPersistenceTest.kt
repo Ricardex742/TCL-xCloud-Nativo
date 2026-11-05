@@ -16,6 +16,22 @@ import javax.xml.parsers.DocumentBuilderFactory
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk=[28])
 class FavoritesPersistenceTest {
+    @Test fun cloudHistoryIsWrittenToDiskAndRestoredOnlyForItsVerifiedAccount() {
+        val first=Robolectric.buildActivity(Activity::class.java).setup()
+        val library=GameLibrary(first.get(),"history-legacy")
+        library.saveCloudRecent(listOf("COD","FORTNITE","cod","FORZA"))
+        val file=File(first.get().applicationInfo.dataDir,"shared_prefs/library_${GameLibrary.accountKey("history-legacy")}.xml")
+        assertTrue(file.readText().contains("cloud_recent"))
+        library.bindXboxAccount("2468")
+        first.pause().stop().destroy()
+        val second=Robolectric.buildActivity(Activity::class.java).setup()
+        val restored=GameLibrary(second.get(),"xuid:2468","new-history-grant")
+        assertEquals(listOf("COD","FORTNITE","FORZA"),restored.cloudRecent())
+        assertNull(GameLibrary(second.get(),"xuid:9999","history-legacy").cloudRecent())
+        restored.saveCloudRecent(emptyList())
+        assertEquals(emptyList<String>(),GameLibrary(second.get(),"xuid:2468","history-legacy").cloudRecent())
+        second.pause().stop().destroy()
+    }
     @Test fun favoriteIsOnDiskBeforeExitAndSurvivesAccountHashRotationAndActivityRecreation() {
         val first=Robolectric.buildActivity(Activity::class.java).setup()
         val library=GameLibrary(first.get(),"xuid:123","first-grant")

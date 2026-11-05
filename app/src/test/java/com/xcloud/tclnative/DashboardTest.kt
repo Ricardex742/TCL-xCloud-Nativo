@@ -33,6 +33,33 @@ import java.io.File
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @LooperMode(LooperMode.Mode.PAUSED)
 class DashboardTest {
+    @Test fun returnToPlayUsesCloudOrderKeepsCachedHistoryOnFailureAndClearsConfirmedEmpty() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        val activity=controller.get()
+        val library=GameLibrary(activity,"cloud-history-ui")
+        library.recordPlayed("game-0",9999)
+        library.saveCloudRecent(listOf("game-7","game-2"))
+        val view=GameDashboardView(activity,library,{}, {}, {}, {})
+        fun all(node: View): List<View> = listOf(node)+if(node is ViewGroup)
+            (0 until node.childCount).flatMap { all(node.getChildAt(it)) } else emptyList()
+        try {
+            activity.setContentView(view); view.setGames(games); view.selectTab(LibraryTab.RECENT); layout(view,1280,720)
+            val grid=all(view).filterIsInstance<RecyclerView>().single()
+            assertEquals(2,grid.adapter!!.itemCount)
+            assertEquals("game-7",view.selectedGame?.titleId)
+            assertTrue(all(view).filterIsInstance<TextView>().any { it.text.toString()=="VOLTAR A JOGAR" })
+            view.setRecentHistory(listOf("game-3","game-1")); layout(view,1280,720)
+            assertEquals("game-3",view.selectedGame?.titleId)
+            view.beginRecentRefresh(); view.setRecentHistory(null); layout(view,1280,720)
+            assertEquals(2,grid.adapter!!.itemCount)
+            assertEquals("game-3",view.selectedGame?.titleId)
+            assertTrue(all(view).filterIsInstance<TextView>().any { it.text.contains("HISTÓRICO SALVO") })
+            view.setRecentHistory(emptyList()); layout(view,1280,720)
+            assertEquals(0,grid.adapter!!.itemCount); assertNull(view.selectedGame)
+            view.setRecentHistory(null); layout(view,1280,720)
+            assertTrue(all(view).filterIsInstance<TextView>().any { it.text.contains("Não foi possível consultar") })
+        } finally { view.close(); controller.pause().stop().destroy() }
+    }
     @Test fun magnifierOpensThePhoneKeyboardAndSearchesTheCatalogWithoutStartingAGame() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()
         val activity=controller.get()

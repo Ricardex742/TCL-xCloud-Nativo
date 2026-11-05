@@ -76,6 +76,16 @@ class ShowcaseCaptureTest {
             await { grid.childCount>=6 && (0 until 6).all { i -> all(grid.getChildAt(i)).filterIsInstance<ImageView>().any { it.drawable is BitmapDrawable } } }
             assertEquals(6,grid.adapter!!.itemCount)
             save(view,"catalog")
+            val header=all(view).filterIsInstance<ImageView>().single { it.contentDescription=="Ícone de ${games[0].name}" }
+            val oldHeader=header.drawable
+            view.setRecentHistory(listOf(games[5].titleId,games[1].titleId,games[0].titleId))
+            view.selectTab(com.xcloud.tclnative.catalog.LibraryTab.RECENT); view.restoreFocus(); layout(view)
+            await { grid.childCount>=3 && (0 until 3).all { i -> all(grid.getChildAt(i)).filterIsInstance<ImageView>().any { it.drawable is BitmapDrawable } } }
+            assertEquals(games[5].titleId,view.selectedGame?.titleId)
+            shadowOf(Looper.getMainLooper()).idleFor(200,java.util.concurrent.TimeUnit.MILLISECONDS)
+            await { header.drawable is BitmapDrawable && header.drawable!==oldHeader }
+            save(view,"return-to-play")
+            view.selectTab(com.xcloud.tclnative.catalog.LibraryTab.ALL); layout(view)
             grid.getChildAt(1).requestFocus(); layout(view)
             assertEquals(games[1].titleId,view.selectedGame?.titleId)
             val loading=GameLoadingView(activity) {}

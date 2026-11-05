@@ -90,6 +90,7 @@ class ShortcutStartupTest {
                     "/cloud" -> """{"gsToken":"test-cloud","offeringSettings":{"regions":[{"isDefault":true,"baseUri":"${server.url("/")}"}]}}"""
                     "/transfer" -> """{"access_token":"test-console"}"""
                     "/v2/titles" -> """{"results":[{"titleId":"FORTNITE","details":{"productTitle":"Fortnite","productId":"PRODUCT","supportedInputTypes":["NativeTouch"]}},{"titleId":"OTHER","details":{"productTitle":"Other","productId":"OTHER-PRODUCT"}}]}"""
+                    "/v2/titles/mru" -> """{"results":[{"titleId":"OTHER"},{"titleId":"FORTNITE"}]}"""
                     "/store/v7.0/products" -> """{"Products":[{"StoreId":"PRODUCT","Image_Poster":{"URL":"$artUrl"}}]}"""
                     else -> return MockResponse().setResponseCode(404)
                 }
@@ -132,7 +133,7 @@ class ShortcutStartupTest {
             val hydration=requests.filter { it.requestUrl!!.encodedPath=="/store/v7.0/products" }
             assertEquals(if(cached) 0 else 1,hydration.size)
             if(!cached) assertEquals("PRODUCT",hydration.single().requestUrl!!.queryParameter("bigIds"))
-            assertFalse(requests.any { it.requestUrl!!.encodedPath in listOf("/device","/token","/profile") || it.requestUrl!!.encodedPath.contains("sigls") })
+            assertFalse(requests.any { it.requestUrl!!.encodedPath in listOf("/device","/token","/profile","/v2/titles/mru") || it.requestUrl!!.encodedPath.contains("sigls") })
             assertNotNull(PreferencesTokenStore(app).read())
             // The deferred catalog is built when the user leaves the shortcut's queue,
             // without consuming the shortcut again or revalidating the same catalog.
@@ -156,6 +157,15 @@ class ShortcutStartupTest {
             assertEquals(View.GONE,transition.visibility)
             assertFalse(all(root(activity)).any { it is ConsoleLoginView })
             assertEquals(1,requests.count { it.requestUrl!!.encodedPath=="/v2/titles" })
+            val dashboard=all(root(activity)).filterIsInstance<GameDashboardView>().single()
+            dashboard.selectTab(LibraryTab.RECENT)
+            val historyDeadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(8)
+            while((requests.none { it.path=="/v2/titles/mru?mr=25" } || dashboard.selectedGame?.titleId!="OTHER") && System.nanoTime()<historyDeadline) {
+                shadowOf(Looper.getMainLooper()).idleFor(16,TimeUnit.MILLISECONDS); Thread.sleep(10)
+            }
+            assertTrue(requests.any { it.path=="/v2/titles/mru?mr=25" })
+            assertEquals("OTHER",dashboard.selectedGame?.titleId)
+            assertEquals(2,all(dashboard).filterIsInstance<androidx.recyclerview.widget.RecyclerView>().single().adapter!!.itemCount)
         } finally { releaseAuth.countDown(); releaseCleanup.complete(Unit); cleanupScope.cancel(); controller.pause().stop().destroy(); server.shutdown(); TestShortcutActivity.server=null; PreferencesTokenStore(app).clear() }
     }
     @Test fun ordinarySavedSessionStartupShowsTheAppIconWithoutBuildingLoginOrLoadingGameArt() {

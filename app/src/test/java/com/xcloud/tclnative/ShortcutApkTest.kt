@@ -85,6 +85,52 @@ class ShortcutApkTest {
         assertNotEquals(ShortcutApkBuilder.packageName("HADES2"),ShortcutApkBuilder.packageName("FORZA5"))
         assertEquals(ShortcutApkBuilder.packageName("hades2"),ShortcutApkBuilder.packageName("HADES2"))
     }
+    @Test fun callOfDutyShortcutLabelsAreAcceptedByTheAndroidResourceParser() {
+        for((id,name) in listOf("CODBO6" to "Call of Duty®: Black Ops 6", "CODMW3" to "Call of Duty®: Modern Warfare® III")) {
+            val apk=build(id,name)
+            val manifest=tool("aapt","dump","badging",apk.path)
+            assertTrue(manifest,manifest.contains("application-label:'$name'"))
+            tool("aapt","dump","xmltree",apk.path,"AndroidManifest.xml")
+            tool("zipalign","-c","4",apk.path)
+            val result=ApkVerifier.Builder(apk).setMinCheckedPlatformVersion(24).build().verify()
+            assertTrue(result.errors.toString(),result.isVerified)
+        }
+    }
+    @Test fun resourceAlignmentExtraFieldDeclaresFourByteAlignmentForEveryPackageLayout() {
+        var fields=0
+        repeat(12) { index ->
+            val apk=build("COD-MWIII-$index","Call of Duty®: Modern Warfare® III")
+            tool("zipalign","-c","4",apk.path)
+            ZipFile(apk).use { zip ->
+                val extra=zip.getEntry("resources.arsc").extra ?: byteArrayOf()
+                val b=java.nio.ByteBuffer.wrap(extra).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                while(b.remaining()>=4) {
+                    val type=b.short.toInt() and 65535; val length=b.short.toInt() and 65535
+                    assertTrue(length<=b.remaining())
+                    if(type==0xd935) {
+                        fields++
+                        assertTrue("APK $index: malformed Android alignment field of $length bytes",length>=2)
+                        assertEquals("APK $index: invalid declared Android alignment",4,b.getShort(b.position()).toInt() and 65535)
+                    }
+                    b.position(b.position()+length)
+                }
+            }
+        }
+        assertTrue(fields>0)
+    }
+    @Test fun generatedPackagesStayAlignedAcrossDeviceTimeZones() {
+        val original=java.util.TimeZone.getDefault()
+        try {
+            for(zone in listOf("GMT-12:00","Pacific/Kiritimati","America/Sao_Paulo")) {
+                java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone(zone))
+                val apk=build("COD-TIMEZONE","Call of Duty®: Modern Warfare® III")
+                tool("zipalign","-c","4",apk.path)
+                val manifest=tool("aapt","dump","badging",apk.path)
+                assertTrue(manifest.contains("leanback-launchable-activity:"))
+                assertTrue(ApkVerifier.Builder(apk).setMinCheckedPlatformVersion(24).build().verify().isVerified)
+            }
+        } finally { java.util.TimeZone.setDefault(original) }
+    }
     @Test(expected=IllegalArgumentException::class) fun invalidLaunchIdsNeverGenerateAnInstallableApp() {
         build("../invalid","Invalid")
     }

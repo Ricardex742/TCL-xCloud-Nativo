@@ -1,7 +1,9 @@
 package com.xcloud.tclnative.home
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -19,29 +21,42 @@ import java.security.KeyStore
 import java.security.PrivateKey
 import java.security.cert.X509Certificate
 import java.util.Date
+import java.util.UUID
 import javax.security.auth.x500.X500Principal
 
 /** Invoked only after selecting a favorite. The system installer retains control of installation. */
 class GameShortcutInstaller(private val context: Context) {
     fun create(game: GameTitle,cover: Bitmap?): File {
         val folder=File(context.cacheDir,"game-shortcuts").apply { mkdirs() }
-        val template=File(folder,"template.apk")
-        context.assets.open("game-shortcut/template.apk").use { source -> template.outputStream().use { source.copyTo(it) } }
-        val fallback=android.graphics.BitmapFactory.decodeResource(context.resources,R.drawable.brand_logo)
-        val art=cover ?: fallback
-        fun png(width: Int,height: Int): ByteArray {
+        // An installer may still be reading the previous APK, even after another request starts.
+        val template=File.createTempFile("template-", ".apk",folder)
+        val packageName=ShortcutApkBuilder.packageName(game.titleId)
+        val output=File(folder,"$packageName-${UUID.randomUUID().toString().replace("-", "")}.apk")
+        var fallback: Bitmap?=null
+        fun png(art: Bitmap,width: Int,height: Int): ByteArray {
             val image=Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888)
-            val canvas=Canvas(image); canvas.drawColor(Color.rgb(18,38,27))
-            val paint=Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
-            val scale=minOf(width.toFloat()/art.width,height.toFloat()/art.height)
-            val w=art.width*scale; val h=art.height*scale
-            canvas.drawBitmap(art,null,RectF((width-w)/2,(height-h)/2,(width+w)/2,(height+h)/2),paint)
-            return ByteArrayOutputStream().also { image.compress(Bitmap.CompressFormat.PNG,100,it); image.recycle() }.toByteArray()
+            try {
+                val canvas=Canvas(image); canvas.drawColor(Color.rgb(18,38,27))
+                val paint=Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+                val scale=minOf(width.toFloat()/art.width,height.toFloat()/art.height)
+                val w=art.width*scale; val h=art.height*scale
+                canvas.drawBitmap(art,null,RectF((width-w)/2,(height-h)/2,(width+w)/2,(height+h)/2),paint)
+                return ByteArrayOutputStream().also { check(image.compress(Bitmap.CompressFormat.PNG,100,it)) }.toByteArray()
+            } finally { image.recycle() }
         }
         return try {
-            ShortcutApkBuilder.build(template,File(folder,"${ShortcutApkBuilder.packageName(game.titleId)}.apk"),
-                game.titleId,game.name.take(256),png(256,256),png(320,180),signer())
-        } finally { fallback.recycle() }
+            context.assets.open("game-shortcut/template.apk").use { source -> template.outputStream().use { source.copyTo(it) } }
+            val art=cover ?: BitmapFactory.decodeResource(context.resources,R.drawable.brand_logo,
+                BitmapFactory.Options().apply { inSampleSize=4; inScaled=false }).also { fallback=it }
+            ShortcutApkBuilder.build(template,output,game.titleId,game.name.take(256),png(art,256,256),png(art,320,180),signer())
+            @Suppress("DEPRECATION")
+            val parsed=context.packageManager.getPackageArchiveInfo(output.path,PackageManager.GET_ACTIVITIES)
+            check(parsed?.packageName==packageName && parsed.activities?.any {
+                it.name=="com.xcloud.shortcut.ShortcutActivity" && it.exported
+            }==true) { "O Android deste aparelho não conseguiu ler o pacote do atalho. O atalho não foi enviado ao instalador." }
+            output
+        } catch(error: Exception) { output.delete(); throw error }
+        finally { template.delete(); fallback?.recycle() }
     }
     private fun signer(): ApkSigner.SignerConfig {
         val store=KeyStore.getInstance("AndroidKeyStore").apply { load(null) }

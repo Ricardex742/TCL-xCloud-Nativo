@@ -7,6 +7,7 @@ import com.xcloud.tclnative.net.checkedBody
 import com.xcloud.tclnative.webrtc.StreamingPeer
 import com.xcloud.tclnative.webrtc.StreamResolution
 import com.xcloud.tclnative.catalog.XboxProfile
+import com.xcloud.tclnative.catalog.CloudPlayHistory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -62,8 +63,11 @@ class XCloudSignalingClient(
                 .put("pixelDensity", JSONObject().put("dpiX", 1).put("dpiY", 1)))).toString()
 
     private suspend fun request(path: String, stage: String, method: String = "GET", body: JSONObject? = null,
-                                client: OkHttpClient = httpClient): String {
-        val builder = Request.Builder().url(CloudProtocol.sessionUrl(session.baseUri, path))
+                                client: OkHttpClient = httpClient,query: Map<String,String> = emptyMap()): String {
+        val url=CloudProtocol.sessionUrl(session.baseUri,path).newBuilder().apply {
+            query.forEach { (key,value) -> addQueryParameter(key,value) }
+        }.build()
+        val builder = Request.Builder().url(url)
             .header("Authorization", "Bearer ${session.gssvToken}")
             .header("Accept", "application/json").header("X-Gssv-Client", "XboxComBrowser")
             .header("X-MS-Device-Info", deviceInfo())
@@ -90,6 +94,12 @@ class XCloudSignalingClient(
                 freeToPlay = details?.optBoolean("isFreeInStore",false) == true,
                 supportedInputTypes = XboxProfile.subscriptionClaims(details?.opt("supportedInputTypes")).toSet())
         }.distinctBy { it.titleId }.sortedBy { it.name.lowercase(java.util.Locale.ROOT) }
+    }
+
+    suspend fun fetchRecentGames(catalog: List<GameTitle>): List<String> = withContext(Dispatchers.IO) {
+        val client=httpClient.newBuilder().callTimeout(6,TimeUnit.SECONDS).build()
+        val response=JSONObject(request("/v2/titles/mru","HISTORY",client=client,query=mapOf("mr" to "25")))
+        CloudPlayHistory.resolve(catalog,response)
     }
 
     /** Resolves official Game Pass product/edition IDs to cloud launch IDs, never using access programs. */

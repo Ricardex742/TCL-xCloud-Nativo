@@ -108,6 +108,7 @@ open class MainActivity : Activity() {
     private var videoRecoveryDialog: Dialog? = null
     private var dashboard: GameDashboardView? = null
     private var dashboardJob: Job? = null
+    private var recentHistoryJob: Job? = null
     private var gameLibrary: GameLibrary? = null
     private var loginView: ConsoleLoginView? = null
     private var accountJob: Job? = null
@@ -152,7 +153,7 @@ open class MainActivity : Activity() {
         lastShortcutRequest=shortcutRequest ?: lastShortcutRequest
         pendingHomeChannel=savedInstanceState?.getLong("pending_home_channel",-1)?.takeIf { it>=0 }
         savedInstanceState?.getString("pending_shortcut_apk")?.takeIf {
-            it.matches(Regex("com[.]xcloud[.]game[.]g[0-9a-f]{24}[.]apk"))
+            it.matches(Regex("com[.]xcloud[.]game[.]g[0-9a-f]{24}(?:-[0-9a-f]{32})?[.]apk"))
         }?.let { pendingShortcutApk=File(cacheDir,"game-shortcuts/$it").takeIf(File::isFile) }
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -317,6 +318,7 @@ open class MainActivity : Activity() {
     }
 
     private fun renderLoginMenu() {
+        recentHistoryJob?.cancel(); recentHistoryJob=null
         accountJob?.cancel()
         qrPollingJob?.cancel()
         dashboardJob?.cancel()
@@ -425,6 +427,7 @@ open class MainActivity : Activity() {
 
     private fun renderGameDashboard(session: XCloudSession, validatedGames: List<GameTitle>? = null) {
         dashboardJob?.cancel()
+        recentHistoryJob?.cancel(); recentHistoryJob=null
         val signaling = XCloudSignalingClient(session, transferTokenProvider = { authenticator.getConsoleTransferToken() })
         dashboardJob = mainScope.launch {
             val allGames = try {
@@ -465,6 +468,7 @@ open class MainActivity : Activity() {
             hudTextView.visibility = View.GONE
             view.setGames(allGames)
             revealDashboard(view)
+            refreshCloudHistory(view,signaling,library)
             currentGames = allGames
             currentSignaling = signaling
             syncHomeShortcuts()
@@ -509,6 +513,22 @@ open class MainActivity : Activity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun refreshCloudHistory(view: GameDashboardView,signaling: XCloudSignalingClient,library: GameLibrary) {
+        recentHistoryJob?.cancel()
+        view.beginRecentRefresh()
+        recentHistoryJob=mainScope.launch {
+            try {
+                catalogWork.await()
+                val ids=signaling.fetchRecentGames(currentGames)
+                if(dashboard===view) {
+                    withContext(Dispatchers.IO) { library.saveCloudRecent(ids) }
+                    if(dashboard===view) view.setRecentHistory(ids)
+                }
+            } catch(cancelled: CancellationException) { throw cancelled }
+            catch(_: Exception) { if(dashboard===view) view.setRecentHistory(null) }
         }
     }
 
@@ -726,7 +746,11 @@ open class MainActivity : Activity() {
         dashboard?.setGames(currentGames)
         dashboard?.resumeArtwork()
         controlPanel.visibility = View.VISIBLE
-        dashboard?.let { view -> hudTextView.visibility = View.GONE; revealDashboard(view) }
+        dashboard?.let { view ->
+            hudTextView.visibility=View.GONE; revealDashboard(view)
+            val signaling=currentSignaling; val library=gameLibrary
+            if(signaling!=null && library!=null) refreshCloudHistory(view,signaling,library)
+        }
     }
     private fun revealDashboard(view: GameDashboardView) {
         view.doOnPreDraw {
@@ -788,6 +812,7 @@ open class MainActivity : Activity() {
     }
 
     private fun launchCloudGame(signaling: XCloudSignalingClient, game: GameTitle, touchChoice: TouchMode? = null) {
+        recentHistoryJob?.cancel(); recentHistoryJob=null
         catalogReturnJob?.cancel(); catalogReturnJob=null
         startupArtJob?.cancel(); startupArtJob=null
         transitionPanel.dismiss(); pendingAutomaticReport=null
@@ -1237,7 +1262,13 @@ open class MainActivity : Activity() {
         return super.onKeyDown(keyCode, event)
     }
 
-    override fun onStart() { super.onStart(); activityVisible=true; reportTracker?.setVisible(true); webrtcClient?.resumeAudio() }
+    override fun onStart() {
+        super.onStart(); activityVisible=true; reportTracker?.setVisible(true); webrtcClient?.resumeAudio()
+        if(activeGame==null && dashboard!=null && controlPanel.visibility==View.VISIBLE && transitionPanel.visibility!=View.VISIBLE) {
+            val signaling=currentSignaling; val library=gameLibrary
+            if(signaling!=null && library!=null) refreshCloudHistory(dashboard!!,signaling,library)
+        }
+    }
     override fun onStop() { activityVisible=false; reportTracker?.setVisible(false); super.onStop() }
 
     override fun onDestroy() {

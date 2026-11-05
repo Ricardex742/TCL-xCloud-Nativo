@@ -56,6 +56,9 @@ class GameDashboardView(
     private var gamePassLoaded = false
     private var added: List<String>? = null
     private var galleriesLoaded = false
+    private var recent=library.cloudRecent()
+    private var recentLoading=true
+    private var recentFailed=false
     private var profile = XboxProfile()
     var activeTab = LibraryTab.ALL
         private set
@@ -75,7 +78,7 @@ class GameDashboardView(
     private var focusRequest = 0
     private val tabs = mutableListOf<TextView>()
     private val tabPlates = mutableListOf<FocusPlate>()
-    private val headerIcon = FixedArtworkView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
+    private val headerIcon = FixedArtworkView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP; cropToPadding=true }
     private val headerTitle = label(44f)
     private val profilePanel = FrameLayout(context).apply {
         id = generateViewId(); isFocusable = true; isClickable = true
@@ -268,15 +271,23 @@ class GameDashboardView(
     fun setAddedGallery(added: List<String>?) {
         this.added = added; galleriesLoaded = true; refresh()
     }
+    fun beginRecentRefresh() { recentLoading=true; recentFailed=false; refresh() }
+    fun setRecentHistory(ids: List<String>?) {
+        recentLoading=false; recentFailed=ids==null
+        if(ids!=null) recent=ids
+        refresh()
+    }
     fun setSearch(query: String) { searchQuery = query.trim(); refresh(); focusFirstCover() }
     fun refresh() {
-        val visible = GameLibrary.select(games, activeTab, library.favorites, library.records(), gamePassProducts?.toList(), added, searchQuery,gamePassTitles)
+        val visible = GameLibrary.select(games, activeTab, library.favorites, emptyMap(), gamePassProducts?.toList(), added, searchQuery,gamePassTitles,recent)
         adapter.submit(visible)
         emptyState.visibility = if (visible.isEmpty()) View.VISIBLE else View.GONE
         emptyState.text = when {
             searchQuery.isNotBlank() -> "Nenhum jogo encontrado para “$searchQuery”.\nX para pesquisar novamente."
             activeTab == LibraryTab.FAVORITES -> "Seus favoritos aparecem aqui.\nSelecione um jogo e pressione Y para favoritar."
-            activeTab == LibraryTab.RECENT -> "Sua próxima partida começa aqui.\nOs jogos iniciados neste aparelho aparecerão nesta aba."
+            activeTab == LibraryTab.RECENT && recentLoading -> "Consultando seu histórico do Xbox Cloud…"
+            activeTab == LibraryTab.RECENT && recentFailed -> "Não foi possível consultar o histórico do Xbox.\nAtualize o catálogo nas configurações para tentar novamente."
+            activeTab == LibraryTab.RECENT -> "Seus jogos recentes do Xbox Cloud Gaming aparecerão aqui."
             activeTab == LibraryTab.ADDED && !galleriesLoaded -> "Carregando adições recentes…"
             activeTab == LibraryTab.ADDED && added == null -> "Adições recentes indisponíveis no momento.\nOs jogos continuam na aba Todos os jogos."
             activeTab == LibraryTab.GAME_PASS && !gamePassLoaded -> "Carregando jogos do Game Pass…"
@@ -287,6 +298,8 @@ class GameDashboardView(
         catalogNote.text = when {
             searchQuery.isNotBlank() -> "BUSCA: $searchQuery  •  ${visible.size} JOGOS"
             activeTab == LibraryTab.GAME_PASS && !gamePassLoaded -> "${visible.size} JOGOS • ATUALIZANDO GAME PASS…"
+            activeTab == LibraryTab.RECENT && recentLoading -> "${visible.size} JOGOS • ATUALIZANDO HISTÓRICO…"
+            activeTab == LibraryTab.RECENT && recentFailed && recent!=null -> "${visible.size} JOGOS • HISTÓRICO SALVO • ATUALIZAÇÃO INDISPONÍVEL"
             else -> "${visible.size} JOGOS"
         }
         val selected = visible.firstOrNull { it.titleId == selectedGame?.titleId } ?: visible.firstOrNull()

@@ -1,6 +1,7 @@
 package com.xcloud.tclnative.home
 
 import com.android.apksig.ApkSigner
+import com.android.apksig.ApkVerifier
 import java.io.File
 import java.io.FilterOutputStream
 import java.io.OutputStream
@@ -41,14 +42,17 @@ object ShortcutApkBuilder {
                         else -> original
                     }
                     val entry=ZipEntry(old.name).apply {
-                        time=315532800000L
+                        // Stay away from the DOS epoch boundary in every device time zone.
+                        time=946684800000L
                         if(old.name=="resources.arsc") {
                             method=ZipEntry.STORED; size=bytes.size.toLong(); compressedSize=size
                             crc=CRC32().apply { update(bytes) }.value
-                            val padding=((4-((counted.size+30+old.name.toByteArray().size)%4))%4).toInt()
-                            if(padding>0) extra=ByteArray(4+padding).also {
-                                it[0]=0x35; it[1]=0xd9.toByte(); it[2]=padding.toByte()
-                            }
+                            // Android's 0xd935 extra field contains a uint16 alignment, then padding.
+                            // Counting just a four-byte header produced malformed fields for some titles.
+                            val base=counted.size+30+old.name.toByteArray(Charsets.UTF_8).size
+                            val padding=((4-((base+6)%4))%4).toInt()
+                            extra=ByteBuffer.allocate(6+padding).order(ByteOrder.LITTLE_ENDIAN)
+                                .putShort(0xd935.toShort()).putShort((2+padding).toShort()).putShort(4).array()
                         }
                     }
                     target.putNextEntry(entry); target.write(bytes); target.closeEntry()
@@ -58,6 +62,11 @@ object ShortcutApkBuilder {
             ApkSigner.Builder(listOf(signer)).setInputApk(unsigned).setOutputApk(output).setMinSdkVersion(24)
                 .setV1SigningEnabled(false).setV2SigningEnabled(true).setV3SigningEnabled(false).setV4SigningEnabled(false)
                 .build().sign()
+            val verified=ApkVerifier.Builder(output).setMinCheckedPlatformVersion(24).build().verify()
+            check(verified.isVerified && verified.isVerifiedUsingV2Scheme &&
+                verified.signerCertificates.singleOrNull()?.encoded?.contentEquals(signer.certificates.first().encoded)==true) {
+                "Não foi possível validar a assinatura do atalho. Tente criá-lo novamente."
+            }
             return output
         } catch(error: Exception) { output.delete(); throw error }
         finally { unsigned.delete() }

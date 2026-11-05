@@ -6,7 +6,7 @@
   <p>
     <a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aci%2Fapk-android10-3cc2595"><img src="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml/badge.svg?branch=ci%2Fapk-android10-3cc2595" alt="Compilação Android" /></a>
     <img src="https://img.shields.io/badge/Android-7.0%2B-54de69?logo=android&logoColor=white" alt="Android 7 ou superior" />
-    <img src="https://img.shields.io/badge/vers%C3%A3o-0.28.0-173d29" alt="Versão 0.28.0" />
+    <img src="https://img.shields.io/badge/vers%C3%A3o-0.29.0-173d29" alt="Versão 0.29.0" />
   </p>
   <p><a href="#baixar-e-instalar">Baixar</a> · <a href="#telas-do-aplicativo">Telas</a> · <a href="#controles-de-toque-por-jogo">HUDs de toque</a> · <a href="#funcionalidades">Funcionalidades</a> · <a href="#atalhos-dos-jogos-na-tv">Atalhos na TV</a> · <a href="#compilar">Compilar</a></p>
 </div>
@@ -14,6 +14,8 @@
 ![Catálogo de jogos do xCLOUD](docs/screenshots/catalog.png)
 
 A **lupa no cabeçalho** abre a pesquisa e solicita o teclado nos celulares. O atalho **X** do controle continua disponível.
+
+**Voltar a jogar** consulta os últimos jogos da conta no Xbox Cloud Gaming e mantém a ordem retornada pelo serviço. A lista é atualizada ao abrir o catálogo ou voltar da partida. A última consulta fica salva por conta; falhas de atualização são indicadas na tela. Só aparecem jogos que ainda estão disponíveis no catálogo cloud. Veja a [implementação do histórico e as correções de atalhos da versão 0.29](docs/cloud-history-shortcuts-0.29.md).
 
 ## Telas do aplicativo
 
@@ -112,7 +114,7 @@ Campos ausentes aparecem como **n/d**, e o índice de qualidade só é calculado
 | Área | Recursos |
 | --- | --- |
 | Conta | Login Microsoft por QR Code, renovação da sessão salva, perfil, avatar e identificação da assinatura quando informada pelos serviços Xbox. |
-| Biblioteca | Jogados recentemente, favoritos por conta, Game Pass, adições recentes e todos os jogos. Pesquisa por nome e navegação pelo controle. |
+| Biblioteca | Voltar a jogar com histórico da conta no xCloud, favoritos por conta, Game Pass, adições recentes e todos os jogos. Pesquisa por nome e navegação pelo controle. |
 | Catálogo | Nomes e capas originais, cache de imagens e selos Game Pass e X\|S conforme os dados disponíveis. A inclusão no Game Pass usa a galeria oficial, separada do acesso a jogos comprados. |
 | Fila | Fundo do jogo, estimativa de espera, tempo aguardado, etapas de conexão e cancelamento. |
 | Transmissão | Vídeo nativo por WebRTC/H.264, com preferência por decodificação de hardware. Perfis solicitados de 720p, 1080p e 1080p HQ, preservados também no toque nativo. |
@@ -178,6 +180,8 @@ Em **Configurações → Atalhos dos favoritos**, há três caminhos:
 - **Pedir atalho ao launcher** — disponível quando a tela inicial oferece a API de atalhos fixados. O pedido ainda precisa ser aceito pelo launcher.
 
 Ao abrir um atalho, o xCLOUD verifica o jogo no catálogo da conta e segue diretamente à fila, concluindo o login antes se necessário. Os atalhos não contêm credenciais. Os atalhos instaláveis podem ser removidos como qualquer aplicativo da TV.
+
+A versão 0.29 corrige o campo de alinhamento dos APKs gerados e verifica a assinatura e a leitura do pacote pelo Android antes de abrir o instalador. Se uma tentativa anterior apresentou erro de análise, atualize o xCLOUD e crie novamente o atalho em **Configurações → Atalhos dos favoritos**. As identidades dos atalhos existentes são preservadas.
 
 Com sessão salva, o app mostra a preparação do jogo enquanto restaura a conexão, sem exibir a tela de login nem montar a grade inteira. A fila usa a capa em cache ou consulta somente a arte do jogo escolhido quando ela falta. Uma sessão que exige renovação continua solicitando login pelo QR Code. Veja os [ajustes de menu, atalhos e entrada automática da versão 0.26](docs/device-aware-startup-0.26.md).
 

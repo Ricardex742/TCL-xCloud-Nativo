@@ -7,7 +7,7 @@ import java.security.MessageDigest
 import java.util.Locale
 
 enum class LibraryTab(val label: String) {
-    RECENT("JOGADOS RECENTEMENTE"), FAVORITES("FAVORITOS"), GAME_PASS("GAME PASS"),
+    RECENT("VOLTAR A JOGAR"), FAVORITES("FAVORITOS"), GAME_PASS("GAME PASS"),
     ADDED("ADIÇÕES RECENTES"), ALL("TODOS OS JOGOS")
 }
 
@@ -44,7 +44,10 @@ class GameLibrary(private val context: Context, accountId: String, legacyAccount
         val plays = runCatching { JSONObject(prefs.getString("plays", "{}") ?: "{}") }.getOrDefault(JSONObject())
         val legacy = runCatching { JSONObject(old.getString("plays", "{}") ?: "{}") }.getOrDefault(JSONObject())
         legacy.keys().forEach { id -> if (!plays.has(id)) plays.put(id, legacy.get(id)) }
-        check(prefs.edit().putStringSet("favorites", merged).putString("plays", plays.toString()).commit())
+        val editor=prefs.edit().putStringSet("favorites",merged).putString("plays",plays.toString())
+        if(old.contains("cloud_recent") && (!prefs.contains("cloud_recent") || old.getLong("cloud_recent_at",0)>prefs.getLong("cloud_recent_at",0)))
+            editor.putString("cloud_recent",old.getString("cloud_recent",null)).putLong("cloud_recent_at",old.getLong("cloud_recent_at",0))
+        check(editor.commit())
         check(old.edit().putString("migrated_to", account).commit())
     }
     val favorites: Set<String> @Synchronized get() = prefs.getStringSet("favorites", emptySet())?.toSet() ?: emptySet()
@@ -69,18 +72,29 @@ class GameLibrary(private val context: Context, accountId: String, legacyAccount
             id to PlayRecord(it.optLong("lastPlayed"), it.optInt("launches"))
         } }.toMap()
     }
+    @Synchronized fun cloudRecent(): List<String>? = runCatching {
+        val text=prefs.getString("cloud_recent",null) ?: return null
+        if(text.length>16384) return null
+        val array=org.json.JSONArray(text)
+        (0 until minOf(array.length(),25)).mapNotNull { array.optString(it)?.takeIf { id -> id.isNotBlank() && id!="null" && id.length<=256 } }
+    }.getOrNull()
+    @Synchronized fun saveCloudRecent(ids: List<String>) {
+        val data=ids.filter { it.isNotBlank() && it.length<=256 }.distinctBy { it.uppercase(Locale.ROOT) }.take(25)
+        if(!prefs.edit().putString("cloud_recent",org.json.JSONArray(data).toString()).putLong("cloud_recent_at",System.currentTimeMillis()).commit())
+            throw java.io.IOException("Não foi possível salvar o histórico do Xbox neste aparelho.")
+    }
     companion object {
         fun accountKey(account: String): String = MessageDigest.getInstance("SHA-256")
             .digest(account.toByteArray()).take(12).joinToString("") { "%02x".format(it) }
 
+        @Suppress("UNUSED_PARAMETER")
         fun select(games: List<GameTitle>, tab: LibraryTab, favorites: Set<String>, records: Map<String, PlayRecord>,
                    gamePass: List<String>?, added: List<String>?, query: String = "",
-                   gamePassTitles: Set<String> = emptySet()): List<GameTitle> {
+                   gamePassTitles: Set<String> = emptySet(),cloudRecent: List<String>? = null): List<GameTitle> {
             val selected = when (tab) {
                 LibraryTab.ALL -> games
                 LibraryTab.FAVORITES -> games.filter { game -> favorites.any { it.equals(game.titleId, true) } }
-                LibraryTab.RECENT -> games.filter { it.titleId in records }
-                    .sortedByDescending { records[it.titleId]?.lastPlayed }
+                LibraryTab.RECENT -> CloudPlayHistory.select(games,cloudRecent ?: emptyList())
                 LibraryTab.GAME_PASS -> {
                     val products=(gamePass ?: emptyList()).map(GamePassCatalog::productKey).toSet()
                     games.filter { GamePassCatalog.contains(it,products,gamePassTitles) }.sortedBy { it.name.lowercase(Locale.ROOT) }

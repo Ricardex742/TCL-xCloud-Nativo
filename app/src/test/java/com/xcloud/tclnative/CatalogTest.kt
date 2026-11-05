@@ -40,7 +40,9 @@ class CatalogTest {
         val games = (1..4).map { GameTitle("$it", "Game $it") }
         val played = mapOf("1" to PlayRecord(100, 4), "3" to PlayRecord(200, 1))
         fun select(tab: LibraryTab) = GameLibrary.select(games, tab, setOf("2"), played, null, null)
-        assertEquals(listOf("3", "1"), select(LibraryTab.RECENT).map { it.titleId })
+        assertTrue(select(LibraryTab.RECENT).isEmpty())
+        assertEquals(listOf("1", "3"),GameLibrary.select(games,LibraryTab.RECENT,setOf("2"),played,null,null,
+            cloudRecent=listOf("1","3")).map { it.titleId })
         assertTrue(select(LibraryTab.GAME_PASS).isEmpty())
         assertEquals(listOf("2"), select(LibraryTab.FAVORITES).map { it.titleId })
         assertTrue(select(LibraryTab.ADDED).isEmpty())

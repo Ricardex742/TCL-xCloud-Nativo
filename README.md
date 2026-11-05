@@ -6,7 +6,7 @@
   <p>
     <a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aci%2Fapk-android10-3cc2595"><img src="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml/badge.svg?branch=ci%2Fapk-android10-3cc2595" alt="Compilação Android" /></a>
     <img src="https://img.shields.io/badge/Android-7.0%2B-54de69?logo=android&logoColor=white" alt="Android 7 ou superior" />
-    <img src="https://img.shields.io/badge/vers%C3%A3o-0.26.0-173d29" alt="Versão 0.26.0" />
+    <img src="https://img.shields.io/badge/vers%C3%A3o-0.27.0-173d29" alt="Versão 0.27.0" />
   </p>
   <p><a href="#baixar-e-instalar">Baixar</a> · <a href="#telas-do-aplicativo">Telas</a> · <a href="#controles-de-toque-por-jogo">HUDs de toque</a> · <a href="#funcionalidades">Funcionalidades</a> · <a href="#atalhos-dos-jogos-na-tv">Atalhos na TV</a> · <a href="#compilar">Compilar</a></p>
 </div>
@@ -18,6 +18,10 @@ A **lupa no cabeçalho** abre a pesquisa e solicita o teclado nos celulares. O a
 ## Telas do aplicativo
 
 <table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/transition-startup.png" alt="Abertura com a logo do xCLOUD" /><br /><strong>Abertura</strong> — restauração da sessão com a identidade do aplicativo.</td>
+    <td width="50%"><img src="docs/screenshots/transition-shortcut.png" alt="Prévia da entrada por atalho com imagem de demonstração" /><br /><strong>Atalho</strong> — arte do jogo durante a preparação.</td>
+  </tr>
   <tr>
     <td width="50%"><img src="docs/screenshots/login.png" alt="Tela de entrada do xCLOUD" /><br /><strong>Login</strong> — acesso à conta Microsoft.</td>
     <td width="50%"><img src="docs/screenshots/qr-login.png" alt="Login Microsoft com QR Code de demonstração" /><br /><strong>QR Code</strong> — autorização pelo celular.</td>
@@ -35,6 +39,8 @@ A **lupa no cabeçalho** abre a pesquisa e solicita o teclado nos celulares. O a
     <td><img src="docs/screenshots/image.png" alt="Ajustes de nitidez e saturação" /><br /><strong>Imagem</strong> — nitidez e saturação durante a partida.</td>
   </tr>
 </table>
+
+Ao sair, uma tela com a arte do jogo e **Saindo do jogo…** acompanha o encerramento até o catálogo estar pronto. Ao cancelar a fila, a mensagem é **Voltando ao catálogo…**. Veja as [transições da versão 0.27](docs/session-transitions-0.27.md).
 
 As telas de interface são capturas das views nativas com perfil e dados de demonstração. O QR Code é ilustrativo. Capas e selos exibidos no uso real dependem dos dados oficiais do catálogo.
 
@@ -83,7 +89,7 @@ O modo **Toque nativo Xbox — experimental** envia contatos da tela pelo canal 
 
 Em **Automático — detectar dispositivo e jogo**, TVs usam controle físico. Celulares com tela de toque iniciam com toque nativo quando o catálogo autenticado anuncia suporte; nos demais jogos, usam o HUD virtual. **Exclusivo — controle virtual** mantém o HUD no celular mesmo em jogos com toque nativo, e **Desativado — controle físico** preserva a escolha de jogar sem toque. Catálogo e atalhos usam a mesma regra.
 
-O usuário confirmou o funcionamento do toque direto no Fortnite com a versão 0.24, em um LGE LM-K200 com Android 10. Essa sessão real valida o resultado nesse aparelho; outros dispositivos e títulos continuam exigindo teste. Contar eventos enviados, por si só, confirma apenas o envio local. Consulte a [validação no aparelho e análise do diagnóstico](docs/catalog-performance-0.25.md).
+O toque direto no Fortnite foi validado em uma sessão real em Android 10 na versão 0.24. A compatibilidade com outros dispositivos e títulos precisa ser verificada. Contar eventos enviados, por si só, confirma apenas o envio local. Consulte a [validação no aparelho e análise do diagnóstico](docs/catalog-performance-0.25.md).
 
 No futebol, toque no botão **ATAQUE ⇄ DEFESA** para trocar as ações sem interromper o movimento. Essa troca é manual: a sessão cloud não informa a posse de bola ao aplicativo. Escolha o esquema **Clássico — chute B** ou **Alternativo — chute X** nos ajustes do HUD, conforme a configuração do seu jogo. Os gestos de chute combinam RB, LB ou LB + RB com o botão de finalização; não é necessário pressionar esses botões separadamente.
 

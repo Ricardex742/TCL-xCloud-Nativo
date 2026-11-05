@@ -65,6 +65,9 @@ object StoreMetadata {
 
 /** Public art only. A cached product never adds a playable title or restores account entitlements. */
 class CatalogCache(private val file: File) {
+    /** A visual hint before authentication; callers must validate launch access with the live catalog. */
+    fun artwork(titleId: String): GameTitle? = restore(listOf(GameTitle(titleId,"Seu jogo"))).single()
+        .takeIf { it.posterUrl!=null || it.tileUrl!=null || it.heroUrl!=null }
     fun restore(games: List<GameTitle>): List<GameTitle> = try {
         if (!file.exists() || file.length() > 10*1024*1024) games else StoreMetadata.merge(games, JSONObject(file.readText()))
     } catch (_: Exception) { games }

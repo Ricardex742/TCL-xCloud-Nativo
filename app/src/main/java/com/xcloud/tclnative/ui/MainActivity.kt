@@ -22,9 +22,12 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.view.doOnPreDraw
+import kotlin.coroutines.resume
 import com.xcloud.tclnative.settings.PlaybackSettings
 import com.xcloud.tclnative.diagnostics.*
 import com.xcloud.tclnative.ui.dashboard.SessionReportPanel
+import com.xcloud.tclnative.ui.dashboard.SessionTransitionView
 import com.xcloud.tclnative.settings.PlaybackSettingsStore
 import com.xcloud.tclnative.settings.StatisticsVisibility
 import com.xcloud.tclnative.settings.TouchMode
@@ -110,7 +113,10 @@ open class MainActivity : Activity() {
     private var accountJob: Job? = null
     private var currentSignaling: XCloudSignalingClient? = null
     private var currentSession: XCloudSession? = null
-    private var accountStatus: TextView? = null
+    private lateinit var transitionPanel: SessionTransitionView
+    private var startupArtJob: Job? = null
+    private var catalogReturnJob: Job? = null
+    private var pendingAutomaticReport: SessionReport? = null
     private var loadingArtJob: Job? = null
     private val catalogCache by lazy { CatalogCache(File(cacheDir,"catalog-art-v2.json")) }
     private var currentGames = emptyList<GameTitle>()
@@ -246,6 +252,8 @@ open class MainActivity : Activity() {
             com.xcloud.tclnative.ui.dashboard.HudActionDialogs.gestures(this,gestures) { touchView.setEditedGestures(id,it) }
         }
         rootLayout.addView(touchView,FrameLayout.LayoutParams(-1,-1))
+        transitionPanel=SessionTransitionView(this)
+        rootLayout.addView(transitionPanel,FrameLayout.LayoutParams(-1,-1))
         setContentView(rootLayout)
         (getSystemService(Context.INPUT_SERVICE) as InputManager).registerInputDeviceListener(deviceListener,null)
 
@@ -264,6 +272,10 @@ open class MainActivity : Activity() {
         if (pendingLaunch.receive(intent)) {
             setIntent(intent)
             lastShortcutRequest=intent.getStringExtra("shortcut_request")
+            if(transitionPanel.visibility==View.VISIBLE && !transitionPanel.exiting) {
+                transitionPanel.showStartup(pendingLaunch.titleId?.let { GameTitle(it,"Seu jogo") },"Preparando seu jogo…")
+                loadStartupArtwork()
+            }
             launchPendingShortcut()
         }
     }
@@ -312,7 +324,8 @@ open class MainActivity : Activity() {
         gameLibrary = null
         currentSignaling = null
         currentSession = null
-        accountStatus = null
+        startupArtJob?.cancel(); startupArtJob=null
+        transitionPanel.dismiss(); pendingAutomaticReport=null
         currentGames = emptyList()
         controlPanel.removeAllViews()
         controlPanel.setPadding(0,0,0,0)
@@ -331,18 +344,25 @@ open class MainActivity : Activity() {
 
     private fun renderSessionRestore() {
         loginView?.close(); loginView=null
-        controlPanel.removeAllViews()
-        controlPanel.gravity=Gravity.CENTER
-        controlPanel.addView(android.widget.ProgressBar(this))
-        accountStatus=TextView(this).apply {
-            text=if(pendingLaunch.titleId!=null) "Preparando o jogo do atalho…" else "Restaurando sua sessão…"
-            setTextColor(Color.WHITE); textSize=22f; gravity=Gravity.CENTER
-            setPadding(24,24,24,24)
-        }.also { controlPanel.addView(it) }
-        controlPanel.visibility=View.VISIBLE; hudTextView.visibility=View.GONE
+        controlPanel.removeAllViews(); controlPanel.visibility=View.GONE
+        val id=pendingLaunch.titleId
+        transitionPanel.showStartup(id?.let { GameTitle(it,"Seu jogo") },
+            if(id!=null) "Preparando seu jogo…" else "Restaurando sua sessão…")
+        hudTextView.visibility=View.GONE
+        loadStartupArtwork()
+    }
+    private fun loadStartupArtwork() {
+        startupArtJob?.cancel()
+        val id=pendingLaunch.titleId ?: return
+        startupArtJob=mainScope.launch {
+            val game=withContext(Dispatchers.IO) { catalogCache.artwork(id) }
+            if(game!=null && pendingLaunch.titleId==id && transitionPanel.visibility==View.VISIBLE && !transitionPanel.exiting)
+                transitionPanel.setGame(game)
+        }
     }
     private fun accountProgress(message: String) {
-        loginView?.showConnecting(message); accountStatus?.text=message
+        loginView?.showConnecting(message)
+        if(transitionPanel.visibility==View.VISIBLE && !transitionPanel.exiting) transitionPanel.updateStatus(message)
     }
     private fun accountFailure(error: Throwable, retry: () -> Unit) {
         if(error is com.xcloud.tclnative.auth.AuthenticationRequiredException) {
@@ -423,10 +443,9 @@ open class MainActivity : Activity() {
             gameLibrary = library
             currentGames=allGames; currentSignaling=signaling
             if(launchPendingShortcut()) {
-                loginView?.close(); loginView=null; accountStatus=null
+                loginView?.close(); loginView=null
                 return@launch // No catalog/grid or background galleries while the shortcut enters its game.
             }
-            accountStatus=null
             val view = GameDashboardView(this@MainActivity, library,
                 onPlay = { game -> chooseLaunchMode(signaling, game) },
                 onSearch = { showCatalogSearch() },
@@ -444,7 +463,7 @@ open class MainActivity : Activity() {
             controlPanel.visibility = View.VISIBLE
             hudTextView.visibility = View.GONE
             view.setGames(allGames)
-            view.restoreFocus()
+            revealDashboard(view)
             currentGames = allGames
             currentSignaling = signaling
             syncHomeShortcuts()
@@ -519,14 +538,21 @@ open class MainActivity : Activity() {
         catch(error: java.io.IOException) { if(!isFinishing && !isDestroyed) Toast.makeText(this,error.message,Toast.LENGTH_LONG).show() }
         val current=reportTracker===tracker
         if(current) reportTracker=null
-        if(current && activityVisible && !isFinishing && !isDestroyed && activeGame==null &&
-            controlPanel.visibility==View.VISIBLE && settingsStore.read().sessionReport &&
+        if(current && activityVisible && !isFinishing && !isDestroyed && activeGame==null && settingsStore.read().sessionReport &&
             (report.durationMs>=5000 || report.end==SessionEnd.FAILURE)) {
-            postSessionDialog?.dismiss()
-            postSessionDialog=SessionReportPanel.show(this,report) {
-                val updated=settingsStore.read().copy(sessionReport=false)
-                settingsStore.save(updated); playbackSettings=updated
-            }
+            pendingAutomaticReport=report; showPendingReport()
+        }
+    }
+    private fun showPendingReport() {
+        if(!activityVisible || isFinishing || isDestroyed || activeGame!=null || dashboard==null ||
+            controlPanel.visibility!=View.VISIBLE || transitionPanel.visibility==View.VISIBLE) return
+        val report=pendingAutomaticReport ?: return
+        pendingAutomaticReport=null
+        if(!settingsStore.read().sessionReport) return
+        postSessionDialog?.dismiss()
+        postSessionDialog=SessionReportPanel.show(this,report) {
+            val updated=settingsStore.read().copy(sessionReport=false)
+            settingsStore.save(updated); playbackSettings=updated
         }
     }
     private fun syncHomeShortcuts(requestVisibility: Boolean = false) {
@@ -647,7 +673,7 @@ open class MainActivity : Activity() {
             ConsoleAction("Testar agora") { rumble.test(); showRumbleDiagnostics(back) },ConsoleAction("Voltar",back)),onCancel=back)
     }
     private fun showGameMenu() {
-        if (gameMenuDialog?.isShowing == true || webrtcClient == null || queuePanel.visibility == View.VISIBLE) return
+        if (transitionPanel.visibility==View.VISIBLE || gameMenuDialog?.isShowing == true || webrtcClient == null || queuePanel.visibility == View.VISIBLE) return
         resetController()
         gameMenuDialog = com.xcloud.tclnative.ui.dashboard.GameMenuPanel.show(this,
             image={ PlaybackSettingsPanel(this,settingsStore,::applyPlaybackSettings,{}, {}, {}).showImageAdjustments(onBack={ showGameMenu() }) },
@@ -699,10 +725,41 @@ open class MainActivity : Activity() {
         dashboard?.setGames(currentGames)
         dashboard?.resumeArtwork()
         controlPanel.visibility = View.VISIBLE
-        dashboard?.let { view -> hudTextView.visibility = View.GONE; view.restoreFocus() }
+        dashboard?.let { view -> hudTextView.visibility = View.GONE; revealDashboard(view) }
+    }
+    private fun revealDashboard(view: GameDashboardView) {
+        view.doOnPreDraw {
+            if(dashboard===view && activeGame==null && controlPanel.visibility==View.VISIBLE) {
+                startupArtJob?.cancel(); startupArtJob=null
+                transitionPanel.dismiss(); view.restoreFocus(); showPendingReport()
+            }
+        }
+    }
+    private fun showCatalogReturn(game: GameTitle?,wasPlaying: Boolean) {
+        startupArtJob?.cancel(); startupArtJob=null
+        gameMenuDialog?.dismiss()
+        val fresh=currentGames.firstOrNull { it.titleId==game?.titleId } ?: game
+        transitionPanel.showExit(fresh,wasPlaying)
+        controlPanel.visibility=View.GONE; statsView.visibility=View.GONE; hudTextView.visibility=View.GONE
+    }
+    private suspend fun allowTransitionFrame() {
+        if(!activityVisible || !transitionPanel.isAttachedToWindow || !transitionPanel.exiting) return
+        // Let the branded screen paint before native decoder/surface cleanup can block the UI.
+        withTimeoutOrNull(100) {
+            suspendCancellableCoroutine<Unit> { waiting ->
+                transitionPanel.postOnAnimation { transitionPanel.post { if(waiting.isActive) waiting.resume(Unit) } }
+            }
+        }
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if(transitionPanel.visibility==View.VISIBLE && event.keyCode in setOf(KeyEvent.KEYCODE_BACK,KeyEvent.KEYCODE_BUTTON_B,
+                KeyEvent.KEYCODE_BUTTON_A,KeyEvent.KEYCODE_DPAD_CENTER,KeyEvent.KEYCODE_ENTER,KeyEvent.KEYCODE_DPAD_UP,
+                KeyEvent.KEYCODE_DPAD_DOWN,KeyEvent.KEYCODE_DPAD_LEFT,KeyEvent.KEYCODE_DPAD_RIGHT)) {
+            if(!transitionPanel.exiting && event.action==KeyEvent.ACTION_DOWN && event.repeatCount==0 &&
+                event.keyCode in setOf(KeyEvent.KEYCODE_BACK,KeyEvent.KEYCODE_BUTTON_B)) showExitDialog()
+            return true
+        }
         if (queuePanel.visibility == View.VISIBLE) {
             val key = event.keyCode
             if (key in setOf(KeyEvent.KEYCODE_BUTTON_A, KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER,
@@ -730,6 +787,9 @@ open class MainActivity : Activity() {
     }
 
     private fun launchCloudGame(signaling: XCloudSignalingClient, game: GameTitle, touchChoice: TouchMode? = null) {
+        catalogReturnJob?.cancel(); catalogReturnJob=null
+        startupArtJob?.cancel(); startupArtJob=null
+        transitionPanel.dismiss(); pendingAutomaticReport=null
         val titleId = game.titleId
         val gameName = game.name
         activeGame = game
@@ -920,9 +980,11 @@ open class MainActivity : Activity() {
                 withContext(NonCancellable) {
                     tracker.finish(android.os.SystemClock.elapsedRealtime(),if(failed) SessionEnd.FAILURE else SessionEnd.USER,rtc.currentInputMetrics())
                     if (generation == playbackGeneration) {
+                        showCatalogReturn(game,pendingLoadingGame==null)
                         finishLoading()
                         statsView.visibility = View.GONE
                     }
+                    allowTransitionFrame()
                     videoRecoveryDialog?.dismiss()
                     resetController()
                     currentTouchMode=TouchMode.OFF
@@ -978,9 +1040,12 @@ open class MainActivity : Activity() {
     }
 
     private fun cancelPlayback() {
+        if(transitionPanel.exiting) return
+        showCatalogReturn(activeGame ?: pendingLoadingGame,pendingLoadingGame==null)
         reportTracker?.finish(android.os.SystemClock.elapsedRealtime(),SessionEnd.USER,webrtcClient?.currentInputMetrics())
-        ++playbackGeneration
-        gameJob?.cancel()
+        val generation=++playbackGeneration
+        val closing=gameJob
+        closing?.cancel()
         activeGame = null
         gameMenuDialog?.dismiss()
         videoRecoveryDialog?.dismiss()
@@ -989,9 +1054,14 @@ open class MainActivity : Activity() {
         touchView.configure(TouchMode.OFF)
         finishLoading()
         statsView.visibility = View.GONE
-        hudTextView.text = "Sessão cancelada. Selecione um jogo."
-        hudTextView.visibility = View.VISIBLE
-        restoreDashboard()
+        hudTextView.visibility = View.GONE
+        catalogReturnJob=mainScope.launch {
+            closing?.join()
+            if(generation==playbackGeneration && transitionPanel.exiting) {
+                reportTracker?.let { finishSessionReport(it) }
+                restoreDashboard()
+            }
+        }
     }
 
     private fun showCopyableErrorDialog(gameName: String, fullError: String) {
@@ -1004,7 +1074,7 @@ open class MainActivity : Activity() {
     }
 
     private fun gameplayInputEnabled() = controlPanel.visibility == View.GONE &&
-        queuePanel.visibility != View.VISIBLE && videoRecoveryDialog?.isShowing != true && webrtcClient != null && !touchView.isEditing && hasWindowFocus()
+        transitionPanel.visibility!=View.VISIBLE && queuePanel.visibility != View.VISIBLE && videoRecoveryDialog?.isShowing != true && webrtcClient != null && !touchView.isEditing && hasWindowFocus()
 
     private fun publishGamepad(slot: Int) { webrtcClient?.updateGamepad(controllers.combined(slot),slot) }
     private fun controllerSlot(deviceId: Int,source: Int): Int? =
@@ -1135,12 +1205,16 @@ open class MainActivity : Activity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if(transitionPanel.visibility==View.VISIBLE && (keyCode==KeyEvent.KEYCODE_BACK || keyCode==KeyEvent.KEYCODE_BUTTON_B)) {
+            if(!transitionPanel.exiting && event.repeatCount==0) showExitDialog()
+            return true
+        }
         if(::touchView.isInitialized && touchView.isEditing && (keyCode==KeyEvent.KEYCODE_BACK || keyCode==KeyEvent.KEYCODE_BUTTON_B)) {
             if(event.repeatCount==0) touchView.cancelEditing()
             return true
         }
         if ((keyCode == KeyEvent.KEYCODE_INFO || keyCode == KeyEvent.KEYCODE_F10) &&
-            controlPanel.visibility == View.GONE && queuePanel.visibility != View.VISIBLE) {
+            transitionPanel.visibility!=View.VISIBLE && controlPanel.visibility == View.GONE && queuePanel.visibility != View.VISIBLE) {
             if (event.repeatCount == 0) {
                 cycleStatistics()
             }
@@ -1176,6 +1250,7 @@ open class MainActivity : Activity() {
         shortcutPosters.close()
         gameMenuDialog?.dismiss()
         loginView?.close()
+        transitionPanel.close()
         queuePanel.close()
         videoRecoveryDialog?.dismiss()
         surfaceRenderer.clearSession()

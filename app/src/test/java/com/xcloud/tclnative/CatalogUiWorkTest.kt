@@ -61,6 +61,7 @@ class CatalogUiWorkTest {
         a.setContentView(view)
         val initial=listOf(com.xcloud.tclnative.signaling.GameTitle("one","One"))
         view.setGames(initial)
+        view.selectTab(com.xcloud.tclnative.catalog.LibraryTab.ALL)
         repeat(20) { view.updateMetadata(listOf(initial[0].copy(name="Name $it"))) }
         assertEquals("One",view.selectedGame!!.name)
         org.robolectric.Shadows.shadowOf(Looper.getMainLooper()).idleFor(200,java.util.concurrent.TimeUnit.MILLISECONDS)

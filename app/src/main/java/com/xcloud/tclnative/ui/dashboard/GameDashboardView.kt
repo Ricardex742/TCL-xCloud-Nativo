@@ -60,7 +60,7 @@ class GameDashboardView(
     private var recentLoading=true
     private var recentFailed=false
     private var profile = XboxProfile()
-    var activeTab = LibraryTab.ALL
+    var activeTab = LibraryTab.RECENT
         private set
     var searchQuery = ""
         private set
@@ -277,7 +277,12 @@ class GameDashboardView(
         if(ids!=null) recent=ids
         refresh()
     }
-    fun setSearch(query: String) { searchQuery = query.trim(); refresh(); focusFirstCover() }
+    fun setSearch(query: String) {
+        searchQuery=query.trim()
+        // The main search must also find games outside the account's recent history.
+        if(searchQuery.isNotBlank() && activeTab!=LibraryTab.ALL) selectTab(LibraryTab.ALL) else refresh()
+        focusFirstCover()
+    }
     fun refresh() {
         val visible = GameLibrary.select(games, activeTab, library.favorites, emptyMap(), gamePassProducts?.toList(), added, searchQuery,gamePassTitles,recent)
         adapter.submit(visible)

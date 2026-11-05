@@ -158,7 +158,7 @@ class ShortcutStartupTest {
             assertFalse(all(root(activity)).any { it is ConsoleLoginView })
             assertEquals(1,requests.count { it.requestUrl!!.encodedPath=="/v2/titles" })
             val dashboard=all(root(activity)).filterIsInstance<GameDashboardView>().single()
-            dashboard.selectTab(LibraryTab.RECENT)
+            assertEquals(LibraryTab.RECENT,dashboard.activeTab)
             val historyDeadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(8)
             while((requests.none { it.path=="/v2/titles/mru?mr=25" } || dashboard.selectedGame?.titleId!="OTHER") && System.nanoTime()<historyDeadline) {
                 shadowOf(Looper.getMainLooper()).idleFor(16,TimeUnit.MILLISECONDS); Thread.sleep(10)

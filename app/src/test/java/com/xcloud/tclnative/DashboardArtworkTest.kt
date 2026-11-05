@@ -62,7 +62,7 @@ class DashboardArtworkTest {
         var played: String?=null
         val view=GameDashboardView(activity,library,{ played=it.titleId },{},{},{})
         try {
-            activity.setContentView(view); view.setGames(games); layout(view)
+            activity.setContentView(view); view.setGames(games); view.selectTab(com.xcloud.tclnative.catalog.LibraryTab.ALL); layout(view)
             val grid=all(view).filterIsInstance<RecyclerView>().single()
             val images=all(grid).filterIsInstance<ImageView>()
             assertTrue(images.isNotEmpty())

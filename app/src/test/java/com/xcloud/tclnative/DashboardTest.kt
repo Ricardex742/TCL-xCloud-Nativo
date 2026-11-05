@@ -43,7 +43,8 @@ class DashboardTest {
         fun all(node: View): List<View> = listOf(node)+if(node is ViewGroup)
             (0 until node.childCount).flatMap { all(node.getChildAt(it)) } else emptyList()
         try {
-            activity.setContentView(view); view.setGames(games); view.selectTab(LibraryTab.RECENT); layout(view,1280,720)
+            activity.setContentView(view); view.setGames(games); layout(view,1280,720)
+            assertEquals(LibraryTab.RECENT,view.activeTab)
             val grid=all(view).filterIsInstance<RecyclerView>().single()
             assertEquals(2,grid.adapter!!.itemCount)
             assertEquals("game-7",view.selectedGame?.titleId)
@@ -84,6 +85,7 @@ class DashboardTest {
         field.setText("Halo Infinite"); field.onEditorAction(android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH)
         layout(view,1280,720)
         assertEquals("Halo Infinite",view.searchQuery)
+        assertEquals(LibraryTab.ALL,view.activeTab)
         val grid=all(view).filterIsInstance<RecyclerView>().single()
         assertEquals(1,grid.adapter!!.itemCount); assertEquals(0,played); assertEquals(0,options)
         view.close(); controller.pause().stop().destroy()
@@ -110,12 +112,15 @@ class DashboardTest {
         val activity = controller.get()
         val library = GameLibrary(activity, "account-a")
         activity.getSharedPreferences("library_"+GameLibrary.accountKey("account-a"), 0).edit().clear().commit()
+        library.saveCloudRecent(listOf(games.first().titleId))
         val view = GameDashboardView(activity, library, {}, {}, {}, {})
         activity.setContentView(view); view.setGames(games); layout(view)
-        assertEquals(LibraryTab.ALL, view.activeTab)
+        assertEquals(LibraryTab.RECENT, view.activeTab)
         key(view, KeyEvent.KEYCODE_BUTTON_Y)
         assertTrue(games.first().titleId in GameLibrary(activity, "account-a").favorites)
         assertTrue(GameLibrary(activity, "account-b").favorites.isEmpty())
+        key(view, KeyEvent.KEYCODE_BUTTON_L1)
+        assertEquals(LibraryTab.ALL,view.activeTab)
         key(view, KeyEvent.KEYCODE_BUTTON_R1)
         assertEquals(LibraryTab.RECENT, view.activeTab)
         key(view, KeyEvent.KEYCODE_BUTTON_R1)
@@ -146,7 +151,7 @@ class DashboardTest {
         val activity=controller.get()
         var opened=0
         val view=GameDashboardView(activity,GameLibrary(activity,"settings-header"),{}, {}, { opened++ }, {})
-        activity.setContentView(view); view.setGames(games)
+        activity.setContentView(view); view.setGames(games); view.selectTab(LibraryTab.ALL)
         fun descendants(node: View): List<View> = listOf(node) + if(node is ViewGroup)
             (0 until node.childCount).flatMap { descendants(node.getChildAt(it)) } else emptyList()
         for (tier in listOf(null,"ULTIMATE","FREE")) {
@@ -194,7 +199,7 @@ class DashboardTest {
         val activity = controller.get()
         var played: GameTitle? = null
         val view = GameDashboardView(activity, GameLibrary(activity, "dpad"), { played = it }, {}, {}, {})
-        activity.setContentView(view); view.setGames(games)
+        activity.setContentView(view); view.setGames(games); view.selectTab(LibraryTab.ALL)
         view.restoreFocus() // Requested before RecyclerView has created any cover holders.
         layout(view, 1920, 1080)
         val grid = (0 until view.childCount).map(view::getChildAt).filterIsInstance<RecyclerView>().single()
@@ -238,6 +243,7 @@ class DashboardTest {
         val view = GameDashboardView(activity, GameLibrary(activity, "visual-preview"), {}, {}, {}, {})
         activity.setContentView(view)
         view.setGames(games)
+        view.selectTab(LibraryTab.ALL)
         view.setGamePassProducts(setOf("product-0", "product-1", "product-3"))
         view.setProfile(XboxProfile("LUCAS", "LUCAS XBOX", subscription = "ULTIMATE"))
         for ((w, h) in listOf(1280 to 948, 1920 to 1080, 3840 to 2160)) {

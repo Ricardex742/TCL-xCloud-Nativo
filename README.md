@@ -6,16 +6,18 @@
   <p>
     <a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aci%2Fapk-android10-3cc2595"><img src="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml/badge.svg?branch=ci%2Fapk-android10-3cc2595" alt="Compilação Android" /></a>
     <img src="https://img.shields.io/badge/Android-7.0%2B-54de69?logo=android&logoColor=white" alt="Android 7 ou superior" />
-    <img src="https://img.shields.io/badge/vers%C3%A3o-0.29.0-173d29" alt="Versão 0.29.0" />
+    <img src="https://img.shields.io/badge/vers%C3%A3o-0.30.0-173d29" alt="Versão 0.30.0" />
   </p>
   <p><a href="#baixar-e-instalar">Baixar</a> · <a href="#telas-do-aplicativo">Telas</a> · <a href="#controles-de-toque-por-jogo">HUDs de toque</a> · <a href="#funcionalidades">Funcionalidades</a> · <a href="#atalhos-dos-jogos-na-tv">Atalhos na TV</a> · <a href="#compilar">Compilar</a></p>
 </div>
 
-![Catálogo de jogos do xCLOUD](docs/screenshots/catalog.png)
+![Voltar a jogar no xCLOUD](docs/screenshots/return-to-play.png)
 
-A **lupa no cabeçalho** abre a pesquisa e solicita o teclado nos celulares. O atalho **X** do controle continua disponível.
+A **lupa no cabeçalho** abre a pesquisa em todos os jogos e solicita o teclado nos celulares. O atalho **X** do controle continua disponível.
 
-**Voltar a jogar** consulta os últimos jogos da conta no Xbox Cloud Gaming e mantém a ordem retornada pelo serviço. A lista é atualizada ao abrir o catálogo ou voltar da partida. A última consulta fica salva por conta; falhas de atualização são indicadas na tela. Só aparecem jogos que ainda estão disponíveis no catálogo cloud. Veja a [implementação do histórico e as correções de atalhos da versão 0.29](docs/cloud-history-shortcuts-0.29.md).
+O catálogo abre em **Voltar a jogar**, que consulta os últimos jogos da conta no Xbox Cloud Gaming e mantém a ordem retornada pelo serviço. A lista é atualizada ao abrir o catálogo ou voltar da partida. A última consulta fica salva por conta; falhas de atualização são indicadas na tela. Só aparecem jogos que ainda estão disponíveis no catálogo cloud. Veja a [implementação do histórico e as correções de atalhos da versão 0.29](docs/cloud-history-shortcuts-0.29.md).
+
+As [notas técnicas da versão 0.30](docs/resume-catalog-frame-generation-0.30.md) descrevem a abertura do catálogo e a análise de interpolação de quadros e conexão de controles à nuvem.
 
 ## Telas do aplicativo
 

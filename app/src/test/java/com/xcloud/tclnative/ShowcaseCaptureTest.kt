@@ -68,7 +68,7 @@ class ShowcaseCaptureTest {
         val library=GameLibrary(activity,"showcase-demo").apply { toggleFavorite(games[1].titleId) }
         val view=GameDashboardView(activity,library,{}, {}, {}, {})
         try {
-            activity.setContentView(view); view.setGames(games)
+            activity.setContentView(view); view.setGames(games); view.selectTab(com.xcloud.tclnative.catalog.LibraryTab.ALL)
             view.setGamePassProducts(setOf("DEMO-PRODUCT-1","DEMO-PRODUCT-5"))
             view.setProfile(XboxProfile("JOGADOR","PERFIL DEMO",subscription="ULTIMATE"))
             layout(view); view.restoreFocus(); layout(view)

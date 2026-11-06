@@ -853,7 +853,8 @@ open class MainActivity : Activity() {
         return super.dispatchKeyEvent(event)
     }
 
-    private fun launchCloudGame(signaling: XCloudSignalingClient, game: GameTitle, touchChoice: TouchMode? = null) {
+    private fun launchCloudGame(signaling: XCloudSignalingClient, game: GameTitle, touchChoice: TouchMode? = null,
+                                codecOverride: com.xcloud.tclnative.settings.VideoCodecMode? = null, codecRetryNote: String? = null) {
         recentHistoryJob?.cancel(); recentHistoryJob=null
         catalogReturnJob?.cancel(); catalogReturnJob=null
         startupArtJob?.cancel(); startupArtJob=null
@@ -863,10 +864,11 @@ open class MainActivity : Activity() {
         activeGame = game
         val settings = playbackSettings
         val compatible=settings.videoMode==com.xcloud.tclnative.settings.VideoMode.COMPATIBILITY
+        val requestedCodec=codecOverride ?: settings.videoCodec
         reportTracker?.finish(android.os.SystemClock.elapsedRealtime(),SessionEnd.REPLACED,webrtcClient?.currentInputMetrics())
         postSessionDialog?.dismiss()
         val tracker=SessionReportTracker(gameName,"${Build.MANUFACTURER} ${Build.MODEL} • Android ${Build.VERSION.RELEASE}",
-            "${settings.resolution.label} • ${settings.videoMode.label}",if(compatible) 30 else 60)
+            "${settings.resolution.label} • ${settings.videoMode.label} • ${settings.videoCodec.label}",if(compatible) 30 else 60)
         tracker.setVisible(activityVisible); reportTracker=tracker
         streamHistory.clear()
         catalogWork.pause()
@@ -919,43 +921,59 @@ open class MainActivity : Activity() {
                 }
             }
             surfaceRenderer.onRenderError = { error -> transportFailure.complete(error) }
-            val rtc = XCloudWebRtcClient(this@MainActivity, surfaceRenderer.eglBase,
-                onVideoTrackReady = { track ->
-                    runOnUiThread { if (generation == playbackGeneration) surfaceRenderer.attachVideoTrack(track) }
-                },
-                onConnectionStateChanged = { state -> runOnUiThread {
-                    if (generation == playbackGeneration) {
-                        if (state.contains("FAILED") || state.contains("CLOSED") || state.startsWith("CHANNELS:")) {
-                            transportFailure.complete(java.io.IOException(state))
-                        }
-                        if (!firstFrame.isCompleted) hudTextView.text = state
-                    }
-                } },
-                onStatistics = stats@ { metrics, input ->
-                    if(generation==playbackGeneration) {
-                        val now=android.os.SystemClock.elapsedRealtime()
-                        streamHistory.add(now,metrics,input); tracker.add(now,metrics,input)
-                    }
-                    if (statistics.mode == 0) return@stats
-                    val complete = statistics.mode == 2
-                    val text = if (complete) metrics.overlay(input, "",settings.resolution,compatible) else metrics.compactOverlay(input)
-                    runOnUiThread {
-                        if (generation == playbackGeneration) {
-                            statsView.text = text + if (complete) surfaceRenderer.diagnostics() + "\n" +
-                                (webrtcClient?.latencyDiagnostics() ?: "") else surfaceRenderer.compactDiagnostics()
-                            statsView.visibility = if (firstFrame.isCompleted && statistics.mode != 0) View.VISIBLE else View.GONE
-                        }
-                    }
-                }, lowLatencyVideo = settings.videoMode.lowLatency, streamResolution = settings.resolution,
-                nativeTouch = touchMode==TouchMode.NATIVE,
-                onRumble = { command -> if(generation==playbackGeneration) rumble.play(command) },compatibility=compatible)
-            webrtcClient = rtc
-            val appVersion=packageManager.getPackageInfo(packageName,0).versionName ?: "n/d"
-            tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}\n${signaling.profileDiagnostics()}\n${rtc.audioDiagnostics()}\n${rtc.latencyDiagnostics()}" }
-            surfaceRenderer.displayDimensions()?.let(rtc::updateDisplayDimensions)
-            if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
+            var allocatedRtc: XCloudWebRtcClient?=null
             var failed=false
+            var retryH264=false
+            var runtimeCodecFailure=false
+            val playbackEgl=surfaceRenderer.eglBase
             try {
+                // Capability discovery and native factory initialization must not block the menu/UI.
+                val rtc = withContext(Dispatchers.Default) { XCloudWebRtcClient(this@MainActivity, playbackEgl,
+                    onVideoTrackReady = { track ->
+                        runOnUiThread { if (generation == playbackGeneration) surfaceRenderer.attachVideoTrack(track) }
+                    },
+                    onConnectionStateChanged = { state -> runOnUiThread {
+                        if (generation == playbackGeneration) {
+                            if(state.startsWith("VIDEO_CODEC:") && firstFrame.isCompleted) {
+                                runtimeCodecFailure=true
+                                videoRecoveryDialog?.dismiss()
+                                videoRecoveryDialog=com.xcloud.tclnative.ui.dashboard.VideoCodecFallbackDialog.show(this@MainActivity,
+                                    retry = {
+                                        retryH264=true
+                                        launchCloudGame(signaling,game,touchMode,com.xcloud.tclnative.settings.VideoCodecMode.H264,
+                                            "Experimento falhou durante a partida; sessão reaberta em H.264 por escolha do jogador.")
+                                    }, leave = { cancelPlayback() })
+                            } else if (state.contains("FAILED") || state.contains("CLOSED") || state.startsWith("CHANNELS:") || state.startsWith("VIDEO_CODEC:")) {
+                                transportFailure.complete(java.io.IOException(state))
+                            }
+                            if (!firstFrame.isCompleted) hudTextView.text = state
+                        }
+                    } },
+                    onStatistics = stats@ { metrics, input ->
+                        if(generation==playbackGeneration) {
+                            val now=android.os.SystemClock.elapsedRealtime()
+                            streamHistory.add(now,metrics,input); tracker.add(now,metrics,input)
+                        }
+                        if (statistics.mode == 0) return@stats
+                        val complete = statistics.mode == 2
+                        val text = if (complete) metrics.overlay(input, "",settings.resolution,compatible) else metrics.compactOverlay(input)
+                        runOnUiThread {
+                            if (generation == playbackGeneration) {
+                                statsView.text = text + if (complete) surfaceRenderer.diagnostics() + "\n" +
+                                    (webrtcClient?.latencyDiagnostics() ?: "") else surfaceRenderer.compactDiagnostics()
+                                statsView.visibility = if (firstFrame.isCompleted && statistics.mode != 0) View.VISIBLE else View.GONE
+                            }
+                        }
+                    }, lowLatencyVideo = settings.videoMode.lowLatency, streamResolution = settings.resolution,
+                    nativeTouch = touchMode==TouchMode.NATIVE,
+                    onRumble = { command -> if(generation==playbackGeneration) rumble.play(command) },compatibility=compatible,
+                    videoCodec=requestedCodec).also { allocatedRtc=it } }
+                webrtcClient = rtc
+                val appVersion=packageManager.getPackageInfo(packageName,0).versionName ?: "n/d"
+                tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}\n${signaling.profileDiagnostics()}\n${rtc.audioDiagnostics()}\n${rtc.latencyDiagnostics()}\n${rtc.codecDiagnostics()}"+
+                    (codecRetryNote?.let { "\n$it" } ?: "") }
+                surfaceRenderer.displayDimensions()?.let(rtc::updateDisplayDimensions)
+                if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
                 signaling.startAndConnectWebRtcSession(titleId, rtc, resolution = settings.resolution, nativeTouch=touchMode==TouchMode.NATIVE, onQueueStatus = { status -> runOnUiThread {
                     if (generation == playbackGeneration) showQueue(status)
                 } }) { progress -> runOnUiThread {
@@ -985,7 +1003,7 @@ open class MainActivity : Activity() {
                     val now = android.os.SystemClock.elapsedRealtime()
                     val health = surfaceRenderer.probeVideoHealth()
                     val receiving=streamHistory.receivingVideo(now)
-                    val action = recovery.observe(now, health.presentedToken, health.deliveredRecently,receiving)
+                    val action = if(runtimeCodecFailure) VideoRecoveryAction.NONE else recovery.observe(now, health.presentedToken, health.deliveredRecently,receiving)
                     tracker.observe(now,health.presentedToken,receiving,action)
                     if (health.presentedToken != lastToken && recovering) {
                         recovering = false
@@ -1037,7 +1055,11 @@ open class MainActivity : Activity() {
                 throw cancelled
             } catch (error: Exception) {
                 failed=true
-                if (generation == playbackGeneration && (!firstFrame.isCompleted || !settingsStore.read().sessionReport)) {
+                retryH264=allocatedRtc?.shouldRetryH264(error,firstFrame.isCompleted)==true
+                if(retryH264 && generation==playbackGeneration) {
+                    Toast.makeText(this@MainActivity,"Codec experimental falhou. Reabrindo a sessão em H.264…",Toast.LENGTH_LONG).show()
+                }
+                if (!retryH264 && generation == playbackGeneration && (!firstFrame.isCompleted || !settingsStore.read().sessionReport)) {
                     val details = error.message ?: "Falha na sessão"
                     hudTextView.text = details
                     hudTextView.setTextColor(Color.RED)
@@ -1046,8 +1068,9 @@ open class MainActivity : Activity() {
             } finally {
                 // The server-side Xbox and the local decoder must both be released before retrying.
                 withContext(NonCancellable) {
-                    tracker.finish(android.os.SystemClock.elapsedRealtime(),if(failed) SessionEnd.FAILURE else SessionEnd.USER,rtc.currentInputMetrics())
-                    if (generation == playbackGeneration) {
+                    val rtc=allocatedRtc
+                    tracker.finish(android.os.SystemClock.elapsedRealtime(),if(failed) SessionEnd.FAILURE else SessionEnd.USER,rtc?.currentInputMetrics())
+                    if (generation == playbackGeneration && !retryH264) {
                         showCatalogReturn(game,pendingLoadingGame==null)
                         finishLoading()
                         statsView.visibility = View.GONE
@@ -1058,13 +1081,15 @@ open class MainActivity : Activity() {
                     currentTouchMode=TouchMode.OFF
                     touchView.configure(TouchMode.OFF)
                     surfaceRenderer.clearSession()
-                    rtc.close()
+                    rtc?.close()
                     if (webrtcClient === rtc) webrtcClient = null
                     signaling.stop()
-                    if (generation == playbackGeneration) { activeGame=null; restoreDashboard() }
-                    finishSessionReport(tracker)
+                    if (generation == playbackGeneration && !retryH264) { activeGame=null; restoreDashboard() }
+                    if(!retryH264) finishSessionReport(tracker)
                 }
             }
+            if(retryH264 && isActive && generation==playbackGeneration) launchCloudGame(signaling,game,touchMode,
+                com.xcloud.tclnative.settings.VideoCodecMode.H264,"Experimento de codec falhou; sessão reaberta uma vez em H.264.")
         }
     }
 

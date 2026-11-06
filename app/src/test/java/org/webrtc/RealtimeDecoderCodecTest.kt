@@ -30,6 +30,16 @@ class RealtimeDecoderCodecTest {
 
     private fun format() = MediaFormat.createVideoFormat("video/avc", 2080, 992)
 
+    @Test fun hevcUsesTheSamePublicRealtimeHintsWithoutBeingRewrittenToAvcOrTenBit() {
+        val driver=Driver()
+        val format=MediaFormat.createVideoFormat("video/hevc",1920,1080)
+        RealtimeDecoderCodec(driver.codec,false) {}.configure(format,null,null,0)
+        assertEquals("video/hevc",driver.configured!!.getString(MediaFormat.KEY_MIME))
+        assertEquals(0,driver.configured!!.getInteger(MediaFormat.KEY_PRIORITY))
+        assertFalse(driver.configured!!.containsKey(MediaFormat.KEY_PROFILE))
+        assertFalse(driver.configured!!.containsKey(MediaFormat.KEY_LOW_LATENCY))
+    }
+
     @Test fun realtimePriorityDoesNotRequireLowLatencySupportOrChangeTheVideoFormat() {
         val driver = Driver(); val status = mutableListOf<String>()
         val codec = RealtimeDecoderCodec(driver.codec, false, status::add)

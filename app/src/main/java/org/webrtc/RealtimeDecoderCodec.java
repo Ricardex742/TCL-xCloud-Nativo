@@ -30,7 +30,7 @@ final class RealtimeDecoderCodec implements MediaCodecWrapper {
       codec.configure(format, surface, crypto, flags);
     } catch (RuntimeException error) {
       status.accept("Codec: opções de tempo real rejeitadas; retorno ao padrão");
-      // AndroidVideoDecoder 1.1.1 releases and returns a failure status for this exception.
+      // The pinned AndroidVideoDecoder releases and returns a failure status for this exception.
       throw new IllegalStateException("Realtime decoder configuration rejected", error);
     }
   }

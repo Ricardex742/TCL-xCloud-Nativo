@@ -72,7 +72,10 @@ class StreamStatsCollector {
         val received = delta("packetsReceived")
         // packetsLost is signed: late arrival corrections must not become a negative loss percentage.
         val lost = old?.number("packetsLost")?.let { before -> video.number("packetsLost")?.let { (it - before).coerceAtLeast(0.0) } }
-        val codec = byId[video.text("codecId")]?.text("mimeType")?.substringAfter('/')
+        val codecSample=byId[video.text("codecId")]
+        val codec = codecSample?.text("mimeType")?.substringAfter('/')?.let {
+            CodecPreference.label(it,CodecPreference.parseParameters(codecSample.text("sdpFmtpLine") ?: ""))
+        }
         val transport = byId[video.text("transportId")]
         val selectedId = transport?.text("selectedCandidatePairId")
             ?: samples.firstOrNull { it.type == "transport" && it.text("selectedCandidatePairId") != null }?.text("selectedCandidatePairId")

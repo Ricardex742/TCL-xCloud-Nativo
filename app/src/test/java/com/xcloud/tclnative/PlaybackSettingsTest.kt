@@ -36,6 +36,21 @@ class PlaybackSettingsTest {
         assertEquals(VideoViewport(405,720),VideoScalingPolicy.viewport(1280,720,1080,1920))
         assertEquals(VideoViewport(1,1),VideoScalingPolicy.viewport(0,0,0,0))
     }
+    @Test fun experimentalCodecIsOptInPersistsAndUnknownPreferencesReturnToH264() {
+        val context=RuntimeEnvironment.getApplication()
+        val prefs=context.getSharedPreferences("stream_preferences",Context.MODE_PRIVATE)
+        prefs.edit().clear().commit()
+        val store=PlaybackSettingsStore(context)
+        assertEquals(VideoCodecMode.H264,store.read().videoCodec)
+        for(mode in VideoCodecMode.entries) {
+            val selected=PlaybackSettings(videoCodec=mode,resolution=StreamResolution.HD_720,touchMode=TouchMode.NATIVE)
+            store.save(selected)
+            assertEquals(selected,PlaybackSettingsStore(context).read())
+        }
+        prefs.edit().putString("video_codec","removed-or-invalid").commit()
+        assertEquals(VideoCodecMode.H264,store.read().videoCodec)
+        assertEquals(StreamResolution.HD_720,store.read().resolution)
+    }
     @Test fun statisticsRequireManualActivationAndEveryNewGameStartsHidden() {
         val visibility=StatisticsVisibility()
         assertEquals(0,visibility.mode)

@@ -5,6 +5,15 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class StreamStatsTest {
+    @Test fun codecLabelUsesTheInboundCodecStatsAndItsRtpProfileRatherThanTheRequestedPreference() {
+        fun receive(mime: String,fmtp: String)=StreamStatsCollector().collect(samples(video(1_000_000.0)).map {
+            if(it.id=="h264") it.copy(values=mapOf("mimeType" to mime,"sdpFmtpLine" to fmtp)) else it
+        })
+        assertEquals("H264 High (640c1f)",receive("video/H264","profile-level-id=640c1f;packetization-mode=1").codec)
+        assertEquals("H264 Baseline (42e01f)",receive("video/H264","profile-level-id=42e01f").codec)
+        assertEquals("H265/HEVC Main",receive("video/H265","profile-id=1;tier-flag=0;level-id=93").codec)
+        assertEquals("H265/HEVC",receive("video/H265","").codec)
+    }
     @Test fun diagnosticsUseActualTransportCountersAndTheDecodedVideoSource() {
         val collector=StreamStatsCollector()
         fun measured(time: Double,bytes: Long,packets: Long)=samples(video(time,bytes=bytes,packets=packets)).map { s ->

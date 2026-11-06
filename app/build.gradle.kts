@@ -74,7 +74,8 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation("io.getstream:stream-webrtc-android:1.1.1")
+    // M137 includes the H.265 RTP depacketizer/parser; Java codec names alone are insufficient.
+    implementation("io.github.webrtc-sdk:android:137.7151.05")
     implementation("com.google.zxing:core:3.5.3")
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")

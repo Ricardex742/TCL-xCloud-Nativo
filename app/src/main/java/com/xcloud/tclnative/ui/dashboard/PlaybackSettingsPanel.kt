@@ -21,6 +21,7 @@ class PlaybackSettingsPanel(
         val settings=store.read()
         val dialog=ConsoleDialogs.menu(context,"Configurações",listOf(
             ConsoleAction("Vídeo: ${settings.videoMode.label}") { chooseVideo() },
+            ConsoleAction("Codec: ${if(settings.videoMode==VideoMode.COMPATIBILITY) "H.264 leve (Compatibilidade)" else settings.videoCodec.label}") { chooseCodec() },
             ConsoleAction("Resolução: ${settings.resolution.label}") { chooseResolution() },
             ConsoleAction("HDR10: verificar tela e transmissão") { showHdrStatus() },
             ConsoleAction("Upscaling nativo: ${if(settings.nativeUpscaling) "Ativado" else "Desativado"}") { chooseUpscaling() },
@@ -66,8 +67,13 @@ class PlaybackSettingsPanel(
             VideoMode.entries.map { it.label to (it==current.videoMode) }) {
             val mode=VideoMode.entries[it]
             save(if(mode==VideoMode.COMPATIBILITY) current.copy(videoMode=mode,resolution=StreamResolution.HD_720,
-                nativeUpscaling=true,sharpness=0,saturation=100) else current.copy(videoMode=mode))
+                nativeUpscaling=true,sharpness=0,saturation=100,videoCodec=VideoCodecMode.H264) else current.copy(videoMode=mode))
         }
+    }
+    fun chooseCodec(): ConsoleDialog {
+        val current=store.read()
+        return choices("Codec de vídeo","H.264 mantém o comportamento padrão. High e HEVC são testes opcionais: exigem hardware compatível com a resolução e a taxa solicitadas. O Xbox decide o formato recebido. Se o experimento falhar ao iniciar, o app pode reabrir a sessão em H.264. Compatibilidade sempre usa H.264 leve. Aplica-se à próxima partida.",
+            VideoCodecMode.entries.map { it.label to (it==current.videoCodec) }) { save(current.copy(videoCodec=VideoCodecMode.entries[it])) }
     }
     fun chooseResolution(): ConsoleDialog {
         val current=store.read()

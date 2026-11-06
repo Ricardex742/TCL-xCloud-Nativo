@@ -2,6 +2,8 @@
 
 Consulta em **6/11/2026**. Branch do aplicativo: `perf/decoder-display-latency-0.31`. Esta entrega renomeia a aba para **TRANSMITA SEU JOGO** e registra a análise; não altera o codec negociado nem substitui o motor de reprodução.
 
+Esta é a análise histórica anterior à implementação. O trabalho posterior com opções experimentais, a migração da biblioteca nativa e seus limites está em [experimental-video-codecs-0.31.md](experimental-video-codecs-0.31.md).
+
 ## Resultado
 
 É tecnicamente viável experimentar codecs mais eficientes em dispositivos adequados. **Não é possível garantir imagem melhor sem perda de desempenho em todas as TVs.** O requisito é a interseção entre capacidade do decoder físico, suporte real do WebRTC, formato aceito pelo servidor e desempenho medido no aparelho. Exibir H.265/AV1 no menu não satisfaz esses requisitos.

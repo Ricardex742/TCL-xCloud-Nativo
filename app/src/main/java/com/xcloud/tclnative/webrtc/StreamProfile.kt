@@ -31,9 +31,10 @@ object StreamProfile {
             val connection = video.indexOfLast { it.startsWith("c=") }
             val index = if (connection >= 0) connection + 1 else 1
             video.addAll(index, listOf("b=AS:$maxKbps", "b=TIAS:${maxKbps * 1000}"))
-            val h264 = video.filter { it.startsWith("a=rtpmap:") && it.substringAfter(' ').startsWith("H264/", true) }
+            val videoCodecs = video.filter { it.startsWith("a=rtpmap:") &&
+                (it.substringAfter(' ').startsWith("H264/", true) || it.substringAfter(' ').startsWith("H265/",true)) }
                 .map { it.substringAfter(':').substringBefore(' ') }.toSet()
-            h264.forEach { payload ->
+            videoCodecs.forEach { payload ->
                 val fmtp = video.indexOfFirst { it.startsWith("a=fmtp:$payload ") }
                 val previous = if (fmtp >= 0) video[fmtp].substringAfter(' ').split(';') else emptyList()
                 val kept = previous.map(String::trim).filter { it.isNotEmpty() && !it.startsWith("x-google-min-bitrate=") &&

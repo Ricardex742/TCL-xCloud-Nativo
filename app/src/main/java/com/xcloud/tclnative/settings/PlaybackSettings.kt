@@ -7,6 +7,9 @@ enum class VideoMode(val label: String, val lowLatency: Boolean) {
     LOW_LATENCY("Menor atraso", true), ADAPTIVE("Adaptativo", false),
     COMPATIBILITY("Compatibilidade — TVs mais fracas", false)
 }
+enum class VideoCodecMode(val label: String) {
+    H264("H.264 — padrão"), H264_HIGH("H.264 High — experimental"), HEVC("H.265/HEVC — experimental")
+}
 enum class TouchMode(val label: String) {
     AUTO("Automático — detectar dispositivo e jogo"), OFF("Desativado — controle físico"), VIRTUAL("Exclusivo — controle virtual"),
     NATIVE("Toque nativo Xbox — experimental")
@@ -33,7 +36,8 @@ data class PlaybackSettings(
     val touchMode: TouchMode = TouchMode.AUTO,
     val sharpness: Int = 0,
     val saturation: Int = 100,
-    val sessionReport: Boolean = true
+    val sessionReport: Boolean = true,
+    val videoCodec: VideoCodecMode = VideoCodecMode.H264
 )
 
 class PlaybackSettingsStore(context: Context) {
@@ -55,7 +59,8 @@ class PlaybackSettingsStore(context: Context) {
             VideoAspect.entries.firstOrNull { it.name == prefs.getString("aspect",null) } ?: VideoAspect.RATIO_16_9,
             prefs.getBoolean("local_coop",false),prefs.getBoolean("rumble",true),
             TouchMode.entries.firstOrNull { it.name==prefs.getString("touch_mode",null) } ?: TouchMode.AUTO,
-            prefs.getInt("sharpness",0).coerceIn(0,100),prefs.getInt("saturation",100).coerceIn(0,200),prefs.getBoolean("session_report",true))
+            prefs.getInt("sharpness",0).coerceIn(0,100),prefs.getInt("saturation",100).coerceIn(0,200),prefs.getBoolean("session_report",true),
+            VideoCodecMode.entries.firstOrNull { it.name==prefs.getString("video_codec",null) } ?: VideoCodecMode.H264)
     }
     fun save(settings: PlaybackSettings) {
         prefs.edit().putString("video_mode",settings.videoMode.name).putBoolean("low_latency_video",settings.videoMode.lowLatency)
@@ -63,7 +68,7 @@ class PlaybackSettingsStore(context: Context) {
             .putString("aspect",settings.aspect.name).putBoolean("local_coop",settings.localCoOp)
             .putBoolean("rumble",settings.rumble).putString("touch_mode",settings.touchMode.name)
             .putInt("sharpness",settings.sharpness.coerceIn(0,100)).putInt("saturation",settings.saturation.coerceIn(0,200))
-            .putBoolean("session_report",settings.sessionReport).apply()
+            .putBoolean("session_report",settings.sessionReport).putString("video_codec",settings.videoCodec.name).apply()
     }
 }
 

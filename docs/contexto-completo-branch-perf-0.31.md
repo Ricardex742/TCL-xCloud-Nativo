@@ -2,7 +2,7 @@
 
 ## Estado e objetivo
 
-O trabalho está exclusivamente na branch **`perf/decoder-display-latency-0.31`**, criada a partir de `ci/apk-android10-3cc2595`, commit **`777a7e3487c230fc515a8b33665a08815bd1eeb0`**. A branch original foi preservada. Após o usuário perguntar pela branch, ela chegou a ser enviada ao GitHub e foi removida de lá a pedido dele. A cópia local foi mantida. A correção de responsividade abaixo permanece local, sem novo push ou publicação do ambiente.
+O trabalho está exclusivamente na branch **`perf/decoder-display-latency-0.31`**, criada a partir de `ci/apk-android10-3cc2595`, commit **`777a7e3487c230fc515a8b33665a08815bd1eeb0`**. A branch original foi preservada. Após o usuário perguntar pela branch, ela chegou a ser enviada ao GitHub e foi removida de lá a pedido dele. A cópia local foi mantida. Na solicitação mais recente, o usuário autorizou novamente a publicação desta branch no GitHub, incluindo a correção de responsividade e os codecs experimentais. A configuração publicada do ambiente não é alterada.
 
 A base já continha o xCLOUD 0.30 com login Microsoft/Xbox, catálogo, histórico remoto, favoritos, atalhos, HUDs, toque nativo, áudio, WebRTC/H.264 e diagnósticos. Esses recursos vieram do trabalho anterior documentado em `docs`; não foram todos implementados novamente nesta conversa.
 
@@ -107,3 +107,17 @@ As listas oficiais completas e a verificação de lançamento foram mantidas. Fo
 A suíte completa desta correção passou em **289 testes JVM/Robolectric**, sem falhas ou testes ignorados, além dos **8 testes Python de assinatura**, lint e empacotamento release sem assinatura. Na revisão final, cliques e foco passaram a consultar a posição atual do holder para impedir a ativação de cartões antigos enquanto uma nova lista é preparada.
 
 Depois dessa proteção final, **23 testes selecionados** de galerias/dashboard/imagens/atalhos foram reexecutados com sucesso, junto com lint e empacotamento release. Nenhum push, workflow remoto ou publicação do ambiente foi executado nesta correção.
+
+## Quinta mudança: H.264 High e H.265/HEVC experimentais
+
+Foram adicionadas opções explícitas em **Configurações → Codec** para H.264 padrão, H.264 High experimental e H.265/HEVC experimental. O padrão continua H.264; o preset Compatibilidade mantém a política leve. Os experimentos exigem decoder de hardware com perfil, tamanho e taxa declarados, verificam também as dimensões reais do fluxo e não recorrem a HEVC por software.
+
+A dependência passou para **WebRTC SDK Android 137.7151.05**, com parser/despacotizador RTP HEVC incluídos e conferidos nas quatro ABIs. O anúncio é baseado nas capacidades RTP e no hardware real, sem falsificar perfil/nível. A inicialização e a descoberta de capacidades ficam fora da interface. Prioridade/baixa latência e recuperação continuam condicionadas ao suporte do decoder.
+
+H.264 permanece na oferta como alternativa. Falhas do experimento antes do primeiro quadro permitem uma única nova sessão em H.264, após liberar a anterior. Depois de uma partida começar a exibir vídeo, o jogador decide se quer reabri-la, com aviso sobre fila/progresso. A configuração salva não é alterada pela tentativa de retorno.
+
+O diagnóstico distingue solicitado, anunciado, resposta SDP e codec RTP recebido, com perfil quando informado nas estatísticas. O caminho permanece SDR de 8 bits; Main10/HDR, VP9 e AV1 não são habilitados. Detalhes e limites em [experimental-video-codecs-0.31.md](experimental-video-codecs-0.31.md). O desempenho e a aceitação efetiva pelo Xbox ainda precisam de validação em aparelho com conta real.
+
+A validação completa passou em **308 testes JVM/Robolectric**, sem falhas, erros ou testes ignorados, mais **8 testes Python de assinatura**. Lint sem problemas e empacotamento release sem assinatura concluído. A captura do menu dos codecs foi inspecionada. O workflow existente continua responsável pela geração do APK debug com o certificado fixo.
+
+A branch desta entrega no GitHub é [perf/decoder-display-latency-0.31](https://github.com/Ricardex742/TCL-xCloud-Nativo/tree/perf%2Fdecoder-display-latency-0.31). A publicação foi solicitada expressamente pelo usuário e inclui os commits anteriores de galerias, diagnóstico, nome da aba e responsividade. O envio aciona o workflow de APK já configurado para essa branch; o estado remoto da compilação pode ser acompanhado em [GitHub Actions](https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml). A branch original e a configuração publicada do ambiente permanecem preservadas.

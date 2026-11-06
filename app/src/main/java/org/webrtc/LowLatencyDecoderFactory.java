@@ -6,7 +6,7 @@ import android.os.Build;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/** Bridge for the pinned WebRTC 1.1.1 codec wrapper. No vendor flags or reflection. */
+/** Bridge for the pinned WebRTC M137 codec wrapper. No vendor flags or reflection. */
 public final class LowLatencyDecoderFactory implements VideoDecoderFactory {
   private final EglBase.Context context;
   private final boolean enabled;

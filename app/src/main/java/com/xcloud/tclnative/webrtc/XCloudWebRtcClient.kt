@@ -26,8 +26,9 @@ class XCloudWebRtcClient(
 ) : StreamingPeer {
     private val factory: PeerConnectionFactory
     private var peerConnection: PeerConnection? = null
-    private val candidates = CopyOnWriteArrayList<IceCandidate>()
-    private val gatheringComplete = CompletableDeferred<Unit>()
+    private val peerGeneration=java.util.concurrent.atomic.AtomicInteger()
+    @Volatile private var iceGathering: LocalIceGathering?=null
+    private val iceReports=CopyOnWriteArrayList<String>()
     private val connected = CompletableDeferred<Unit>()
     private val channelsReady = CompletableDeferred<Unit>()
     private val handshake = ChannelHandshake(nativeTouch)
@@ -57,6 +58,7 @@ class XCloudWebRtcClient(
     private val decoderFactory: ExperimentalVideoDecoderFactory
     fun codecDiagnostics(): String = "${codecTrace.diagnostics()}\n${decoderFactory.diagnostics()}"
     fun codecFallbackSummary(error: Exception): String = codecTrace.fallbackSummary(error)
+    fun iceDiagnostics(): String = iceReports.joinToString("\n").ifBlank { "ICE local: aguardando coleta" }
     fun shouldRetryH264(error: Exception, firstFrame: Boolean): Boolean = ExperimentalCodecRetry.allowed(
         effectiveCodec,experimentalOffered,answerVideo,firstFrame,codecTrace.retryReason(error))
     private val audioLock=Any()
@@ -105,8 +107,20 @@ class XCloudWebRtcClient(
         if (!closed.get()) onConnectionStateChanged(message)
     }
 
-    override suspend fun createOfferSdp(): Pair<String, List<IceCandidate>> = withTimeout(15_000) {
+    override suspend fun createOfferSdp(): Pair<String, List<IceCandidate>> = withTimeout(30_000) {
         check(!closed.get() && peerConnection == null)
+        // Final disposal and onDestroy also run on Main. Serialize retry disposal there too.
+        LocalIceOfferRetry.prepare(::createOfferAttempt,{ withContext(Dispatchers.Main.immediate) { closePeerTransport() } }) {
+            onConnectionStateChanged("ICE: sem candidatos locais; refazendo a conexão uma vez (2/2), mantendo a sessão Xbox…")
+        }
+    }
+
+    private suspend fun createOfferAttempt(attempt: Int): Pair<String,List<IceCandidate>> {
+        currentCoroutineContext().ensureActive()
+        check(!closed.get() && peerConnection==null)
+        val generation=peerGeneration.incrementAndGet()
+        fun current()=!closed.get() && generation==peerGeneration.get()
+        val gathering=LocalIceGathering().also { iceGathering=it }
         val config = PeerConnection.RTCConfiguration(listOf(
             PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer()
         )).apply {
@@ -117,12 +131,14 @@ class XCloudWebRtcClient(
         val pc = factory.createPeerConnection(config, object : PeerConnection.Observer {
             override fun onSignalingChange(state: PeerConnection.SignalingState?) {}
             override fun onIceConnectionReceivingChange(receiving: Boolean) {}
-            override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {}
+            override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {
+                if(current() && candidates!=null) gathering.removed(candidates)
+            }
             override fun onRemoveStream(stream: MediaStream?) {}
             override fun onRenegotiationNeeded() {}
             override fun onDataChannel(channel: DataChannel?) {}
             override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {
-                if (closed.get()) return
+                if (!current()) return
                 onConnectionStateChanged("ICE: ${state?.name}")
                 when (state) {
                     PeerConnection.IceConnectionState.CONNECTED, PeerConnection.IceConnectionState.COMPLETED -> connected.complete(Unit)
@@ -131,19 +147,22 @@ class XCloudWebRtcClient(
                 }
             }
             override fun onIceGatheringChange(state: PeerConnection.IceGatheringState?) {
-                if (state == PeerConnection.IceGatheringState.COMPLETE) gatheringComplete.complete(Unit)
+                if(current() && state!=null) gathering.state(state)
             }
             override fun onIceCandidate(candidate: IceCandidate?) {
                 // The ':' in candidate:<foundation> is mandatory; IPv6 is valid too.
-                if (candidate != null && !closed.get()) candidates.add(candidate)
+                if (candidate != null && current()) gathering.candidate(candidate)
+            }
+            override fun onIceCandidateError(event: IceCandidateErrorEvent?) {
+                if(current() && event!=null) gathering.error(event.errorCode)
             }
             private fun receive(track: MediaStreamTrack?) {
-                if (closed.get()) return
+                if (!current()) return
                 track?.setEnabled(true)
                 if (track is VideoTrack) onVideoTrackReady(track)
                 if (track is AudioTrack) {
                     synchronized(audioLock) {
-                        if(closed.get()) return
+                        if(!current()) return
                         audioTracks.add(track); track.setVolume(audioSession.gain)
                     }
                     audioSession.requestFocus()
@@ -176,12 +195,12 @@ class XCloudWebRtcClient(
             channel.registerObserver(object : DataChannel.Observer {
                 override fun onBufferedAmountChange(amount: Long) {}
                 override fun onStateChange() {
-                    if (closed.get()) return
+                    if(!current()) return
                     if (channel.state() == DataChannel.State.OPEN) dispatch(handshake.onOpen(name))
                     else if (channel.state() == DataChannel.State.CLOSED && name != "chat") fail("CHANNELS: $name fechado")
                 }
                 override fun onMessage(buffer: DataChannel.Buffer?) {
-                    if (closed.get() || buffer == null) return
+                    if (!current() || buffer == null) return
                     if(name=="input" && buffer.binary) {
                         RemoteInputReport.parse(buffer.data)?.let { report ->
                             if (report.width != null && report.height != null) synchronized(pumpLock) {
@@ -211,12 +230,10 @@ class XCloudWebRtcClient(
         val description = SessionDescription(original.type, StreamProfile.receiveSdp(original.description, streamResolution,compatibility))
         codecTrace.localOffer(description.description)
         setDescription("SDP_LOCAL") { observer -> pc.setLocalDescription(observer, description) }
-        // A blocked STUN service must not discard usable host candidates.
-        if (withTimeoutOrNull(8000) { gatheringComplete.await(); true } != true) {
-            onConnectionStateChanged("ICE: coleta limitada a 8s; ${candidates.size} candidatos disponíveis")
-        }
-        if (candidates.isEmpty()) throw IOException("ICE_LOCAL: nenhum candidato de rede disponível")
-        description.description to candidates.toList()
+        val candidates=gathering.awaitCandidates()
+        iceReports.add(gathering.diagnostics(attempt))
+        if (candidates.isEmpty()) throw LocalIceUnavailableException(attempt,iceDiagnostics())
+        return description.description to candidates
     }
 
     private fun dispatch(messages: List<ChannelMessage>) {
@@ -372,13 +389,20 @@ class XCloudWebRtcClient(
         statsJob?.cancel()
         scope.cancel()
         synchronized(statisticsLock) { /* Wait for any getStats request to leave JNI before disposal. */ }
-        gatheringComplete.cancel(); connected.cancel(); channelsReady.cancel()
+        connected.cancel(); channelsReady.cancel()
+        closePeerTransport()
+        factory.dispose()
+    }
+
+    /** Invalidate callbacks before closing; old CLOSED/channel events cannot poison a retry. */
+    private fun closePeerTransport() {
+        peerGeneration.incrementAndGet()
+        iceGathering?.close();iceGathering=null
         channels.values.forEach { it.unregisterObserver(); it.close(); it.dispose() }
         channels.clear()
         peerConnection?.close()
         peerConnection?.dispose()
         peerConnection = null
-        factory.dispose()
     }
 
     private open class DescriptionObserver : SdpObserver {

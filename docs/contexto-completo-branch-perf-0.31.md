@@ -4,7 +4,7 @@
 
 O trabalho está exclusivamente na branch **`perf/decoder-display-latency-0.31`**, criada a partir de `ci/apk-android10-3cc2595`, commit **`777a7e3487c230fc515a8b33665a08815bd1eeb0`**. A branch original foi preservada. Após o usuário perguntar pela branch, ela chegou a ser enviada ao GitHub e foi removida de lá a pedido dele. A cópia local foi mantida. Na solicitação mais recente, o usuário autorizou novamente a publicação desta branch no GitHub, incluindo a correção de responsividade e os codecs experimentais. A configuração publicada do ambiente não é alterada.
 
-Estado atual do código: **0.31.1-codec-negotiation, versionCode 32**. As seções abaixo registram as entregas em ordem; a sétima substitui a política inicial de oferecer H.264 junto com os experimentos.
+Estado atual do código: **0.31.2-ice-recovery, versionCode 33**. As seções abaixo registram as entregas em ordem; a sétima substitui a política inicial de oferecer H.264 junto com os experimentos, e a oitava trata a coleta ICE vazia no início da conexão.
 
 A base já continha o xCLOUD 0.30 com login Microsoft/Xbox, catálogo, histórico remoto, favoritos, atalhos, HUDs, toque nativo, áudio, WebRTC/H.264 e diagnósticos. Esses recursos vieram do trabalho anterior documentado em `docs`; não foram todos implementados novamente nesta conversa.
 
@@ -145,3 +145,13 @@ HEVC anuncia Main de 8 bits, main tier e o nível decimal correspondente à capa
 A tela permaneceu 90 Hz nos testes apesar da sinalização de conteúdo a 60 FPS. O relatório agora distingue conteúdo sinalizado, modo pedido na janela, modo físico atual, taxa informada ao app e modos disponíveis. O histórico do pedido de joystick durante a sessão também é preservado ao voltar ao menu. Os buffers médios de cerca de 3–4 ms nas duas sessões maiores são observações; decode médio de cerca de 25 ms não prova incapacidade de 60 FPS, e a sessão padrão de 14 segundos não permite comparação controlada.
 
 A versão passa a **0.31.1-codec-negotiation / 32**, mantendo pacote e identidade de atualização. A análise completa e o próximo teste estão em [phone-codec-tests-0.31.1.md](phone-codec-tests-0.31.1.md). A validação completa passou em **330 testes JVM/Robolectric**, sem falhas, erros ou testes ignorados, mais **8 testes Python de proteção da assinatura**, lint sem problemas e build release sem assinatura. A captura atualizada do seletor foi inspecionada. O envio segue na mesma branch GitHub já autorizada; o APK assinado continua sendo responsabilidade do CI existente.
+
+## Oitava mudança: coleta ICE local vazia no início de jogos
+
+O usuário relatou falha ocasional `ICE_LOCAL: nenhum candidato de rede disponível`. A mensagem era produzida antes de enviar SDP ao Xbox. O código anterior aceitava COMPLETE mesmo com lista vazia e encerrava a tentativa imediatamente, sem aguardar o restante do prazo nem refazer a conexão local. A ocorrência física ainda precisa de confirmação de aparelho/rede; não foi atribuída automaticamente aos codecs ou a falta de Internet.
+
+Na **0.31.2-ice-recovery / 33**, COMPLETE vazio continua esperando candidatos até oito segundos. Se a lista permanecer vazia, o app libera a primeira PeerConnection/canais e tenta uma segunda uma única vez, dentro da mesma sessão Xbox e antes do envio de SDP. O caminho normal com candidatos não ganha espera fixa; host/IPv6 disponíveis são preservados se o STUN continuar pendente. Não há reinício de uma partida já exibida, nova fila solicitada pelo app ou retorno de codec motivado por essa falha local.
+
+Cada coleta fica isolada por PeerConnection/geração; remoções de candidatos e cancelamento são respeitados. O descarte para a segunda tentativa ocorre em Main, como o fechamento final e `onDestroy`. Relatório/erro recebem apenas estados, contagens e códigos numéricos STUN. Detalhes, limites e procedimento físico estão em [local-ice-recovery-0.31.2.md](local-ice-recovery-0.31.2.md).
+
+A validação completa passou em **346 testes JVM/Robolectric**, sem falhas, erros ou testes ignorados, mais **8 testes Python de assinatura**, lint sem problemas e build release sem assinatura. Foram conferidos pacote/versão 33/0.31.2. Os testes HTTP mantêm uma única sessão Xbox durante a recuperação local. A confirmação da recuperação no aparelho ainda está pendente; o envio segue somente na mesma branch experimental, com APK assinado pelo workflow existente.

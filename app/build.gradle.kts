@@ -14,8 +14,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 32
-        versionName = "0.31.1-codec-negotiation"
+        versionCode = 33
+        versionName = "0.31.2-ice-recovery"
     }
 
     signingConfigs {
@@ -78,6 +78,7 @@ dependencies {
     implementation("io.github.webrtc-sdk:android:137.7151.05")
     implementation("com.google.zxing:core:3.5.3")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testImplementation("org.json:json:20231013")
     testImplementation("org.robolectric:robolectric:4.14.1")

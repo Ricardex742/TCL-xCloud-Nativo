@@ -4,6 +4,8 @@ import com.xcloud.tclnative.auth.XCloudSession
 import com.xcloud.tclnative.signaling.XCloudSignalingClient
 import com.xcloud.tclnative.webrtc.StreamingPeer
 import com.xcloud.tclnative.webrtc.StreamResolution
+import com.xcloud.tclnative.webrtc.LocalIceOfferRetry
+import com.xcloud.tclnative.webrtc.LocalIceUnavailableException
 import com.xcloud.tclnative.catalog.*
 import kotlinx.coroutines.*
 import okhttp3.OkHttpClient
@@ -289,6 +291,40 @@ class SignalingTest {
         assertTrue(job.isCancelled)
         assertEquals(1, requests.count { it.method == "DELETE" })
         assertFalse(events.contains("ready"))
+    }
+    @Test fun localIceRetryKeepsTheAllocatedXboxSessionAndPostsOnlyTheSuccessfulOffer() = runBlocking {
+        var attempts=0;var disposed=false
+        val recovering=object: StreamingPeer by peer {
+            override suspend fun createOfferSdp()=LocalIceOfferRetry.prepare(create={ attempt ->
+                attempts++
+                if(attempt==1) throw LocalIceUnavailableException(attempt,"coleta vazia")
+                assertTrue(disposed)
+                peer.createOfferSdp()
+            },discard={ disposed=true },onRetry={})
+        }
+        val client=signaling()
+        assertTrue(client.startAndConnectWebRtcSession("real-id",recovering) {}.isSuccess)
+        assertEquals(2,attempts)
+        assertEquals(1,requests.count { it.method=="POST" && it.path=="/v5/sessions/cloud/play" })
+        assertEquals(1,requests.count { it.method=="POST" && it.path=="/session/connect" })
+        assertEquals(1,requests.count { it.method=="POST" && it.path=="/session/sdp" })
+        assertEquals(1,requests.count { it.method=="POST" && it.path=="/session/ice" })
+        assertEquals(0,requests.count { it.method=="DELETE" })
+        client.stop()
+        assertEquals(1,requests.count { it.method=="DELETE" })
+    }
+    @Test fun twoEmptyLocalIceCollectionsStopTheXboxSessionWithoutPostingSdpOrFakingCandidates() = runBlocking {
+        var attempts=0
+        val unavailable=object: StreamingPeer by peer {
+            override suspend fun createOfferSdp()=LocalIceOfferRetry.prepare(create={ attempt ->
+                attempts++;throw LocalIceUnavailableException(attempt,"coleta vazia")
+            },discard={},onRetry={})
+        }
+        val error=signaling().startAndConnectWebRtcSession("real-id",unavailable) {}.exceptionOrNull()!!
+        assertEquals(2,attempts)
+        assertTrue(error.message!!.startsWith("ICE_LOCAL:"))
+        assertFalse(requests.any { it.path=="/session/sdp" || it.path=="/session/ice" })
+        assertEquals(1,requests.count { it.method=="DELETE" })
     }
 
     @Test fun queueLongerThanNinetySecondsCanStillProvisionAndConnect() = runBlocking {

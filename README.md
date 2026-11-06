@@ -21,6 +21,8 @@ As [notas técnicas da versão 0.30](docs/resume-catalog-frame-generation-0.30.m
 
 A branch `perf/decoder-display-latency-0.31` continua a 0.30 com solicitações de prioridade de tempo real ao decoder, cadência de tela compatível com o vídeo e diagnóstico separado de buffer observado/alvo/mínimo de rede. Veja as [notas e limites da versão 0.31](docs/decoder-display-latency-0.31.md). A redução efetiva de atraso ainda precisa de comparação em aparelho físico.
 
+Nesta branch, **GAME PASS** consulta a galeria cloud atual do site oficial, e **JOGUE SEU JOGO COMPRADO** mostra a galeria oficial “Transmita seu próprio jogo”. As listas completas usam os produtos da região BR, sem limitar a exibição aos títulos já associados ao motor nativo. Uma edição ainda sem associação é verificada no serviço autenticado ao selecionar. A galeria de compra não é um inventário da conta: jogar exige a licença e as condições do serviço. Veja [fontes, contagens e funcionamento das abas](docs/official-catalog-galleries-0.31.md) e o [contexto completo das modificações desta branch](docs/contexto-completo-branch-perf-0.31.md).
+
 A [investigação de 5/11/2026](docs/xbox-nano-gamesir-frame-generation-research.md) confirma a prévia oficial de conexão Wi-Fi do Xbox Nano e distingue seus requisitos das conexões do GameSir Nova Lite. Também examina a integração de geração de quadros e seus limites em hardware modesto; esses recursos não foram adicionados ao aplicativo.
 
 ## Telas do aplicativo

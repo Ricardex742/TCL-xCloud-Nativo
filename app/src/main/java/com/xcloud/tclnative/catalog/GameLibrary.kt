@@ -7,7 +7,7 @@ import java.security.MessageDigest
 import java.util.Locale
 
 enum class LibraryTab(val label: String) {
-    RECENT("VOLTAR A JOGAR"), FAVORITES("FAVORITOS"), GAME_PASS("GAME PASS"),
+    RECENT("VOLTAR A JOGAR"), FAVORITES("FAVORITOS"), GAME_PASS("GAME PASS"), PURCHASED("JOGUE SEU JOGO COMPRADO"),
     ADDED("ADIÇÕES RECENTES"), ALL("TODOS OS JOGOS")
 }
 
@@ -17,7 +17,7 @@ data class PlayRecord(val lastPlayed: Long, val launches: Int)
 object GamePassCatalog {
     fun productKey(id: String) = id.trim().uppercase(Locale.ROOT)
     fun contains(game: GameTitle, normalizedProducts: Set<String>, resolvedTitles: Set<String> = emptySet()): Boolean =
-        !game.freeToPlay && (game.productId?.let { productKey(it) in normalizedProducts } == true ||
+        (game.productId?.let { productKey(it) in normalizedProducts } == true ||
             productKey(game.titleId) in resolvedTitles)
 }
 
@@ -100,6 +100,7 @@ class GameLibrary(private val context: Context, accountId: String, legacyAccount
                     games.filter { GamePassCatalog.contains(it,products,gamePassTitles) }.sortedBy { it.name.lowercase(Locale.ROOT) }
                 }
                 LibraryTab.ADDED -> ordered(games, added ?: emptyList())
+                LibraryTab.PURCHASED -> emptyList() // The public purchased gallery is not inferred from native access programs.
             }
             return selected.filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
         }

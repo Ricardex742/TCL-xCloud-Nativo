@@ -80,20 +80,33 @@ class XCloudSignalingClient(
 
     suspend fun fetchCatalogGames(): List<GameTitle> = withContext(Dispatchers.IO) {
         val results = JSONObject(request("/v2/titles", "CATALOG")).getJSONArray("results")
-        (0 until results.length()).mapNotNull { index ->
-            val game = results.getJSONObject(index)
-            val id = game.optString("titleId").trim().takeIf { it.isNotEmpty() } ?: return@mapNotNull null
-            val details = game.optJSONObject("details")
-            GameTitle(id, details?.optString("productTitle")?.takeIf { it.isNotBlank() } ?: id,
-                productId = details?.optString("productId")?.takeIf { it.isNotBlank() && it != "null" }
-                    ?: game.optString("productId").takeIf { it.isNotBlank() && it != "null" },
-                xboxTitleId = details?.optString("xboxTitleId")?.takeIf { it.isNotBlank() && it != "null" },
-                userSubscriptions = XboxProfile.subscriptionClaims(details?.opt("userSubscriptions")),
-                userPrograms = XboxProfile.subscriptionClaims(details?.opt("userPrograms")),
-                programs = XboxProfile.subscriptionClaims(details?.opt("programs")),
-                freeToPlay = details?.optBoolean("isFreeInStore",false) == true,
-                supportedInputTypes = XboxProfile.subscriptionClaims(details?.opt("supportedInputTypes")).toSet())
-        }.distinctBy { it.titleId }.sortedBy { it.name.lowercase(java.util.Locale.ROOT) }
+        (0 until results.length()).mapNotNull { parseCatalogTitle(results.getJSONObject(it)) }
+            .distinctBy { it.titleId }.sortedBy { it.name.lowercase(java.util.Locale.ROOT) }
+    }
+
+    private fun parseCatalogTitle(game: JSONObject): GameTitle? {
+        val id=game.optString("titleId").trim().takeIf { it.isNotEmpty() && it!="null" } ?: return null
+        val details = game.optJSONObject("details")
+        return GameTitle(id, details?.optString("productTitle")?.takeIf { it.isNotBlank() } ?: id,
+            productId = details?.optString("productId")?.takeIf { it.isNotBlank() && it != "null" }
+                ?: game.optString("productId").takeIf { it.isNotBlank() && it != "null" },
+            xboxTitleId = details?.optString("xboxTitleId")?.takeIf { it.isNotBlank() && it != "null" },
+            userSubscriptions = XboxProfile.subscriptionClaims(details?.opt("userSubscriptions")),
+            userPrograms = XboxProfile.subscriptionClaims(details?.opt("userPrograms")),
+            programs = XboxProfile.subscriptionClaims(details?.opt("programs")),
+            freeToPlay = details?.optBoolean("isFreeInStore",false) == true,
+            supportedInputTypes = XboxProfile.subscriptionClaims(details?.opt("supportedInputTypes")).toSet())
+    }
+
+    /** A public gallery product must resolve through the authenticated service before launching. */
+    suspend fun resolveGalleryProduct(productId: String): GameTitle? = withContext(Dispatchers.IO) {
+        require(productId.matches(Regex("[A-Za-z0-9]{12}")))
+        val body=JSONObject().put("alternateIds",org.json.JSONArray(listOf(productId))).put("alternateIdType","productId")
+        val response=JSONObject(request("/v2/titles","GALLERY_LOOKUP","POST",body,
+            httpClient.newBuilder().callTimeout(6,TimeUnit.SECONDS).build()))
+        val results=response.getJSONArray("results")
+        if(results.length()!=1 || response.optInt("totalItems",results.length())!=1) return@withContext null
+        parseCatalogTitle(results.getJSONObject(0))
     }
 
     suspend fun fetchRecentGames(catalog: List<GameTitle>): List<String> = withContext(Dispatchers.IO) {

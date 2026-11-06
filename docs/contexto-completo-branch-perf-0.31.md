@@ -1,0 +1,87 @@
+# Contexto completo das modificações desta branch
+
+## Estado e objetivo
+
+O trabalho está exclusivamente na branch **`perf/decoder-display-latency-0.31`**, criada a partir de `ci/apk-android10-3cc2595`, commit **`777a7e3487c230fc515a8b33665a08815bd1eeb0`**. A branch original foi preservada. As modificações são locais; publicação do ambiente, push e execução remota do GitHub Actions não foram realizados nesta etapa.
+
+A base já continha o xCLOUD 0.30 com login Microsoft/Xbox, catálogo, histórico remoto, favoritos, atalhos, HUDs, toque nativo, áudio, WebRTC/H.264 e diagnósticos. Esses recursos vieram do trabalho anterior documentado em `docs`; não foram todos implementados novamente nesta conversa.
+
+O link de conversa compartilhada não forneceu o histórico ao executor. A retomada utilizou o arquivo `contexto 2.0.txt`, a documentação da branch e o código real. O ponto interrompido era a análise de uma partida longa de Fortnite na 0.30 e a possibilidade de melhorar decode, buffer e cadência da tela.
+
+## Preparação do ambiente feita anteriormente
+
+Na primeira etapa da conversa, o checkout inicial estava numa versão antiga da branch principal. Foram instalados e verificados JDK 17 completo, Gradle 8.9 e Android SDK 34 fora do repositório, com ferramentas sob `/workspace/.local/android-dev`. Foram salvos `install_script` e `start_skill` de preparação. O usuário posteriormente publicou o ambiente.
+
+Ao retomar a branch correta, foi preparado Gradle 8.7, conforme o repositório/CI, e utilizada a confiança TLS do sistema para as conexões do Gradle pelo proxy. Não se desativaram verificações TLS ou checksums. A compilação local desta branch usa os plugins já fixados no projeto: AGP 8.5.2 e Kotlin 1.9.24. Os scripts antigos de instalação não foram reaplicados à configuração publicada.
+
+A chave privada de atualização não está disponível na máquina. O projeto continua exigindo seu certificado fixo para o APK debug de atualização. Não foi criada uma chave substituta. O CI existente possui o fluxo de segredo e validação; o build local de empacotamento usa release sem assinatura, que não é um APK de atualização instalável.
+
+## Primeira mudança: vídeo e diagnósticos
+
+Registrada no commit **`cc1467f`**, `Request realtime decoding and align playback display cadence`.
+
+### Evidência usada
+
+A sessão recebida do usuário durou 25min47s: Fortnite, Samsung SM-A155M, Android 16, toque nativo, H.264 de 2080×992, média de 58,43 FPS decodificados, decode de 18,72 ms/quadro, buffer de 59,51 ms e RTT de 45,52 ms. A saída Android estava em 90 Hz para uma apresentação solicitada de 60 FPS. Houve uma pausa observada de quatro segundos sem dados de vídeo.
+
+Esses valores não são input-to-photon. Um pipeline de hardware pode sobrepor quadros; decode acima de 16,7 ms não demonstra sozinho incapacidade de sustentar 60 FPS. A interrupção sem dados também não é necessariamente um problema do decoder.
+
+### Alterações realizadas
+
+1. **Decoder:** `KEY_PRIORITY=0` no modo Menor atraso, inclusive em Android 7–10, sem depender de `FEATURE_LowLatency`. `KEY_LOW_LATENCY=1` permanece restrito a Android 11+ e suporte declarado pelo decoder. Não foram adicionados parâmetros de fabricante, clock máximo ou descarte de quadros de referência.
+2. **Fallback e recuperação:** rejeições de configuração/início seguem o caminho de erro reconhecido pelo WebRTC 1.1.1. O decoder padrão é usado após rejeição e mantido nas recuperações da mesma sessão. Uma liberação com falha não aloca sucessivamente novos codecs nesse wrapper.
+3. **Tela:** durante a partida, preferência por uma frequência compatível com 60 FPS, como 60/120 Hz, em vez de 90 Hz quando o aparelho oferece essa alternativa. A resolução física do celular é preservada. Compatibilidade considera múltiplos de 30 Hz; TVs mantêm a política de 4K60 suportado sem reduzir uma saída 4K120 existente. As preferências de janela anteriores são restauradas ao voltar ao catálogo/destruir a Activity.
+4. **Buffer:** observado, alvo WebRTC e mínimo estimado da rede são calculados separadamente pelos contadores cumulativos e quadros emitidos. As médias de sessão usam ponderação por emissão. Ausência/reset de contadores aparece como `n/d`, não como zero saudável.
+5. **Relatório:** registra o estado das solicitações ao codec e explica os limites das medidas. O aviso de decode respeita a apresentação de 60 ou 30 FPS. O pedido de playout 0–40 ms foi mantido; ele não é um teto garantido para a estatística observada.
+6. **Versão/CI:** versão de desenvolvimento `0.31.0-decoder-display-latency`, versionCode 31; workflow habilitado também para esta branch, com a assinatura fixa preservada.
+
+A primeira entrega passou em **277 testes JVM/Robolectric**, **8 testes Python de assinatura**, lint sem problemas e build release sem assinatura. O ganho real de atraso não foi medido em um dispositivo físico. Detalhes em [decoder-display-latency-0.31.md](decoder-display-latency-0.31.md).
+
+## Segunda mudança: Game Pass e jogos comprados
+
+### Pesquisa direta nas fontes oficiais
+
+Foram consultadas as páginas oficiais Game Pass e “Transmita seu próprio jogo”, os scripts referenciados e as APIs públicas usadas pelo cliente. O contrato atual é **SIGL v3**, mercado BR, idioma pt-BR e plataforma **`Cloud:XGPUWEB`**.
+
+Em **6/11/2026**, os resultados foram:
+
+| Lista oficial | Produtos retornados | Metadados e oferta XGPUWEB confirmados |
+| --- | ---: | ---: |
+| Game Pass | 560 | 560 |
+| Transmita seu próprio jogo | 3.781 | 3.781 |
+
+A auditoria verificou nomes e ofertas cloud de **todos os 3.845 produtos distintos** da união, não apenas uma primeira página. Há **496 produtos em ambas as galerias**. Os totais podem mudar no serviço e não são constantes da aplicação.
+
+A galeria Game Pass atual inclui opções gratuitas, como Fortnite. O app não subtrai mais essa categoria da lista oficial, nem interpreta o programa genérico `GPULTIMATE` como inclusão na assinatura. Disponibilidade na galeria, compatibilidade cloud, propriedade e direito de iniciar uma partida são informações diferentes.
+
+### Alterações no aplicativo
+
+1. **Aba Game Pass atualizada:** consulta a galeria oficial atual (`af206485-e87d-4624-9007-cb7f6d0cc42e`) pelo contrato v3. A galeria antiga v2 deixa de ser a fonte de produção dessa aba.
+2. **Nova aba JOGUE SEU JOGO COMPRADO:** consulta `e78d9a61-5ef4-43af-b400-edba1250b18e`, a fonte da rota oficial `buy-and-stream`. A lista não é apresentada como inventário de compras do usuário.
+3. **Catálogo completo por produto:** produtos/edições oficiais continuam visíveis mesmo quando ainda não têm um vínculo no catálogo nativo. Não há limite artificial de itens, lista estática de títulos ou IDs cloud inventados.
+4. **Modelo separado:** `GalleryProduct`/`CatalogCard` representam a navegação pública; `GameTitle` mantém o ID real de lançamento obtido de uma resposta autenticada. Cartas de edições distintas não colidem por compartilhar o mesmo título cloud.
+5. **Verificação ao selecionar:** produtos sem vínculo consultam o serviço autenticado por ID de produto. Somente uma resposta válida e única fornece um ID para o fluxo de partida. Falhas, respostas vazias, ambíguas ou não filtradas não iniciam jogos. Resoluções atrasadas não atravessam uma troca de conta/tela ou o início de outra sessão.
+6. **Capacidades preservadas:** o início da partida utiliza as capacidades reais de input e a sessão existente. Um produto público não inventa NativeTouch, propriedade, assinatura ou licença. O serviço continua autorizando o provisionamento.
+7. **Nomes, capas e oferta cloud:** consulta pública `RemoteLowJade0` em lotes de até 50, com a correlação `MS-CV` exigida pelo endpoint. Metadados completos já obtidos no catálogo nativo são reutilizados. `XCloudOfferings.XGPUWEB.Programs` informa suporte cloud; não define a categoria Game Pass. Dados incompletos geram aviso de parcialidade.
+8. **Desempenho:** imagens continuam limitadas às views visíveis/anexadas e ao tamanho exibido. Novas consultas respeitam a pausa do catálogo durante a partida; atualizações visuais são agrupadas. Não é feito download das capas dos milhares de jogos antecipadamente.
+9. **Interface e pesquisa:** seis abas com navegação circular por LB/RB; o nome novo ocupa duas linhas. A pesquisa global também encontra produtos públicos ainda não associados ao motor nativo. Favoritos existentes mantêm seus IDs reais; uma carta sem vínculo precisa ser verificada antes de favoritar.
+10. **Estado de falha:** falha de consulta não vira “lista vazia confirmada”. Totais e mensagens distinguem atualização, dados parciais, indisponibilidade e lista oficial carregada.
+
+As respostas completas dos SIGLs foram preservadas como fixtures de teste, não como catálogo embutido em produção. Os testes cobrem contagens completas, sobreposição, gratuitos oficiais, formato HTTP, metadados, pausa durante partidas, resolução autenticada, pesquisa, seleção e layout em telefone/TV/4K. O documento [official-catalog-galleries-0.31.md](official-catalog-galleries-0.31.md) contém as URLs, o contrato e os checksums da pesquisa.
+
+## Estado de validação e próximos passos
+
+A validação final passou em **286 testes JVM/Robolectric**, sem falhas, erros ou testes ignorados, mais **8 testes Python da proteção de assinatura**. `:app:lintDebug` concluiu sem problemas e `:app:assembleRelease` gerou o pacote sem assinatura. A captura de UI da nova aba foi inspecionada; os testes conferiram duas linhas sem reticências e navegação por controle em telefone, TV e 4K.
+
+Comandos executados em `/workspace/TCL-xCloud-Nativo`, com o SDK/JDK locais e proxy/TLS configurados:
+
+```bash
+gradle --no-daemon --max-workers=2 :app:testDebugUnitTest :app:lintDebug :app:assembleRelease
+python3 -m unittest discover -s scripts/tests -v
+```
+
+A auditoria pública consultou todos os produtos dos dois SIGLs e todos os lotes de metadados; nenhum ID retornado ficou sem nome ou sem confirmação da oferta XGPUWEB nesta coleta. A planilha de conferência contém 3.845 produtos únicos, com nome oficial e marcação independente das duas galerias. Essa auditoria não usou a conta do usuário nem confirmou propriedade.
+
+Continua necessária uma validação no aparelho com conta/licença reais: abrir as duas galerias, comparar com a região BR do site, selecionar uma edição com e sem vínculo prévio e testar um jogo comprado que a conta possua. Também continua pendente a comparação de latência da primeira mudança, mantendo jogo, perfil 1080p, rede, proporção Original e filtros iguais. Não há neste ambiente uma sessão autenticada de gameplay físico que comprove esses resultados.
+
+O APK de atualização assinado depende do CI e do segredo existente. Não foram publicados ambiente, branch remota ou APK nesta etapa.

@@ -7,6 +7,20 @@ import java.io.File
 
 /** Handles Store v7 arrays and the older Game Pass object map without changing cloud launch IDs. */
 object StoreMetadata {
+    fun galleryProduct(data: JSONObject): GalleryProduct? {
+        val id = (data.text("ProductId") ?: data.text("StoreId"))?.let(GamePassCatalog::productKey) ?: return null
+        val local = localized(data)
+        return GalleryProduct(id, local?.text("ProductTitle") ?: data.text("ProductTitle"),
+            artwork(local, listOf("Poster", "BoxArt", "BrandedKeyArt", "Portrait")) ?: direct(data, "Image_Poster"),
+            artwork(local, listOf("SquareTile", "Tile", "BoxArt")) ?: direct(data, "Image_Tile"),
+            artwork(local, listOf("SuperHeroArt", "TitledHeroArt", "Hero", "Screenshot")) ?: direct(data, "Image_Hero"), optimized(data),
+            data.optJSONObject("XCloudOfferings")?.let { offerings ->
+                val key=offerings.keys().asSequence().firstOrNull { it.equals("XGPUWEB",true) } ?: return@let false
+                val programs=offerings.optJSONObject(key)?.optJSONArray("Programs") ?: return@let null
+                if((0 until programs.length()).any { programs.opt(it) !is String }) return@let null
+                programs.length()>0
+            })
+    }
     private fun JSONObject.text(key: String) = optString(key).takeIf { it.isNotBlank() && it != "null" }
     fun products(response: JSONObject): List<JSONObject> = when (val data = response.opt("Products")) {
         is JSONArray -> (0 until data.length()).mapNotNull { data.optJSONObject(it) }

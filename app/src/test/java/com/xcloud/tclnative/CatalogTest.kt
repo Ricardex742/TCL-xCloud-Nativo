@@ -83,8 +83,8 @@ class CatalogTest {
         val galleryOnly=game.copy(programs=emptyList())
         assertEquals(listOf(galleryOnly),GameLibrary.select(listOf(galleryOnly),LibraryTab.GAME_PASS,
             emptySet(),emptyMap(),listOf("LOWERCASE"),null))
-        assertTrue(GameLibrary.select(listOf(galleryOnly.copy(freeToPlay=true)),LibraryTab.GAME_PASS,
-            emptySet(),emptyMap(),listOf("LOWERCASE"),null).isEmpty())
+        assertEquals(1,GameLibrary.select(listOf(galleryOnly.copy(freeToPlay=true)),LibraryTab.GAME_PASS,
+            emptySet(),emptyMap(),listOf("LOWERCASE"),null).size) // The official gallery also includes free options.
     }
     @Test fun xboxGamerscoreNeverBecomesMicrosoftRewardsAndOfferingIdDoesNotProveATier() {
         val profile = XboxProfile.parse(JSONObject("""{"profileUsers":[{"settings":[{"id":"Gamertag","value":"XboxUser"},{"id":"GameDisplayName","value":"Lucas"},{"id":"GameDisplayPicRaw","value":"https://example.com/avatar.jpg"},{"id":"Gamerscore","value":"12550"}]}]}"""))

@@ -16,8 +16,11 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
+import java.util.UUID
+import java.nio.ByteBuffer
+import okio.ByteString.Companion.toByteString
 
-/** Public metadata enriches only titles returned by the authenticated cloud catalog. */
+/** Public metadata and gallery cards never grant a cloud launch ID or account entitlement. */
 class CatalogService(
     private val client: OkHttpClient = OkHttpClient.Builder().callTimeout(12, TimeUnit.SECONDS).build(),
     private val baseUrl: String = "https://catalog.gamepass.com",
@@ -121,6 +124,48 @@ class CatalogService(
         } catch (cancelled: CancellationException) { throw cancelled }
         catch (_: Exception) { null }
     }
+
+    suspend fun officialGallery(kind: OfficialGalleryKind): OfficialGallery = withContext(Dispatchers.IO) {
+        beforeRequest()
+        val url = "$baseUrl/sigls/v3".toHttpUrl().newBuilder().addQueryParameter("id", kind.id)
+            .addQueryParameter("market", "BR").addQueryParameter("language", "pt-BR")
+            .addQueryParameter("subscriptionContext", "none").addQueryParameter("platformContext", "Cloud:XGPUWEB").build()
+        client.newCall(Request.Builder().url(url).build()).awaitResponse().use {
+            OfficialGallery.parse(kind, JSONArray(it.checkedBody("OFFICIAL_GALLERY")))
+        }
+    }
+
+    /** Hydrate unmatched public products without inserting them into the authenticated native catalog. */
+    suspend fun hydrateOfficialGallery(gallery: OfficialGallery, knownProducts: Set<String>,
+                                      onBatch: suspend (OfficialGallery) -> Unit) = withContext(Dispatchers.IO) {
+        var current = gallery
+        var failed = false
+        // Native metadata has already been loaded. Reuse it instead of downloading it a second time.
+        for (batch in gallery.products.filter { it.productId !in knownProducts }.chunked(50)) {
+            beforeRequest()
+            try {
+                val url = "$baseUrl/v3/products".toHttpUrl().newBuilder()
+                    .addQueryParameter("market", "BR").addQueryParameter("language", "pt-BR")
+                    .addQueryParameter("hydration", "RemoteLowJade0").build()
+                val uuid=UUID.randomUUID()
+                val cv=ByteBuffer.allocate(16).putLong(uuid.mostSignificantBits).putLong(uuid.leastSignificantBits)
+                    .array().toByteString().base64().trimEnd('=')+".0"
+                val body=JSONObject().put("Products",JSONArray(batch.map { it.productId })).toString().toRequestBody("application/json".toMediaType())
+                val data = client.newCall(Request.Builder().url(url).header("MS-CV",cv)
+                    .header("Calling-App-Name","Xbox Cloud Gaming Web").header("Calling-App-Version","26.1.0").post(body).build()).awaitResponse().use {
+                    JSONObject(it.checkedBody("GALLERY_ART"))
+                }
+                val wanted = batch.map { it.productId }.toSet()
+                val updates = StoreMetadata.products(data).mapNotNull(StoreMetadata::galleryProduct)
+                    .filter { it.productId in wanted }.associateBy { it.productId }
+                if (updates.size != wanted.size || updates.values.any { it.name == null || it.cloudSupported == null }) failed = true
+                current = current.copy(products = current.products.map { updates[it.productId] ?: it })
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { failed = true }
+            onBatch(current)
+        }
+        onBatch(current.copy(metadataComplete = true, metadataFailed = failed))
+    }
     companion object {
         const val RECENTLY_ADDED = "44a55037-770f-4bbf-bde5-a9fa27dba1da"
         fun galleryIds(data: JSONArray): List<String> = (0 until data.length()).mapNotNull {
@@ -130,6 +175,7 @@ class CatalogService(
             val value = raw?.trim()?.let { if (it.startsWith("//")) "https:$it" else it } ?: return null
             return runCatching { value.toHttpUrl().takeIf { it.isHttps }?.toString() }.getOrNull()
         }
+        @Deprecated("Use officialGallery(OfficialGalleryKind.GAME_PASS), with SIGL v3 and the cloud platform context.")
         const val GAME_PASS = "29a81209-df6f-41fd-a528-2ae6b91f719c"
         const val FREE_TO_PLAY = "d8f4afcd-882a-49e3-86b3-f61fa0172b75"
         fun merge(games: List<GameTitle>, response: JSONObject): List<GameTitle> = StoreMetadata.merge(games, response)

@@ -218,7 +218,28 @@ class SignalingTest {
         assertEquals(setOf("FORZAHORIZON5","FORZAHORIZON6"),resolved)
         assertEquals(listOf("FORZAHORIZON5","FORZAHORIZON6"),selected(listOf("BUNDLE-FH5","BUNDLE-FH6"),resolved).map { it.titleId })
         assertTrue(selected(null).isEmpty())
-        assertFalse(selected(listOf("FREE")).any { it.titleId in setOf("FREE","OWNED") })
+        assertEquals(listOf("FREE"),selected(listOf("FREE")).map { it.titleId })
+    }
+    @Test fun galleryProductsResolveOnlyToASingleAuthenticatedTitleWithItsRealInputCapabilities() = runBlocking {
+        val bodies=java.util.ArrayDeque<String>().apply {
+            add("""{"results":[{"titleId":"actual-id","details":{"productId":"OTHEREDITION","productTitle":"Real game","supportedInputTypes":["NativeTouch"]}}]}""")
+            add("""{"results":[]}""")
+            add("""{"totalItems":900,"results":[{"titleId":"unfiltered"}]}""")
+            add("""{"results":[{"titleId":"one"},{"titleId":"two"}]}""")
+        }
+        server.dispatcher=object: Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                assertTrue(request.getHeader("Authorization")!!.startsWith("Bearer "))
+                val data=JSONObject(request.body.readUtf8())
+                assertEquals("productId",data.getString("alternateIdType"))
+                assertEquals("BT5P2X999VH2",data.getJSONArray("alternateIds").getString(0))
+                return response(bodies.removeFirst())
+            }
+        }
+        val client=signaling()
+        val game=client.resolveGalleryProduct("BT5P2X999VH2")!!
+        assertEquals("actual-id",game.titleId);assertEquals(setOf("NativeTouch"),game.supportedInputTypes)
+        repeat(3) {assertNull(client.resolveGalleryProduct("BT5P2X999VH2"))}
     }
     @Test fun catalogHttpFailureDoesNotReturnFakeSuccess() = runBlocking {
         rejectCatalog = true

@@ -46,6 +46,8 @@ import com.xcloud.tclnative.ui.dashboard.ConsoleLoginView
 import com.xcloud.tclnative.ui.dashboard.ConsoleDialogs
 import com.xcloud.tclnative.ui.dashboard.ConsoleAction
 import com.xcloud.tclnative.catalog.CatalogService
+import com.xcloud.tclnative.catalog.GalleryProduct
+import com.xcloud.tclnative.catalog.OfficialGalleryKind
 import com.xcloud.tclnative.catalog.GameLibrary
 import com.xcloud.tclnative.home.GameLaunchLink
 import com.xcloud.tclnative.home.PendingGameLaunch
@@ -110,6 +112,7 @@ open class MainActivity : Activity() {
     private var videoRecoveryDialog: Dialog? = null
     private var dashboard: GameDashboardView? = null
     private var dashboardJob: Job? = null
+    private var galleryLaunchJob: Job? = null
     private var recentHistoryJob: Job? = null
     private var gameLibrary: GameLibrary? = null
     private var loginView: ConsoleLoginView? = null
@@ -321,6 +324,7 @@ open class MainActivity : Activity() {
     }
 
     private fun renderLoginMenu() {
+        galleryLaunchJob?.cancel(); galleryLaunchJob=null
         recentHistoryJob?.cancel(); recentHistoryJob=null
         accountJob?.cancel()
         qrPollingJob?.cancel()
@@ -429,6 +433,7 @@ open class MainActivity : Activity() {
     }
 
     private fun renderGameDashboard(session: XCloudSession, validatedGames: List<GameTitle>? = null) {
+        galleryLaunchJob?.cancel(); galleryLaunchJob=null
         dashboardJob?.cancel()
         recentHistoryJob?.cancel(); recentHistoryJob=null
         val signaling = XCloudSignalingClient(session, transferTokenProvider = { authenticator.getConsoleTransferToken() })
@@ -458,7 +463,8 @@ open class MainActivity : Activity() {
                 onSearch = { showCatalogSearch() },
                 onOptions = { showSettings(session) },
                 onExit = { showExitDialog() },
-                onFavoritesChanged = { syncHomeShortcuts() })
+                onFavoritesChanged = { syncHomeShortcuts() },
+                onPlayProduct = { product -> playGalleryProduct(signaling,product) })
             dashboard = view
             controlPanel.removeAllViews()
             controlPanel.setPadding(0, 0, 0, 0)
@@ -477,31 +483,32 @@ open class MainActivity : Activity() {
             syncHomeShortcuts()
             launchPendingShortcut()
             val catalog = createCatalogService(catalogCache,catalogWork::await)
-            launch {
+            val nativeMetadata = async {
                 catalog.hydrate(allGames, onProgress = { progress -> withContext(Dispatchers.Main) {
                     if (dashboard === view) view.setMetadataProgress(progress)
                 } }) { hydrated -> withContext(Dispatchers.Main) {
                     if (dashboard === view) {
-                        currentGames = hydrated
-                        if(controlPanel.visibility==View.VISIBLE) view.updateMetadata(hydrated)
+                        val baseIds=allGames.map { it.titleId }.toSet()
+                        currentGames = hydrated + currentGames.filter { it.titleId !in baseIds }
+                        if(controlPanel.visibility==View.VISIBLE) view.updateMetadata(currentGames)
                         refreshLoadingArt(); syncHomeShortcuts()
                     }
                 } }
             }
-            launch {
-                val included = async { catalog.gallery(CatalogService.GAME_PASS) }
-                val free = async { catalog.gallery(CatalogService.FREE_TO_PLAY) }
-                val products = included.await()?.map(com.xcloud.tclnative.catalog.GamePassCatalog::productKey)?.toSet()
-                val excluded = free.await()?.map(com.xcloud.tclnative.catalog.GamePassCatalog::productKey)?.toSet()
-                // Product and edition lookup are both anchored to the official Game Pass gallery.
-                val confirmed = if (products != null && excluded != null) products-excluded else null
-                if (dashboard === view) { view.setGamePassProducts(confirmed); refreshLoadingArt() }
-                if (!confirmed.isNullOrEmpty()) {
-                    val known=allGames.mapNotNull { it.productId?.let(com.xcloud.tclnative.catalog.GamePassCatalog::productKey) }.toSet()
-                    val resolved=signaling.resolveCatalogProducts(confirmed-known,catalogWork::await)
-                    if (dashboard === view) { view.setGamePassProducts(confirmed,resolved); refreshLoadingArt() }
+            OfficialGalleryKind.entries.forEach { kind -> launch {
+                val gallery=try { catalog.officialGallery(kind) }
+                catch(cancelled: CancellationException) { throw cancelled }
+                catch(_: Exception) { null }
+                if(dashboard===view) view.setOfficialGallery(kind,gallery)
+                if(gallery!=null) {
+                    nativeMetadata.await()
+                    val known=currentGames.filter { it.name!=it.titleId && (it.posterUrl!=null || it.tileUrl!=null) }
+                        .mapNotNull { it.productId?.let(com.xcloud.tclnative.catalog.GamePassCatalog::productKey) }.toSet()
+                    catalog.hydrateOfficialGallery(gallery,known) { hydrated -> withContext(Dispatchers.Main) {
+                        if(dashboard===view) view.updateOfficialGallery(hydrated)
+                    } }
                 }
-            }
+            } }
             launch {
                 view.setAddedGallery(catalog.gallery(CatalogService.RECENTLY_ADDED))
             }
@@ -515,6 +522,37 @@ open class MainActivity : Activity() {
                         view.setProfile(profile)
                     }
                 }
+            }
+        }
+    }
+
+    private fun playGalleryProduct(signaling: XCloudSignalingClient, product: GalleryProduct) {
+        val view=dashboard ?: return
+        val generation=playbackGeneration
+        galleryLaunchJob?.cancel()
+        Toast.makeText(this,"Verificando disponibilidade do jogo no Xbox Cloud…",Toast.LENGTH_SHORT).show()
+        galleryLaunchJob=mainScope.launch {
+            try {
+                val resolved=signaling.resolveGalleryProduct(product.productId)
+                if(dashboard!==view || currentSignaling!==signaling || generation!=playbackGeneration || controlPanel.visibility!=View.VISIBLE) return@launch
+                if(resolved==null) {
+                    ConsoleDialogs.message(this@MainActivity,"Jogo indisponível",
+                        "O produto está na galeria oficial, mas o serviço não retornou um título de nuvem disponível para esta conta/região. Nenhuma partida foi iniciada.")
+                    return@launch
+                }
+                val native=currentGames.firstOrNull { it.titleId.equals(resolved.titleId,true) } ?: resolved
+                val game=native.copy(name=if(native.name==native.titleId) product.name ?: native.name else native.name,
+                    posterUrl=native.posterUrl ?: product.posterUrl,tileUrl=native.tileUrl ?: product.tileUrl,
+                    heroUrl=native.heroUrl ?: product.heroUrl,gamePass=view.isGamePassProduct(product.productId))
+                currentGames=currentGames.filterNot { it.titleId.equals(game.titleId,true) }+game
+                view.setGames(currentGames)
+                view.bindGalleryProduct(product.productId,game)
+                chooseLaunchMode(signaling,game)
+            } catch(cancelled: CancellationException) { throw cancelled }
+            catch(_: Exception) {
+                if(dashboard===view && currentSignaling===signaling)
+                    ConsoleDialogs.message(this@MainActivity,"Disponibilidade não confirmada",
+                        "Não foi possível verificar o jogo. Tente novamente ou atualize o catálogo. Jogos comprados exigem a licença digital e as condições do serviço Xbox.")
             }
         }
     }

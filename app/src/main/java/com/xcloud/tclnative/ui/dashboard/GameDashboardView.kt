@@ -27,6 +27,11 @@ import com.xcloud.tclnative.catalog.GameLibrary
 import com.xcloud.tclnative.catalog.GamePassCatalog
 import com.xcloud.tclnative.catalog.LibraryTab
 import com.xcloud.tclnative.catalog.XboxProfile
+import com.xcloud.tclnative.catalog.CatalogCard
+import com.xcloud.tclnative.catalog.GalleryProduct
+import com.xcloud.tclnative.catalog.OfficialGallery
+import com.xcloud.tclnative.catalog.OfficialGalleryKind
+import com.xcloud.tclnative.catalog.OfficialGalleryCards
 import com.xcloud.tclnative.signaling.GameTitle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +51,8 @@ class GameDashboardView(
     private val onSearch: () -> Unit,
     private val onOptions: () -> Unit,
     private val onExit: () -> Unit,
-    private val onFavoritesChanged: () -> Unit = {}
+    private val onFavoritesChanged: () -> Unit = {},
+    private val onPlayProduct: (GalleryProduct) -> Unit = {}
 ) : FrameLayout(context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val posters = PosterLoader(context, scope,frameBound=true)
@@ -54,6 +60,11 @@ class GameDashboardView(
     private var gamePassProducts: Set<String>? = null
     private var gamePassTitles = emptySet<String>()
     private var gamePassLoaded = false
+    private val officialGalleries = mutableMapOf<OfficialGalleryKind, OfficialGallery?>()
+    private val pendingGalleries = mutableMapOf<OfficialGalleryKind, OfficialGallery>()
+    private val galleryBindings = mutableMapOf<String, GameTitle>()
+    private var artworkPaused = false
+    private var metadataStatus = ""
     private var added: List<String>? = null
     private var galleriesLoaded = false
     private var recent=library.cloudRecent()
@@ -64,8 +75,8 @@ class GameDashboardView(
         private set
     var searchQuery = ""
         private set
-    var selectedGame: GameTitle? = null
-        private set
+    private var selectedCard: CatalogCard? = null
+    val selectedGame: GameTitle? get() = selectedCard?.game
     private var scale = 1f
     private var coverHeight = 1
     private var coverArtSize = ArtworkSize(192,320)
@@ -161,7 +172,8 @@ class GameDashboardView(
         LibraryTab.entries.forEach { tab ->
             val plate = FocusPlate(7f, 4f)
             val view = label(25f).apply {
-                id = generateViewId(); text = tab.label; gravity = Gravity.CENTER
+                id = generateViewId(); text = if(tab==LibraryTab.PURCHASED) "JOGUE SEU\nJOGO COMPRADO" else tab.label; gravity = Gravity.CENTER
+                if(tab==LibraryTab.PURCHASED) { maxLines=2; setLineSpacing(0f,.95f) }
                 isFocusable = true; isFocusableInTouchMode = true; isClickable = true; background = plate
                 DashboardTheme.customFocus(this)
                 setOnClickListener { selectTab(tab); focusFirstCover() }
@@ -170,7 +182,7 @@ class GameDashboardView(
             }
             tabs.add(view); tabPlates.add(plate)
             tabRow.addView(view, LinearLayout.LayoutParams(0, LayoutParams.MATCH_PARENT, when (tab) {
-                LibraryTab.RECENT -> 1.65f; LibraryTab.ADDED -> 1.35f; LibraryTab.ALL -> 1.16f
+                LibraryTab.RECENT -> 1.65f; LibraryTab.ADDED -> 1.35f; LibraryTab.ALL -> 1.16f; LibraryTab.PURCHASED -> 1.95f
                 else -> 1f
             }))
         }
@@ -179,7 +191,7 @@ class GameDashboardView(
         grid.adapter = adapter
         addView(grid); addView(emptyState)
         addView(footer); addView(catalogNote); addView(metadataNote)
-        hint("A", "SELECIONAR") { selectedGame?.let(onPlay) }
+        hint("A", "SELECIONAR") { selectedCard?.let(::playCard) }
         hint("B", "VOLTAR") { back() }
         hint("Y", "FAVORITAR") { toggleSelectedFavorite() }
         hint("X", "BUSCAR", onSearch)
@@ -213,12 +225,18 @@ class GameDashboardView(
     }
     fun updateMetadata(titles: List<GameTitle>) {
         pendingMetadata=titles
-        if(metadataJob?.isActive==true) return
+        scheduleMetadata()
+    }
+    private fun scheduleMetadata() {
+        if(artworkPaused || metadataJob?.isActive==true) return
         metadataJob=scope.launch {
             delay(180)
             val latest=pendingMetadata
             pendingMetadata=null; metadataJob=null
-            if(!closed && latest!=null) applyGames(latest)
+            if(!closed) {
+                officialGalleries.putAll(pendingGalleries); pendingGalleries.clear()
+                if(latest!=null) applyGames(latest) else refresh()
+            }
         }
     }
     private fun applyGames(titles: List<GameTitle>) {
@@ -231,12 +249,15 @@ class GameDashboardView(
     }
     fun gameById(id: String): GameTitle? = games.firstOrNull { it.titleId == id }
     fun pauseArtwork() {
+        artworkPaused=true
         metadataJob?.cancel(); metadataJob=null; pendingMetadata=null
         headerArtJob?.cancel(); posters.pause()
     }
     fun resumeArtwork() {
+        artworkPaused=false
+        if(pendingGalleries.isNotEmpty()) scheduleMetadata()
         posters.resume(); renderProfile()
-        selectedGame?.let { loadHeaderArtwork(it) }
+        selectedCard?.let { loadHeaderArtwork(it) }
         adapter.notifyItemRangeChanged(0,adapter.itemCount,"artwork")
     }
     fun setGamePassProducts(products: Set<String>?, resolvedTitles: Set<String> = emptySet()) {
@@ -245,13 +266,32 @@ class GameDashboardView(
         gamePassLoaded = true
         setGames(games)
     }
+    fun setOfficialGallery(kind: OfficialGalleryKind, gallery: OfficialGallery?) {
+        require(gallery==null || gallery.kind==kind)
+        officialGalleries[kind]=gallery
+        if(kind==OfficialGalleryKind.GAME_PASS) {
+            gamePassProducts=gallery?.products?.map { it.productId }?.toSet()
+            gamePassTitles=emptySet(); gamePassLoaded=true
+        }
+        if(!artworkPaused) applyGames(games)
+    }
+    fun updateOfficialGallery(gallery: OfficialGallery) {
+        pendingGalleries[gallery.kind]=gallery
+        scheduleMetadata()
+    }
+    fun bindGalleryProduct(productId: String, game: GameTitle) {
+        galleryBindings[GamePassCatalog.productKey(productId)]=game
+        refresh()
+    }
+    fun isGamePassProduct(productId: String) = GamePassCatalog.productKey(productId) in (gamePassProducts ?: emptySet())
     fun setMetadataProgress(progress: com.xcloud.tclnative.catalog.CatalogService.Progress) {
-        metadataNote.text = when {
+        metadataStatus = when {
             !progress.finished -> "CARREGANDO INFORMAÇÕES E CAPAS: ${progress.covers}/${progress.total}"
             progress.covers == 0 -> "CAPAS INDISPONÍVEIS. START → ATUALIZAR CATÁLOGO."
             progress.covers < progress.total -> "ALGUMAS CAPAS INDISPONÍVEIS. ATUALIZE NAS CONFIGURAÇÕES."
             else -> ""
         }
+        renderMetadataNote()
     }
     fun setProfile(value: XboxProfile) {
         val updated=value.copy(subscription=value.subscription ?: profile.subscription)
@@ -284,7 +324,20 @@ class GameDashboardView(
         focusFirstCover()
     }
     fun refresh() {
-        val visible = GameLibrary.select(games, activeTab, library.favorites, emptyMap(), gamePassProducts?.toList(), added, searchQuery,gamePassTitles,recent)
+        val kind=when(activeTab) { LibraryTab.GAME_PASS -> OfficialGalleryKind.GAME_PASS; LibraryTab.PURCHASED -> OfficialGalleryKind.PURCHASED; else -> null }
+        val gallery=kind?.let { officialGalleries[it] }
+        val visible = if(gallery!=null) OfficialGalleryCards.select(gallery,games,galleryBindings,gamePassProducts ?: emptySet(),searchQuery)
+            else {
+                val native=GameLibrary.select(games, activeTab, library.favorites, emptyMap(), gamePassProducts?.toList(), added, searchQuery,gamePassTitles,recent).map { CatalogCard(it) }
+                if(activeTab==LibraryTab.ALL && officialGalleries.values.any { it!=null }) {
+                    val known=games.mapNotNull { it.productId?.let(GamePassCatalog::productKey) }.toSet()
+                    val titleIds=games.map { it.titleId }.toSet()
+                    val extra=officialGalleries.values.filterNotNull().flatMap {
+                        OfficialGalleryCards.select(it,games,galleryBindings,gamePassProducts ?: emptySet(),searchQuery)
+                    }.filter { it.product?.productId !in known && it.game?.titleId !in titleIds }.distinctBy { it.key }
+                    (native+extra).sortedBy { it.name.lowercase(Locale.ROOT) }
+                } else native
+            }
         adapter.submit(visible)
         emptyState.visibility = if (visible.isEmpty()) View.VISIBLE else View.GONE
         emptyState.text = when {
@@ -298,6 +351,9 @@ class GameDashboardView(
             activeTab == LibraryTab.GAME_PASS && !gamePassLoaded -> "Carregando jogos do Game Pass…"
             activeTab == LibraryTab.GAME_PASS && gamePassProducts == null -> "Não foi possível confirmar os jogos do Game Pass.\nAtualize o catálogo nas configurações."
             activeTab == LibraryTab.GAME_PASS -> "Nenhum título do Game Pass disponível nesta lista."
+            activeTab == LibraryTab.PURCHASED && !officialGalleries.containsKey(OfficialGalleryKind.PURCHASED) -> "Carregando a lista oficial de jogos comprados compatíveis…"
+            activeTab == LibraryTab.PURCHASED && gallery == null -> "Não foi possível consultar a lista oficial.\nAtualize o catálogo nas configurações."
+            activeTab == LibraryTab.PURCHASED -> "A galeria oficial não retornou jogos nesta região."
             else -> "Nenhum jogo disponível nesta categoria."
         }
         catalogNote.text = when {
@@ -305,14 +361,32 @@ class GameDashboardView(
             activeTab == LibraryTab.GAME_PASS && !gamePassLoaded -> "${visible.size} JOGOS • ATUALIZANDO GAME PASS…"
             activeTab == LibraryTab.RECENT && recentLoading -> "${visible.size} JOGOS • ATUALIZANDO HISTÓRICO…"
             activeTab == LibraryTab.RECENT && recentFailed && recent!=null -> "${visible.size} JOGOS • HISTÓRICO SALVO • ATUALIZAÇÃO INDISPONÍVEL"
+            kind!=null && officialGalleries.containsKey(kind) && gallery==null -> "LISTA OFICIAL INDISPONÍVEL"
+            gallery!=null && !gallery.metadataComplete -> "${visible.size} PRODUTOS • ATUALIZANDO"
+            gallery?.metadataFailed==true -> "${visible.size} PRODUTOS • DADOS PARCIAIS"
+            gallery!=null -> "${visible.size} JOGOS • LISTA OFICIAL"
             else -> "${visible.size} JOGOS"
         }
-        val selected = visible.firstOrNull { it.titleId == selectedGame?.titleId } ?: visible.firstOrNull()
+        renderMetadataNote()
+        val selected = visible.firstOrNull { it.key == selectedCard?.key } ?: visible.firstOrNull()
         updateSelected(selected)
+    }
+    private fun renderMetadataNote() {
+        val kind=when(activeTab) { LibraryTab.GAME_PASS -> OfficialGalleryKind.GAME_PASS; LibraryTab.PURCHASED -> OfficialGalleryKind.PURCHASED; else -> null }
+        val gallery=kind?.let { officialGalleries[it] }
+        metadataNote.text=when {
+            activeTab==LibraryTab.PURCHASED && gallery?.metadataFailed==true -> "Algumas informações indisponíveis. A lista não confirma a propriedade; exige compra digital e condições do serviço."
+            activeTab==LibraryTab.PURCHASED && gallery!=null && !gallery.metadataComplete -> "Carregando informações da lista oficial. Não confirma a propriedade; exige compra digital e condições do serviço."
+            activeTab==LibraryTab.PURCHASED -> "Lista oficial de jogos compatíveis; exige compra digital e condições do serviço. Não confirma a propriedade na conta."
+            gallery?.metadataFailed==true -> "Lista oficial completa • Algumas informações/capas indisponíveis; atualize o catálogo nas configurações."
+            gallery!=null && !gallery.metadataComplete -> "Lista oficial completa • Carregando informações e capas…"
+            gallery!=null -> "Galeria oficial do Xbox Cloud Gaming • Inclui opções gratuitas; acesso depende da conta e das condições do serviço."
+            else -> metadataStatus
+        }
     }
     fun selectTab(tab: LibraryTab) {
         if (activeTab != tab) {
-            activeTab = tab; selectedGame = null; refresh(); grid.scrollToPosition(0)
+            activeTab = tab; selectedCard = null; refresh(); grid.scrollToPosition(0)
         }
         updateTabs()
     }
@@ -344,13 +418,13 @@ class GameDashboardView(
     }
     fun restoreFocus() {
         refresh()
-        val position = adapter.items.indexOfFirst { it.titleId == selectedGame?.titleId }.coerceAtLeast(0)
+        val position = adapter.items.indexOfFirst { it.key == selectedCard?.key }.coerceAtLeast(0)
         focusCoverAt(position)
     }
-    private fun updateSelected(game: GameTitle?) {
-        val previous = selectedGame
-        selectedGame = game
-        if (previous?.titleId==game?.titleId && previous?.name==game?.name && previous?.tileUrl==game?.tileUrl &&
+    private fun updateSelected(game: CatalogCard?) {
+        val previous = selectedCard
+        selectedCard = game
+        if (previous?.key==game?.key && previous?.name==game?.name && previous?.tileUrl==game?.tileUrl &&
             previous?.posterUrl==game?.posterUrl && headerTitle.text.isNotEmpty()) return
         headerArtJob?.cancel()
         if (game == null) { headerTitle.text = "SUA BIBLIOTECA"; posters.load(headerIcon, null); return }
@@ -365,23 +439,30 @@ class GameDashboardView(
         }
         headerIcon.contentDescription = "Ícone de ${game.name}"
         // Fast D-pad navigation updates text immediately and loads art only after focus settles.
-        headerArtJob=scope.launch { delay(120); if(selectedGame?.titleId==game.titleId) loadHeaderArtwork(game) }
+        headerArtJob=scope.launch { delay(120); if(selectedCard?.key==game.key) loadHeaderArtwork(game) }
     }
-    private fun loadHeaderArtwork(game: GameTitle) {
+    private fun loadHeaderArtwork(game: CatalogCard) {
         val size=ArtworkSize.forDisplay((116*scale).roundToInt(),(116*scale).roundToInt())
         posters.load(headerIcon,game.tileUrl ?: game.posterUrl,size.width,size.height)
     }
     private fun toggleSelectedFavorite() {
-        val game = selectedGame ?: return
+        val game = selectedGame ?: run {
+            if(selectedCard?.product!=null) android.widget.Toast.makeText(context,"Selecione o jogo para verificar sua disponibilidade antes de favoritar.",android.widget.Toast.LENGTH_LONG).show()
+            return
+        }
         val added = try { library.toggleFavorite(game.titleId) } catch (error: java.io.IOException) {
             android.widget.Toast.makeText(context,error.message,android.widget.Toast.LENGTH_LONG).show()
             return
         }
         onFavoritesChanged()
         announceForAccessibility(if (added) "${game.name} adicionado aos favoritos" else "${game.name} removido dos favoritos")
-        val position = adapter.items.indexOfFirst { it.titleId == game.titleId }
         if (activeTab == LibraryTab.FAVORITES) { refresh(); focusFirstCover() }
-        else if (position >= 0) adapter.notifyItemChanged(position, "favorite")
+        else adapter.items.indices.filter { adapter.items[it].game?.titleId==game.titleId }
+            .forEach { adapter.notifyItemChanged(it,"favorite") }
+    }
+    private fun playCard(card: CatalogCard) {
+        if(card.game!=null) onPlay(card.game.copy(gamePass=card.gamePass))
+        else card.product?.let(onPlayProduct)
     }
     fun back() {
         when {
@@ -437,7 +518,7 @@ class GameDashboardView(
         val navTop = headerTop+headerSize+30*s
         val top = navTop+navHeight+18*s
         place(headerIcon, 106*s, headerTop, headerSize, headerSize)
-        selectedGame?.let(::loadHeaderArtwork)
+        selectedCard?.let(::loadHeaderArtwork)
         place(searchButton, 8*s, headerTop+14*s, 88*s, 88*s)
         place(headerTitle, 242*s, headerTop+8*s, 465*s, 110*s)
         textSize(headerTitle, 46f)
@@ -459,7 +540,7 @@ class GameDashboardView(
         val shoulderTop = (navHeight-29*s)/2
         place(lb, 3*s, shoulderTop, 40*s, 29*s); place(rb, w-128*s, shoulderTop, 40*s, 29*s)
         place(tabRow, 58*s, 0f, w-204*s, navHeight)
-        tabs.forEach { textSize(it, 25f) }; textSize(lb, 23f); textSize(rb, 23f)
+        tabs.forEach { textSize(it, 22f) }; textSize(lb, 23f); textSize(rb, 23f)
         place(grid, 96*s, top, w-150*s, (footerTop-top-10*s).coerceAtLeast(coverHeight.toFloat()))
         place(emptyState, 106*s, top, w-210*s, h*.50f)
         textSize(emptyState, 26f)
@@ -480,14 +561,14 @@ class GameDashboardView(
     }
 
     private inner class CoversAdapter : RecyclerView.Adapter<CoverHolder>() {
-        var items = emptyList<GameTitle>()
+        var items = emptyList<CatalogCard>()
         init { setHasStableIds(true) }
-        override fun getItemId(position: Int) = items[position].titleId.fold(1125899906842597L) { hash, c -> hash*31+c.code }
+        override fun getItemId(position: Int) = items[position].key.fold(1125899906842597L) { hash, c -> hash*31+c.code }
         override fun getItemCount() = items.size
-        fun submit(next: List<GameTitle>) {
+        fun submit(next: List<CatalogCard>) {
             val before = items
             // Hydration usually changes metadata without changing order; avoid a full diff for each batch.
-            if(before.size==next.size && before.indices.all { before[it].titleId==next[it].titleId }) {
+            if(before.size==next.size && before.indices.all { before[it].key==next[it].key }) {
                 items=next
                 before.indices.filter { before[it]!=next[it] }.forEach { notifyItemChanged(it,"metadata") }
                 return
@@ -495,7 +576,7 @@ class GameDashboardView(
             val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
                 override fun getOldListSize() = before.size
                 override fun getNewListSize() = next.size
-                override fun areItemsTheSame(old: Int, new: Int) = before[old].titleId == next[new].titleId
+                override fun areItemsTheSame(old: Int, new: Int) = before[old].key == next[new].key
                 override fun areContentsTheSame(old: Int, new: Int) = before[old] == next[new]
             })
             items = next; diff.dispatchUpdatesTo(this)
@@ -511,7 +592,7 @@ class GameDashboardView(
                 card.focused = focused
                 if (focused) updateSelected(game)
             }
-            card.setOnClickListener { updateSelected(game); onPlay(game) }
+            card.setOnClickListener { updateSelected(game); playCard(game) }
         }
         override fun onBindViewHolder(holder: CoverHolder, position: Int, payloads: MutableList<Any>) {
             when {
@@ -554,7 +635,7 @@ class GameDashboardView(
             cover.addView(badges)
             addView(cover); addView(favorite)
         }
-        fun bind(game: GameTitle) {
+        fun bind(game: CatalogCard) {
             bindFavorite(game)
             val name=game.name.uppercase(Locale.getDefault())
             if(fallback.text.toString()!=name) fallback.text=name
@@ -572,11 +653,12 @@ class GameDashboardView(
                 .apply { topMargin = (16*s).roundToInt(); marginEnd = (18*s).roundToInt() }
             textSize(favorite, 23f)
         }
-        fun bindFavorite(game: GameTitle) {
-            contentDescription = game.name + if(library.isFavorite(game.titleId)) ", favorito" else ""
-            favorite.visibility=if(library.isFavorite(game.titleId)) View.VISIBLE else View.GONE
+        fun bindFavorite(game: CatalogCard) {
+            val starred=game.game?.let { library.isFavorite(it.titleId) } == true
+            contentDescription = game.name + if(starred) ", favorito" else ""
+            favorite.visibility=if(starred) View.VISIBLE else View.GONE
         }
-        fun bindArtwork(game: GameTitle) {
+        fun bindArtwork(game: CatalogCard) {
             posters.load(image,game.posterUrl ?: game.tileUrl,coverArtSize.width,coverArtSize.height)
         }
         override fun dispatchDraw(canvas: Canvas) {

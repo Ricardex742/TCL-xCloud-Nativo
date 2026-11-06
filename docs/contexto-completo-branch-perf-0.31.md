@@ -85,3 +85,13 @@ A auditoria pública consultou todos os produtos dos dois SIGLs e todos os lotes
 Continua necessária uma validação no aparelho com conta/licença reais: abrir as duas galerias, comparar com a região BR do site, selecionar uma edição com e sem vínculo prévio e testar um jogo comprado que a conta possua. Também continua pendente a comparação de latência da primeira mudança, mantendo jogo, perfil 1080p, rede, proporção Original e filtros iguais. Não há neste ambiente uma sessão autenticada de gameplay físico que comprove esses resultados.
 
 O APK de atualização assinado depende do CI e do segredo existente. Não foram publicados ambiente, branch remota ou APK nesta etapa.
+
+## Terceira mudança: nome da aba e revisão de codecs/projetos
+
+A aba de compra foi renomeada para **TRANSMITA SEU JOGO**, em uma linha, mantendo o ID de categoria, a galeria oficial, o fluxo de licença e a navegação. A alteração foi validada com os dois testes de UI selecionados, lint sem problemas e empacotamento release sem assinatura.
+
+Foram analisados Nuvem-TV (`3d3efd9`) e OnlyTCL (`567cde1`), suas fábricas de decoders, dependências, fluxo de vídeo, estatísticas, testes e licenças. A biblioteca Java atual já representa cinco codecs, mas nosso app continua negociando H.264. O cliente público oficial Xbox possui uma preferência condicional HEVC; isso fundamenta um experimento futuro, sem demonstrar uma partida em HEVC no nosso app. A recomendação é manter H.264 padrão, auditar High no decoder físico e testar HEVC somente com capacidades, negociação e desempenho confirmados. AV1/VP9 precisam também de confirmação do serviço e do aparelho.
+
+O caminho MediaCodec→Surface do OnlyTCL merece um experimento separado, especialmente em TVs limitadas, mas exige sincronização/recuperação e não equivale automaticamente a hardware tunneling. Seu motor do snapshot é H.264, e seu shim sintetiza algumas métricas, incluindo buffer zero; os números não são uma comparação direta com nosso diagnóstico. Não foram incorporados engines, código AGPL/MIT, scripts de sistema ou binários dos projetos externos, nem foi alterado o codec ativo.
+
+A análise completa, com fontes imutáveis, limites e condições para não comprometer dispositivos modestos, está em [codec-and-project-review-0.31.md](codec-and-project-review-0.31.md).

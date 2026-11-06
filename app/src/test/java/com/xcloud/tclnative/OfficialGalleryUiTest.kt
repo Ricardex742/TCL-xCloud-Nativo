@@ -81,7 +81,7 @@ class OfficialGalleryUiTest {
             for((w,h) in listOf(1280 to 720,2260 to 1080,3840 to 2160)) {
                 layout(view,w,h)
                 val tab=all(view).filterIsInstance<TextView>().single { it.contentDescription?.startsWith(LibraryTab.PURCHASED.label)==true }
-                assertEquals(2,tab.layout.lineCount)
+                assertEquals(1,tab.layout.lineCount)
                 assertTrue((0 until tab.layout.lineCount).all { tab.layout.getEllipsisCount(it)==0 })
                 assertTrue(tab.left>=0 && tab.right<=(tab.parent as View).width)
             }

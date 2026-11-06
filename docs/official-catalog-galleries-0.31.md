@@ -45,7 +45,7 @@ O app reutiliza nomes/capas completos do catálogo nativo e só consulta separad
 ## Navegação e início da partida
 
 - **GAME PASS:** mostra os produtos da galeria atual, inclusive edições sem associação local ao catálogo nativo.
-- **JOGUE SEU JOGO COMPRADO:** nova aba após Game Pass, com o nome em duas linhas e navegação por toque, direcional e LB/RB. Explica que a lista contém jogos compatíveis e não comprova propriedade na conta.
+- **TRANSMITA SEU JOGO:** aba após Game Pass, com o nome em uma linha e navegação por toque, direcional e LB/RB. Explica que a lista contém jogos compatíveis e não comprova propriedade na conta.
 - **TODOS OS JOGOS/pesquisa:** inclui também os produtos das galerias ainda sem associação local; a busca não os perde ao sair de uma categoria.
 
 Uma carta pública tem um `productId`, não um `titleId` inventado. Seu tipo é separado de `GameTitle`. Quando existe uma associação inequívoca ao catálogo autenticado, o caminho de jogo já existente é utilizado. Caso contrário, selecionar consulta `POST /v2/titles` autenticado com `alternateIdType=productId` e um único ID de produto.

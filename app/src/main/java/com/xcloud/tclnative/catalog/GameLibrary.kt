@@ -7,7 +7,7 @@ import java.security.MessageDigest
 import java.util.Locale
 
 enum class LibraryTab(val label: String) {
-    RECENT("VOLTAR A JOGAR"), FAVORITES("FAVORITOS"), GAME_PASS("GAME PASS"), PURCHASED("JOGUE SEU JOGO COMPRADO"),
+    RECENT("VOLTAR A JOGAR"), FAVORITES("FAVORITOS"), GAME_PASS("GAME PASS"), PURCHASED("TRANSMITA SEU JOGO"),
     ADDED("ADIÇÕES RECENTES"), ALL("TODOS OS JOGOS")
 }
 

@@ -172,8 +172,7 @@ class GameDashboardView(
         LibraryTab.entries.forEach { tab ->
             val plate = FocusPlate(7f, 4f)
             val view = label(25f).apply {
-                id = generateViewId(); text = if(tab==LibraryTab.PURCHASED) "JOGUE SEU\nJOGO COMPRADO" else tab.label; gravity = Gravity.CENTER
-                if(tab==LibraryTab.PURCHASED) { maxLines=2; setLineSpacing(0f,.95f) }
+                id = generateViewId(); text = tab.label; gravity = Gravity.CENTER
                 isFocusable = true; isFocusableInTouchMode = true; isClickable = true; background = plate
                 DashboardTheme.customFocus(this)
                 setOnClickListener { selectTab(tab); focusFirstCover() }

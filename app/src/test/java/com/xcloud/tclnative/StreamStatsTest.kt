@@ -105,4 +105,32 @@ class StreamStatsTest {
         assertNull(collector.collect(samples(video(1_000_000.0))).bitrateMbps)
         assertNull(collector.collect(samples(video(2_000_000.0))).decodeMs)
     }
+    @Test fun bufferTargetAndNetworkMinimumUseTheirOwnCounterDeltasAndEmittedFrames() {
+        val collector = StreamStatsCollector()
+        fun measured(time: Double, frames: Long, buffer: Double, target: Double, minimum: Double) =
+            samples(video(time, emitted = frames, buffer = buffer).let {
+                it.copy(values = it.values + mapOf("jitterBufferTargetDelay" to target, "jitterBufferMinimumDelay" to minimum))
+            })
+        val first = collector.collect(measured(1_000_000.0, 600, 30.0, 20.0, 10.0))
+        assertNull(first.jitterBufferTargetMs); assertNull(first.jitterBufferMinimumMs)
+        val result = collector.collect(measured(2_000_000.0, 660, 34.8, 23.6, 11.2))
+        assertEquals(80.0, result.jitterBufferMs!!, 0.001)
+        assertEquals(60.0, result.jitterBufferTargetMs!!, 0.001)
+        assertEquals(20.0, result.jitterBufferMinimumMs!!, 0.001)
+        assertEquals(60L, result.jitterBufferEmittedFrames)
+        val paused = collector.collect(measured(3_000_000.0, 660, 34.8, 23.6, 11.2))
+        assertNull(paused.jitterBufferTargetMs); assertNull(paused.jitterBufferMinimumMs)
+        val reset = collector.collect(measured(4_000_000.0, 2, 0.1, 0.1, 0.1))
+        assertNull(reset.jitterBufferTargetMs); assertNull(reset.jitterBufferMinimumMs)
+        val changed = collector.collect(samples(video(5_000_000.0, id = "other")))
+        assertNull(changed.jitterBufferMs); assertNull(changed.jitterBufferTargetMs)
+    }
+    @Test fun absentBufferTargetAndMinimumStayUnknownAndDoNotReplaceTheObservedBuffer() {
+        val collector = StreamStatsCollector()
+        collector.collect(samples(video(1_000_000.0)))
+        val result = collector.collect(samples(video(2_000_000.0, buffer = 9.6, emitted = 660)))
+        assertEquals(60.0, result.jitterBufferMs!!, 0.001)
+        assertNull(result.jitterBufferTargetMs); assertNull(result.jitterBufferMinimumMs)
+        assertTrue(result.overlay(InputMetrics(), "renderer").contains("alvo n/d ms | mínimo de rede n/d ms"))
+    }
 }

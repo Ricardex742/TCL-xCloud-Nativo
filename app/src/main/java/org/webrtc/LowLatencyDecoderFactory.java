@@ -1,14 +1,8 @@
 package org.webrtc;
 
-import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
-import android.media.MediaCrypto;
-import android.media.MediaFormat;
 import android.os.Build;
-import android.os.Bundle;
-import android.view.Surface;
-import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -39,9 +33,7 @@ public final class LowLatencyDecoderFactory implements VideoDecoderFactory {
     Supplier<VideoDecoder> normal = () -> hardware.createDecoder(codec);
     Supplier<VideoDecoder> preferred = normal;
     if (enabled && codec.getName().equalsIgnoreCase("H264")) {
-      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-        status.accept("Codec LL: não disponível nesta versão Android");
-      } else try {
+      try {
         String name = original.getImplementationName();
         MediaCodecInfo chosen = null;
         for (MediaCodecInfo info : new MediaCodecList(MediaCodecList.ALL_CODECS).getCodecInfos()) {
@@ -50,51 +42,26 @@ public final class LowLatencyDecoderFactory implements VideoDecoderFactory {
         if (chosen != null) {
           MediaCodecInfo.CodecCapabilities caps = chosen.getCapabilitiesForType("video/avc");
           Integer color = MediaCodecUtils.selectColorFormat(MediaCodecUtils.DECODER_COLOR_FORMATS, caps);
-          if (color != null && caps.isFeatureSupported(MediaCodecInfo.CodecCapabilities.FEATURE_LowLatency)) {
+          if (color != null) {
+            boolean lowLatency = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                caps.isFeatureSupported(MediaCodecInfo.CodecCapabilities.FEATURE_LowLatency);
             MediaCodecWrapperFactory wrappers = new MediaCodecWrapperFactoryImpl();
             preferred = () -> new AndroidVideoDecoder(
-                codecName -> new LowLatencyCodec(wrappers.createByCodecName(codecName), status),
+                codecName -> new RealtimeDecoderCodec(wrappers.createByCodecName(codecName), lowLatency, status),
                 name, VideoCodecMimeType.H264, color, context);
-            status.accept("Codec LL: disponível, aguardando configuração");
-          } else status.accept("Codec LL: driver não declara suporte; decoder padrão");
-        }
+            normal = () -> {
+              status.accept("Codec: padrão após rejeição das opções de tempo real");
+              return hardware.createDecoder(codec);
+            };
+            status.accept("Codec: aguardando configuração de tempo real");
+          } else status.accept("Codec: formato não disponível; decoder padrão");
+        } else status.accept("Codec: capacidades não encontradas; decoder padrão");
       } catch (RuntimeException error) {
-        status.accept("Codec LL: indisponível; decoder padrão");
+        status.accept("Codec: capacidades indisponíveis; decoder padrão");
       }
     }
     // Only raw Java hardware decoders can be delegated here. Native wrappers stay outside.
     return new VideoDecoderFallback(fallback, new RecoverableVideoDecoder(preferred, normal, recovery));
   }
 
-  private static final class LowLatencyCodec implements MediaCodecWrapper {
-    private final MediaCodecWrapper codec;
-    private final Consumer<String> status;
-    LowLatencyCodec(MediaCodecWrapper codec, Consumer<String> status) { this.codec = codec; this.status = status; }
-    @Override public void configure(MediaFormat format, Surface surface, MediaCrypto crypto, int flags) {
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) format.setInteger(MediaFormat.KEY_LOW_LATENCY, 1);
-      try {
-        codec.configure(format, surface, crypto, flags);
-        status.accept("Codec LL: solicitado (suporte declarado pelo driver)");
-      } catch (RuntimeException error) {
-        status.accept("Codec LL: configuração rejeitada; retorno ao padrão");
-        throw error;
-      }
-    }
-    @Override public void start() { codec.start(); }
-    @Override public void flush() { codec.flush(); }
-    @Override public void stop() { codec.stop(); }
-    @Override public void release() { codec.release(); }
-    @Override public int dequeueInputBuffer(long timeoutUs) { return codec.dequeueInputBuffer(timeoutUs); }
-    @Override public void queueInputBuffer(int index, int offset, int size, long timeUs, int flags) { codec.queueInputBuffer(index, offset, size, timeUs, flags); }
-    @Override public int dequeueOutputBuffer(MediaCodec.BufferInfo info, long timeoutUs) { return codec.dequeueOutputBuffer(info, timeoutUs); }
-    @Override public void releaseOutputBuffer(int index, boolean render) { codec.releaseOutputBuffer(index, render); }
-    @Override public MediaFormat getInputFormat() { return codec.getInputFormat(); }
-    @Override public MediaFormat getOutputFormat() { return codec.getOutputFormat(); }
-    @Override public MediaFormat getOutputFormat(int index) { return codec.getOutputFormat(index); }
-    @Override public ByteBuffer getInputBuffer(int index) { return codec.getInputBuffer(index); }
-    @Override public ByteBuffer getOutputBuffer(int index) { return codec.getOutputBuffer(index); }
-    @Override public Surface createInputSurface() { return codec.createInputSurface(); }
-    @Override public void setParameters(Bundle params) { codec.setParameters(params); }
-    @Override public MediaCodecInfo getCodecInfo() { return codec.getCodecInfo(); }
-  }
 }

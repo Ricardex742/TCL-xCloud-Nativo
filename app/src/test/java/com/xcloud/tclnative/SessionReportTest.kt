@@ -125,4 +125,26 @@ class SessionReportTest {
         assertEquals(9000L,r.stalledMs); assertEquals(60,r.score)
         assertTrue(r.findings().any { it.contains("sem progresso da imagem") })
     }
+    @Test fun bufferAveragesAreWeightedByEmittedFramesInsteadOfElapsedTime() {
+        val t = tracker(); t.begin(0, "Wi-Fi")
+        t.add(1000, sample().copy(jitterBufferMs = 80.0, jitterBufferTargetMs = 60.0,
+            jitterBufferMinimumMs = 20.0, jitterBufferEmittedFrames = 10), InputMetrics())
+        t.add(2000, sample().copy(jitterBufferMs = 40.0, jitterBufferTargetMs = 30.0,
+            jitterBufferMinimumMs = 10.0, jitterBufferEmittedFrames = 90), InputMetrics())
+        val r = finish(t, 2000)
+        assertEquals(44.0, r.metrics.getValue(ReportMetric.BUFFER).average, 0.001)
+        assertEquals(33.0, r.metrics.getValue(ReportMetric.BUFFER_TARGET).average, 0.001)
+        assertEquals(11.0, r.metrics.getValue(ReportMetric.BUFFER_MINIMUM).average, 0.001)
+        assertTrue(r.text().contains("Alvo do buffer WebRTC: média 33.00"))
+        assertTrue(r.text().contains("Mínimo de rede do buffer WebRTC: média 11.00"))
+    }
+    @Test fun decodeFindingsFollowThePresentationTargetAndExplainPipelineOverlap() {
+        fun report(fps: Int) = SessionReportTracker("Jogo", "Aparelho", "720p", fps).let { t ->
+            t.begin(0, "Wi-Fi"); t.add(1000, sample().copy(decodeMs = 20.0), InputMetrics()); finish(t, 1000)
+        }
+        assertTrue(report(60).findings().any { it.contains("sozinho não prova sobrecarga") })
+        assertFalse(report(30).findings().any { it.contains("Tempo de decodificação acima") })
+        assertTrue(report(60).text().contains("Não some essas medidas para estimar input-to-photon"))
+        assertTrue(report(60).text().contains("Alvo do buffer WebRTC: média n/d"))
+    }
 }

@@ -4,9 +4,9 @@
   <p><strong>Seus jogos. Na sua tela.</strong></p>
   <p>Cliente Android independente para Xbox Cloud Gaming, com interface para TV e transmissão nativa.</p>
   <p>
-    <a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aci%2Fapk-android10-3cc2595"><img src="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml/badge.svg?branch=ci%2Fapk-android10-3cc2595" alt="Compilação Android" /></a>
+    <a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aperf%2Fdecoder-display-latency-0.31"><img src="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml/badge.svg?branch=perf%2Fdecoder-display-latency-0.31" alt="Compilação Android" /></a>
     <img src="https://img.shields.io/badge/Android-7.0%2B-54de69?logo=android&logoColor=white" alt="Android 7 ou superior" />
-    <img src="https://img.shields.io/badge/vers%C3%A3o-0.30.0-173d29" alt="Versão 0.30.0" />
+    <img src="https://img.shields.io/badge/vers%C3%A3o-0.31.0-173d29" alt="Versão 0.31.0" />
   </p>
   <p><a href="#baixar-e-instalar">Baixar</a> · <a href="#telas-do-aplicativo">Telas</a> · <a href="#controles-de-toque-por-jogo">HUDs de toque</a> · <a href="#funcionalidades">Funcionalidades</a> · <a href="#atalhos-dos-jogos-na-tv">Atalhos na TV</a> · <a href="#compilar">Compilar</a></p>
 </div>
@@ -18,6 +18,8 @@ A **lupa no cabeçalho** abre a pesquisa em todos os jogos e solicita o teclado 
 O catálogo abre em **Voltar a jogar**, que consulta os últimos jogos da conta no Xbox Cloud Gaming e mantém a ordem retornada pelo serviço. A lista é atualizada ao abrir o catálogo ou voltar da partida. A última consulta fica salva por conta; falhas de atualização são indicadas na tela. Só aparecem jogos que ainda estão disponíveis no catálogo cloud. Veja a [implementação do histórico e as correções de atalhos da versão 0.29](docs/cloud-history-shortcuts-0.29.md).
 
 As [notas técnicas da versão 0.30](docs/resume-catalog-frame-generation-0.30.md) descrevem a abertura do catálogo e a análise de interpolação de quadros e conexão de controles à nuvem.
+
+A branch `perf/decoder-display-latency-0.31` continua a 0.30 com solicitações de prioridade de tempo real ao decoder, cadência de tela compatível com o vídeo e diagnóstico separado de buffer observado/alvo/mínimo de rede. Veja as [notas e limites da versão 0.31](docs/decoder-display-latency-0.31.md). A redução efetiva de atraso ainda precisa de comparação em aparelho físico.
 
 A [investigação de 5/11/2026](docs/xbox-nano-gamesir-frame-generation-research.md) confirma a prévia oficial de conexão Wi-Fi do Xbox Nano e distingue seus requisitos das conexões do GameSir Nova Lite. Também examina a integração de geração de quadros e seus limites em hardware modesto; esses recursos não foram adicionados ao aplicativo.
 
@@ -141,7 +143,7 @@ A disponibilidade dos jogos depende da conta, da região e do serviço Xbox Clou
 
 ## Baixar e instalar
 
-1. Abra [GitHub Actions nesta branch](https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aci%2Fapk-android10-3cc2595) e escolha a execução bem-sucedida mais recente.
+1. Abra [GitHub Actions nesta branch](https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aperf%2Fdecoder-display-latency-0.31) e escolha a execução bem-sucedida mais recente.
 2. Em **Artifacts**, baixe **TCL-xCloud-App-Debug-Android10** e extraia o arquivo ZIP.
 3. Instale **app-debug.apk** no Android TV, Google TV ou celular. O pacote também inclui checksum e metadados públicos de versão e assinatura.
 4. Abra **xCLOUD**, selecione **Entrar com QR Code** e conclua a autorização Microsoft.

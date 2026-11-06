@@ -2,7 +2,7 @@ name: Compilar APK Android 10 e TV
 
 on:
   push:
-    branches: [ "ci/apk-android10-3cc2595" ]
+    branches: [ "ci/apk-android10-3cc2595", "perf/decoder-display-latency-0.31" ]
   workflow_dispatch:
 
 permissions:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/ci/apk-android10-3cc2595'
+    if: github.ref == 'refs/heads/ci/apk-android10-3cc2595' || github.ref == 'refs/heads/perf/decoder-display-latency-0.31'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -77,7 +77,7 @@ jobs:
           sha256sum "$apk" | tee "$apk.sha256"
           {
             echo '### APK debug gerado'
-            echo '- Branch: ci/apk-android10-3cc2595'
+            echo "- Branch: $GITHUB_REF_NAME"
             echo '- Android mínimo: 7.0 (API 24), incluindo Android 10 (API 29).'
             echo '- Assinatura e lint NewApi/InlinedApi verificados.'
             echo '- Testes JVM de autenticação, provisionamento e protocolo executados.'

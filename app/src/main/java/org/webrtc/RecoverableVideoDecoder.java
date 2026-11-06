@@ -15,6 +15,7 @@ public final class RecoverableVideoDecoder implements VideoDecoder {
   private Callback callback;
   private boolean released;
   private boolean initialized;
+  private boolean standardOnly;
 
   public RecoverableVideoDecoder(Supplier<VideoDecoder> primary, Supplier<VideoDecoder> standard,
                                  DecoderRecoveryController controller) {
@@ -28,7 +29,8 @@ public final class RecoverableVideoDecoder implements VideoDecoder {
     if (decoder == null) return VideoCodecStatus.FALLBACK_SOFTWARE;
     VideoCodecStatus result = decoder.initDecode(settings, callback);
     if (result != VideoCodecStatus.OK) {
-      releaseCurrent();
+      if (standardOnly || releaseCurrent() != VideoCodecStatus.OK) return result;
+      standardOnly = true;
       decoder = standard.get();
       if (decoder == null) return VideoCodecStatus.FALLBACK_SOFTWARE;
       result = decoder.initDecode(settings, callback);
@@ -43,7 +45,7 @@ public final class RecoverableVideoDecoder implements VideoDecoder {
       initialized = false;
       controller.detach(request);
       if (releaseCurrent() != VideoCodecStatus.OK) return VideoCodecStatus.FALLBACK_SOFTWARE;
-      decoder = primary.get();
+      decoder = standardOnly ? standard.get() : primary.get();
       if (decoder == null) return VideoCodecStatus.FALLBACK_SOFTWARE;
       Settings next = new Settings(settings.numberOfCores,
           image.encodedWidth > 0 ? image.encodedWidth : settings.width,

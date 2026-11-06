@@ -7,7 +7,8 @@ import kotlin.math.roundToInt
 enum class ReportMetric(val label: String,val unit: String) {
     RTT("Latência RTT","ms"),LOSS("Perda de pacotes","%"),JITTER("Jitter da rede","ms"),
     FPS("FPS decodificados","FPS"),BITRATE("Bitrate de vídeo","Mbps"),DECODE("Decodificação","ms/quadro"),
-    BUFFER("Buffer de vídeo","ms"),INPUT_DELAY("Atraso local do input","ms")
+    BUFFER("Buffer de vídeo observado","ms"),INPUT_DELAY("Atraso local do input","ms"),
+    BUFFER_TARGET("Alvo do buffer WebRTC","ms"),BUFFER_MINIMUM("Mínimo de rede do buffer WebRTC","ms")
 }
 data class MetricSummary(val average: Double,val minimum: Double,val peak: Double,val samples: Long)
 enum class SessionEnd(val label: String) { USER("Encerrada pelo usuário"),FAILURE("Falha na transmissão"),REPLACED("Outra partida iniciada"),APP_CLOSED("Aplicativo fechado") }
@@ -26,7 +27,9 @@ data class SessionReport(
         if((avg(ReportMetric.LOSS) ?: 0.0)>2 || (avg(ReportMetric.JITTER) ?: 0.0)>15)
             add("Perdas ou jitter elevados. Compare Ethernet e Wi-Fi próximo ao roteador; o serviço também pode variar.")
         if((avg(ReportMetric.RTT) ?: 0.0)>85) add("RTT elevado. Compare a conexão e a região do serviço. RTT não mede a latência completa do comando até a imagem.")
-        if((avg(ReportMetric.DECODE) ?: 0.0)>16.7) add("Decodificação acima de 16,7 ms/quadro. Compare 720p e o modo de compatibilidade; desative filtros para testar.")
+        val frameBudget=1000.0/presentationFps.coerceAtLeast(1)
+        if((avg(ReportMetric.DECODE) ?: 0.0)>frameBudget)
+            add("Tempo de decodificação acima do intervalo de ${number(frameBudget)} ms a $presentationFps FPS. O pipeline pode sobrepor quadros; isso sozinho não prova sobrecarga. Compare 720p e filtros desativados no aparelho.")
         if(stalledWithDataMs>0) add("Houve vídeo recebido sem progresso da imagem. Compare decoder, resolução, filtros e perdas de pacotes.")
         if(stalledWithoutDataMs>0) add("Houve pausas sem recebimento de vídeo. Investigue a rede e a continuidade do envio pelo serviço.")
         if(inputWaits>0) add("O canal de input apresentou espera por congestionamento. Compare a estabilidade da conexão.")
@@ -52,7 +55,7 @@ data class SessionReport(
         append("Input: $inputWaits esperas | $inputCoalesced transições consolidadas\n")
         append("Recuperações tentadas: ${recovery.entries.joinToString { "${it.key}: ${it.value}" }.ifBlank { "nenhuma" }}\n\n")
         append(findings().joinToString("\n"))
-        append("\n\nValores das amostras disponíveis. FPS do decoder não é FPS do jogo nem da tela. Contadores WebRTC podem não incluir todo o tráfego da conexão. O índice é uma estimativa local, não um teste de velocidade. Pausas são observadas pelo watchdog, não por captura de cada quadro.")
+        append("\n\nValores das amostras disponíveis. FPS do decoder não é FPS do jogo nem da tela. Buffer observado, alvo WebRTC e mínimo de rede são medidas distintas; o pedido de playout não garante o valor observado. Decode inclui o pipeline do codec, não só processamento. Não some essas medidas para estimar input-to-photon. Contadores WebRTC podem não incluir todo o tráfego da conexão. O índice é uma estimativa local, não um teste de velocidade. Pausas são observadas pelo watchdog, não por captura de cada quadro.")
     }
     companion object {
         fun number(n: Double?)=n?.takeIf { it.isFinite() }?.let { String.format(Locale.US,"%.2f",it) } ?: "n/d"
@@ -117,7 +120,11 @@ class SessionReportTracker(private val game: String,private val device: String,p
         observed+=seconds
         fun add(k: ReportMetric,v: Double?,w: Double=seconds)=values.getValue(k).add(v,w)
         add(ReportMetric.RTT,m.rttMs); add(ReportMetric.LOSS,m.packetLossPercent); add(ReportMetric.JITTER,m.jitterMs)
-        add(ReportMetric.FPS,m.fps); add(ReportMetric.BITRATE,m.bitrateMbps); add(ReportMetric.BUFFER,m.jitterBufferMs)
+        add(ReportMetric.FPS,m.fps); add(ReportMetric.BITRATE,m.bitrateMbps)
+        val bufferWeight=m.jitterBufferEmittedFrames?.toDouble() ?: seconds
+        add(ReportMetric.BUFFER,m.jitterBufferMs,bufferWeight)
+        add(ReportMetric.BUFFER_TARGET,m.jitterBufferTargetMs,bufferWeight)
+        add(ReportMetric.BUFFER_MINIMUM,m.jitterBufferMinimumMs,bufferWeight)
         add(ReportMetric.DECODE,m.decodeMs,m.decodedFrames?.toDouble() ?: seconds)
         add(ReportMetric.INPUT_DELAY,i.maxSchedulerDelayMs)
         m.droppedFrames?.takeIf { it>=0 }?.let { dropped+=it; droppedKnown=true }

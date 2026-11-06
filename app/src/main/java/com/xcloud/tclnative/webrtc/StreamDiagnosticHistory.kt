@@ -17,6 +17,7 @@ class StreamDiagnosticHistory {
             val m=s.metrics
             "+${(s.time-start)/1000}s RX ${m.receivedVideoBytes ?: "n/d"} B | decode ${m.decodedFrames ?: "n/d"} quadros | " +
                 "${m.width ?: "?"}x${m.height ?: "?"} | buffer ${m.jitterBufferMs?.toInt() ?: "?"} ms | " +
+                "alvo ${m.jitterBufferTargetMs?.toInt() ?: "?"} ms | mínimo rede ${m.jitterBufferMinimumMs?.toInt() ?: "?"} ms | " +
                 "perda ${m.lostPackets ?: "?"} | ${m.decoder ?: "decoder n/d"}"
         }
     }

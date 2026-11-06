@@ -14,8 +14,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 30
-        versionName = "0.30.0-resume-catalog"
+        versionCode = 31
+        versionName = "0.31.0-decoder-display-latency"
     }
 
     signingConfigs {

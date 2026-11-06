@@ -25,6 +25,7 @@ import android.widget.Toast
 import androidx.core.view.doOnPreDraw
 import kotlin.coroutines.resume
 import com.xcloud.tclnative.settings.PlaybackSettings
+import com.xcloud.tclnative.settings.VideoMode
 import com.xcloud.tclnative.diagnostics.*
 import com.xcloud.tclnative.ui.dashboard.SessionReportPanel
 import com.xcloud.tclnative.ui.dashboard.SessionTransitionView
@@ -73,6 +74,7 @@ open class MainActivity : Activity() {
         CatalogService(cache=cache,beforeRequest=beforeRequest)
 
     private lateinit var rootLayout: FrameLayout
+    private val playbackDisplay by lazy { com.xcloud.tclnative.renderer.PlaybackDisplayPreference(window) }
     private lateinit var surfaceRenderer: AiPqSurfaceRenderer
     private lateinit var hudTextView: TextView
     private lateinit var statsView: TextView
@@ -303,18 +305,19 @@ open class MainActivity : Activity() {
         return false
     }
 
-    private fun configureVideoOutput(settings: PlaybackSettings) {
+    private fun configureVideoOutput(settings: PlaybackSettings, playing: Boolean = false) {
         if (Build.VERSION.SDK_INT >= 30) window.setPreferMinimalPostProcessing(settings.videoMode.lowLatency)
+        if (!playing) return
         val uiMode = getSystemService(Context.UI_MODE_SERVICE) as android.app.UiModeManager
-        if (uiMode.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION) {
-            val display = windowManager.defaultDisplay
-            fun mode(value: android.view.Display.Mode) = com.xcloud.tclnative.renderer.OutputMode(
-                value.modeId,value.physicalWidth,value.physicalHeight,value.refreshRate)
-            val id = if (settings.nativeUpscaling)
-                com.xcloud.tclnative.renderer.DisplayModePolicy.preferred4k60(mode(display.mode),display.supportedModes.map(::mode))
-            else 0
-            if (id != null) window.attributes = window.attributes.apply { preferredDisplayModeId=id }
-        }
+        val display = windowManager.defaultDisplay
+        fun mode(value: android.view.Display.Mode) = com.xcloud.tclnative.renderer.OutputMode(
+            value.modeId,value.physicalWidth,value.physicalHeight,value.refreshRate)
+        val current=mode(display.mode)
+        val supported=display.supportedModes.map(::mode)
+        val tv4k = if (uiMode.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION && settings.nativeUpscaling)
+            com.xcloud.tclnative.renderer.DisplayModePolicy.preferred4k60(current,supported) else null
+        val fps=if(settings.videoMode==VideoMode.COMPATIBILITY) 30 else 60
+        playbackDisplay.request(tv4k ?: com.xcloud.tclnative.renderer.DisplayModePolicy.preferredCadence(current,supported,fps))
     }
 
     private fun renderLoginMenu() {
@@ -738,6 +741,7 @@ open class MainActivity : Activity() {
     }
 
     private fun restoreDashboard() {
+        playbackDisplay.restore()
         catalogWork.resume()
         if(dashboard==null) {
             currentSession?.let { renderGameDashboard(it,currentGames) }
@@ -834,7 +838,7 @@ open class MainActivity : Activity() {
         currentTouchMode=TouchMode.OFF
         touchView.configure(TouchMode.OFF)
         statistics.beginSession()
-        configureVideoOutput(settings)
+        configureVideoOutput(settings, playing = true)
         val previous = gameJob
         previous?.cancel()
         val generation = ++playbackGeneration
@@ -909,7 +913,7 @@ open class MainActivity : Activity() {
                 onRumble = { command -> if(generation==playbackGeneration) rumble.play(command) },compatibility=compatible)
             webrtcClient = rtc
             val appVersion=packageManager.getPackageInfo(packageName,0).versionName ?: "n/d"
-            tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}\n${signaling.profileDiagnostics()}\n${rtc.audioDiagnostics()}" }
+            tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}\n${signaling.profileDiagnostics()}\n${rtc.audioDiagnostics()}\n${rtc.latencyDiagnostics()}" }
             surfaceRenderer.displayDimensions()?.let(rtc::updateDisplayDimensions)
             if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
             var failed=false
@@ -1272,6 +1276,7 @@ open class MainActivity : Activity() {
     override fun onStop() { activityVisible=false; reportTracker?.setVisible(false); super.onStop() }
 
     override fun onDestroy() {
+        playbackDisplay.restore()
         reportTracker?.finish(android.os.SystemClock.elapsedRealtime(),SessionEnd.APP_CLOSED,webrtcClient?.currentInputMetrics())
         postSessionDialog?.dismiss()
         ++playbackGeneration

@@ -79,6 +79,32 @@ class RecoverableVideoDecoderTest {
         assertEquals(1080, created.last().settings!!.height)
         decoder.release()
     }
+    @Test fun recoveryKeepsNormalHardwareAfterRealtimeOptionsWereRejected() {
+        var preferredAllocations = 0
+        val normals = mutableListOf<Decoder>()
+        val control = DecoderRecoveryController()
+        val decoder = RecoverableVideoDecoder(
+            { preferredAllocations++; Decoder(VideoCodecStatus.ERROR) },
+            { Decoder().also(normals::add) }, control)
+        assertEquals(VideoCodecStatus.OK, decoder.initDecode(settings, callback))
+        assertTrue(control.requestReset())
+        assertEquals(VideoCodecStatus.OK, decoder.decode(image(true, 1280, 720), info))
+        assertEquals(1, preferredAllocations)
+        assertEquals(2, normals.size)
+        assertEquals(1, normals.first().releases)
+        assertEquals(1280, normals.last().settings!!.width)
+        assertEquals(1, normals.last().frames)
+        decoder.release()
+    }
+    @Test fun failedReleaseDuringInitializationDoesNotAllocateAnotherHardwareCodec() {
+        var standardAllocations = 0
+        val stuck = Decoder(VideoCodecStatus.ERROR, VideoCodecStatus.TIMEOUT)
+        val decoder = RecoverableVideoDecoder({ stuck }, { standardAllocations++; Decoder() }, DecoderRecoveryController())
+        assertEquals(VideoCodecStatus.ERROR, decoder.initDecode(settings, callback))
+        assertEquals(0, standardAllocations)
+        decoder.release()
+        assertEquals(1, stuck.releases)
+    }
     @Test fun releasedDecoderIgnoresRequestsAndNeverDecodesAnotherFrame() {
         val hardware = Decoder()
         val control = DecoderRecoveryController()

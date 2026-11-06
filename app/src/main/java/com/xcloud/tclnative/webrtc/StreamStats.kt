@@ -15,7 +15,9 @@ data class StreamMetrics(
     val intervalSeconds: Double? = null,
     val receivedVideoBytes: Long? = null, val decodedFrames: Long? = null,
     val receivedPackets: Long? = null, val totalReceivedVideoBytes: Long? = null, val videoStreamId: String? = null,
-    val transportReceivedBytes: Long? = null, val transportSentBytes: Long? = null, val transportId: String? = null
+    val transportReceivedBytes: Long? = null, val transportSentBytes: Long? = null, val transportId: String? = null,
+    val jitterBufferTargetMs: Double? = null, val jitterBufferMinimumMs: Double? = null,
+    val jitterBufferEmittedFrames: Long? = null
 ) {
     fun compactOverlay(input: InputMetrics): String {
         fun n(value: Double?, decimals: Int = 1) = value?.takeIf(Double::isFinite)
@@ -34,6 +36,7 @@ data class StreamMetrics(
         val efficiency = when (powerEfficient) { true -> "eficiente: sim"; false -> "eficiente: não"; null -> "HW/SW: n/d" }
         return "$resolution | ${number(fps, 0)} FPS | ${codec ?: "codec n/d"} | RX ${number(bitrateMbps)} Mbps\n" +
             "Ping (RTT ICE): ${number(rttMs)} ms | Jitter RTP: ${number(jitterMs)} ms | Buffer: ${number(jitterBufferMs)} ms\n" +
+            "Buffer WebRTC: observado ${number(jitterBufferMs)} ms | alvo ${number(jitterBufferTargetMs)} ms | mínimo de rede ${number(jitterBufferMinimumMs)} ms\n" +
             "Perda: ${number(packetLossPercent, 2)}% (${lostPackets ?: "n/d"} pacotes/${number(intervalSeconds)}s; total ${totalLostPackets ?: "n/d"})\n" +
             "Quadros descartados WebRTC: ${droppedFrames ?: "n/d"}/intervalo; total ${totalDroppedFrames ?: "n/d"}\n" +
             "Decode: ${number(decodeMs, 2)} ms/quadro | ${decoder ?: "decoder n/d"} | $efficiency\n" +
@@ -77,6 +80,8 @@ class StreamStatsCollector {
             else samples.firstOrNull { it.type == "candidate-pair" && it.text("state") == "succeeded" &&
                 (it.values["selected"] == true || it.values["nominated"] == true) }
         val emitted = delta("jitterBufferEmittedCount")
+        fun bufferMs(key: String) = if (emitted != null && emitted > 0)
+            delta(key)?.times(1000)?.div(emitted) else null
         return StreamMetrics(
             width = video.number("frameWidth")?.toInt()?.takeIf { it > 0 },
             height = video.number("frameHeight")?.toInt()?.takeIf { it > 0 },
@@ -84,7 +89,10 @@ class StreamStatsCollector {
             bitrateMbps = if (seconds != null) delta("bytesReceived")?.times(8)?.div(seconds * 1_000_000) else null,
             rttMs = pair?.number("currentRoundTripTime")?.takeIf { it >= 0 }?.times(1000),
             jitterMs = video.number("jitter")?.takeIf { it >= 0 }?.times(1000),
-            jitterBufferMs = if (emitted != null && emitted > 0) delta("jitterBufferDelay")?.times(1000)?.div(emitted) else null,
+            jitterBufferMs = bufferMs("jitterBufferDelay"),
+            jitterBufferTargetMs = bufferMs("jitterBufferTargetDelay"),
+            jitterBufferMinimumMs = bufferMs("jitterBufferMinimumDelay"),
+            jitterBufferEmittedFrames = emitted?.toLong(),
             decodeMs = if (decoded != null && decoded > 0) delta("totalDecodeTime")?.times(1000)?.div(decoded) else null,
             droppedFrames = delta("framesDropped")?.toLong(), totalDroppedFrames = video.number("framesDropped")?.toLong(),
             lostPackets = lost?.toLong(), totalLostPackets = video.number("packetsLost")?.coerceAtLeast(0.0)?.toLong(),

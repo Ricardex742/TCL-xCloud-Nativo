@@ -124,7 +124,7 @@ A branch desta entrega no GitHub é [perf/decoder-display-latency-0.31](https://
 
 ## Sexta mudança: resposta do controle na TCL P755
 
-Após a publicação dos codecs, o usuário relatou atraso de câmera em Gears of War: E-Day na TCL P755, com ping e decode baixos. Confirmou que a sessão problemática era no **app 0.29.0, Menor atraso, H.264 padrão e receptor USB**, sem guardar o diagnóstico. O episódio antecede os codecs experimentais; não foi atribuído ao HEVC/M137 nem a uma causa única do aparelho/jogo/controle.
+Após a publicação dos codecs, o usuário relatou atraso de câmera em Gears of War: E-Day na TCL P755, com ping e decode baixos. Confirmou que a sessão problemática era no **app 0.29.0, Menor atraso, H.264 padrão e GameSir T4 Nova Lite via dongle USB**, sem guardar o diagnóstico. O episódio antecede os codecs experimentais; não foi atribuído ao HEVC/M137 nem a uma causa única do aparelho/jogo/controle.
 
 A análise confirmou que a câmera já desperta a thread de envio e usa o estado mais recente, mas a entrega anterior dos eventos pelo Android podia aguardar lotes da interface. Foi preparado o pedido público de despacho imediato do joystick no modo Menor atraso em Android 11+, limitado a gameplay visível/focado e restaurado nos menus/background. O mapeamento dos eixos e o contrato Xbox foram preservados.
 

@@ -2,7 +2,7 @@
 
 ## Relato e limites das medidas
 
-O usuário percebeu atraso leve entre mover a câmera no controle e ver a resposta em Gears of War: E-Day na TCL P755, mesmo com ping e decode baixos. Confirmou **app 0.29.0, Menor atraso, codec padrão H.264 e receptor USB**. Não guardou o diagnóstico na TV. O modelo do controle/receptor ainda não foi confirmado.
+O usuário percebeu atraso leve entre mover a câmera no controle e ver a resposta em Gears of War: E-Day na TCL P755, mesmo com ping e decode baixos. Confirmou **app 0.29.0, Menor atraso, codec padrão H.264 e GameSir T4 Nova Lite via dongle USB**. Não guardou o diagnóstico na TV. Não foi confirmado se o dongle estava diretamente na TV ou em hub/extensão.
 
 O relato antecede as mudanças de decoder/cadência e os codecs experimentais da 0.31; não é evidência de regressão por HEVC ou pela migração para WebRTC M137. A comparação deve manter H.264 padrão como referência. Receptor USB também não significa necessariamente cabo até o controle: pode existir um trecho de rádio antes do receptor.
 

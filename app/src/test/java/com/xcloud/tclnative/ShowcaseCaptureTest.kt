@@ -34,6 +34,7 @@ import java.io.File
 class ShowcaseCaptureTest {
     private fun all(view: View): List<View> = listOf(view)+if(view is ViewGroup) (0 until view.childCount).flatMap { all(view.getChildAt(it)) } else emptyList()
     private fun layout(view: View) {
+        (view as? GameDashboardView)?.awaitCatalog()
         repeat(2) {
             view.measure(View.MeasureSpec.makeMeasureSpec(1280,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(720,View.MeasureSpec.EXACTLY))
             view.layout(0,0,1280,720); shadowOf(Looper.getMainLooper()).idle()

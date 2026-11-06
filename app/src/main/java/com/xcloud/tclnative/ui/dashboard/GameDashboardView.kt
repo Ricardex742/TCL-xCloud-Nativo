@@ -19,7 +19,6 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.core.view.doOnNextLayout
@@ -31,7 +30,9 @@ import com.xcloud.tclnative.catalog.CatalogCard
 import com.xcloud.tclnative.catalog.GalleryProduct
 import com.xcloud.tclnative.catalog.OfficialGallery
 import com.xcloud.tclnative.catalog.OfficialGalleryKind
-import com.xcloud.tclnative.catalog.OfficialGalleryCards
+import com.xcloud.tclnative.catalog.CatalogInput
+import com.xcloud.tclnative.catalog.CatalogPresentation
+import com.xcloud.tclnative.catalog.CatalogChanges
 import com.xcloud.tclnative.signaling.GameTitle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +41,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -83,6 +85,14 @@ class GameDashboardView(
     private var headerArtJob: Job? = null
     private var metadataJob: Job? = null
     private var pendingMetadata: List<GameTitle>? = null
+    private var catalogJob: Job? = null
+    private var pendingCatalog: CatalogInput? = null
+    private var catalogRevision = 0L
+    private var renderedTab = activeTab
+    private var renderedQuery = searchQuery
+    private var positions = emptyMap<String, Int>()
+    private var pendingFocus: Pair<String?, Int>? = null
+    internal val isCatalogUpdating: Boolean get() = catalogJob?.isActive == true || metadataJob?.isActive == true
     private var coverVerticalPadding = 8f
     private var lastGeometry = 0L
     private var closed = false
@@ -220,7 +230,9 @@ class GameDashboardView(
 
     fun setGames(titles: List<GameTitle>) {
         metadataJob?.cancel(); metadataJob=null; pendingMetadata=null
-        applyGames(titles)
+        officialGalleries.putAll(pendingGalleries); pendingGalleries.clear()
+        games=titles
+        refresh()
     }
     fun updateMetadata(titles: List<GameTitle>) {
         pendingMetadata=titles
@@ -229,50 +241,45 @@ class GameDashboardView(
     private fun scheduleMetadata() {
         if(artworkPaused || metadataJob?.isActive==true) return
         metadataJob=scope.launch {
-            delay(180)
+            delay(400)
             val latest=pendingMetadata
             pendingMetadata=null; metadataJob=null
             if(!closed) {
                 officialGalleries.putAll(pendingGalleries); pendingGalleries.clear()
-                if(latest!=null) applyGames(latest) else refresh()
+                if(latest!=null) games=latest
+                refresh()
             }
         }
-    }
-    private fun applyGames(titles: List<GameTitle>) {
-        val products=gamePassProducts?.map(GamePassCatalog::productKey)?.toSet() ?: emptySet()
-        games = titles.map { game -> game.copy(gamePass = GamePassCatalog.contains(game,products,gamePassTitles)) }
-        val tier = XboxProfile.subscription(titles.flatMap { it.userSubscriptions + it.userPrograms })
-        val updated=profile.copy(subscription=tier ?: profile.subscription)
-        if(updated!=profile) { profile=updated; renderProfile() }
-        refresh()
     }
     fun gameById(id: String): GameTitle? = games.firstOrNull { it.titleId == id }
     fun pauseArtwork() {
         artworkPaused=true
+        catalogRevision++; pendingCatalog=null; pendingFocus=null; focusRequest++
         metadataJob?.cancel(); metadataJob=null; pendingMetadata=null
         headerArtJob?.cancel(); posters.pause()
     }
     fun resumeArtwork() {
         artworkPaused=false
-        if(pendingGalleries.isNotEmpty()) scheduleMetadata()
+        officialGalleries.putAll(pendingGalleries); pendingGalleries.clear()
+        refresh()
         posters.resume(); renderProfile()
         selectedCard?.let { loadHeaderArtwork(it) }
         adapter.notifyItemRangeChanged(0,adapter.itemCount,"artwork")
     }
     fun setGamePassProducts(products: Set<String>?, resolvedTitles: Set<String> = emptySet()) {
         gamePassProducts = products
-        gamePassTitles = resolvedTitles.map(GamePassCatalog::productKey).toSet()
+        gamePassTitles = resolvedTitles
         gamePassLoaded = true
         setGames(games)
     }
     fun setOfficialGallery(kind: OfficialGalleryKind, gallery: OfficialGallery?) {
         require(gallery==null || gallery.kind==kind)
+        pendingGalleries.remove(kind)
         officialGalleries[kind]=gallery
         if(kind==OfficialGalleryKind.GAME_PASS) {
-            gamePassProducts=gallery?.products?.map { it.productId }?.toSet()
             gamePassTitles=emptySet(); gamePassLoaded=true
         }
-        if(!artworkPaused) applyGames(games)
+        refresh()
     }
     fun updateOfficialGallery(gallery: OfficialGallery) {
         pendingGalleries[gallery.kind]=gallery
@@ -323,23 +330,61 @@ class GameDashboardView(
         focusFirstCover()
     }
     fun refresh() {
+        if(closed) return
+        catalogRevision++
+        if(artworkPaused) return
+        if(renderedTab!=activeTab || renderedQuery!=searchQuery) {
+            // Do not leave clickable cards from the previous category while preparing the next.
+            renderedTab=activeTab; renderedQuery=searchQuery
+            adapter.submit(emptyList(),CatalogChanges(true,emptyList()))
+            positions=emptyMap(); updateSelected(null)
+            renderCatalogState(0,preparing=true)
+        }
+        pendingCatalog=CatalogInput(games,officialGalleries.toMap(),galleryBindings.toMap(),
+            gamePassProducts,gamePassTitles,activeTab,library.favorites,added,recent,searchQuery)
+        if(catalogJob?.isActive==true) return
+        // One worker, one pending snapshot: bursts cannot build an unbounded CPU queue.
+        catalogJob=scope.launch {
+            while(!closed && !artworkPaused) {
+                val input=pendingCatalog ?: break
+                pendingCatalog=null
+                val revision=catalogRevision
+                val before=adapter.items
+                val (presentation,changes)=withContext(Dispatchers.Default) {
+                    val result=CatalogPresentation.build(input)
+                    result to CatalogChanges.between(before,result.cards)
+                }
+                if(!closed && !artworkPaused && revision==catalogRevision) applyCatalog(presentation,changes)
+            }
+        }
+    }
+    private fun applyCatalog(presentation: CatalogPresentation, changes: CatalogChanges) {
+        val selectedKey=selectedCard?.key
+        val focused=grid.hasFocus()
+        val manager=grid.layoutManager as GridLayoutManager
+        val anchor=manager.findFirstVisibleItemPosition()
+        val anchorKey=adapter.items.getOrNull(anchor)?.key
+        val anchorOffset=manager.findViewByPosition(anchor)?.top?.minus(grid.paddingTop) ?: 0
+        positions=presentation.positions
+        gamePassProducts=presentation.gamePassProducts
+        val updated=profile.copy(subscription=presentation.subscription ?: profile.subscription)
+        if(updated!=profile) { profile=updated; renderProfile() }
+        adapter.submit(presentation.cards,changes)
+        val selectedPosition=positions[selectedKey]
+        updateSelected(selectedPosition?.let { presentation.cards[it] } ?: presentation.cards.firstOrNull())
+        renderCatalogState(presentation.cards.size)
+        val requested=pendingFocus
+        pendingFocus=null
+        if(requested!=null) focusCoverNow(positions[requested.first] ?: requested.second)
+        else if(changes.replace && focused) focusCoverNow(selectedPosition ?: 0)
+        else if(changes.replace && anchorKey!=null) positions[anchorKey]?.let { manager.scrollToPositionWithOffset(it,anchorOffset) }
+    }
+    private fun renderCatalogState(count: Int, preparing: Boolean = false) {
         val kind=when(activeTab) { LibraryTab.GAME_PASS -> OfficialGalleryKind.GAME_PASS; LibraryTab.PURCHASED -> OfficialGalleryKind.PURCHASED; else -> null }
         val gallery=kind?.let { officialGalleries[it] }
-        val visible = if(gallery!=null) OfficialGalleryCards.select(gallery,games,galleryBindings,gamePassProducts ?: emptySet(),searchQuery)
-            else {
-                val native=GameLibrary.select(games, activeTab, library.favorites, emptyMap(), gamePassProducts?.toList(), added, searchQuery,gamePassTitles,recent).map { CatalogCard(it) }
-                if(activeTab==LibraryTab.ALL && officialGalleries.values.any { it!=null }) {
-                    val known=games.mapNotNull { it.productId?.let(GamePassCatalog::productKey) }.toSet()
-                    val titleIds=games.map { it.titleId }.toSet()
-                    val extra=officialGalleries.values.filterNotNull().flatMap {
-                        OfficialGalleryCards.select(it,games,galleryBindings,gamePassProducts ?: emptySet(),searchQuery)
-                    }.filter { it.product?.productId !in known && it.game?.titleId !in titleIds }.distinctBy { it.key }
-                    (native+extra).sortedBy { it.name.lowercase(Locale.ROOT) }
-                } else native
-            }
-        adapter.submit(visible)
-        emptyState.visibility = if (visible.isEmpty()) View.VISIBLE else View.GONE
+        emptyState.visibility = if (count==0) View.VISIBLE else View.GONE
         emptyState.text = when {
+            preparing -> "Carregando catálogo…"
             searchQuery.isNotBlank() -> "Nenhum jogo encontrado para “$searchQuery”.\nX para pesquisar novamente."
             activeTab == LibraryTab.FAVORITES -> "Seus favoritos aparecem aqui.\nSelecione um jogo e pressione Y para favoritar."
             activeTab == LibraryTab.RECENT && recentLoading -> "Consultando seu histórico do Xbox Cloud…"
@@ -356,19 +401,18 @@ class GameDashboardView(
             else -> "Nenhum jogo disponível nesta categoria."
         }
         catalogNote.text = when {
-            searchQuery.isNotBlank() -> "BUSCA: $searchQuery  •  ${visible.size} JOGOS"
-            activeTab == LibraryTab.GAME_PASS && !gamePassLoaded -> "${visible.size} JOGOS • ATUALIZANDO GAME PASS…"
-            activeTab == LibraryTab.RECENT && recentLoading -> "${visible.size} JOGOS • ATUALIZANDO HISTÓRICO…"
-            activeTab == LibraryTab.RECENT && recentFailed && recent!=null -> "${visible.size} JOGOS • HISTÓRICO SALVO • ATUALIZAÇÃO INDISPONÍVEL"
+            preparing -> "CARREGANDO CATÁLOGO…"
+            searchQuery.isNotBlank() -> "BUSCA: $searchQuery  •  $count JOGOS"
+            activeTab == LibraryTab.GAME_PASS && !gamePassLoaded -> "$count JOGOS • ATUALIZANDO GAME PASS…"
+            activeTab == LibraryTab.RECENT && recentLoading -> "$count JOGOS • ATUALIZANDO HISTÓRICO…"
+            activeTab == LibraryTab.RECENT && recentFailed && recent!=null -> "$count JOGOS • HISTÓRICO SALVO • ATUALIZAÇÃO INDISPONÍVEL"
             kind!=null && officialGalleries.containsKey(kind) && gallery==null -> "LISTA OFICIAL INDISPONÍVEL"
-            gallery!=null && !gallery.metadataComplete -> "${visible.size} PRODUTOS • ATUALIZANDO"
-            gallery?.metadataFailed==true -> "${visible.size} PRODUTOS • DADOS PARCIAIS"
-            gallery!=null -> "${visible.size} JOGOS • LISTA OFICIAL"
-            else -> "${visible.size} JOGOS"
+            gallery!=null && !gallery.metadataComplete -> "$count PRODUTOS • ATUALIZANDO"
+            gallery?.metadataFailed==true -> "$count PRODUTOS • DADOS PARCIAIS"
+            gallery!=null -> "$count JOGOS • LISTA OFICIAL"
+            else -> "$count JOGOS"
         }
         renderMetadataNote()
-        val selected = visible.firstOrNull { it.key == selectedCard?.key } ?: visible.firstOrNull()
-        updateSelected(selected)
     }
     private fun renderMetadataNote() {
         val kind=when(activeTab) { LibraryTab.GAME_PASS -> OfficialGalleryKind.GAME_PASS; LibraryTab.PURCHASED -> OfficialGalleryKind.PURCHASED; else -> null }
@@ -385,6 +429,7 @@ class GameDashboardView(
     }
     fun selectTab(tab: LibraryTab) {
         if (activeTab != tab) {
+            pendingFocus=null; focusRequest++
             activeTab = tab; selectedCard = null; refresh(); grid.scrollToPosition(0)
         }
         updateTabs()
@@ -405,6 +450,10 @@ class GameDashboardView(
         focusCoverAt(0)
     }
     private fun focusCoverAt(position: Int) {
+        if(isCatalogUpdating) { pendingFocus=selectedCard?.key to position; return }
+        focusCoverNow(position)
+    }
+    private fun focusCoverNow(position: Int) {
         val request = ++focusRequest
         if (adapter.itemCount == 0) { tabs[activeTab.ordinal].requestFocus(); return }
         grid.doOnNextLayout {
@@ -417,7 +466,7 @@ class GameDashboardView(
     }
     fun restoreFocus() {
         refresh()
-        val position = adapter.items.indexOfFirst { it.key == selectedCard?.key }.coerceAtLeast(0)
+        val position = positions[selectedCard?.key] ?: 0
         focusCoverAt(position)
     }
     private fun updateSelected(game: CatalogCard?) {
@@ -564,21 +613,10 @@ class GameDashboardView(
         init { setHasStableIds(true) }
         override fun getItemId(position: Int) = items[position].key.fold(1125899906842597L) { hash, c -> hash*31+c.code }
         override fun getItemCount() = items.size
-        fun submit(next: List<CatalogCard>) {
-            val before = items
-            // Hydration usually changes metadata without changing order; avoid a full diff for each batch.
-            if(before.size==next.size && before.indices.all { before[it].key==next[it].key }) {
-                items=next
-                before.indices.filter { before[it]!=next[it] }.forEach { notifyItemChanged(it,"metadata") }
-                return
-            }
-            val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
-                override fun getOldListSize() = before.size
-                override fun getNewListSize() = next.size
-                override fun areItemsTheSame(old: Int, new: Int) = before[old].key == next[new].key
-                override fun areContentsTheSame(old: Int, new: Int) = before[old] == next[new]
-            })
-            items = next; diff.dispatchUpdatesTo(this)
+        fun submit(next: List<CatalogCard>, changes: CatalogChanges) {
+            items=next
+            if(changes.replace) notifyDataSetChanged()
+            else changes.ranges.forEach { notifyItemRangeChanged(it.first,it.last-it.first+1,"metadata") }
         }
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = CoverHolder(GameCard(context))
         override fun onBindViewHolder(holder: CoverHolder, position: Int) {
@@ -589,9 +627,13 @@ class GameDashboardView(
             card.nextFocusUpId = if (position < COLUMNS) tabs[activeTab.ordinal].id else View.NO_ID
             card.setOnFocusChangeListener { _, focused ->
                 card.focused = focused
-                if (focused) updateSelected(game)
+                if (focused) items.getOrNull(holder.bindingAdapterPosition)?.let(::updateSelected)
             }
-            card.setOnClickListener { updateSelected(game); playCard(game) }
+            // Holders from the previous snapshot can still exist until the next layout.
+            // Resolve the current position/binding instead of launching the captured old card.
+            card.setOnClickListener {
+                items.getOrNull(holder.bindingAdapterPosition)?.let { current -> updateSelected(current); playCard(current) }
+            }
         }
         override fun onBindViewHolder(holder: CoverHolder, position: Int, payloads: MutableList<Any>) {
             when {

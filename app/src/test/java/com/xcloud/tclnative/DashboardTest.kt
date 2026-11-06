@@ -95,6 +95,7 @@ class DashboardTest {
         "Microsoft Flight Simulator", "Indiana Jones").mapIndexed { i, name -> GameTitle("game-$i", name, "product-$i", seriesOptimized = i % 2 == 0) }
 
     private fun layout(view: View, w: Int = 1280, h: Int = 948) {
+        (view as? GameDashboardView)?.awaitCatalog()
         view.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))
         view.layout(0, 0, w, h)
         shadowOf(Looper.getMainLooper()).idle()
@@ -106,6 +107,7 @@ class DashboardTest {
     private fun key(view: GameDashboardView, code: Int) {
         assertTrue(view.handleKey(KeyEvent(KeyEvent.ACTION_DOWN, code)))
         assertTrue(view.handleKey(KeyEvent(KeyEvent.ACTION_UP, code)))
+        view.awaitCatalog()
     }
     @Test fun shoulderTabsWrapAndFavoritesSurviveViewRecreationWithoutLeakingBetweenAccounts() {
         val controller = Robolectric.buildActivity(Activity::class.java).setup()

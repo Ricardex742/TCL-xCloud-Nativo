@@ -2,7 +2,7 @@
 
 ## Estado e objetivo
 
-O trabalho está exclusivamente na branch **`perf/decoder-display-latency-0.31`**, criada a partir de `ci/apk-android10-3cc2595`, commit **`777a7e3487c230fc515a8b33665a08815bd1eeb0`**. A branch original foi preservada. As modificações são locais; publicação do ambiente, push e execução remota do GitHub Actions não foram realizados nesta etapa.
+O trabalho está exclusivamente na branch **`perf/decoder-display-latency-0.31`**, criada a partir de `ci/apk-android10-3cc2595`, commit **`777a7e3487c230fc515a8b33665a08815bd1eeb0`**. A branch original foi preservada. Após o usuário perguntar pela branch, ela chegou a ser enviada ao GitHub e foi removida de lá a pedido dele. A cópia local foi mantida. A correção de responsividade abaixo permanece local, sem novo push ou publicação do ambiente.
 
 A base já continha o xCLOUD 0.30 com login Microsoft/Xbox, catálogo, histórico remoto, favoritos, atalhos, HUDs, toque nativo, áudio, WebRTC/H.264 e diagnósticos. Esses recursos vieram do trabalho anterior documentado em `docs`; não foram todos implementados novamente nesta conversa.
 
@@ -95,3 +95,15 @@ Foram analisados Nuvem-TV (`3d3efd9`) e OnlyTCL (`567cde1`), suas fábricas de d
 O caminho MediaCodec→Surface do OnlyTCL merece um experimento separado, especialmente em TVs limitadas, mas exige sincronização/recuperação e não equivale automaticamente a hardware tunneling. Seu motor do snapshot é H.264, e seu shim sintetiza algumas métricas, incluindo buffer zero; os números não são uma comparação direta com nosso diagnóstico. Não foram incorporados engines, código AGPL/MIT, scripts de sistema ou binários dos projetos externos, nem foi alterado o codec ativo.
 
 A análise completa, com fontes imutáveis, limites e condições para não comprometer dispositivos modestos, está em [codec-and-project-review-0.31.md](codec-and-project-review-0.31.md).
+
+## Quarta mudança: travamentos nas galerias em celular modesto
+
+O usuário informou ANRs e travamentos ao alternar Game Pass e Transmita seu jogo em um **LG K10, app 0.31.0**. A expansão anterior mantinha projeção e comparação de listas grandes na thread da interface, incluindo detecção de movimentos durante reordenações causadas pela chegada dos nomes.
+
+A preparação e a comparação do catálogo foram transferidas para um único processamento em segundo plano, com uma solicitação pendente substituída pela mais recente e descarte de resultados antigos. Mudanças de ordem passam a aplicar uma substituição com IDs estáveis; metadados sem reordenação usam notificações em intervalos limitados. Foram reduzidas as alocações de strings, compartilhado o índice nativo na pesquisa e ampliado para 400 ms o agrupamento de metadados. A seleção/foco seguem o produto após a ordenação, e a pausa/fechamento impedem resultados tardios.
+
+As listas oficiais completas e a verificação de lançamento foram mantidas. Foram acrescentados testes com as duas fixtures completas, incluindo uma tarefa de catálogo deliberadamente bloqueada para comprovar que eventos da interface continuam sendo atendidos e que trocas rápidas não aplicam uma busca antiga. O comportamento físico do LG K10 ainda precisa ser confirmado; não houve acesso a trace de ANR desse aparelho. Detalhes em [catalog-menu-responsiveness-0.31.md](catalog-menu-responsiveness-0.31.md).
+
+A suíte completa desta correção passou em **289 testes JVM/Robolectric**, sem falhas ou testes ignorados, além dos **8 testes Python de assinatura**, lint e empacotamento release sem assinatura. Na revisão final, cliques e foco passaram a consultar a posição atual do holder para impedir a ativação de cartões antigos enquanto uma nova lista é preparada.
+
+Depois dessa proteção final, **23 testes selecionados** de galerias/dashboard/imagens/atalhos foram reexecutados com sucesso, junto com lint e empacotamento release. Nenhum push, workflow remoto ou publicação do ambiente foi executado nesta correção.

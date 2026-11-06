@@ -43,8 +43,10 @@ data class OfficialGallery(
 /** A browse card may have no launch binding yet; a Store product never fabricates a titleId. */
 data class CatalogCard(val game: GameTitle? = null, val product: GalleryProduct? = null, val gamePass: Boolean = game?.gamePass == true) {
     init { require(game != null || product != null) }
-    val key get() = product?.let { "product:${it.productId}" } ?: "title:${game!!.titleId}"
+    // Comparisons and stable IDs must not allocate a new String for each access.
+    val key = product?.let { "product:${it.productId}" } ?: "title:${game!!.titleId}"
     val name get() = product?.name ?: game?.name ?: product!!.productId
+    val sortKey = name.lowercase(Locale.ROOT)
     val posterUrl get() = product?.posterUrl ?: game?.posterUrl
     val tileUrl get() = product?.tileUrl ?: game?.tileUrl
     val seriesOptimized get() = product?.seriesOptimized == true || game?.seriesOptimized == true
@@ -54,10 +56,12 @@ object OfficialGalleryCards {
     fun select(gallery: OfficialGallery, games: List<GameTitle>, bindings: Map<String, GameTitle>,
                gamePassProducts: Set<String>, query: String = ""): List<CatalogCard> {
         val native = games.filter { it.productId != null }.groupBy { GamePassCatalog.productKey(it.productId!!) }
-        return gallery.products.filter { it.cloudSupported != false }.map { product ->
+        return matching(gallery,native,bindings,gamePassProducts,query).sortedBy { it.sortKey }.toList()
+    }
+    internal fun matching(gallery: OfficialGallery, native: Map<String,List<GameTitle>>,
+                          bindings: Map<String,GameTitle>, gamePassProducts: Set<String>, query: String): Sequence<CatalogCard> =
+        gallery.products.asSequence().filter { it.cloudSupported != false }.map { product ->
             val game = bindings[product.productId] ?: native[product.productId]?.singleOrNull()
             CatalogCard(game, product, product.productId in gamePassProducts)
         }.filter { query.isBlank() || it.name.contains(query.trim(), true) }
-            .sortedBy { it.name.lowercase(Locale.ROOT) }
-    }
 }

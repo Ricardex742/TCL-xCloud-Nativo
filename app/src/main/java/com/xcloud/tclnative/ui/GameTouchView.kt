@@ -29,7 +29,29 @@ class GameTouchView(context: Context,
     private var model=VirtualGamepad(1,1)
     val preset: HudPreset get()=model.preset
     private var mode=TouchMode.OFF
+    var immediateNativeDispatch=true
     private val native=mutableMapOf<Int,NativePointer>()
+    private var nativeEvents=NativeEvents()
+    private class NativeEvents {
+        var down=0L;var up=0L;var moves=0L;var cancel=0L;var menu=0L;var outside=0L;var ignored=0L
+        var releases=0L;var generatedDown=0L;var generatedUp=0L
+        var immediate=0L;var refused=0L
+        var samples=0L;var totalAge=0.0;var maxAge=0L
+    }
+    /** Reset after the previous report was frozen, not when opening a menu or hiding the view. */
+    fun beginSession() { releaseInputs();nativeEvents=NativeEvents() }
+    fun nativeDiagnostics(): String {
+        val s=nativeEvents
+        val age=if(s.samples==0L) "n/d" else java.lang.String.format(java.util.Locale.US,"%.2f/%d ms",s.totalAge/s.samples,s.maxAge)
+        return "Toque Android → app: idade média/pico $age; down/up/move/cancel ${s.down}/${s.up}/${s.moves}/${s.cancel}; "+
+            "gerados D/U ${s.generatedDown}/${s.generatedUp}; solturas pelo app ${s.releases}; "+
+            "inícios fora do vídeo ${s.outside}; contatos ignorados ${s.ignored}; menu ${s.menu}; "+
+            "despacho imediato por gesto: pedidos ${s.immediate}, recusados ${s.refused}"
+    }
+    private fun emitNative(events: List<NativePointer>) {
+        nativeEvents.generatedDown+=events.count { it.type==1 };nativeEvents.generatedUp+=events.count { it.type==2 }
+        onPointers(events)
+    }
     private var menuPointer: Int?=null
     var isEditing=false
         private set
@@ -93,7 +115,7 @@ class GameTouchView(context: Context,
     fun releaseInputs() {
         removeCallbacks(lookReset)
         model.clear(); onGamepad(GamepadState())
-        if(native.isNotEmpty()) onPointers(native.values.map { it.copy(type=2,pressure=0f) })
+        if(native.isNotEmpty()) { nativeEvents.releases++;emitNative(native.values.map { it.copy(type=2,pressure=0f) }) }
         native.clear(); menuPointer=null; editPointer=null; editAction=null; invalidate()
     }
     override fun onSizeChanged(w: Int,h: Int,oldw: Int,oldh: Int) {
@@ -110,6 +132,25 @@ class GameTouchView(context: Context,
     }
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if(isEditing) return editTouch(event)
+        if(mode==TouchMode.NATIVE) {
+            val s=nativeEvents
+            when(event.actionMasked) {
+                MotionEvent.ACTION_DOWN,MotionEvent.ACTION_POINTER_DOWN -> s.down++
+                MotionEvent.ACTION_UP,MotionEvent.ACTION_POINTER_UP -> s.up++
+                MotionEvent.ACTION_MOVE -> s.moves++
+                MotionEvent.ACTION_CANCEL -> s.cancel++
+            }
+            val age=SystemClock.uptimeMillis()-event.eventTime
+            if(age>=0) { s.samples++;s.totalAge+=age;s.maxAge=maxOf(s.maxAge,age) }
+            if(event.actionMasked==MotionEvent.ACTION_DOWN) {
+                // A fresh Android gesture must not reuse a contact left by an interrupted one.
+                if(native.isNotEmpty()) releaseInputs()
+                parent?.requestDisallowInterceptTouchEvent(true)
+                if(immediateNativeDispatch) {
+                    if(runCatching { requestUnbufferedDispatch(event) }.isSuccess) s.immediate++ else s.refused++
+                }
+            }
+        }
         if(mode==TouchMode.VIRTUAL && event.actionMasked==MotionEvent.ACTION_DOWN) {
             parent?.requestDisallowInterceptTouchEvent(true)
             if(preset.shooter) requestUnbufferedDispatch(event)
@@ -118,6 +159,7 @@ class GameTouchView(context: Context,
         val index=event.actionIndex
         val id=event.getPointerId(index)
         if((action==MotionEvent.ACTION_DOWN || action==MotionEvent.ACTION_POINTER_DOWN) && menuPointer==null && menuHit(event.getX(index),event.getY(index))) {
+            if(mode==TouchMode.NATIVE) nativeEvents.menu++
             menuPointer=id; return true
         }
         if(action==MotionEvent.ACTION_CANCEL) { releaseInputs(); return true }
@@ -134,8 +176,11 @@ class GameTouchView(context: Context,
                 if(pointerId==menuPointer) return
                 val position=coordinates(event.getX(i),event.getY(i))
                 val old=native[pointerId]
-                if(type==1 && (native.size>=10 || position==null)) return
-                if(type!=1 && old==null) return
+                if(type==1 && (native.size>=10 || position==null)) {
+                    if(position==null) nativeEvents.outside++ else nativeEvents.ignored++
+                    return
+                }
+                if(type!=1 && old==null) { nativeEvents.ignored++;return }
                 val (x,y)=position ?: old?.let { it.x to it.y } ?: return
                 val pressure=event.getPressure(i).let { if(it.isFinite() && it>0) it.coerceAtMost(1f) else 1f }
                 val diameter=event.getTouchMajor(i).takeIf { it.isFinite() && it>0 } ?: 1f
@@ -150,7 +195,7 @@ class GameTouchView(context: Context,
                 MotionEvent.ACTION_UP,MotionEvent.ACTION_POINTER_UP -> pointer(index,2)
                 MotionEvent.ACTION_MOVE -> repeat(event.pointerCount) { pointer(it,3) }
             }
-            if(events.isNotEmpty()) onPointers(events)
+            if(events.isNotEmpty()) emitNative(events)
         } else {
             when(action) {
                 MotionEvent.ACTION_DOWN,MotionEvent.ACTION_POINTER_DOWN -> model.down(id,event.getX(index),event.getY(index),event.eventTime)

@@ -872,6 +872,8 @@ open class MainActivity : Activity() {
         val requestedCodec=codecOverride ?: settings.videoCodec
         reportTracker?.finish(android.os.SystemClock.elapsedRealtime(),SessionEnd.REPLACED,webrtcClient?.currentInputMetrics())
         joystickDispatch.beginSession()
+        touchView.beginSession()
+        touchView.immediateNativeDispatch=settings.videoMode.lowLatency
         postSessionDialog?.dismiss()
         val tracker=SessionReportTracker(gameName,"${Build.MANUFACTURER} ${Build.MODEL} • Android ${Build.VERSION.RELEASE}",
             "${settings.resolution.label} • ${settings.videoMode.label} • ${settings.videoCodec.label}",if(compatible) 30 else 60)
@@ -979,7 +981,9 @@ open class MainActivity : Activity() {
                     videoCodec=requestedCodec).also { allocatedRtc=it } }
                 webrtcClient = rtc
                 val appVersion=packageManager.getPackageInfo(packageName,0).versionName ?: "n/d"
-                tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}\n${joystickDispatch.diagnostics()}\n${signaling.profileDiagnostics()}\n${surfaceRenderer.diagnostics()}\n${playbackDisplay.diagnostics(window.decorView.display)}\n${rtc.audioDiagnostics()}\n${rtc.latencyDiagnostics()}\n${rtc.iceDiagnostics()}\n${rtc.codecDiagnostics()}"+
+                tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}"+
+                    (if(touchMode==TouchMode.NATIVE) "\n${touchView.nativeDiagnostics()}" else "")+
+                    "\n${joystickDispatch.diagnostics()}\n${signaling.profileDiagnostics()}\n${surfaceRenderer.diagnostics()}\n${playbackDisplay.diagnostics(window.decorView.display)}\n${rtc.audioDiagnostics()}\n${rtc.latencyDiagnostics()}\n${rtc.iceDiagnostics()}\n${rtc.codecDiagnostics()}"+
                     (codecRetryNote?.let { "\n$it" } ?: "") }
                 surfaceRenderer.displayDimensions()?.let(rtc::updateDisplayDimensions)
                 if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }

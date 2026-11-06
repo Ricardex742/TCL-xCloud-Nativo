@@ -71,7 +71,8 @@ class XCloudWebRtcClient(
     fun resumeAudio() { if(synchronized(audioLock) { audioTracks.isNotEmpty() }) audioSession.requestFocus() }
     fun inputDiagnostics(): String = (if(nativeTouch)
         "Toque nativo: ${if(touchEnabled) "sinalizado ativo" else "desativado para HUD"}; espaço de input: ${inputDimensions?.let { "${it.width}×${it.height}" } ?: "aguardando metadata"}; slot virtual 0: ${if(channelsReady.isCompleted) "registro enviado" else "aguardando canal"}"
-        else "Input Xbox: controle/HUD")+"\n"+controllerEventTiming.diagnostics()
+        else "Input Xbox: controle/HUD")+"\n"+controllerEventTiming.diagnostics()+
+        (if(nativeTouch) "\n${pendingTouch.diagnostics()}" else "")
     fun latencyDiagnostics(): String = (if (lowLatencyVideo) "Playout solicitado: 0–40 ms" else "Playout: adaptativo") +
         " | " + (if (lowLatencyVideo) decoderLatency.get() else "codec padrão") +
         if(nativeTouch) " | Toque: ${if(touchEnabled) "ativo" else "desativado"}, ${inputDimensions?.let { "${it.width}×${it.height}" } ?: "aguardando metadata"}, ${inputPump?.metrics?.pointerEventsSent ?: 0} eventos enviados" else ""

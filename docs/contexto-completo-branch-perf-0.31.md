@@ -4,7 +4,7 @@
 
 O trabalho está exclusivamente na branch **`perf/decoder-display-latency-0.31`**, criada a partir de `ci/apk-android10-3cc2595`, commit **`777a7e3487c230fc515a8b33665a08815bd1eeb0`**. A branch original foi preservada. Após o usuário perguntar pela branch, ela chegou a ser enviada ao GitHub e foi removida de lá a pedido dele. A cópia local foi mantida. Na solicitação mais recente, o usuário autorizou novamente a publicação desta branch no GitHub, incluindo a correção de responsividade e os codecs experimentais. A configuração publicada do ambiente não é alterada.
 
-Estado atual do código: **0.31.2-ice-recovery, versionCode 33**. As seções abaixo registram as entregas em ordem; a sétima substitui a política inicial de oferecer H.264 junto com os experimentos, e a oitava trata a coleta ICE vazia no início da conexão.
+Estado atual do código: **0.31.3-native-touch, versionCode 34**. As seções abaixo registram as entregas em ordem; a sétima substitui a política inicial de oferecer H.264 junto com os experimentos, a oitava trata a coleta ICE vazia e a nona revisa a entrega de toque nativo no Android 10.
 
 A base já continha o xCLOUD 0.30 com login Microsoft/Xbox, catálogo, histórico remoto, favoritos, atalhos, HUDs, toque nativo, áudio, WebRTC/H.264 e diagnósticos. Esses recursos vieram do trabalho anterior documentado em `docs`; não foram todos implementados novamente nesta conversa.
 
@@ -155,3 +155,15 @@ Na **0.31.2-ice-recovery / 33**, COMPLETE vazio continua esperando candidatos at
 Cada coleta fica isolada por PeerConnection/geração; remoções de candidatos e cancelamento são respeitados. O descarte para a segunda tentativa ocorre em Main, como o fechamento final e `onDestroy`. Relatório/erro recebem apenas estados, contagens e códigos numéricos STUN. Detalhes, limites e procedimento físico estão em [local-ice-recovery-0.31.2.md](local-ice-recovery-0.31.2.md).
 
 A validação completa passou em **346 testes JVM/Robolectric**, sem falhas, erros ou testes ignorados, mais **8 testes Python de assinatura**, lint sem problemas e build release sem assinatura. Foram conferidos pacote/versão 33/0.31.2. Os testes HTTP mantêm uma única sessão Xbox durante a recuperação local. A confirmação da recuperação no aparelho ainda está pendente; o envio segue somente na mesma branch experimental, com APK assinado pelo workflow existente.
+
+## Nona mudança: botões intermitentes com toque nativo no LG LM-K200
+
+O usuário enviou uma sessão de 26min14s no **LG/LGE LM-K200, Android 10/Qualcomm, Wi-Fi 2,4 GHz, app 0.31.1**, H.264 padrão/720p/Menor atraso e toque nativo. Informou botões sem resposta intermitente e confirmou ocorrência também com um único dedo. O decode médio foi 10,37 ms, buffer 4,62 ms, RTT 45,82 ms e FPS decodificados 57,39, com três segundos de pausas observadas. Os 55.704 ponteiros aceitos incluíam movimentos; o índice 90 e os contadores de espera/gamepad não provavam reconhecimento de cada botão.
+
+A revisão encontrou ausência do pedido de despacho imediato por gesto no modo nativo, embora o HUD virtual de shooters já usasse essa API pública compatível com Android 10. Na **0.31.3-native-touch / 34**, o nativo faz esse pedido no modo Menor atraso, protege a captura do gesto contra interceptação pelo pai e libera contatos pendentes antes de iniciar um gesto novo. Adaptativo/Compatibilidade preservam o agrupamento padrão do Android. A coalescência de movimentos passa a preservar a posição mais recente por ID, mantendo down/up separados e a fila limitada.
+
+O relatório ganha agregados de ações/idade dos eventos Android, contatos gerados, cancelamentos/solturas, inícios fora do vídeo, menu e pedidos de despacho. O buffer distingue recebidos de aceitos pelo canal, inclui pendências/pico, coalescência e ressincronizações; aceitação continua sem significar confirmação do jogo. A evidência da UI sobrevive ao menu e é limpa somente na próxima sessão após congelar a anterior.
+
+A análise e o procedimento de teste estão em [native-touch-lg-k200-0.31.3.md](native-touch-lg-k200-0.31.3.md). A escala do servidor 1920×1080 continua independente da resolução do vídeo; pacote, assinatura, codecs e correção ICE anterior são preservados. A causa física completa do toque intermitente ainda não foi comprovada.
+
+A suíte completa passou em **354 testes JVM/Robolectric**, sem falhas, erros ou testes ignorados, mais **8 testes Python de assinatura**. Depois do ajuste final de política de despacho/texto, foram reexecutados **67 testes selecionados** de toque, input, compatibilidade, início de sessão e relatório, todos aprovados. Lint sem problemas e build release sem assinatura passaram nas duas validações; pacote/versão 34/0.31.3 foram conferidos. O envio segue na mesma branch experimental e o workflow existente gera o APK com o certificado fixo, sem alteração da configuração publicada do ambiente.

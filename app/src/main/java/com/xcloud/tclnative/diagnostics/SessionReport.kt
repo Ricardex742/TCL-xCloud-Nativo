@@ -57,7 +57,7 @@ data class SessionReport(
         append("Input: $inputWaits esperas | $inputCoalesced transições consolidadas\n")
         append("Recuperações tentadas: ${recovery.entries.joinToString { "${it.key}: ${it.value}" }.ifBlank { "nenhuma" }}\n\n")
         append(findings().joinToString("\n"))
-        append("\n\nO agendador de input mede somente a thread de envio. Evento Android → app mede a idade do evento ao chegar à Activity; não inclui todo o trajeto Bluetooth/USB, a resposta do jogo ou a tela. Ping e decode baixos não demonstram baixa latência total do controle.")
+        append("\n\nO agendador de input mede somente a thread de envio. A idade do evento Android é medida na Activity para joystick e no View para toque; não inclui todo o trajeto Bluetooth/USB, a detecção física do toque, a resposta do jogo ou a tela. Ping e decode baixos não demonstram baixa latência total dos comandos.")
         append("\n\nValores das amostras disponíveis. FPS do decoder não é FPS do jogo nem da tela. Buffer observado, alvo WebRTC e mínimo de rede são medidas distintas; o pedido de playout não garante o valor observado. Decode inclui o pipeline do codec, não só processamento. Não some essas medidas para estimar input-to-photon. Contadores WebRTC podem não incluir todo o tráfego da conexão. O índice é uma estimativa local, não um teste de velocidade. Pausas são observadas pelo watchdog, não por captura de cada quadro.")
     }
     companion object {

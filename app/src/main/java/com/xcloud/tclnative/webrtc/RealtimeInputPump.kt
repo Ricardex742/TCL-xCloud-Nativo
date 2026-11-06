@@ -122,6 +122,7 @@ class RealtimeInputPump(
                             if (running.get()) onFailure()
                             break
                         }
+                        if(pointers.isNotEmpty()) touch.accepted(pointers)
                         metrics = metrics.copy(sentState = states[0] ?: GamepadState(),pointerEventsSent=metrics.pointerEventsSent+pointers.size,
                             sentBytes=metrics.sentBytes+(packet?.size ?: 0))
                     }

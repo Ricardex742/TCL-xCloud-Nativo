@@ -46,6 +46,9 @@ class XCloudWebRtcClient(
     private val statisticsLock = Any()
     private var statsJob: Job? = null
     private val decoderRecovery = DecoderRecoveryController()
+    private val controllerEventTiming=ControllerEventTiming()
+    fun recordControllerEvent(eventUptimeMs: Long,arrivalUptimeMs: Long,historySize: Int,name: String?) =
+        controllerEventTiming.record(eventUptimeMs,arrivalUptimeMs,historySize,name)
     private val decoderLatency = java.util.concurrent.atomic.AtomicReference("Codec LL: aguardando vídeo")
     private val effectiveCodec=if(compatibility) VideoCodecMode.H264 else videoCodec
     private val codecStatus=java.util.concurrent.atomic.AtomicReference("Codec: aguardando capacidades")
@@ -63,9 +66,9 @@ class XCloudWebRtcClient(
     fun currentInputMetrics(): InputMetrics = inputPump?.metrics ?: InputMetrics()
     fun audioDiagnostics()=audioSession.diagnostics()
     fun resumeAudio() { if(synchronized(audioLock) { audioTracks.isNotEmpty() }) audioSession.requestFocus() }
-    fun inputDiagnostics(): String = if(nativeTouch)
+    fun inputDiagnostics(): String = (if(nativeTouch)
         "Toque nativo: ${if(touchEnabled) "sinalizado ativo" else "desativado para HUD"}; espaço de input: ${inputDimensions?.let { "${it.width}×${it.height}" } ?: "aguardando metadata"}; slot virtual 0: ${if(channelsReady.isCompleted) "registro enviado" else "aguardando canal"}"
-        else "Input Xbox: controle/HUD"
+        else "Input Xbox: controle/HUD")+"\n"+controllerEventTiming.diagnostics()
     fun latencyDiagnostics(): String = (if (lowLatencyVideo) "Playout solicitado: 0–40 ms" else "Playout: adaptativo") +
         " | " + (if (lowLatencyVideo) decoderLatency.get() else "codec padrão") +
         if(nativeTouch) " | Toque: ${if(touchEnabled) "ativo" else "desativado"}, ${inputDimensions?.let { "${it.width}×${it.height}" } ?: "aguardando metadata"}, ${inputPump?.metrics?.pointerEventsSent ?: 0} eventos enviados" else ""

@@ -77,6 +77,8 @@ open class MainActivity : Activity() {
 
     private lateinit var rootLayout: FrameLayout
     private val playbackDisplay by lazy { com.xcloud.tclnative.renderer.PlaybackDisplayPreference(window) }
+    private val joystickDispatch by lazy { com.xcloud.tclnative.webrtc.JoystickDispatchPreference(window.decorView) }
+    private var immediateJoystickForSession=false
     private lateinit var surfaceRenderer: AiPqSurfaceRenderer
     private lateinit var hudTextView: TextView
     private lateinit var statsView: TextView
@@ -779,6 +781,7 @@ open class MainActivity : Activity() {
     }
 
     private fun restoreDashboard() {
+        joystickDispatch.request(false)
         playbackDisplay.restore()
         catalogWork.resume()
         if(dashboard==null) {
@@ -863,6 +866,8 @@ open class MainActivity : Activity() {
         val gameName = game.name
         activeGame = game
         val settings = playbackSettings
+        joystickDispatch.request(false)
+        immediateJoystickForSession=settings.videoMode.lowLatency
         val compatible=settings.videoMode==com.xcloud.tclnative.settings.VideoMode.COMPATIBILITY
         val requestedCodec=codecOverride ?: settings.videoCodec
         reportTracker?.finish(android.os.SystemClock.elapsedRealtime(),SessionEnd.REPLACED,webrtcClient?.currentInputMetrics())
@@ -911,6 +916,7 @@ open class MainActivity : Activity() {
                     tracker.begin(android.os.SystemClock.elapsedRealtime(),NetworkSnapshot.read(this@MainActivity))
                     firstFrame.complete(Unit)
                     finishLoading()
+                    updateJoystickDispatch()
                     currentTouchMode=touchMode
                     touchView.configure(touchMode,game,hudStore.read(titleId))
                     hudTextView.visibility = View.GONE
@@ -970,7 +976,7 @@ open class MainActivity : Activity() {
                     videoCodec=requestedCodec).also { allocatedRtc=it } }
                 webrtcClient = rtc
                 val appVersion=packageManager.getPackageInfo(packageName,0).versionName ?: "n/d"
-                tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}\n${signaling.profileDiagnostics()}\n${rtc.audioDiagnostics()}\n${rtc.latencyDiagnostics()}\n${rtc.codecDiagnostics()}"+
+                tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}\n${joystickDispatch.diagnostics()}\n${signaling.profileDiagnostics()}\n${surfaceRenderer.diagnostics()}\n${rtc.audioDiagnostics()}\n${rtc.latencyDiagnostics()}\n${rtc.codecDiagnostics()}"+
                     (codecRetryNote?.let { "\n$it" } ?: "") }
                 surfaceRenderer.displayDimensions()?.let(rtc::updateDisplayDimensions)
                 if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
@@ -1169,6 +1175,8 @@ open class MainActivity : Activity() {
     private fun gameplayInputEnabled() = controlPanel.visibility == View.GONE &&
         transitionPanel.visibility!=View.VISIBLE && queuePanel.visibility != View.VISIBLE && videoRecoveryDialog?.isShowing != true && webrtcClient != null && !touchView.isEditing && hasWindowFocus()
 
+    private fun updateJoystickDispatch() { joystickDispatch.request(activityVisible && immediateJoystickForSession && gameplayInputEnabled()) }
+
     private fun publishGamepad(slot: Int) { webrtcClient?.updateGamepad(controllers.combined(slot),slot) }
     private fun controllerSlot(deviceId: Int,source: Int): Int? =
         if(source and InputDevice.SOURCE_GAMEPAD==InputDevice.SOURCE_GAMEPAD || source and InputDevice.SOURCE_JOYSTICK==InputDevice.SOURCE_JOYSTICK)
@@ -1223,9 +1231,12 @@ open class MainActivity : Activity() {
         if (gameplayInputEnabled() &&
             event.source and android.view.InputDevice.SOURCE_JOYSTICK != 0 && event.action == MotionEvent.ACTION_MOVE) {
             val slot=controllerSlot(event.deviceId,event.source) ?: return true
+            val receivedAt=android.os.SystemClock.uptimeMillis()
+            val device=event.device
+            webrtcClient?.recordControllerEvent(event.eventTime,receivedAt,event.historySize,device?.name)
             val previous=controllers.physical(slot)
             fun range(id: Int): com.xcloud.tclnative.webrtc.ControllerAxisRange? =
-                event.device?.getMotionRange(id, event.source)?.let {
+                device?.getMotionRange(id, event.source)?.let {
                     com.xcloud.tclnative.webrtc.ControllerAxisRange(it.min, it.max, it.flat)
                 }
             fun stick(id: Int, hardwareDeadzone: Boolean = false) = com.xcloud.tclnative.webrtc.ControllerAxes.stick(
@@ -1289,6 +1300,7 @@ open class MainActivity : Activity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
+        updateJoystickDispatch()
         if (!hasFocus) resetController()
         else {
             rumble.enabled=playbackSettings.rumble && webrtcClient!=null
@@ -1331,14 +1343,16 @@ open class MainActivity : Activity() {
 
     override fun onStart() {
         super.onStart(); activityVisible=true; reportTracker?.setVisible(true); webrtcClient?.resumeAudio()
+        updateJoystickDispatch()
         if(activeGame==null && dashboard!=null && controlPanel.visibility==View.VISIBLE && transitionPanel.visibility!=View.VISIBLE) {
             val signaling=currentSignaling; val library=gameLibrary
             if(signaling!=null && library!=null) refreshCloudHistory(dashboard!!,signaling,library)
         }
     }
-    override fun onStop() { activityVisible=false; reportTracker?.setVisible(false); super.onStop() }
+    override fun onStop() { joystickDispatch.request(false);activityVisible=false; reportTracker?.setVisible(false); super.onStop() }
 
     override fun onDestroy() {
+        joystickDispatch.request(false)
         playbackDisplay.restore()
         reportTracker?.finish(android.os.SystemClock.elapsedRealtime(),SessionEnd.APP_CLOSED,webrtcClient?.currentInputMetrics())
         postSessionDialog?.dismiss()

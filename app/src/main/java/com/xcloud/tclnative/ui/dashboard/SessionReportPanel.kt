@@ -38,7 +38,8 @@ object SessionReportPanel {
         hero.addView(intro,LinearLayout.LayoutParams(0,-2,1f)); dialog.body.addView(hero)
         dialog.body.addView(dialog.text("MÉDIA / PICO • ${report.samples} amostras • ${SessionReport.duration(report.observedMs)} observados • ↑/↓ ou deslize para detalhes",17,true,DashboardTheme.muted),
             LinearLayout.LayoutParams(-1,-2).apply { topMargin=dialog.px(14); bottomMargin=dialog.px(10) })
-        val keys=listOf(ReportMetric.RTT,ReportMetric.LOSS,ReportMetric.FPS,ReportMetric.BITRATE,ReportMetric.JITTER,ReportMetric.DECODE)
+        val keys=listOf(ReportMetric.RTT,ReportMetric.LOSS,ReportMetric.FPS,ReportMetric.BITRATE,ReportMetric.JITTER,ReportMetric.DECODE,
+            ReportMetric.BUFFER,ReportMetric.BUFFER_TARGET,ReportMetric.INPUT_DELAY)
         keys.chunked(3).forEach { row ->
             val line=LinearLayout(context).apply { orientation=LinearLayout.HORIZONTAL }
             row.forEachIndexed { index,key ->

@@ -6,6 +6,15 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class SessionReportTest {
+    @Test fun lowRttAndFastDecodeDoNotHideADeepVideoBufferOrMislabelSchedulerTiming() {
+        val t=tracker();t.begin(0,"Ethernet")
+        t.add(1000,sample(rtt=12.0).copy(decodeMs=3.0,jitterBufferMs=60.0,jitterBufferTargetMs=40.0),InputMetrics())
+        val report=finish(t,1000)
+        assertTrue(report.findings().any { it.contains("mesmo com RTT e decode baixos") })
+        assertTrue(report.text().contains("Agendador de input"))
+        assertTrue(report.text().contains("não inclui todo o trajeto Bluetooth/USB"))
+        assertFalse(report.findings().any { it.contains("RTT elevado") || it.contains("Tempo de decodificação acima") })
+    }
     @Test fun reportCapturesFinalTouchFallbackAndInputDimensionsAndFreezesThem() {
         val t=tracker(); t.begin(0,"Wi-Fi")
         var details="xCLOUD 0.24 • Toque nativo: ativo; espaço de input: 1280×720"

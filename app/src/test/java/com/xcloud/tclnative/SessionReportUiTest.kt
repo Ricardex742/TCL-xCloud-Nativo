@@ -62,6 +62,8 @@ class SessionReportUiTest {
         val store=PlaybackSettingsStore(a); val original=PlaybackSettings(resolution=StreamResolution.HD_720,saturation=125)
         store.save(original)
         var d=SessionReportPanel.show(a,r)
+        assertTrue(all(d.body).filterIsInstance<TextView>().any { it.text.toString()==ReportMetric.BUFFER.label.uppercase() })
+        assertTrue(all(d.body).filterIsInstance<TextView>().any { it.text.toString()==ReportMetric.BUFFER_TARGET.label.uppercase() })
         assertTrue(all(d.body).filterIsInstance<TextView>().any { it.text.contains("desativado para HUD") })
         label(d.panel,"COPIAR").performClick()
         assertEquals(r.text(),(a.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).primaryClip!!.getItemAt(0).text.toString())
@@ -70,6 +72,18 @@ class SessionReportUiTest {
         assertEquals(original.copy(sessionReport=false),PlaybackSettingsStore(a).read())
         assertEquals(0,StatisticsVisibility().mode)
         c.pause().stop().destroy()
+    }
+    @Test fun controllerSurfaceAndCodecDetailsSurviveTheOldLengthLimitAndStayBounded() {
+        val c=Robolectric.buildActivity(Activity::class.java).setup()
+        try {
+            val store=SessionReportStore(c.get())
+            val details="Evento Android e saída da TV: "+"dado ".repeat(300)+" | Codec recebido HEVC Main"
+            val report=demo().copy(inputDetails=details)
+            store.save(report)
+            assertEquals(details,store.read()!!.inputDetails)
+            store.save(report.copy(inputDetails="x".repeat(6000)))
+            assertEquals(SessionReport.MAX_INPUT_DETAILS,store.read()!!.inputDetails!!.length)
+        } finally { c.pause().stop().destroy() }
     }
     @Test fun settingsOfferExplicitAutomaticReportChoiceAndLastReportAction() {
         val c=Robolectric.buildActivity(Activity::class.java).setup(); val a=c.get(); val store=PlaybackSettingsStore(a)
@@ -104,7 +118,7 @@ class SessionReportUiTest {
         assertTrue(d.panel.measuredHeight<=648)
         assertTrue(label(d.panel,"CONCLUIR").hasFocus())
         val cards=all(d.body).filterIsInstance<android.widget.LinearLayout>().filter { it.isFocusable }
-        assertEquals(6,cards.size)
+        assertEquals(9,cards.size)
         cards.forEach { assertTrue(it.requestFocus()); assertFalse(it.defaultFocusHighlightEnabled) }
         val scroll=all(d.panel).filterIsInstance<ScrollView>().single()
         val last=all(d.body).filterIsInstance<TextView>().last { it.isFocusable }

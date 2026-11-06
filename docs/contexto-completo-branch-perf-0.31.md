@@ -121,3 +121,13 @@ O diagnóstico distingue solicitado, anunciado, resposta SDP e codec RTP recebid
 A validação completa passou em **308 testes JVM/Robolectric**, sem falhas, erros ou testes ignorados, mais **8 testes Python de assinatura**. Lint sem problemas e empacotamento release sem assinatura concluído. A captura do menu dos codecs foi inspecionada. O workflow existente continua responsável pela geração do APK debug com o certificado fixo.
 
 A branch desta entrega no GitHub é [perf/decoder-display-latency-0.31](https://github.com/Ricardex742/TCL-xCloud-Nativo/tree/perf%2Fdecoder-display-latency-0.31). A publicação foi solicitada expressamente pelo usuário e inclui os commits anteriores de galerias, diagnóstico, nome da aba e responsividade. O envio aciona o workflow de APK já configurado para essa branch; o estado remoto da compilação pode ser acompanhado em [GitHub Actions](https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml). A branch original e a configuração publicada do ambiente permanecem preservadas.
+
+## Sexta mudança: resposta do controle na TCL P755
+
+Após a publicação dos codecs, o usuário relatou atraso de câmera em Gears of War: E-Day na TCL P755, com ping e decode baixos. Confirmou que a sessão problemática era no **app 0.29.0, Menor atraso, H.264 padrão e receptor USB**, sem guardar o diagnóstico. O episódio antecede os codecs experimentais; não foi atribuído ao HEVC/M137 nem a uma causa única do aparelho/jogo/controle.
+
+A análise confirmou que a câmera já desperta a thread de envio e usa o estado mais recente, mas a entrega anterior dos eventos pelo Android podia aguardar lotes da interface. Foi preparado o pedido público de despacho imediato do joystick no modo Menor atraso em Android 11+, limitado a gameplay visível/focado e restaurado nos menus/background. O mapeamento dos eixos e o contrato Xbox foram preservados.
+
+O relatório passa a registrar a idade dos eventos analógicos ao chegar à Activity e as informações da saída Android, distinguindo isso do atraso do agendador. Buffer observado/alvo ganham destaque no painel. Os detalhes persistidos são limitados a 4.096 caracteres para conservar informações de controle, tela e codec. Não são medidas de Bluetooth completo nem de input-to-photon. Evidências e comparação física necessária em [controller-latency-p755-0.31.md](controller-latency-p755-0.31.md).
+
+A validação desta etapa passou em **316 testes JVM/Robolectric**, sem falhas, erros ou testes ignorados, além de lint sem problemas e empacotamento release sem assinatura. A captura do relatório com nove cartões foi inspecionada. O ajuste segue na mesma branch publicada; não altera a configuração do ambiente, a branch original ou a assinatura do aplicativo.

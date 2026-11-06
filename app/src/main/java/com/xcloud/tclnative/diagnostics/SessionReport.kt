@@ -7,7 +7,7 @@ import kotlin.math.roundToInt
 enum class ReportMetric(val label: String,val unit: String) {
     RTT("Latência RTT","ms"),LOSS("Perda de pacotes","%"),JITTER("Jitter da rede","ms"),
     FPS("FPS decodificados","FPS"),BITRATE("Bitrate de vídeo","Mbps"),DECODE("Decodificação","ms/quadro"),
-    BUFFER("Buffer de vídeo observado","ms"),INPUT_DELAY("Atraso local do input","ms"),
+    BUFFER("Buffer de vídeo observado","ms"),INPUT_DELAY("Agendador de input","ms"),
     BUFFER_TARGET("Alvo do buffer WebRTC","ms"),BUFFER_MINIMUM("Mínimo de rede do buffer WebRTC","ms")
 }
 data class MetricSummary(val average: Double,val minimum: Double,val peak: Double,val samples: Long)
@@ -28,6 +28,8 @@ data class SessionReport(
             add("Perdas ou jitter elevados. Compare Ethernet e Wi-Fi próximo ao roteador; o serviço também pode variar.")
         if((avg(ReportMetric.RTT) ?: 0.0)>85) add("RTT elevado. Compare a conexão e a região do serviço. RTT não mede a latência completa do comando até a imagem.")
         val frameBudget=1000.0/presentationFps.coerceAtLeast(1)
+        if((avg(ReportMetric.BUFFER) ?: 0.0)>2*frameBudget)
+            add("O buffer observado supera dois intervalos da apresentação solicitada. Ele pode contribuir para a sensação de atraso mesmo com RTT e decode baixos. Compare Menor atraso e Adaptativo; o alvo solicitado não é um teto garantido.")
         if((avg(ReportMetric.DECODE) ?: 0.0)>frameBudget)
             add("Tempo de decodificação acima do intervalo de ${number(frameBudget)} ms a $presentationFps FPS. O pipeline pode sobrepor quadros; isso sozinho não prova sobrecarga. Compare 720p e filtros desativados no aparelho.")
         if(stalledWithDataMs>0) add("Houve vídeo recebido sem progresso da imagem. Compare decoder, resolução, filtros e perdas de pacotes.")
@@ -55,9 +57,11 @@ data class SessionReport(
         append("Input: $inputWaits esperas | $inputCoalesced transições consolidadas\n")
         append("Recuperações tentadas: ${recovery.entries.joinToString { "${it.key}: ${it.value}" }.ifBlank { "nenhuma" }}\n\n")
         append(findings().joinToString("\n"))
+        append("\n\nO agendador de input mede somente a thread de envio. Evento Android → app mede a idade do evento ao chegar à Activity; não inclui todo o trajeto Bluetooth/USB, a resposta do jogo ou a tela. Ping e decode baixos não demonstram baixa latência total do controle.")
         append("\n\nValores das amostras disponíveis. FPS do decoder não é FPS do jogo nem da tela. Buffer observado, alvo WebRTC e mínimo de rede são medidas distintas; o pedido de playout não garante o valor observado. Decode inclui o pipeline do codec, não só processamento. Não some essas medidas para estimar input-to-photon. Contadores WebRTC podem não incluir todo o tráfego da conexão. O índice é uma estimativa local, não um teste de velocidade. Pausas são observadas pelo watchdog, não por captura de cada quadro.")
     }
     companion object {
+        const val MAX_INPUT_DETAILS=4096
         fun number(n: Double?)=n?.takeIf { it.isFinite() }?.let { String.format(Locale.US,"%.2f",it) } ?: "n/d"
         fun duration(ms: Long): String { val s=ms.coerceAtLeast(0)/1000; return "%d:%02d:%02d".format(Locale.US,s/3600,(s/60)%60,s%60) }
         fun bytes(value: Long?): String {
@@ -162,7 +166,7 @@ class SessionReportTracker(private val game: String,private val device: String,p
         report=SessionReport(game.take(256),device.take(180),network,profile.take(180),fpsTarget,(now-began).coerceAtLeast(0),
             (observed*1000).toLong(),samples,wallClock(),end,metrics,resolution,codec,decoder,efficient,video.value(),down.value(),up.value(),
             input.sentBytes,dropped.takeIf { droppedKnown },input.pointerEventsSent,input.backpressureSkips,input.coalescedEdges,
-            stallMs,stallEvents,noDataMs,withDataMs,recovery.toMap(),score,inputDetails?.invoke()?.take(1024))
+            stallMs,stallEvents,noDataMs,withDataMs,recovery.toMap(),score,inputDetails?.invoke()?.take(SessionReport.MAX_INPUT_DETAILS))
         return report
     }
     @Synchronized fun takeReport(): SessionReport? { val ready=report ?: return null; if(delivered) return null; delivered=true; return ready }

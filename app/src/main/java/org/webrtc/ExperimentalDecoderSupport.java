@@ -25,6 +25,15 @@ final class ExperimentalDecoderSupport {
       try { return Build.VERSION.SDK_INT >= 30 && caps.isFeatureSupported(MediaCodecInfo.CodecCapabilities.FEATURE_LowLatency); }
       catch (RuntimeException error) { return false; }
     }
+    Integer hevcLevelId() {
+      Integer highest = null;
+      for (MediaCodecInfo.CodecProfileLevel entry : caps.profileLevels) {
+        if (entry.profile != MediaCodecInfo.CodecProfileLevel.HEVCProfileMain) continue;
+        Integer level = hevcLevelIdForAndroid(entry.level);
+        if (level != null && (highest == null || level > highest)) highest = level;
+      }
+      return highest;
+    }
   }
 
   static Selection find(String mode, int width, int height, int fps) {
@@ -57,8 +66,19 @@ final class ExperimentalDecoderSupport {
       Integer color = MediaCodecUtils.selectColorFormat(MediaCodecUtils.DECODER_COLOR_FORMATS, caps);
       if (color == null) return null;
       Selection selection = new Selection(info, caps, type, color, fps);
+      if (type == VideoCodecMimeType.H265 && selection.hevcLevelId() == null) return null;
       return selection.supports(width, height) ? selection : null;
     } catch (RuntimeException error) { return null; }
+  }
+
+  /** Android's paired main/high-tier bit constants map to the RFC 7798 decimal level-id. */
+  static Integer hevcLevelIdForAndroid(int level) {
+    int[] ids = {30,60,63,90,93,120,123,150,153,156,180,183,186};
+    for (int index = 0; index < ids.length; index++) {
+      int mainTier = 1 << (2 * index);
+      if (level == mainTier || level == (mainTier << 1)) return ids[index];
+    }
+    return null; // An unknown vendor level must not become an invented SDP capability.
   }
 
   private static boolean isHardware(MediaCodecInfo info) {

@@ -72,4 +72,21 @@ class ExperimentalHardwareCodecTest {
             MediaCodecInfo.CodecProfileLevel.AVCLevel42))
         assertTrue(factory("H264_HIGH").supportedCodecs.any { it.params["profile-level-id"]=="640c1f" })
     }
+    @Test fun hevcOfferLevelComesFromTheHardwareMainProfileInsteadOfAnEmptyDefault() {
+        for((androidLevel,sdpLevel) in listOf(
+            MediaCodecInfo.CodecProfileLevel.HEVCMainTierLevel41 to "123",
+            MediaCodecInfo.CodecProfileLevel.HEVCMainTierLevel51 to "153",
+            MediaCodecInfo.CodecProfileLevel.HEVCHighTierLevel52 to "156")) {
+            inventory(info(level=androidLevel))
+            val hevc=factory("HEVC").supportedCodecs.single { it.name=="H265" }
+            assertEquals("1",hevc.params["profile-id"])
+            assertEquals("0",hevc.params["tier-flag"])
+            assertEquals(sdpLevel,hevc.params["level-id"])
+        }
+        assertNull(ExperimentalDecoderSupport.hevcLevelIdForAndroid(0))
+        assertNull(ExperimentalDecoderSupport.hevcLevelIdForAndroid(3))
+        assertNull(ExperimentalDecoderSupport.hevcLevelIdForAndroid(Int.MAX_VALUE))
+        inventory(info(profile=MediaCodecInfo.CodecProfileLevel.HEVCProfileMain10))
+        assertFalse(factory("HEVC").supportedCodecs.any { it.name=="H265" })
+    }
 }

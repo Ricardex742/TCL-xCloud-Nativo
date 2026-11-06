@@ -42,6 +42,7 @@ class SignalingTest {
     private var rejectIce = false
     private var rejectCatalog = false
     private var rejectTransport = false
+    private var rejectSdp = false
     private val offer = "v=0\r\nm=video 9 UDP/TLS/RTP/SAVPF 96\r\na=rtpmap:96 H264/90000\r\n"
     private val peer = object : StreamingPeer {
         override suspend fun createOfferSdp(): Pair<String, List<IceCandidate>> {
@@ -59,7 +60,7 @@ class SignalingTest {
         estimateBody = """{"estimatedTotalWaitTimeInSeconds":300}"""; rejectEstimate = false
         stallEstimate = false; failAfterFirstEstimate = false; estimateCalls = 0; estimateEntered = CompletableDeferred()
         now = 0; queuedStates = 0; connectSent = false; provisioned = false; rejectConnect = false; failedState = false
-        requests.clear(); events.clear(); rejectIce = false; rejectCatalog = false; rejectTransport = false
+        requests.clear(); events.clear(); rejectIce = false; rejectCatalog = false; rejectTransport = false; rejectSdp = false
         server = MockWebServer()
         server.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
@@ -88,7 +89,7 @@ class SignalingTest {
                         if (rejectConnect) response("""{"code":"Unauthorized","token":"must-not-leak"}""", 401)
                         else { connectSent = true; response("", 204) }
                     }
-                    "POST" to "/session/sdp" -> if (provisioned) response("{}") else
+                    "POST" to "/session/sdp" -> if(rejectSdp) response("{}",400) else if (provisioned) response("{}") else
                         response("""{"code":"SessionNotConnectable"}""", 400)
                     "GET" to "/session/sdp" -> response(JSONObject().put("exchangeResponse", JSONObject().put("sdp", "v=0\r\nanswer").toString()).toString())
                     "POST" to "/session/ice" -> {
@@ -137,6 +138,34 @@ class SignalingTest {
         assertTrue(result.exceptionOrNull()!!.message!!.contains("BadIce"))
         assertFalse(result.exceptionOrNull()!!.message!!.contains("must-not-leak"))
         assertFalse(events.contains("ready")); assertEquals(1, requests.count { it.method == "DELETE" })
+    }
+    @Test fun offerPostIsConfirmedOnlyAfterHttpSuccessAndBeforeReadingTheAnswer() = runBlocking {
+        var posted=false
+        val audited=object: StreamingPeer by peer {
+            override fun onOfferPosted() {
+                assertTrue(requests.any { it.method=="POST" && it.path=="/session/sdp" })
+                assertFalse(requests.any { it.method=="GET" && it.path=="/session/sdp" })
+                posted=true
+            }
+            override suspend fun setRemoteAnswer(answerSdp: String) {
+                assertTrue(posted)
+                peer.setRemoteAnswer(answerSdp)
+            }
+        }
+        val client=signaling()
+        assertTrue(client.startAndConnectWebRtcSession("real-id",audited) {}.isSuccess)
+        assertTrue(posted)
+        client.stop()
+    }
+    @Test fun aRejectedSdpPostDoesNotReportAnOfferAsSentOrApplyAnAnswer() = runBlocking {
+        rejectSdp=true
+        var posted=false
+        val audited=object: StreamingPeer by peer { override fun onOfferPosted() { posted=true } }
+        val result=signaling().startAndConnectWebRtcSession("real-id",audited) {}
+        assertTrue(result.isFailure)
+        assertFalse(posted)
+        assertFalse(events.contains("answer"))
+        assertEquals(1,requests.count { it.method=="DELETE" })
     }
     @Test fun selectedResolutionReachesBothPlaySettingsAndDeviceHeadersAcrossSessions() = runBlocking {
         val client=signaling()

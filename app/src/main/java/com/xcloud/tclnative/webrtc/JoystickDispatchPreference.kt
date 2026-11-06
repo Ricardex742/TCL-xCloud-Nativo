@@ -8,18 +8,21 @@ import android.view.View
 class JoystickDispatchPreference(private val root: View) {
     private var requested=false
     private var rejected=false
+    private var requestedDuringSession=false
+    fun beginSession() { request(false);requestedDuringSession=false;rejected=false }
     fun request(enabled: Boolean) {
         if(Build.VERSION.SDK_INT<30) return
         val immediate=enabled && root.isAttachedToWindow
         try {
             root.requestUnbufferedDispatch(if(immediate) InputDevice.SOURCE_CLASS_JOYSTICK else InputDevice.SOURCE_CLASS_NONE)
             requested=immediate;rejected=false
+            requestedDuringSession=requestedDuringSession || immediate
         } catch(_: RuntimeException) { requested=false;rejected=true }
     }
-    fun diagnostics(): String = "Joystick Android: "+when {
+    fun diagnostics(): String = "Joystick Android: "+(when {
         Build.VERSION.SDK_INT<30 -> "despacho imediato indisponível nesta API"
         rejected -> "pedido de despacho imediato recusado"
         requested -> "despacho imediato solicitado (sem espera pelo vsync da interface)"
         else -> "despacho padrão"
-    }
+    })+if(Build.VERSION.SDK_INT>=30) "; pedido durante a sessão: ${if(requestedDuringSession) "sim" else "não"}" else ""
 }

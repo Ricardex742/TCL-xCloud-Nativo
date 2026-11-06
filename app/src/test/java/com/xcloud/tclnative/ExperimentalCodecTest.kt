@@ -16,15 +16,16 @@ class ExperimentalCodecTest {
     private val all=listOf(baseline,high,hevc,codec("VP9",102),codec("rtx",97,"apt" to "96"),
         codec("rtx",99,"apt" to "98"),codec("rtx",101,"apt" to "100"),codec("rtx",103,"apt" to "102"))
 
-    @Test fun hevcIsOptInKeepsH264AndOnlyItsAssociatedRepairPayloadsWithoutMutatingCapabilities() {
+    @Test fun experimentalOffersExcludeBaselineAndKeepOnlyTheirRepairPayloadsWithoutMutatingCapabilities() {
         val original=all.map { it.parameters.toMap() }
         val standard=CodecPreference.select(all,VideoCodecMode.H264,false,false)
         assertFalse(standard.experimental)
         assertEquals(listOf(98,96,97,99),standard.codecs.map { it.preferredPayloadType })
         val experimental=CodecPreference.select(all,VideoCodecMode.HEVC,false,false)
         assertTrue(experimental.experimental)
-        assertEquals(listOf(100,98,96,97,99,101),experimental.codecs.map { it.preferredPayloadType })
+        assertEquals(listOf(100,101),experimental.codecs.map { it.preferredPayloadType })
         assertSame(hevc,experimental.codecs.first())
+        assertEquals(listOf(98,99),CodecPreference.select(all,VideoCodecMode.H264_HIGH,true,false).codecs.map { it.preferredPayloadType })
         assertEquals(original,all.map { it.parameters })
     }
     @Test fun highCanBeRequestedAt720pButCompatibilityAlwaysPrefersTheLightweightCodec() {
@@ -69,6 +70,8 @@ class ExperimentalCodecTest {
         assertEquals("H265/HEVC Main",answer.label)
         assertNull(CodecPreference.answerVideo(sdp.substringBefore("m=video")))
         assertNull(CodecPreference.answerVideo(sdp.replace("m=video 9","m=video 0")))
+        assertNull(CodecPreference.answerVideo(sdp+"a=inactive\r\n"))
+        assertEquals(listOf("H265","H264"),CodecPreference.videoFormats(sdp).map { it.name })
         assertEquals("H264 High (640c1f)",CodecPreference.label("H264",mapOf("profile-level-id" to "640c1f")))
         assertEquals("H264",CodecPreference.label("H264",mapOf("profile-level-id" to "unknown-sensitive-data")))
     }

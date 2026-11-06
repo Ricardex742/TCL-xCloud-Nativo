@@ -5,12 +5,12 @@
 Em **Configurações → Codec**, estão disponíveis:
 
 - **H.264 — padrão:** preserva a política anterior de perfis H.264, preferindo Baseline no perfil leve e High quando anunciado no perfil de qualidade.
-- **H.264 High — experimental:** prioriza High também em 720p, se houver hardware elegível. O anúncio é baseado no perfil High real do MediaCodec, incluindo decoders `c2.*` que não constam da lista antiga de fabricantes do helper WebRTC.
-- **H.265/HEVC — experimental:** oferece HEVC Main de 8 bits antes de H.264, se houver hardware elegível e capacidade RTP correspondente no WebRTC.
+- **H.264 High — experimental:** na 0.31.1, tenta uma oferta exclusivamente High também em 720p, se houver hardware elegível. O anúncio é baseado no perfil High real do MediaCodec, incluindo decoders `c2.*` que não constam da lista antiga de fabricantes do helper WebRTC.
+- **H.265/HEVC — experimental:** na 0.31.1, tenta uma oferta exclusivamente HEVC Main de 8 bits, se houver hardware elegível e capacidade RTP correspondente no WebRTC.
 
 Abrir a tela não altera a preferência. A seleção é persistida e vale para a próxima partida. Preferência ausente ou desconhecida usa H.264. Selecionar o preset Compatibilidade restaura H.264 e 720p; durante esse preset, uma preferência experimental salva não substitui a política leve.
 
-H.264 continua disponível na oferta de um experimento. O servidor pode escolher H.264 mesmo quando o aparelho oferece HEVC ou High. Não há promessa de que o codec solicitado será o recebido ou de ganho de qualidade/desempenho em toda TV.
+A 0.31.0 apenas ordenava a preferência e mantinha Baseline na mesma oferta; nos testes físicos enviados pelo usuário, o serviço respondeu e entregou Baseline nas três escolhas. A **0.31.1-codec-negotiation (versionCode 32)** mantém H.264 disponível localmente para uma nova sessão de retorno, mas o exclui da primeira oferta HEVC e exclui os demais perfis da primeira oferta High. O SDP efetivamente gerado pelo SDK é verificado antes do envio. O Xbox ainda pode recusar o experimento; a tentativa exclusiva não comprova suporte do serviço nem garante qualidade/desempenho superiores. Evidências e roteiro em [phone-codec-tests-0.31.1.md](phone-codec-tests-0.31.1.md).
 
 ## Dependência nativa e transporte
 
@@ -36,12 +36,14 @@ O decoder opcional usa MediaCodec com SurfaceTexture, o renderer e a recuperaç�
 
 High usa o descritor padrão do SDK após verificar as capacidades reais. A preferência usa apenas capacidades RTP anunciadas; não reescreve `profile-level-id` ou níveis para fingir suporte. RTX é mantido apenas quando genérico ou associado aos codecs oferecidos. O orçamento de banda da seção de vídeo e os pedidos de bitrate também contemplam HEVC, preservando perfis, áudio, ICE e feedback.
 
+Na 0.31.1, o descritor HEVC informa explicitamente Main, main tier e o `level-id` correspondente ao maior nível Main de hardware declarado pelo Android. Os pares de constantes Android main/high tier são convertidos para o nível decimal do RFC 7798; anunciar main tier continua sendo um subconjunto do high tier. Um nível desconhecido não é inventado. Isso evita deixar o nível implícito/default na capacidade opcional. As verificações de tamanho/taxa antes e durante a decodificação continuam obrigatórias.
+
 HEVC Main10, HDR10, VP9 e AV1 não são habilitados nesta entrega. O caminho continua SDR de 8 bits. A tela de HDR foi atualizada para refletir H.264 ou HEVC Main experimental sem prometer HDR.
 
 ## Retorno ao H.264
 
 1. **Sem hardware/capacidade RTP opcional:** a oferta usa H.264; não é necessária outra sessão.
-2. **Servidor escolhe H.264:** a resposta é aplicada normalmente e o diagnóstico registra o resultado.
+2. **Servidor responde H.264 após oferta exclusiva:** a 0.31.1 registra essa resposta e trata a negociação experimental como recusada; abre a sessão de retorno em H.264. Uma resposta sem vídeo ativo ou com Main10/high tier também não é aplicada como um experimento bem-sucedido.
 3. **Falha do experimento antes do primeiro quadro:** rejeição de negociação/decoder ou falta de primeiro quadro após uma resposta experimental permite uma única reabertura de sessão em H.264. A conexão e a sessão Xbox anteriores são encerradas antes de criar as novas; pode haver nova fila. A preferência salva do usuário não é alterada.
 4. **Falha do decoder depois do primeiro quadro:** o jogador escolhe entre reabrir em H.264 e voltar ao catálogo. A mensagem informa que a sessão será encerrada e que progresso ainda não salvo pode ser perdido. Não há reabertura automática de uma partida já exibida.
 
@@ -49,16 +51,22 @@ A tentativa em H.264 não habilita outra tentativa automática. Falhas de login,
 
 ## Diagnóstico e validação física
 
-O relatório distingue preferência solicitada, hardware declarado, formatos oferecidos e preferência da resposta SDP. O codec recebido é obtido do registro `codecId` das estatísticas RTP de entrada. Quando informado pelo WebRTC, o perfil RTP aparece como High/Baseline/Main ou HEVC Main. Isso não é uma inspeção independente de cada SPS do bitstream.
+O relatório distingue preferência solicitada, hardware declarado, formatos do SDP preparado, POST confirmado, formatos da resposta SDP e aplicação dessa resposta no WebRTC. Um POST HTTP bem-sucedido não significa aceitação do codec pelo serviço. O codec recebido é obtido do registro `codecId` das estatísticas RTP de entrada. Quando informado pelo WebRTC, o perfil RTP aparece como High/Baseline/Main ou HEVC Main. Isso não é uma inspeção independente de cada SPS do bitstream.
+
+A sessão de retorno conserva um resumo da oferta/resposta/motivo do experimento anterior, sem SDP bruto, endereços, credenciais ou corpo de erro do servidor. Um erro de decoder experimental registrado antes de um timeout de prontidão conserva a classificação de codec; não transforma qualquer timeout de rede em motivo de retorno. O relatório distingue o pedido de conteúdo a 60 FPS à Surface do modo físico atual, taxa informada ao app e modos anunciados pelo Android. Também conserva se houve pedido de despacho imediato do joystick durante a sessão, mesmo após voltar ao menu.
 
 Para comparar, manter jogo, cena, resolução, rede, proporção e filtros iguais. Conferir codec e resolução recebidos, bitrate, decode, buffer, quadros descartados, pausas, aquecimento e estabilidade durante uma partida longa. A confirmação do serviço e do desempenho em aparelhos reais continua pendente; não há TV/celular conectado nem sessão autenticada de gameplay neste ambiente.
 
 Referências: [artefato Maven](https://repo.maven.apache.org/maven2/io/github/webrtc-sdk/android/137.7151.05/), [projeto WebRTC SDK](https://github.com/webrtc-sdk/android), [análise anterior](codec-and-project-review-0.31.md).
 
-## Validação desta entrega
+## Validação inicial da 0.31.0
 
 Em 6/11/2026, a suíte completa passou em **308 testes JVM/Robolectric**, sem falhas, erros ou testes ignorados, além dos **8 testes Python de proteção da assinatura**. `:app:lintDebug` terminou com `No issues found` e `:app:assembleRelease` concluiu com sucesso. A captura do seletor de codecs foi inspecionada.
 
 Os testes adicionais cobrem preferência persistida, opt-in, precedência do modo Compatibilidade, ausência de codec opcional, filtros de hardware/perfil/tamanho/taxa, rejeição de software/Main10, associação de RTX, preservação de SDP, dimensões reais do decoder, retorno limitado ao H.264, escolha explícita após o primeiro quadro e identificação do codec/perfil nas estatísticas.
 
 O pacote local é release sem assinatura. O APK de atualização depende do workflow existente e do segredo de assinatura fixa no GitHub; não foi criada uma chave substituta nem feita publicação do ambiente.
+
+## Validação da revisão 0.31.1
+
+A suíte completa passou em **330 testes JVM/Robolectric**, sem falhas, erros ou testes ignorados, além dos **8 testes Python da assinatura**, lint sem problemas e build release sem assinatura. A captura atualizada do seletor foi inspecionada. Os casos adicionais e as evidências físicas estão em [phone-codec-tests-0.31.1.md](phone-codec-tests-0.31.1.md); testes locais de contrato não comprovam que o serviço Xbox aceitará os formatos experimentais.

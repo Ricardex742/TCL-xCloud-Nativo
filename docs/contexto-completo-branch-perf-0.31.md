@@ -4,6 +4,8 @@
 
 O trabalho está exclusivamente na branch **`perf/decoder-display-latency-0.31`**, criada a partir de `ci/apk-android10-3cc2595`, commit **`777a7e3487c230fc515a8b33665a08815bd1eeb0`**. A branch original foi preservada. Após o usuário perguntar pela branch, ela chegou a ser enviada ao GitHub e foi removida de lá a pedido dele. A cópia local foi mantida. Na solicitação mais recente, o usuário autorizou novamente a publicação desta branch no GitHub, incluindo a correção de responsividade e os codecs experimentais. A configuração publicada do ambiente não é alterada.
 
+Estado atual do código: **0.31.1-codec-negotiation, versionCode 32**. As seções abaixo registram as entregas em ordem; a sétima substitui a política inicial de oferecer H.264 junto com os experimentos.
+
 A base já continha o xCLOUD 0.30 com login Microsoft/Xbox, catálogo, histórico remoto, favoritos, atalhos, HUDs, toque nativo, áudio, WebRTC/H.264 e diagnósticos. Esses recursos vieram do trabalho anterior documentado em `docs`; não foram todos implementados novamente nesta conversa.
 
 O link de conversa compartilhada não forneceu o histórico ao executor. A retomada utilizou o arquivo `contexto 2.0.txt`, a documentação da branch e o código real. O ponto interrompido era a análise de uma partida longa de Fortnite na 0.30 e a possibilidade de melhorar decode, buffer e cadência da tela.
@@ -114,7 +116,7 @@ Foram adicionadas opções explícitas em **Configurações → Codec** para H.2
 
 A dependência passou para **WebRTC SDK Android 137.7151.05**, com parser/despacotizador RTP HEVC incluídos e conferidos nas quatro ABIs. O anúncio é baseado nas capacidades RTP e no hardware real, sem falsificar perfil/nível. A inicialização e a descoberta de capacidades ficam fora da interface. Prioridade/baixa latência e recuperação continuam condicionadas ao suporte do decoder.
 
-H.264 permanece na oferta como alternativa. Falhas do experimento antes do primeiro quadro permitem uma única nova sessão em H.264, após liberar a anterior. Depois de uma partida começar a exibir vídeo, o jogador decide se quer reabri-la, com aviso sobre fila/progresso. A configuração salva não é alterada pela tentativa de retorno.
+Na implementação inicial 0.31.0, H.264 permanecia na oferta como alternativa; a sétima mudança abaixo substitui essa política nos experimentos. Falhas do experimento antes do primeiro quadro permitem uma única nova sessão em H.264, após liberar a anterior. Depois de uma partida começar a exibir vídeo, o jogador decide se quer reabri-la, com aviso sobre fila/progresso. A configuração salva não é alterada pela tentativa de retorno.
 
 O diagnóstico distingue solicitado, anunciado, resposta SDP e codec RTP recebido, com perfil quando informado nas estatísticas. O caminho permanece SDR de 8 bits; Main10/HDR, VP9 e AV1 não são habilitados. Detalhes e limites em [experimental-video-codecs-0.31.md](experimental-video-codecs-0.31.md). O desempenho e a aceitação efetiva pelo Xbox ainda precisam de validação em aparelho com conta real.
 
@@ -131,3 +133,15 @@ A análise confirmou que a câmera já desperta a thread de envio e usa o estado
 O relatório passa a registrar a idade dos eventos analógicos ao chegar à Activity e as informações da saída Android, distinguindo isso do atraso do agendador. Buffer observado/alvo ganham destaque no painel. Os detalhes persistidos são limitados a 4.096 caracteres para conservar informações de controle, tela e codec. Não são medidas de Bluetooth completo nem de input-to-photon. Evidências e comparação física necessária em [controller-latency-p755-0.31.md](controller-latency-p755-0.31.md).
 
 A validação desta etapa passou em **316 testes JVM/Robolectric**, sem falhas, erros ou testes ignorados, além de lint sem problemas e empacotamento release sem assinatura. A captura do relatório com nove cartões foi inspecionada. O ajuste segue na mesma branch publicada; não altera a configuração do ambiente, a branch original ou a assinatura do aplicativo.
+
+## Sétima mudança: testes do celular e negociação experimental na 0.31.1
+
+O arquivo `testes.txt` trouxe três sessões de Fortnite no Samsung SM-A155M, Android 16, toque nativo, Menor atraso e 1080p. O usuário confirmou melhora percebida no atraso do toque. Entretanto, as opções High, HEVC e padrão receberam **H.264 Baseline 42e01f / c2.mtk.avc.decoder em 2080×992**, após respostas SDP Baseline 42e02a. O hardware opcional estava elegível nominalmente; isso não significa que foi usado. Nenhum resultado foi atribuído a HEVC/High, e os testes do celular não demonstram o comportamento do controle/dongle na TV.
+
+A ordenação da preferência anterior mantinha Baseline na mesma oferta e permitia esse resultado. A 0.31.1 passa a tentar somente o formato experimental elegível na primeira sessão, com verificação do SDP realmente gerado pelo SDK. H.264 padrão/Compatibilidade preservam a política anterior. A sessão de retorno continua limitada a uma tentativa H.264 após liberar a anterior; o relatório conserva um resumo sanitizado da oferta, confirmação do POST, resposta e motivo da falha. O codec recebido continua sendo identificado pelas estatísticas RTP, separado do formato solicitado.
+
+HEVC anuncia Main de 8 bits, main tier e o nível decimal correspondente à capacidade Main real de hardware; não depende de parâmetros de nível implícitos. Não há software HEVC, Main10/HDR, nível inventado ou falsificação de perfil. A aceitação do serviço ainda precisa ser confirmada fisicamente.
+
+A tela permaneceu 90 Hz nos testes apesar da sinalização de conteúdo a 60 FPS. O relatório agora distingue conteúdo sinalizado, modo pedido na janela, modo físico atual, taxa informada ao app e modos disponíveis. O histórico do pedido de joystick durante a sessão também é preservado ao voltar ao menu. Os buffers médios de cerca de 3–4 ms nas duas sessões maiores são observações; decode médio de cerca de 25 ms não prova incapacidade de 60 FPS, e a sessão padrão de 14 segundos não permite comparação controlada.
+
+A versão passa a **0.31.1-codec-negotiation / 32**, mantendo pacote e identidade de atualização. A análise completa e o próximo teste estão em [phone-codec-tests-0.31.1.md](phone-codec-tests-0.31.1.md). A validação completa passou em **330 testes JVM/Robolectric**, sem falhas, erros ou testes ignorados, mais **8 testes Python de proteção da assinatura**, lint sem problemas e build release sem assinatura. A captura atualizada do seletor foi inspecionada. O envio segue na mesma branch GitHub já autorizada; o APK assinado continua sendo responsabilidade do CI existente.

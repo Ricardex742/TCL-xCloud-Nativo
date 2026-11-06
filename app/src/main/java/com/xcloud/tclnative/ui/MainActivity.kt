@@ -871,6 +871,7 @@ open class MainActivity : Activity() {
         val compatible=settings.videoMode==com.xcloud.tclnative.settings.VideoMode.COMPATIBILITY
         val requestedCodec=codecOverride ?: settings.videoCodec
         reportTracker?.finish(android.os.SystemClock.elapsedRealtime(),SessionEnd.REPLACED,webrtcClient?.currentInputMetrics())
+        joystickDispatch.beginSession()
         postSessionDialog?.dismiss()
         val tracker=SessionReportTracker(gameName,"${Build.MANUFACTURER} ${Build.MODEL} • Android ${Build.VERSION.RELEASE}",
             "${settings.resolution.label} • ${settings.videoMode.label} • ${settings.videoCodec.label}",if(compatible) 30 else 60)
@@ -930,6 +931,7 @@ open class MainActivity : Activity() {
             var allocatedRtc: XCloudWebRtcClient?=null
             var failed=false
             var retryH264=false
+            var codecFailureNote: String?=null
             var runtimeCodecFailure=false
             val playbackEgl=surfaceRenderer.eglBase
             try {
@@ -947,7 +949,8 @@ open class MainActivity : Activity() {
                                     retry = {
                                         retryH264=true
                                         launchCloudGame(signaling,game,touchMode,com.xcloud.tclnative.settings.VideoCodecMode.H264,
-                                            "Experimento falhou durante a partida; sessão reaberta em H.264 por escolha do jogador.")
+                                            (allocatedRtc?.codecFallbackSummary(java.io.IOException("VIDEO_CODEC: decoder")) ?: "Experimento de codec falhou.")+
+                                                " Reabertura solicitada pelo jogador após o início da partida.")
                                     }, leave = { cancelPlayback() })
                             } else if (state.contains("FAILED") || state.contains("CLOSED") || state.startsWith("CHANNELS:") || state.startsWith("VIDEO_CODEC:")) {
                                 transportFailure.complete(java.io.IOException(state))
@@ -976,7 +979,7 @@ open class MainActivity : Activity() {
                     videoCodec=requestedCodec).also { allocatedRtc=it } }
                 webrtcClient = rtc
                 val appVersion=packageManager.getPackageInfo(packageName,0).versionName ?: "n/d"
-                tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}\n${joystickDispatch.diagnostics()}\n${signaling.profileDiagnostics()}\n${surfaceRenderer.diagnostics()}\n${rtc.audioDiagnostics()}\n${rtc.latencyDiagnostics()}\n${rtc.codecDiagnostics()}"+
+                tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}\n${joystickDispatch.diagnostics()}\n${signaling.profileDiagnostics()}\n${surfaceRenderer.diagnostics()}\n${playbackDisplay.diagnostics(window.decorView.display)}\n${rtc.audioDiagnostics()}\n${rtc.latencyDiagnostics()}\n${rtc.codecDiagnostics()}"+
                     (codecRetryNote?.let { "\n$it" } ?: "") }
                 surfaceRenderer.displayDimensions()?.let(rtc::updateDisplayDimensions)
                 if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
@@ -1062,6 +1065,7 @@ open class MainActivity : Activity() {
             } catch (error: Exception) {
                 failed=true
                 retryH264=allocatedRtc?.shouldRetryH264(error,firstFrame.isCompleted)==true
+                if(retryH264) codecFailureNote=allocatedRtc?.codecFallbackSummary(error)
                 if(retryH264 && generation==playbackGeneration) {
                     Toast.makeText(this@MainActivity,"Codec experimental falhou. Reabrindo a sessão em H.264…",Toast.LENGTH_LONG).show()
                 }
@@ -1095,7 +1099,7 @@ open class MainActivity : Activity() {
                 }
             }
             if(retryH264 && isActive && generation==playbackGeneration) launchCloudGame(signaling,game,touchMode,
-                com.xcloud.tclnative.settings.VideoCodecMode.H264,"Experimento de codec falhou; sessão reaberta uma vez em H.264.")
+                com.xcloud.tclnative.settings.VideoCodecMode.H264,codecFailureNote ?: "Experimento de codec falhou; sessão reaberta uma vez em H.264.")
         }
     }
 

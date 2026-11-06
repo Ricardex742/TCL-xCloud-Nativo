@@ -51,13 +51,14 @@ class XCloudWebRtcClient(
         controllerEventTiming.record(eventUptimeMs,arrivalUptimeMs,historySize,name)
     private val decoderLatency = java.util.concurrent.atomic.AtomicReference("Codec LL: aguardando vídeo")
     private val effectiveCodec=if(compatibility) VideoCodecMode.H264 else videoCodec
-    private val codecStatus=java.util.concurrent.atomic.AtomicReference("Codec: aguardando capacidades")
+    private val codecTrace=CodecNegotiationTrace(effectiveCodec)
     @Volatile private var experimentalOffered=false
     @Volatile private var answerVideo: VideoCodecAnswer?=null
     private val decoderFactory: ExperimentalVideoDecoderFactory
-    fun codecDiagnostics(): String = "Codec solicitado: ${videoCodec.label} | ${codecStatus.get()}\n${decoderFactory.diagnostics()}"
+    fun codecDiagnostics(): String = "${codecTrace.diagnostics()}\n${decoderFactory.diagnostics()}"
+    fun codecFallbackSummary(error: Exception): String = codecTrace.fallbackSummary(error)
     fun shouldRetryH264(error: Exception, firstFrame: Boolean): Boolean = ExperimentalCodecRetry.allowed(
-        effectiveCodec,experimentalOffered,answerVideo,firstFrame,error.message ?: "")
+        effectiveCodec,experimentalOffered,answerVideo,firstFrame,codecTrace.retryReason(error))
     private val audioLock=Any()
     private val audioTracks=mutableSetOf<AudioTrack>()
     private val audioSession=GameAudioSession(context) { gain -> synchronized(audioLock) {
@@ -78,7 +79,7 @@ class XCloudWebRtcClient(
             .setFieldTrials(VideoLatencyPolicy.fieldTrials(lowLatencyVideo))
             .setEnableInternalTracer(false).createInitializationOptions())
         decoderFactory=ExperimentalVideoDecoderFactory(eglBase.eglBaseContext,lowLatencyVideo,decoderRecovery,
-            { decoderLatency.set(it) }, { if(!closed.get()) onConnectionStateChanged(it) },effectiveCodec.name,
+            { decoderLatency.set(it) }, { codecTrace.decoderRejected(it);if(!closed.get()) onConnectionStateChanged(it) },effectiveCodec.name,
             streamResolution.width,streamResolution.height,if(compatibility) 30 else 60)
         val audio=JavaAudioDeviceModule.builder(context.applicationContext)
             .setAudioAttributes(GameAudioSession.attributes()).setUseStereoOutput(true).setEnableVolumeLogger(false)
@@ -162,9 +163,12 @@ class XCloudWebRtcClient(
         // Select supported codecs before creating/setLocalDescription. Never forge profile-level-id.
         val selection=CodecPreference.select(capabilities,effectiveCodec,compatibility || streamResolution==StreamResolution.HD_720,compatibility)
         experimentalOffered=selection.experimental
-        codecStatus.set(selection.description)
+        codecTrace.selected(selection)
         val result=video.setCodecPreferences(selection.codecs)
-        if(result.isError) throw IOException("SDP: preferências de codec rejeitadas pelo WebRTC")
+        if(result.isError) {
+            codecTrace.preferencesRejected()
+            throw IOException("SDP: preferências de codec rejeitadas pelo WebRTC")
+        }
         listOf("control" to "controlV1", "input" to "1.0", "message" to "messageV1", "chat" to "chatV1").forEach { (name, protocol) ->
             val channel = pc.createDataChannel(name, DataChannel.Init().apply { ordered = true; this.protocol = protocol })
                 ?: throw IOException("CHANNELS: não foi possível criar $name")
@@ -205,7 +209,8 @@ class XCloudWebRtcClient(
         }, MediaConstraints())
         val original = offer.await()
         val description = SessionDescription(original.type, StreamProfile.receiveSdp(original.description, streamResolution,compatibility))
-        setDescription { observer -> pc.setLocalDescription(observer, description) }
+        codecTrace.localOffer(description.description)
+        setDescription("SDP_LOCAL") { observer -> pc.setLocalDescription(observer, description) }
         // A blocked STUN service must not discard usable host candidates.
         if (withTimeoutOrNull(8000) { gatheringComplete.await(); true } != true) {
             onConnectionStateChanged("ICE: coleta limitada a 8s; ${candidates.size} candidatos disponíveis")
@@ -331,13 +336,15 @@ class XCloudWebRtcClient(
 
     override suspend fun setRemoteAnswer(answerSdp: String) {
         val pc = peerConnection ?: throw IOException("TRANSPORT: PeerConnection ausente")
-        val selected=CodecPreference.answerVideo(answerSdp) ?: throw IOException("VIDEO_CODEC: resposta sem vídeo ativo")
+        val selected=codecTrace.remoteAnswer(answerSdp)
+        answerVideo=selected
         if(selected.name.equals("H265",true) && (effectiveCodec!=VideoCodecMode.HEVC || !experimentalOffered || !CodecPreference.mainHevc(selected.parameters)))
             throw IOException("VIDEO_CODEC: resposta HEVC sem suporte anunciado para o perfil")
-        withTimeout(10_000) { setDescription { pc.setRemoteDescription(it, SessionDescription(SessionDescription.Type.ANSWER, answerSdp)) } }
-        answerVideo=selected
-        codecStatus.set("${codecStatus.get()} | Resposta SDP: ${selected.label} (preferência; recebido nas estatísticas)")
+        withTimeout(10_000) { setDescription("SDP_REMOTE") { pc.setRemoteDescription(it, SessionDescription(SessionDescription.Type.ANSWER, answerSdp)) } }
+        codecTrace.answerApplied()
     }
+
+    override fun onOfferPosted() { codecTrace.offerPosted() }
 
     override suspend fun addRemoteCandidates(candidates: List<IceCandidate>) {
         val pc = peerConnection ?: throw IOException("TRANSPORT: PeerConnection ausente")
@@ -348,11 +355,11 @@ class XCloudWebRtcClient(
         withTimeout(30_000) { connected.await(); channelsReady.await() }
     }
 
-    private suspend fun setDescription(set: (SdpObserver) -> Unit) {
+    private suspend fun setDescription(stage: String, set: (SdpObserver) -> Unit) {
         val done = CompletableDeferred<Unit>()
         set(object : DescriptionObserver() {
             override fun onSetSuccess() { done.complete(Unit) }
-            override fun onSetFailure(error: String?) { done.completeExceptionally(IOException("SDP: setDescription falhou")) }
+            override fun onSetFailure(error: String?) { done.completeExceptionally(IOException("$stage: setDescription falhou")) }
         })
         done.await()
     }

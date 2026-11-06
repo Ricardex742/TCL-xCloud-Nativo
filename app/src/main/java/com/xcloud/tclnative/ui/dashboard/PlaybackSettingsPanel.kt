@@ -72,7 +72,7 @@ class PlaybackSettingsPanel(
     }
     fun chooseCodec(): ConsoleDialog {
         val current=store.read()
-        return choices("Codec de vídeo","H.264 mantém o comportamento padrão. High e HEVC são testes opcionais: exigem hardware compatível com a resolução e a taxa solicitadas. O Xbox decide o formato recebido. Se o experimento falhar ao iniciar, o app pode reabrir a sessão em H.264. Compatibilidade sempre usa H.264 leve. Aplica-se à próxima partida.",
+        return choices("Codec de vídeo","H.264 mantém o comportamento padrão. High e HEVC tentam exclusivamente o formato escolhido quando o hardware é compatível. O Xbox pode recusar; uma falha ao iniciar permite reabrir a sessão uma vez em H.264 padrão, com o motivo no diagnóstico. Compatibilidade sempre usa H.264 leve. Aplica-se à próxima partida.",
             VideoCodecMode.entries.map { it.label to (it==current.videoCodec) }) { save(current.copy(videoCodec=VideoCodecMode.entries[it])) }
     }
     fun chooseResolution(): ConsoleDialog {

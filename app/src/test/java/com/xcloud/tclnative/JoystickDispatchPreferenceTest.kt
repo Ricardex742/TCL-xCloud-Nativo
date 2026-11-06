@@ -58,4 +58,19 @@ class JoystickDispatchPreferenceTest {
             assertTrue(preference.diagnostics().contains("indisponível nesta API"))
         } finally { c.pause().stop().destroy() }
     }
+    @Test fun finalMenuStateKeepsTheGameplayRequestHistoryUntilTheNextSession() {
+        val c=Robolectric.buildActivity(Activity::class.java).setup()
+        try {
+            val root=c.get().window.decorView
+            val preference=JoystickDispatchPreference(root)
+            preference.beginSession()
+            assertTrue(preference.diagnostics().contains("pedido durante a sessão: não"))
+            preference.request(true)
+            preference.request(false)
+            assertEquals(InputDevice.SOURCE_CLASS_NONE,source(root))
+            assertTrue(preference.diagnostics().contains("despacho padrão; pedido durante a sessão: sim"))
+            preference.beginSession()
+            assertTrue(preference.diagnostics().contains("pedido durante a sessão: não"))
+        } finally { c.pause().stop().destroy() }
+    }
 }

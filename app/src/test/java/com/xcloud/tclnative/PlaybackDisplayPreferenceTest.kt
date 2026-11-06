@@ -58,4 +58,21 @@ class PlaybackDisplayPreferenceTest {
             assertEquals(90f, window.attributes.preferredRefreshRate, 0f)
         } finally { controller.pause().stop().destroy() }
     }
+    @Test fun diagnosticsDistinguishTheWindowRequestFromTheUnchangedPhysicalModeAndListAvailableModes() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        try {
+            val window=controller.get().window
+            val display=window.decorView.display
+            val actual=display.mode.modeId
+            val preference=PlaybackDisplayPreference(window)
+            preference.request(12345)
+            val report=preference.diagnostics(display)
+            assertTrue(report,report.contains("pedido: #12345 não anunciado"))
+            assertTrue(report,report.contains("físico atual: #$actual "))
+            assertTrue(report,report.contains("taxa informada ao app:"))
+            assertTrue(report,report.contains("Modos anunciados: #$actual "))
+            assertEquals(actual,display.mode.modeId)
+            assertEquals("Modo de tela: n/d",preference.diagnostics(null))
+        } finally { controller.pause().stop().destroy() }
+    }
 }

@@ -23,39 +23,48 @@ object CodecPreference {
         val hevc=if(mode==VideoCodecMode.HEVC) capabilities.filter {
             it.name.equals("H265",true) && mainHevc(it.parameters)
         } else emptyList()
-        val high=mode==VideoCodecMode.H264_HIGH && h264.any { it.parameters["profile-level-id"]?.startsWith("64")==true }
-        val primary=hevc+h264.sortedBy { rank(it.parameters["profile-level-id"],if(high) false else lightweight) }
+        val high=if(mode==VideoCodecMode.H264_HIGH) h264.filter { it.parameters["profile-level-id"]?.startsWith("64")==true } else emptyList()
+        // An experiment must actually try its format. Offering Baseline alongside it lets the
+        // service always select Baseline, as observed on the SM-A155M. H.264 stays available
+        // locally for the bounded retry with a fresh PeerConnection/session.
+        val primary=when {
+            hevc.isNotEmpty() -> hevc
+            high.isNotEmpty() -> high
+            else -> h264.sortedBy { rank(it.parameters["profile-level-id"],lightweight) }
+        }
         val payloads=primary.map { it.preferredPayloadType.toString() }.toSet()
         val repair=capabilities.filter { it.name.equals("rtx",true) &&
             (it.parameters["apt"]==null || it.parameters["apt"] in payloads) }
         val description=when {
             compatibility -> "H.264 leve • modo Compatibilidade"
-            hevc.isNotEmpty() -> "HEVC Main preferido • H.264 também oferecido"
-            high -> "H.264 High preferido • demais perfis H.264 também oferecidos"
+            hevc.isNotEmpty() -> "Tentativa exclusiva HEVC Main • retorno a H.264 em nova sessão se necessário"
+            high.isNotEmpty() -> "Tentativa exclusiva H.264 High • retorno a H.264 padrão em nova sessão se necessário"
             mode!=VideoCodecMode.H264 -> "Experimental indisponível • H.264 padrão"
             else -> "H.264 padrão"
         }
-        return Offer(primary+repair,hevc.isNotEmpty() || high,description)
+        return Offer(primary+repair,hevc.isNotEmpty() || high.isNotEmpty(),description)
     }
 
     fun mainHevc(parameters: Map<String,String>): Boolean =
         (parameters["profile-id"] ?: "1")=="1" && (parameters["tier-flag"] ?: "0")=="0"
 
     /** Only the first active video section; never interpret an audio/RTX payload as video. */
-    fun answerVideo(sdp: String): VideoCodecAnswer? {
+    fun answerVideo(sdp: String): VideoCodecAnswer? = videoFormats(sdp).firstOrNull()
+
+    fun videoFormats(sdp: String): List<VideoCodecAnswer> {
         val sections=sdp.replace("\r\n","\n").split(Regex("(?m)(?=^m=)"))
-        val lines=sections.firstOrNull { it.startsWith("m=video ") && it.lineSequence().first().split(' ').getOrNull(1)!="0" }
-            ?.lineSequence()?.filter { it.isNotBlank() }?.toList() ?: return null
+        val lines=sections.firstOrNull { it.startsWith("m=video ") && it.lineSequence().first().trim().split(Regex("\\s+")).getOrNull(1)?.substringBefore('/')!="0" &&
+            it.lineSequence().none { line -> line.trim()=="a=inactive" } }
+            ?.lineSequence()?.map(String::trim)?.filter { it.isNotBlank() }?.toList() ?: return emptyList()
         val formats=lines.filter { it.startsWith("a=rtpmap:") }.associate {
             it.substringAfter(':').substringBefore(' ') to it.substringAfter(' ').substringBefore('/')
         }
-        for(payload in lines.first().split(' ').drop(3)) {
-            val name=formats[payload] ?: continue
-            if(name.lowercase(Locale.ROOT) in setOf("rtx","red","ulpfec","flexfec-03")) continue
+        return lines.first().split(Regex("\\s+")).drop(3).mapNotNull { payload ->
+            val name=formats[payload] ?: return@mapNotNull null
+            if(name.lowercase(Locale.ROOT) in setOf("rtx","red","ulpfec","flexfec-03")) return@mapNotNull null
             val params=parseParameters(lines.firstOrNull { it.startsWith("a=fmtp:$payload ") }?.substringAfter(' ') ?: "")
-            return VideoCodecAnswer(name,params)
+            VideoCodecAnswer(name,params)
         }
-        return null
     }
     fun parseParameters(text: String): Map<String,String> = text.split(';').mapNotNull {
         val pair=it.trim().split('=',limit=2)

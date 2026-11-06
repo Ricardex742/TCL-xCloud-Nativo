@@ -216,7 +216,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         val minimalLabel=when(minimalSupport) { true -> "sim";false -> "não";null -> "n/d" }
         return "Surface $size → janela ${width}x$height | Saída Android: $output\n" +
             "Layout do vídeo: $layout | Área calculada: ${expected.width}x${expected.height} | Quadro do renderer: ${videoWidth}x$videoHeight\n" +
-            "Escala da Surface: ${if (nativeUpscaling) "HW solicitada" else "HW desativada"}; imagem ajustada à janela | Cadência ${if(compatibility) 30 else 60} Hz: ${if (frameRateHintRequested) "solicitada" else "n/d"} | Pós-processamento mínimo: ${if (minimalPostProcessingRequested) "solicitado" else "padrão"}; suporte Android declarado: $minimalLabel\n" +
+            "Escala da Surface: ${if (nativeUpscaling) "HW solicitada" else "HW desativada"}; imagem ajustada à janela | Conteúdo ${if(compatibility) 30 else 60} FPS sinalizado à Surface: ${if (frameRateHintRequested) "sim" else "não confirmado"} | Pós-processamento mínimo: ${if (minimalPostProcessingRequested) "solicitado" else "padrão"}; suporte Android declarado: $minimalLabel\n" +
             "Proporção: ${aspect.label} | Nitidez: $sharpness% | Saturação: $saturation% | Apresentação: até ${if(compatibility) 30 else 60} FPS | AiPQ: não verificável pelo app"
     }
 

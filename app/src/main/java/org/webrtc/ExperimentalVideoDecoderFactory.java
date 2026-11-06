@@ -3,6 +3,8 @@ package org.webrtc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -50,9 +52,14 @@ public final class ExperimentalVideoDecoderFactory implements VideoDecoderFactor
       if (mode.equals("H264_HIGH") && isHigh(codec)) continue;
       codecs.add(codec);
     }
-    if (hardware != null) codecs.add(mode.equals("HEVC") ?
-        new VideoCodecInfo("H265",MediaCodecUtils.getCodecProperties(VideoCodecMimeType.H265,false),Collections.emptyList()) :
-        H264Utils.DEFAULT_H264_HIGH_PROFILE_CODEC);
+    if (hardware != null) {
+      if (mode.equals("HEVC")) {
+        Map<String,String> params = new HashMap<>(MediaCodecUtils.getCodecProperties(VideoCodecMimeType.H265,false));
+        params.put("profile-id","1"); params.put("tier-flag","0");
+        params.put("level-id",Integer.toString(hardware.hevcLevelId()));
+        codecs.add(new VideoCodecInfo("H265",params,Collections.emptyList()));
+      } else codecs.add(H264Utils.DEFAULT_H264_HIGH_PROFILE_CODEC);
+    }
     return codecs.toArray(new VideoCodecInfo[0]);
   }
   private static boolean isHigh(VideoCodecInfo codec) {

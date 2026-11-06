@@ -242,6 +242,7 @@ class XCloudSignalingClient(
             }
             request("$path/sdp", "SDP_OFFER", "POST", JSONObject().put("messageType", "offer")
                 .put("requestId", "1").put("sdp", offer).put("configuration", configuration))
+            peer.onOfferPosted()
             val answer = (exchange("$path/sdp", "SDP_ANSWER") as? JSONObject)?.optString("sdp")
                 ?.takeIf { it.isNotBlank() } ?: throw IOException("SDP_ANSWER: resposta sem SDP")
             peer.setRemoteAnswer(answer)

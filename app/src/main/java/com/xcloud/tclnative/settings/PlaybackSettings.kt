@@ -40,7 +40,12 @@ data class PlaybackSettings(
     val sessionReport: Boolean = true,
     val videoCodec: VideoCodecMode = VideoCodecMode.H264,
     val fsr: FsrMode = FsrMode.OFF,
-    val fsrSharpness: Int = 50
+    val fsrSharpness: Int = 50,
+    val brightness: Int = 0,val contrast: Int = 100,
+    val ipPreference: IpPreference = IpPreference.AUTO,
+    val desktopInput: DesktopInputMode = DesktopInputMode.OFF,val mouseSensitivity: Int = 100,
+    val gyroMode: GyroMode = GyroMode.OFF,val gyroSensitivity: Int = 100,
+    val microphone: Boolean = false,val audioGain: Int = 100,val touchRumble: Boolean = false
 ) {
     fun forSession(): PlaybackSettings = if(videoCodec==VideoCodecMode.H264_BASELINE || videoMode==VideoMode.COMPATIBILITY)
         copy(resolution=StreamResolution.HD_720) else this
@@ -70,7 +75,14 @@ class PlaybackSettingsStore(context: Context) {
             prefs.getInt("sharpness",0).coerceIn(0,100),prefs.getInt("saturation",100).coerceIn(0,200),prefs.getBoolean("session_report",true),
             VideoCodecMode.entries.firstOrNull { it.name==prefs.getString("video_codec",null) } ?: VideoCodecMode.H264,
             FsrMode.entries.firstOrNull { it.name==prefs.getString("fsr_mode",null) } ?: FsrMode.OFF,
-            prefs.getInt("fsr_sharpness",50).coerceIn(0,100))
+            prefs.getInt("fsr_sharpness",50).coerceIn(0,100),
+            prefs.getInt("brightness",0).coerceIn(-50,50),prefs.getInt("contrast",100).coerceIn(50,150),
+            IpPreference.entries.firstOrNull { it.name==prefs.getString("ip_preference",null) } ?: IpPreference.AUTO,
+            DesktopInputMode.entries.firstOrNull { it.name==prefs.getString("desktop_input",null) } ?: DesktopInputMode.OFF,
+            prefs.getInt("mouse_sensitivity",100).coerceIn(25,300),
+            GyroMode.entries.firstOrNull { it.name==prefs.getString("gyro_mode",null) } ?: GyroMode.OFF,
+            prefs.getInt("gyro_sensitivity",100).coerceIn(25,300),prefs.getBoolean("microphone",false),
+            prefs.getInt("audio_gain",100).coerceIn(0,300),prefs.getBoolean("touch_rumble",false))
     }
     fun save(settings: PlaybackSettings) {
         prefs.edit().putString("video_mode",settings.videoMode.name).putBoolean("low_latency_video",settings.videoMode.lowLatency)
@@ -79,7 +91,12 @@ class PlaybackSettingsStore(context: Context) {
             .putBoolean("rumble",settings.rumble).putString("touch_mode",settings.touchMode.name)
             .putInt("sharpness",settings.sharpness.coerceIn(0,100)).putInt("saturation",settings.saturation.coerceIn(0,200))
             .putBoolean("session_report",settings.sessionReport).putString("video_codec",settings.videoCodec.name)
-            .putString("fsr_mode",settings.fsr.name).putInt("fsr_sharpness",settings.fsrSharpness.coerceIn(0,100)).apply()
+            .putString("fsr_mode",settings.fsr.name).putInt("fsr_sharpness",settings.fsrSharpness.coerceIn(0,100))
+            .putInt("brightness",settings.brightness.coerceIn(-50,50)).putInt("contrast",settings.contrast.coerceIn(50,150))
+            .putString("ip_preference",settings.ipPreference.name).putString("desktop_input",settings.desktopInput.name)
+            .putInt("mouse_sensitivity",settings.mouseSensitivity.coerceIn(25,300)).putString("gyro_mode",settings.gyroMode.name)
+            .putInt("gyro_sensitivity",settings.gyroSensitivity.coerceIn(25,300)).putBoolean("microphone",settings.microphone)
+            .putInt("audio_gain",settings.audioGain.coerceIn(0,300)).putBoolean("touch_rumble",settings.touchRumble).apply()
     }
 }
 

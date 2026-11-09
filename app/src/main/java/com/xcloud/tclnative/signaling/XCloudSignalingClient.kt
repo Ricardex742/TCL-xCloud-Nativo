@@ -2,6 +2,9 @@ package com.xcloud.tclnative.signaling
 
 import com.xcloud.tclnative.auth.AuthenticationRequiredException
 import com.xcloud.tclnative.auth.XCloudSession
+import com.xcloud.tclnative.settings.SessionOptions
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import com.xcloud.tclnative.net.awaitResponse
 import com.xcloud.tclnative.net.checkedBody
 import com.xcloud.tclnative.webrtc.StreamingPeer
@@ -46,6 +49,11 @@ class XCloudSignalingClient(
     private val queueTimeoutMs: Long = 60 * 60_000,
     private val transferTokenProvider: suspend () -> String = { session.transferToken }
 ) {
+    @Volatile private var activeBaseUri=session.baseUri
+    @Volatile private var activeLocale="pt-BR"
+    @Volatile private var activeRegion="Automático"
+    private val chatLock=Mutex()
+    private var sdpRequest=1
     private val activePath = AtomicReference<String?>(null)
     private val waitTimeClient = httpClient.newBuilder().callTimeout(3, TimeUnit.SECONDS).build()
     private val jsonType = "application/json; charset=utf-8".toMediaType()
@@ -53,7 +61,7 @@ class XCloudSignalingClient(
     private var mobileTouchSession=false
     // Quality and input are independent: NativeTouch must not replace a selected HD profile with Android/720p.
     private val activeOsName: String get()=activeResolution.osName
-    fun profileDiagnostics()="Perfil de vídeo solicitado: ${activeResolution.width}×${activeResolution.height} • $activeOsName"
+    fun profileDiagnostics()="Perfil de vídeo solicitado: ${activeResolution.width}×${activeResolution.height} • $activeOsName\nRegião solicitada: $activeRegion | Idioma solicitado: $activeLocale"
     private fun deviceInfo() = JSONObject().put("appInfo", JSONObject().put("env", JSONObject()
         .put("clientAppId", "www.xbox.com").put("clientAppType", "browser").put("clientAppVersion", "26.1.0")))
         .put("dev", JSONObject().put("hw", JSONObject().put("make", if(mobileTouchSession) "Android" else "Microsoft")
@@ -64,7 +72,8 @@ class XCloudSignalingClient(
 
     private suspend fun request(path: String, stage: String, method: String = "GET", body: JSONObject? = null,
                                 client: OkHttpClient = httpClient,query: Map<String,String> = emptyMap()): String {
-        val url=CloudProtocol.sessionUrl(session.baseUri,path).newBuilder().apply {
+        val base=if(path.startsWith("/v2/titles")) session.baseUri else activeBaseUri
+        val url=CloudProtocol.sessionUrl(base,path).newBuilder().apply {
             query.forEach { (key,value) -> addQueryParameter(key,value) }
         }.build()
         val builder = Request.Builder().url(url)
@@ -169,7 +178,7 @@ class XCloudSignalingClient(
                         onProgress("QUEUE: Aguardando vaga no Xbox Cloud (${QueueStatus.duration(elapsed)}). Voltar cancela.")
                         if (estimateAttemptAt == null || confirmedAt - estimateAttemptAt >= 30_000) {
                             estimateAttemptAt = confirmedAt
-                            val url = CloudProtocol.sessionUrl(session.baseUri, "/v1/waittime/")
+                            val url = CloudProtocol.sessionUrl(activeBaseUri, "/v1/waittime/")
                                 .newBuilder().addPathSegment(titleId).build().encodedPath
                             try {
                                 val estimate = QueueEstimate.parse(request(url, "QUEUE_ESTIMATE", client = waitTimeClient))
@@ -203,11 +212,11 @@ class XCloudSignalingClient(
         }
     }
 
-    private suspend fun exchange(path: String, stage: String): Any {
+    private suspend fun exchange(path: String, stage: String,expectedRequestId: String?=null): Any {
         val started = clockMs()
         while (clockMs() - started < 30_000) {
             val value = CloudProtocol.exchange(request(path, stage))
-            if (value != null) return value
+            if (value != null && (expectedRequestId==null || value !is JSONObject || !value.has("requestId") || value.optString("requestId")==expectedRequestId)) return value
             pause(500)
         }
         throw IOException("$stage: tempo limite aguardando resposta do Xbox")
@@ -215,9 +224,15 @@ class XCloudSignalingClient(
 
     suspend fun startAndConnectWebRtcSession(
         titleId: String, peer: StreamingPeer, onQueueStatus: (QueueStatus?) -> Unit = {},
-        resolution: StreamResolution = StreamResolution.HD_1080_HQ, nativeTouch: Boolean=false, onProgress: (String) -> Unit
+        resolution: StreamResolution = StreamResolution.HD_1080_HQ, nativeTouch: Boolean=false,
+        options: SessionOptions=SessionOptions(),microphone: Boolean=false,onProgress: (String) -> Unit
     ): Result<String> = withContext(Dispatchers.IO) {
         stop()
+        val selected=session.regions.firstOrNull { it.name==options.region && options.region.isNotEmpty() }
+        activeBaseUri=selected?.baseUri ?: session.baseUri
+        activeRegion=selected?.name ?: if(options.region.isBlank()) "Automático" else "Automático — região salva não oferecida à conta"
+        activeLocale=options.normalized().locale
+        sdpRequest=1
         activeResolution = resolution
         mobileTouchSession=nativeTouch
         try {
@@ -225,10 +240,10 @@ class XCloudSignalingClient(
                 .put("titleId", titleId).put("systemUpdateGroup", "").put("serverId", "")
                 .put("fallbackRegionNames", org.json.JSONArray()).put("settings", JSONObject()
                     .put("nanoVersion", "V3;WebrtcTransport.dll").put("enableOptionalDataCollection", false)
-                    .put("enableTextToSpeech", false).put("highContrast", 0).put("locale", "pt-BR")
+                    .put("enableTextToSpeech", false).put("highContrast", 0).put("locale", activeLocale)
                     .put("useIceConnection", false).put("timezoneOffsetMinutes", -180).put("sdkType", "web").put("osName", activeOsName))
             val response = JSONObject(request("/v5/sessions/cloud/play", "PLAY", "POST", play))
-            val path = CloudProtocol.sessionUrl(session.baseUri, response.getString("sessionPath")).encodedPath.trimEnd('/')
+            val path = CloudProtocol.sessionUrl(activeBaseUri, response.getString("sessionPath")).encodedPath.trimEnd('/')
             activePath.set(path)
             awaitProvisioned(path, titleId, onQueueStatus, onProgress)
 
@@ -240,10 +255,14 @@ class XCloudSignalingClient(
             listOf("chat" to 1, "control" to 3, "input" to 8, "message" to 1).forEach { (channel, version) ->
                 configuration.put(channel, JSONObject().put("minVersion", 1).put("maxVersion", version))
             }
+            if(microphone) configuration.put("chatStream",JSONObject().put("minVersion",1).put("maxVersion",1))
             request("$path/sdp", "SDP_OFFER", "POST", JSONObject().put("messageType", "offer")
                 .put("requestId", "1").put("sdp", offer).put("configuration", configuration))
             peer.onOfferPosted()
-            val answer = (exchange("$path/sdp", "SDP_ANSWER") as? JSONObject)?.optString("sdp")
+            val answerObject=exchange("$path/sdp", "SDP_ANSWER") as? JSONObject
+            peer.configureInput(answerObject?.optInt("input",0) ?: 0)
+            peer.configureChat(microphone && (answerObject?.optInt("chatStream",0) ?: 0)>0)
+            val answer = answerObject?.optString("sdp")
                 ?.takeIf { it.isNotBlank() } ?: throw IOException("SDP_ANSWER: resposta sem SDP")
             peer.setRemoteAnswer(answer)
             onProgress("ICE: Negociando conectividade com o Xbox...")
@@ -264,6 +283,18 @@ class XCloudSignalingClient(
         } catch (error: Exception) {
             stop()
             Result.failure(error)
+        }
+    }
+
+    suspend fun renegotiateChat(offer: String): String = chatLock.withLock {
+        withContext(Dispatchers.IO) {
+            val path=activePath.get() ?: throw IOException("CHAT: sessão encerrada")
+            val requestId=(++sdpRequest).toString()
+            request("$path/sdp","CHAT_OFFER","POST",JSONObject().put("messageType","offer").put("requestId",requestId)
+                .put("sdp",offer).put("configuration",JSONObject().put("isMediaStreamsChatRenegotiation",true)))
+            val answer=exchange("$path/sdp","CHAT_ANSWER",requestId) as? JSONObject ?: throw IOException("CHAT: resposta inválida")
+            if(activePath.get()!=path) throw IOException("CHAT: sessão substituída")
+            answer.optString("sdp").takeIf { it.isNotBlank() } ?: throw IOException("CHAT: resposta sem SDP")
         }
     }
 

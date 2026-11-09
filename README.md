@@ -6,7 +6,7 @@
   <p>
     <a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aperf%2Fdecoder-display-latency-0.31"><img src="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml/badge.svg?branch=perf%2Fdecoder-display-latency-0.31" alt="Compilação Android" /></a>
     <img src="https://img.shields.io/badge/Android-7.0%2B-54de69?logo=android&logoColor=white" alt="Android 7 ou superior" />
-    <img src="https://img.shields.io/badge/vers%C3%A3o-0.31.5-173d29" alt="Versão 0.31.5" />
+    <img src="https://img.shields.io/badge/vers%C3%A3o-0.31.6-173d29" alt="Versão 0.31.6" />
   </p>
   <p><a href="#baixar-e-instalar">Baixar</a> · <a href="#telas-do-aplicativo">Telas</a> · <a href="#controles-de-toque-por-jogo">HUDs de toque</a> · <a href="#funcionalidades">Funcionalidades</a> · <a href="#atalhos-dos-jogos-na-tv">Atalhos na TV</a> · <a href="#compilar">Compilar</a></p>
 </div>
@@ -22,6 +22,8 @@ As [notas técnicas da versão 0.30](docs/resume-catalog-frame-generation-0.30.m
 A branch `perf/decoder-display-latency-0.31` continua a 0.30 com solicitações de prioridade de tempo real ao decoder, cadência de tela compatível com o vídeo e diagnóstico separado de buffer observado/alvo/mínimo de rede. Veja as [notas e limites da versão 0.31](docs/decoder-display-latency-0.31.md). A redução efetiva de atraso ainda precisa de comparação em aparelho físico. A [análise de codecs, Nuvem-TV e OnlyTCL](docs/codec-and-project-review-0.31.md) registra a viabilidade de HEVC e de um renderer direto, seus limites e as verificações necessárias antes de ativá-los.
 
 Na **0.31.5**, os experimentos H.264 High/HEVC foram substituídos pela opção **H.264 leve — Baseline (720p)**. Há também um teste opcional de vibração USB/XInput para receptores reconhecidos, sujeito à autorização e ao driver Android. Veja [mudanças, limites e roteiro de teste](docs/light-codec-usb-rumble-0.31.5.md).
+
+A **0.31.6** acrescenta bitrate/região/idioma por jogo, perfis de controle, preferência IPv6 com alternativa IPv4, mouse/teclado nativos ou emulados, giroscópio, microfone opcional, ganho de áudio com controle adaptativo de picos, brilho/contraste e vibração do celular no toque. Veja [acesso, limitações e validação das dez adições](docs/session-controls-audio-0.31.6.md). As novas capturas de entrada/voz começam desativadas; a rede mantém Automático.
 
 Nesta branch, **GAME PASS** consulta a galeria cloud atual do site oficial, e **TRANSMITA SEU JOGO** mostra a galeria oficial “Transmita seu próprio jogo”. As listas completas usam os produtos da região BR, sem limitar a exibição aos títulos já associados ao motor nativo. Uma edição ainda sem associação é verificada no serviço autenticado ao selecionar. A galeria de compra não é um inventário da conta: jogar exige a licença e as condições do serviço. Veja [fontes, contagens e funcionamento das abas](docs/official-catalog-galleries-0.31.md) e o [contexto completo das modificações desta branch](docs/contexto-completo-branch-perf-0.31.md).
 
@@ -128,13 +130,15 @@ Campos ausentes aparecem como **n/d**, e o índice de qualidade só é calculado
 | Catálogo | Nomes e capas originais, cache de imagens e selos Game Pass e X\|S conforme os dados disponíveis. A inclusão no Game Pass usa a galeria oficial, separada do acesso a jogos comprados. |
 | Fila | Fundo do jogo, estimativa de espera, tempo aguardado, etapas de conexão e cancelamento. |
 | Transmissão | Vídeo nativo por WebRTC/H.264, com preferência por decodificação de hardware. Perfis solicitados de 720p, 1080p e 1080p HQ, preservados também no toque nativo. |
-| Áudio | Saída configurada como mídia/jogo, estéreo solicitado, teclas de volume no canal de mídia e foco de áudio com liberação ao encerrar. Volume e foco disponíveis no diagnóstico. |
+| Áudio | Mídia/jogo, estéreo, foco Android e ganho até 300% com redução adaptativa de picos. Microfone opcional via chat WebRTC, iniciando mudo, com permissão ao ativar. |
 | Vídeo | Seletores de menor atraso, adaptativo e compatibilidade. Escala nativa, proporção original, 16:9, 18:9, 21:9, 16:10, 4:3, esticar e zoom. |
-| Imagem | Nitidez e saturação opcionais, com aplicação durante a partida. |
+| Imagem | Nitidez, saturação, brilho e contraste durante a partida. AMD FSR 1.0.2 opcional, com ajustes no passe final RCAS. |
 | HDR10 | Diagnóstico do suporte anunciado pela tela, separado do formato do streaming. O motor nativo atual usa H.264 SDR de 8 bits e não ativa HDR10 real. |
-| Controle físico | USB, Bluetooth e dongles reconhecidos pelo Android. Navegação por direcional, botões e analógicos. |
+| Controle físico | USB, Bluetooth e dongles reconhecidos pelo Android. Perfis por dispositivo com zonas mortas, sensibilidade, curvas, inversão, gatilhos e remapeamento. |
+| Opções por jogo | Bitrate máximo Automático/1–50 Mbps, regiões oferecidas à conta e idioma solicitado. Preferência IPv6 opcional, mantendo IPv4. |
+| Mouse e sensores | Emulação de controle ou MKB nativo nos títulos/sessões compatíveis; F7 menu e F8 captura. Giroscópio opcional com LT/LB/sempre quando há sensor, fora do toque nativo Xbox. |
 | Coop local | Até quatro jogadores com estados independentes, quando aceitos pelo jogo e pela sessão cloud. |
-| Vibração | Via Android e teste USB/XInput opcional para receptores reconhecidos. Suporte depende do controle, dongle e acesso permitido pelo driver. |
+| Vibração | Via Android, teste USB/XInput opcional e vibração do celular no toque. Suporte depende do aparelho, jogo, controle, dongle e driver. |
 | Toque | HUDs por jogo, múltiplos dedos, câmera por arrasto, pedais, ataque/defesa no futebol, comandos combinados e gestos editáveis. Posição, tamanho, opacidade e ações salvas por título. Toque nativo experimental no mesmo motor WebRTC. |
 | Menu da partida | Atalho pelo controle ou pelo botão de toque, ajustes de HUD e imagem, estatísticas, diagnóstico e desconexão da sessão. |
 | Estatísticas | FPS, resolução recebida, bitrate, RTT, jitter, buffer, perdas, descarte e tempo de decodificação. Começam ocultas e são ativadas manualmente. |

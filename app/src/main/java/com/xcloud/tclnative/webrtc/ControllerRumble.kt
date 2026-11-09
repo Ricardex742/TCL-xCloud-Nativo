@@ -8,27 +8,29 @@ import android.os.Vibrator
 import android.view.InputDevice
 
 /** Addresses the gamepad's actuator, never the phone's or TV remote's vibrator. */
-class ControllerRumble(private val deviceFor: (Int) -> Int?, private val usb: UsbControllerRumble?=null) {
+class ControllerRumble(private val deviceFor: (Int) -> Int?, private val usb: UsbControllerRumble?=null,private val phoneVibrator: () -> Vibrator?={ null }) {
     private val handler=Handler(Looper.getMainLooper())
     private val generation=IntArray(4)
     private val running=mutableMapOf<Int,Vibrator>()
     private var commands=0L
     private var usbCommands=0L
     private var androidCommands=0L
+    var touchRumble=false
     var enabled=true
         set(value) { val changed=field!=value;field=value;if(changed && !value) stop() }
     fun play(command: RumbleCommand) {
         handler.post {
             if(!enabled) return@post
-            val id=deviceFor(command.player) ?: return@post
+            val id=deviceFor(command.player)
+            if(id==null && (command.player!=0 || !touchRumble)) return@post
             commands++
-            if(usb?.accepts(id)==true) {
+            if(id!=null && usb?.accepts(id)==true) {
                 running.remove(command.player)?.cancel()
                 generation[command.player]++
                 usbCommands++;usb.play(command,id)
                 return@post
             }
-            val vibrator=InputDevice.getDevice(id)?.vibrator?.takeIf { it.hasVibrator() } ?: return@post
+            val vibrator=(if(id==null) phoneVibrator() else InputDevice.getDevice(id)?.vibrator)?.takeIf { it.hasVibrator() } ?: return@post
             androidCommands++
             val token=++generation[command.player]
             running.remove(command.player)?.cancel()
@@ -53,7 +55,7 @@ class ControllerRumble(private val deviceFor: (Int) -> Int?, private val usb: Us
         running.values.forEach { runCatching { it.cancel() } }; running.clear()
         usb?.stop()
     }
-    fun diagnostics(): String = "Vibração: $commands comandos com controle associado; $androidCommands via Android; $usbCommands encaminhados para USB.\n"+
+    fun diagnostics(): String = "Vibração: $commands comandos com destino associado desde a abertura do app; $androidCommands via Android; $usbCommands encaminhados para USB.\n"+
         (usb?.status ?: "USB/XInput: desativado.")
     fun describe(): String {
         val devices=InputDevice.getDeviceIds().map { InputDevice.getDevice(it) }.filterNotNull().filter {

@@ -8,6 +8,8 @@ class Fsr1PipelineTest {
         val calls=mutableListOf<String>()
         var target=42;var allocated=false;var allocations=0
         var lastPlan: Fsr1Plan?=null;var lastMatrix: FloatArray?=null
+        var brightness=0;var contrast=100
+        override fun colors(brightness: Int,contrast: Int) { this.brightness=brightness;this.contrast=contrast }
         var strength=-1f;var saturation=-1f;var lastX=-1;var lastY=-1
         private fun call(stage: String) { calls+=stage;if(fail==stage) throw IllegalStateException("private driver body") }
         override fun begin() { call("begin") }
@@ -84,4 +86,13 @@ class Fsr1PipelineTest {
         renderer.release();val calls=gpu.calls.toList();renderer.release()
         assertFalse(renderer.drawRgb(7,identity,1280,720,0,0,1920,1080));assertEquals(calls,gpu.calls)
     }
+    @Test fun colorAdjustmentsUseTheExistingRcasPassWithoutAnExtraAllocation() {
+        val gpu=Gpu();val renderer=Fsr1Drawer(gpu)
+        renderer.configure(1280,720,50,100);renderer.setColorAdjustments(20,125)
+        assertTrue(renderer.drawRgb(7,identity,1280,720,0,0,1920,1080))
+        assertEquals(20,gpu.brightness);assertEquals(125,gpu.contrast)
+        assertEquals(1,gpu.allocations)
+        assertEquals(1,gpu.calls.count { it=="rcas" })
+    }
+
 }

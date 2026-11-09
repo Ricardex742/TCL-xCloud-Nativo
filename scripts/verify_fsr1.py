@@ -190,7 +190,7 @@ def texture(w,h,data=None,linear=False):
     return t
 
 
-def draw(p,source,iw,ih,ow,oh,strength=.5,saturation=1.,origin=(0,0),matrix=None):
+def draw(p,source,iw,ih,ow,oh,strength=.5,saturation=1.,origin=(0,0),matrix=None,brightness=0.,contrast=0.):
     x,y=origin;tw,th=ow+x+2,oh+y+2
     result=texture(tw,th)
     fbo=uint();gen_framebuffers(1,C.byref(fbo));bind_framebuffer(0x8D40,fbo)
@@ -208,6 +208,8 @@ def draw(p,source,iw,ih,ow,oh,strength=.5,saturation=1.,origin=(0,0),matrix=None
     uniform2f(uniform_location(p,b"viewport_origin"),x,y)
     uniform1f(uniform_location(p,b"rcas_strength"),strength)
     uniform1f(uniform_location(p,b"saturation"),saturation)
+    uniform1f(uniform_location(p,b"brightness"),brightness)
+    uniform1f(uniform_location(p,b"contrast_adjust"),contrast)
     if matrix is not None:uniform_matrix(uniform_location(p,b"tex_mat"),1,0,(C.c_float*16)(*matrix))
     viewport(x,y,ow,oh);draw_arrays(5,0,4)
     pixels=(C.c_ubyte*(ow*oh*4))();read_pixels(x,y,ow,oh,0x1908,0x1401,pixels)
@@ -303,6 +305,14 @@ checks+=1
 _,gray=run(app_easu,app_rcas,[80,140,210,255]*24,6,4,12,8,saturation=0.)
 assert all(abs(gray[i]-gray[i+1])<=1 and abs(gray[i]-gray[i+2])<=1 for i in range(0,len(gray),4))
 checks+=1
+# Color adjustments share the existing RCAS pass; the neutral FSR reference checks remain above.
+source=texture(4,4,[80,140,210,255]*16)
+for brightness,contrast in [(.1,0.),(0.,.25),(-.2,-.25)]:
+    pixels=draw(app_rcas,source,4,4,4,4,strength=0.,brightness=brightness,contrast=contrast)
+    expected=[round(max(0.,min(1.,(v/255.-.5)*(1.+contrast)+.5+brightness))*255) for v in [80,140,210]]
+    assert all(abs(a-b)<=2 for a,b in zip(pixels[:3],expected)),(pixels[:3],expected)
+    checks+=1
+delete_textures(1,C.byref(source))
 report=dict(renderer=get_string(0x1F01).decode(),version=get_string(0x1F02).decode(),checks=checks,
             upstream_commit="a21ffb8f6c13233ba336352bdff293894c706575",comparisons=comparisons,
             note="Readback is test-only. Software timings do not measure Android GPU or streaming latency.")

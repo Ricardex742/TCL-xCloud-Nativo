@@ -137,11 +137,13 @@ vertex_pointer(0, 2, 0x1406, 0, 0, vertices)
 enable_attribute(0)
 
 
-def render(data, sharpness, saturation):
+def render(data, sharpness, saturation, brightness=0., contrast=0.):
     pixels = (C.c_ubyte * len(data))(*data)
     tex_image(0x0DE1, 0, 0x1908, 8, 8, 0, 0x1908, 0x1401, pixels)
     uniform1f(uniform_location(program, b"sharpness"), sharpness)
     uniform1f(uniform_location(program, b"saturation"), saturation)
+    uniform1f(uniform_location(program, b"brightness"), brightness)
+    uniform1f(uniform_location(program, b"contrast_adjust"), contrast)
     draw_arrays(5, 0, 4)
     result = (C.c_ubyte * 256)()
     read_pixels(0, 0, 8, 8, 0x1908, 0x1401, result)
@@ -158,7 +160,11 @@ center = 4 * (4 * 8 + 4)
 edge[center:center + 4] = [153, 153, 153, 255]
 actual = render(edge, .5, 1)[center:center + 3]
 assert all(abs(value - 179) <= 2 for value in actual), actual
-report = f"{get_string(0x1F02).decode()}\nRGB/OES/YUV shaders compiled and linked.\n5 pixel-output checks passed.\n"
+for brightness, contrast, expected in [(.1, 0., [226, 126, 76]), (-.2, 0., [149, 49, 0]),
+                                         (0., .5, [236, 86, 11]), (0., -.5, [164, 114, 89])]:
+    actual = render(flat, 0., 1., brightness, contrast)[center:center + 3]
+    assert all(abs(a - b) <= 2 for a, b in zip(actual, expected)), (brightness, contrast, actual, expected)
+report = f"{get_string(0x1F02).decode()}\nRGB/OES/YUV shaders compiled and linked.\n9 pixel-output checks passed.\n"
 print(report, end="")
 output = root / "app/build/reports/dashboard/image-filter-validation.txt"
 output.parent.mkdir(parents=True, exist_ok=True)

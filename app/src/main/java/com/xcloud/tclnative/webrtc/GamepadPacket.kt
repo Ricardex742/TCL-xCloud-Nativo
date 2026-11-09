@@ -17,10 +17,14 @@ object GamepadPacket {
         header(15, 8, 0, timestampMs).put(maxTouchPoints.coerceIn(0,10).toByte()).array()
     fun encode(state: GamepadState, sequence: Int, timestampMs: Double): ByteArray = encode(mapOf(0 to state),sequence,timestampMs)
     fun encode(states: Map<Int,GamepadState>, sequence: Int, timestampMs: Double,
-               pointers: List<NativePointer> = emptyList(), width: Int = 1920, height: Int = 1080): ByteArray {
+               pointers: List<NativePointer> = emptyList(), width: Int = 1920, height: Int = 1080,
+               keys: List<NativeKey> = emptyList(), mice: List<NativeMouse> = emptyList()): ByteArray {
         require(states.size<=4 && states.keys.all { it in 0..3 } && pointers.size<=10)
-        val type=(if(states.isEmpty()) 0 else 2) or (if(pointers.isEmpty()) 0 else 4)
-        val out=header(14+(if(states.isEmpty()) 0 else 1+23*states.size)+(if(pointers.isEmpty()) 0 else 2+20*pointers.size),type,sequence,timestampMs)
+        require(keys.size<=32 && mice.size<=16 && keys.all { it.code in 1..255 })
+        val type=(if(states.isEmpty()) 0 else 2) or (if(pointers.isEmpty()) 0 else 4) or
+            (if(mice.isEmpty()) 0 else 32) or (if(keys.isEmpty()) 0 else 64)
+        val out=header(14+(if(states.isEmpty()) 0 else 1+23*states.size)+(if(pointers.isEmpty()) 0 else 2+20*pointers.size)+
+            (if(mice.isEmpty()) 0 else 1+18*mice.size)+(if(keys.isEmpty()) 0 else 1+3*keys.size),type,sequence,timestampMs)
         if(states.isNotEmpty()) {
             out.put(states.size.toByte())
             states.toSortedMap().forEach { (index,state) ->
@@ -45,6 +49,14 @@ object GamepadPacket {
                     .putInt((p.x.coerceIn(0f,1f)*width.coerceAtLeast(1)).toInt())
                     .putInt((p.y.coerceIn(0f,1f)*height.coerceAtLeast(1)).toInt()).put(p.type.toByte())
             }
+        }
+        if(mice.isNotEmpty()) {
+            out.put(mice.size.toByte())
+            mice.forEach { out.putInt(it.x).putInt(it.y).putInt(it.wheelX).putInt(it.wheelY).put((it.buttons and 31).toByte()).put(0) }
+        }
+        if(keys.isNotEmpty()) {
+            out.put(keys.size.toByte())
+            keys.forEach { out.put(2).put((if(it.pressed) 1 else 0).toByte()).put(it.code.toByte()) }
         }
         return out.array()
     }

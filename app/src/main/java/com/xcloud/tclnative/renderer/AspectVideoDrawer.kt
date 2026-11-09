@@ -32,6 +32,8 @@ class AspectVideoDrawer(@Volatile var stretch: Boolean,
     @Volatile var sourceHeight=1080
     @Volatile var sharpness=0
     @Volatile var saturation=100
+    @Volatile var brightness=0
+    @Volatile var contrast=100
     @Volatile var fsrEnabled=false
     @Volatile var fsrSharpness=50
     @Volatile private var fsr: FsrUpscaler?=null
@@ -42,12 +44,13 @@ class AspectVideoDrawer(@Volatile var stretch: Boolean,
         if(!fsrEnabled) { fsr?.release();fsr=null;return null }
         return (fsr ?: fsrFactory?.invoke()?.also { fsr=it })?.also {
             it.configure(if(stretch) sourceWidth else width,if(stretch) sourceHeight else height,fsrSharpness,saturation)
+            it.setColorAdjustments(brightness,contrast)
         }
     }
     private fun drawer(width: Int,height: Int): RendererCommon.GlDrawer {
-        if(sharpness==0 && saturation==100) return delegate
+        if(sharpness==0 && saturation==100 && brightness==0 && contrast==100) return delegate
         return (adjusted ?: ImageAdjustmentDrawer().also { adjusted=it }).also {
-            it.configure(sharpness,saturation,if(stretch) sourceWidth else width,if(stretch) sourceHeight else height)
+            it.configure(sharpness,saturation,if(stretch) sourceWidth else width,if(stretch) sourceHeight else height,brightness,contrast)
         }
     }
     private val transformed=FloatArray(16)

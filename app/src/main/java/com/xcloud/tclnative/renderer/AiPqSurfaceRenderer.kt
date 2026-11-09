@@ -62,6 +62,8 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     private var videoHeight = 1080
     private var sharpness=0
     private var saturation=100
+    private var brightness=0
+    private var contrast=100
     private var fsrRequested=false
     private var fsrSharpness=50
     private val fsrEnabled get()=fsrRequested && !compatibility
@@ -72,9 +74,11 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         renderer?.setEnableHardwareScaler(nativeUpscaling && !fsrEnabled)
     }
     fun setFsrSharpness(sharpness: Int) { fsrSharpness=sharpness.coerceIn(0,100);aspectDrawer?.fsrSharpness=fsrSharpness }
-    fun setImageAdjustments(sharpness: Int,saturation: Int) {
+    fun setImageAdjustments(sharpness: Int,saturation: Int,brightness: Int=0,contrast: Int=100) {
+        this.brightness=brightness.coerceIn(-50,50);this.contrast=contrast.coerceIn(50,150)
         this.sharpness=sharpness.coerceIn(0,100); this.saturation=saturation.coerceIn(0,200)
         aspectDrawer?.sharpness=this.sharpness; aspectDrawer?.saturation=this.saturation
+        aspectDrawer?.brightness=this.brightness;aspectDrawer?.contrast=this.contrast
     }
     fun touchCoordinates(x: Float,y: Float): Pair<Float,Float>? = VideoScalingPolicy.touchCoordinates(
         width,height,videoWidth,videoHeight,aspect,x,y)
@@ -116,7 +120,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         renderer?.let { removeView(it); it.release() }
         val id = generation
         val drawer=AspectVideoDrawer(aspect.stretch,{ org.webrtc.Fsr1Drawer(context) }).also {
-            it.sharpness=sharpness;it.saturation=saturation;it.fsrEnabled=fsrEnabled;it.fsrSharpness=fsrSharpness;aspectDrawer=it
+            it.sharpness=sharpness;it.saturation=saturation;it.brightness=brightness;it.contrast=contrast;it.fsrEnabled=fsrEnabled;it.fsrSharpness=fsrSharpness;aspectDrawer=it
         }
         renderer = object : SurfaceViewRenderer(context) {
             override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
@@ -228,7 +232,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         return "Surface $size → janela ${width}x$height | Saída Android: $output\n" +
             "Layout do vídeo: $layout | Área calculada: ${expected.width}x${expected.height} | Quadro do renderer: ${videoWidth}x$videoHeight\n" +
             "Escala da Surface: ${if(fsrEnabled) "renderer em resolução de saída para FSR" else if (nativeUpscaling) "HW solicitada" else "HW desativada"}; imagem ajustada à janela | Conteúdo ${if(compatibility) 30 else 60} FPS sinalizado à Surface: ${if (frameRateHintRequested) "sim" else "não confirmado"} | Pós-processamento mínimo: ${if (minimalPostProcessingRequested) "solicitado" else "padrão"}; suporte Android declarado: $minimalLabel\n" +
-            "Proporção: ${aspect.label} | Nitidez padrão: $sharpness% | Saturação: $saturation% | Apresentação: até ${if(compatibility) 30 else 60} FPS | AiPQ: não verificável pelo app\n"+
+            "Proporção: ${aspect.label} | Nitidez padrão: $sharpness% | Saturação: $saturation% | Brilho: $brightness% | Contraste: $contrast% | Apresentação: até ${if(compatibility) 30 else 60} FPS | AiPQ: não verificável pelo app\n"+
             (if(fsrRequested && compatibility) "AMD FSR 1.0.2: inativo no modo Compatibilidade" else aspectDrawer?.fsrDiagnostics() ?: "AMD FSR 1.0.2: desligado")
     }
 

@@ -8,5 +8,7 @@ interface StreamingPeer {
     fun onOfferPosted() {}
     suspend fun setRemoteAnswer(answerSdp: String)
     suspend fun addRemoteCandidates(candidates: List<IceCandidate>)
+    fun configureChat(supported: Boolean) {}
+    fun configureInput(version: Int) {}
     suspend fun awaitReady()
 }

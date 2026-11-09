@@ -23,10 +23,12 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
+data class CloudRegion(val name: String,val baseUri: String,val isDefault: Boolean=false)
+
 data class XCloudSession(
     val gssvToken: String, val baseUri: String, val userHash: String,
     val expiresAtMs: Long = System.currentTimeMillis() + 3600_000L, val transferToken: String = "",
-    val xuid: String? = null
+    val xuid: String? = null,val regions: List<CloudRegion> = emptyList()
 ) {
     val libraryAccountId: String get() = xuid?.let { "xuid:$it" } ?: userHash
 }
@@ -191,7 +193,15 @@ class XalAuthenticator(
         profileUserToken = user.getString("Token")
         profileUserHash = hash
         XCloudSession(cloud.getString("gsToken"), region.getString("baseUri").trimEnd('/'), hash,
-            clockMs() + cloud.optLong("durationInSeconds", 3600) * 1000, xuid = xuid)
+            clockMs() + cloud.optLong("durationInSeconds", 3600) * 1000, xuid = xuid,
+            regions=(0 until regions.length()).mapNotNull { index ->
+                val item=regions.getJSONObject(index)
+                val uri=item.optString("baseUri").trimEnd('/')
+                val parsed=runCatching { java.net.URI(uri) }.getOrNull()
+                if(parsed==null || parsed.host.isNullOrBlank() || parsed.userInfo!=null || parsed.query!=null || parsed.fragment!=null ||
+                    (parsed.scheme!="https" && !(parsed.scheme=="http" && parsed.host in listOf("localhost","127.0.0.1","::1")))) null
+                else CloudRegion(item.optString("name").ifBlank { parsed.host }.take(100),uri,item.optBoolean("isDefault"))
+            }.distinctBy { it.name })
     }
 
     /** Optional Xbox profile grant is separate from GSSV/console transfer and never blocks playing. */

@@ -6,6 +6,8 @@ uniform vec2 input_size;
 uniform vec2 viewport_origin;
 uniform float rcas_strength;
 uniform float saturation;
+uniform float brightness;
+uniform float contrast_adjust;
 vec3 loadPixel(vec2 p) {
     return texture2D(source_tex,(clamp(p,vec2(0.0),input_size-1.0)+0.5)/input_size).rgb;
 }
@@ -34,5 +36,7 @@ void main() {
         color=(lobe*(b+d+f+h)+e)/(4.0*lobe+1.0);
     }
     float luminance=dot(color,vec3(0.299,0.587,0.114));
-    gl_FragColor=vec4(clamp(mix(vec3(luminance),color,saturation),0.0,1.0),1.0);
+    color=mix(vec3(luminance),color,saturation);
+    if(brightness!=0.0 || contrast_adjust!=0.0) color=(color-0.5)*(1.0+contrast_adjust)+0.5+brightness;
+    gl_FragColor=vec4(clamp(color,0.0,1.0),1.0);
 }

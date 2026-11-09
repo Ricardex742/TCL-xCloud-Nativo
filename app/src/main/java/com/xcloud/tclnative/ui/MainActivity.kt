@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.ui
 
+import com.xcloud.tclnative.settings.*
+import com.xcloud.tclnative.webrtc.*
 import android.app.Activity
 import android.app.Dialog
 import android.content.ClipData
@@ -24,19 +26,9 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.doOnPreDraw
 import kotlin.coroutines.resume
-import com.xcloud.tclnative.settings.PlaybackSettings
-import com.xcloud.tclnative.settings.VideoMode
 import com.xcloud.tclnative.diagnostics.*
 import com.xcloud.tclnative.ui.dashboard.SessionReportPanel
 import com.xcloud.tclnative.ui.dashboard.SessionTransitionView
-import com.xcloud.tclnative.settings.PlaybackSettingsStore
-import com.xcloud.tclnative.settings.StatisticsVisibility
-import com.xcloud.tclnative.settings.TouchMode
-import com.xcloud.tclnative.settings.DeviceInputPolicy
-import com.xcloud.tclnative.settings.InputDeviceProfile
-import com.xcloud.tclnative.webrtc.ControllerRouter
-import com.xcloud.tclnative.webrtc.ControllerRumble
-import com.xcloud.tclnative.webrtc.GamepadState
 import com.xcloud.tclnative.ui.dashboard.PlaybackSettingsPanel
 import com.xcloud.tclnative.catalog.CatalogCache
 import java.io.File
@@ -60,11 +52,6 @@ import com.xcloud.tclnative.auth.XCloudSession
 import com.xcloud.tclnative.auth.XalAuthenticator
 import com.xcloud.tclnative.renderer.AiPqSurfaceRenderer
 import com.xcloud.tclnative.signaling.XCloudSignalingClient
-import com.xcloud.tclnative.webrtc.XCloudWebRtcClient
-import com.xcloud.tclnative.webrtc.ControllerShortcut
-import com.xcloud.tclnative.webrtc.ShortcutUpdate
-import com.xcloud.tclnative.webrtc.VideoRecoveryPolicy
-import com.xcloud.tclnative.webrtc.VideoRecoveryAction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.*
@@ -90,13 +77,30 @@ open class MainActivity : Activity() {
     private var webrtcClient: XCloudWebRtcClient? = null
     private val mainScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var gameJob: Job? = null
+    private var microphoneJob: Job?=null
+    private var pendingMicrophoneGeneration: Int?=null
+    private var sessionSettings: PlaybackSettings?=null
+    private var sessionDesktopMode=DesktopInputMode.OFF
+    private var desktopCaptured=false
+    private var desktopFocusState: Pair<Boolean,Boolean>?=null
+    private var lastMousePosition: Pair<Float,Float>?=null
+    private val desktopGamepad=DesktopGamepad()
+    private val auxiliaryHandler=android.os.Handler(android.os.Looper.getMainLooper())
+    private val releaseMouseMotion=Runnable { desktopGamepad.releaseMotion();if(gameplayInputEnabled()) publishGamepad(0) }
+    private val controllerProfiles by lazy { ControllerProfileStore(this) }
+    private val gyro by lazy { GyroController(this,{ window.decorView.display?.rotation ?: android.view.Surface.ROTATION_0 }) {
+        if(gameplayInputEnabled()) publishGamepad(0)
+    } }
     @Volatile private var playbackGeneration = 0
     private val controllers=ControllerRouter()
     private var gamepadState: GamepadState
         get()=controllers.physical(0)
         set(value) { controllers.update(0,value) }
     private val usbRumble by lazy { com.xcloud.tclnative.webrtc.UsbControllerRumble(this) }
-    private val rumble by lazy { ControllerRumble(controllers::deviceFor,usbRumble) }
+    private val rumble by lazy { ControllerRumble(controllers::deviceFor,usbRumble) {
+        if(InputDeviceProfile.read(this).touchDevice && currentTouchMode!=TouchMode.OFF)
+            getSystemService(Context.VIBRATOR_SERVICE) as? android.os.Vibrator else null
+    } }
     private lateinit var touchView: GameTouchView
     private var currentTouchMode=TouchMode.OFF
     private val hudStore by lazy { com.xcloud.tclnative.touch.GameHudStore(this) }
@@ -589,7 +593,24 @@ open class MainActivity : Activity() {
             refresh = { renderGameDashboard(session) },
             logout = { authenticator.clearSession(); renderLoginMenu(); syncHomeShortcuts() },
             testRumble = { showRumbleDiagnostics { showSettings(session) } },
-            homeShortcuts = { showHomeShortcuts() },lastReport={ showLatestReport() }).show()
+            homeShortcuts = { showHomeShortcuts() },lastReport={ showLatestReport() },
+            sessionOptions={ showSessionOptionsMenu(session) },controllerProfiles={ showControllerProfiles { showSettings(session) } }).show()
+    }
+    private fun showControllerProfiles(back: () -> Unit) {
+        com.xcloud.tclnative.ui.dashboard.ControllerProfilePanel(this,controllerProfiles) { if(webrtcClient!=null) (0..3).filter { controllers.deviceFor(it)!=null }.forEach(::publishGamepad) }.show(back)
+    }
+    private fun showSessionOptionsMenu(session: XCloudSession) {
+        val game=activeGame ?: dashboard?.selectedGame
+        val store=SessionOptionsStore(this,session.libraryAccountId)
+        val actions=mutableListOf(ConsoleAction("Padrão para todas as partidas") {
+            com.xcloud.tclnative.ui.dashboard.SessionOptionsPanel(this,store,session.regions,back={ showSessionOptionsMenu(session) }).show()
+        })
+        if(game!=null) actions.add(ConsoleAction("Este jogo: ${game.name}") {
+            com.xcloud.tclnative.ui.dashboard.SessionOptionsPanel(this,store,session.regions,game.titleId,game.name) {
+                showSessionOptionsMenu(session)
+            }.show()
+        })
+        ConsoleDialogs.menu(this,"Opções das partidas",actions,onBack={ if(webrtcClient!=null) showGameMenu() else showSettings(session) })
     }
     private fun showLatestReport() {
         val report=lastSessionReport ?: reportStore.read()
@@ -732,8 +753,9 @@ open class MainActivity : Activity() {
     }
     private fun applyPlaybackSettings(settings: PlaybackSettings) {
         playbackSettings=settings
-        surfaceRenderer.setImageAdjustments(settings.sharpness,settings.saturation)
+        surfaceRenderer.setImageAdjustments(settings.sharpness,settings.saturation,settings.brightness,settings.contrast)
         surfaceRenderer.setFsrSharpness(settings.fsrSharpness)
+        webrtcClient?.setOutputGain(settings.audioGain)
     }
     private fun showRumbleDiagnostics(back: () -> Unit) {
         val actions=mutableListOf(ConsoleAction("Testar via Android") { rumble.test();showRumbleDiagnostics(back) })
@@ -754,7 +776,12 @@ open class MainActivity : Activity() {
             statistics={ cycleStatistics() },
             diagnostics={ showCopyableErrorDialog("Áudio e vídeo","${Build.MANUFACTURER} ${Build.MODEL} | Android ${Build.VERSION.RELEASE} | ${Build.HARDWARE}\n${surfaceRenderer.diagnostics()}\n${currentSignaling?.profileDiagnostics() ?: ""}\n${webrtcClient?.audioDiagnostics() ?: ""}\n${streamHistory.report()}") },
             disconnect={ cancelPlayback() },
-            hud={ showGameHudSettings() }).also { dialog ->
+            hud={ showGameHudSettings() },
+            sessionOptions={ currentSession?.let(::showSessionOptionsMenu) },
+            audio={ PlaybackSettingsPanel(this,settingsStore,::applyPlaybackSettings,{}, {}, {}).showAudio { showGameMenu() } },
+            microphone=::toggleMicrophone,microphoneLabel=webrtcClient?.microphoneLabel() ?: "Ativar microfone",
+            controllerProfiles={ showControllerProfiles { showGameMenu() } },
+            mouse=if(sessionDesktopMode==DesktopInputMode.OFF) null else ({ auxiliaryHandler.post { setDesktopCapture(!desktopCaptured) } })).also { dialog ->
                 dialog.setOnDismissListener { if(gameMenuDialog===dialog) gameMenuDialog=null }
             }
     }
@@ -833,6 +860,24 @@ open class MainActivity : Activity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if(sessionDesktopMode!=DesktopInputMode.OFF && gameplayInputEnabled() &&
+            event.device?.keyboardType==InputDevice.KEYBOARD_TYPE_ALPHABETIC) {
+            if(event.keyCode==KeyEvent.KEYCODE_F7) {
+                if(event.action==KeyEvent.ACTION_DOWN && event.repeatCount==0) showGameMenu()
+                return true
+            }
+            if(event.keyCode==KeyEvent.KEYCODE_F8) {
+                if(event.action==KeyEvent.ACTION_DOWN && event.repeatCount==0) setDesktopCapture(!desktopCaptured)
+                return true
+            }
+            if(desktopCaptured && event.action in setOf(KeyEvent.ACTION_DOWN,KeyEvent.ACTION_UP)) {
+                val down=event.action==KeyEvent.ACTION_DOWN
+                if(sessionDesktopMode==DesktopInputMode.NATIVE) {
+                    val code=DesktopKeys.windowsKey(event.keyCode)
+                    if(code!=null) { if(event.repeatCount==0) webrtcClient?.desktopKey(NativeKey(code,down));return true }
+                } else if(desktopGamepad.key(event.keyCode,down)) { publishGamepad(0);return true }
+            }
+        }
         if(transitionPanel.visibility==View.VISIBLE && event.keyCode in setOf(KeyEvent.KEYCODE_BACK,KeyEvent.KEYCODE_BUTTON_B,
                 KeyEvent.KEYCODE_BUTTON_A,KeyEvent.KEYCODE_DPAD_CENTER,KeyEvent.KEYCODE_ENTER,KeyEvent.KEYCODE_DPAD_UP,
                 KeyEvent.KEYCODE_DPAD_DOWN,KeyEvent.KEYCODE_DPAD_LEFT,KeyEvent.KEYCODE_DPAD_RIGHT)) {
@@ -874,7 +919,14 @@ open class MainActivity : Activity() {
         val titleId = game.titleId
         val gameName = game.name
         activeGame = game
+        microphoneJob?.cancel();pendingMicrophoneGeneration=null
         val settings = playbackSettings.forSession()
+        sessionSettings=settings
+        val sessionOptions=currentSession?.let { SessionOptionsStore(this,it.libraryAccountId).read(titleId) } ?: SessionOptions()
+        sessionDesktopMode=if(settings.desktopInput==DesktopInputMode.NATIVE && !DesktopKeys.nativeSupported(game.supportedInputTypes)) {
+            Toast.makeText(this,"Este jogo não anunciou mouse e teclado nativos. Use emulação ou controle.",Toast.LENGTH_LONG).show()
+            DesktopInputMode.OFF
+        } else settings.desktopInput
         joystickDispatch.request(false)
         immediateJoystickForSession=settings.videoMode.lowLatency
         val compatible=settings.videoMode==com.xcloud.tclnative.settings.VideoMode.COMPATIBILITY
@@ -890,7 +942,7 @@ open class MainActivity : Activity() {
         catalogWork.pause()
         dashboard?.pauseArtwork()
         val choice=touchChoice ?: settings.touchMode
-        val touchMode=DeviceInputPolicy.resolve(InputDeviceProfile.read(this),choice,game)
+        val touchMode=if(sessionDesktopMode!=DesktopInputMode.OFF) TouchMode.OFF else DeviceInputPolicy.resolve(InputDeviceProfile.read(this),choice,game)
         currentTouchMode=TouchMode.OFF
         touchView.configure(TouchMode.OFF)
         statistics.beginSession()
@@ -911,16 +963,17 @@ open class MainActivity : Activity() {
             val firstFrame = CompletableDeferred<Unit>()
             val transportFailure = CompletableDeferred<Exception>()
             resetController()
-            controllers.beginSession(settings.localCoOp,touchMode!=TouchMode.OFF)
+            controllers.beginSession(settings.localCoOp,touchMode!=TouchMode.OFF || sessionDesktopMode!=DesktopInputMode.OFF)
             InputDevice.getDeviceIds().map { InputDevice.getDevice(it) }.filterNotNull().filter {
                 it.sources and InputDevice.SOURCE_GAMEPAD==InputDevice.SOURCE_GAMEPAD || it.sources and InputDevice.SOURCE_JOYSTICK==InputDevice.SOURCE_JOYSTICK
             }.sortedWith(compareBy<InputDevice> { it.id!=preferredControllerId }.thenBy { it.id }).forEach { controllers.slot(it.id) }
             rumble.enabled=settings.rumble
+            rumble.touchRumble=settings.touchRumble
             surfaceRenderer.compatibility=compatible
             surfaceRenderer.setFsr(settings.fsr==com.xcloud.tclnative.settings.FsrMode.FSR1,settings.fsrSharpness)
             surfaceRenderer.nativeUpscaling = settings.nativeUpscaling
             surfaceRenderer.aspect = settings.aspect
-            surfaceRenderer.setImageAdjustments(settings.sharpness,settings.saturation)
+            surfaceRenderer.setImageAdjustments(settings.sharpness,settings.saturation,settings.brightness,settings.contrast)
             surfaceRenderer.minimalPostProcessingRequested = settings.videoMode.lowLatency && Build.VERSION.SDK_INT >= 30
             surfaceRenderer.prepareForSession(settings.resolution.width,settings.resolution.height)
             surfaceRenderer.onFirstFrameRendered = {
@@ -931,6 +984,7 @@ open class MainActivity : Activity() {
                     updateJoystickDispatch()
                     currentTouchMode=touchMode
                     touchView.configure(touchMode,game,hudStore.read(titleId))
+                    resumeAuxiliaryInput()
                     hudTextView.visibility = View.GONE
                     gameLibrary?.recordPlayed(titleId)
                     hudTextView.text = "Vídeo nativo ativo [$gameName]"
@@ -974,15 +1028,17 @@ open class MainActivity : Activity() {
                     }, lowLatencyVideo = settings.videoMode.lowLatency, streamResolution = settings.resolution,
                     nativeTouch = touchMode==TouchMode.NATIVE,
                     onRumble = { command -> if(generation==playbackGeneration) rumble.play(command) },compatibility=compatible,
-                    videoCodec=settings.videoCodec).also { allocatedRtc=it } }
+                    videoCodec=settings.videoCodec,maxBitrateKbps=sessionOptions.maxBitrateKbps,
+                    preferIpv6=settings.ipPreference==IpPreference.IPV6,nativeKeyboardMouse=sessionDesktopMode==DesktopInputMode.NATIVE,
+                    microphoneAllowed=settings.microphone,outputGain=settings.audioGain).also { allocatedRtc=it } }
                 webrtcClient = rtc
                 val appVersion=packageManager.getPackageInfo(packageName,0).versionName ?: "n/d"
                 tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}"+
                     (if(touchMode==TouchMode.NATIVE) "\n${touchView.nativeDiagnostics()}" else "")+
-                    "\n${joystickDispatch.diagnostics()}\n${signaling.profileDiagnostics()}\n${surfaceRenderer.diagnostics()}\n${playbackDisplay.diagnostics(window.decorView.display)}\n${rtc.audioDiagnostics()}\n${rtc.latencyDiagnostics()}\n${rtc.iceDiagnostics()}\n${rtc.codecDiagnostics()}\n${rumble.diagnostics()}" }
+                    "\n${joystickDispatch.diagnostics()}\n${signaling.profileDiagnostics()}\n${surfaceRenderer.diagnostics()}\n${playbackDisplay.diagnostics(window.decorView.display)}\n${rtc.audioDiagnostics()}\n${rtc.latencyDiagnostics()}\n${rtc.iceDiagnostics()}\n${rtc.codecDiagnostics()}\n${rumble.diagnostics()}\n${gyro.status} | Mouse/teclado: ${sessionDesktopMode.label} | Entrada MKB ativa: $desktopCaptured | Captura Android: ${if(Build.VERSION.SDK_INT>=26) window.decorView.hasPointerCapture() else false}" }
                 surfaceRenderer.displayDimensions()?.let(rtc::updateDisplayDimensions)
                 if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
-                signaling.startAndConnectWebRtcSession(titleId, rtc, resolution = settings.resolution, nativeTouch=touchMode==TouchMode.NATIVE, onQueueStatus = { status -> runOnUiThread {
+                signaling.startAndConnectWebRtcSession(titleId, rtc, resolution = settings.resolution, nativeTouch=touchMode==TouchMode.NATIVE,options=sessionOptions,microphone=settings.microphone, onQueueStatus = { status -> runOnUiThread {
                     if (generation == playbackGeneration) showQueue(status)
                 } }) { progress -> runOnUiThread {
                     if (generation == playbackGeneration && !firstFrame.isCompleted) {
@@ -1074,6 +1130,10 @@ open class MainActivity : Activity() {
                 withContext(NonCancellable) {
                     val rtc=allocatedRtc
                     tracker.finish(android.os.SystemClock.elapsedRealtime(),if(failed) SessionEnd.FAILURE else SessionEnd.USER,rtc?.currentInputMetrics())
+                    microphoneJob?.cancelAndJoin();microphoneJob=null;pendingMicrophoneGeneration=null
+                    rtc?.setMicrophoneMuted(true)
+                    gyro.stop();setDesktopCapture(false)
+                    if(generation==playbackGeneration) { sessionDesktopMode=DesktopInputMode.OFF;sessionSettings=null }
                     if (generation == playbackGeneration) {
                         showCatalogReturn(game,pendingLoadingGame==null)
                         finishLoading()
@@ -1134,6 +1194,47 @@ open class MainActivity : Activity() {
         if (pendingLoadingGame != null) queuePanel.updateQueue(status)
     }
 
+    private fun toggleMicrophone() {
+        val rtc=webrtcClient ?: return
+        if(rtc.microphoneActive) { rtc.setMicrophoneMuted(true);return }
+        if(microphoneJob?.isActive==true) { Toast.makeText(this,"Negociando microfone…",Toast.LENGTH_SHORT).show();return }
+        if(!rtc.canUseMicrophone()) {
+            ConsoleDialogs.message(this,"Microfone",rtc.microphoneUnavailableReason())
+            return
+        }
+        if(androidx.core.content.ContextCompat.checkSelfPermission(this,android.Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED) {
+            pendingMicrophoneGeneration=playbackGeneration
+            requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO),2206)
+            return
+        }
+        val generation=playbackGeneration
+        microphoneJob=mainScope.launch {
+            try {
+                if(!rtc.microphoneNegotiated()) {
+                    withTimeout(35000) {
+                        val offer=rtc.createChatOffer()
+                        val answer=currentSignaling?.renegotiateChat(offer) ?: throw java.io.IOException("CHAT: sessão encerrada")
+                        ensureActive()
+                        if(generation!=playbackGeneration || webrtcClient!==rtc) throw CancellationException("session replaced")
+                        rtc.applyChatAnswer(answer)
+                    }
+                }
+                if(activityVisible && generation==playbackGeneration && webrtcClient===rtc) rtc.setMicrophoneMuted(false)
+            } catch(cancelled: CancellationException) {
+                withContext(NonCancellable) { rtc.rejectChat() };throw cancelled
+            } catch(error: Exception) {
+                rtc.rejectChat()
+                if(generation==playbackGeneration) showCopyableErrorDialog("Microfone",error.message ?: "CHAT: não foi possível negociar o microfone")
+            }
+        }
+    }
+    override fun onRequestPermissionsResult(requestCode: Int,permissions: Array<out String>,grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode,permissions,grantResults)
+        if(requestCode==2206) {
+            val generation=pendingMicrophoneGeneration;pendingMicrophoneGeneration=null
+            if(generation==playbackGeneration && activityVisible && grantResults.firstOrNull()==PackageManager.PERMISSION_GRANTED) toggleMicrophone()
+        }
+    }
     private fun cancelPlayback() {
         if(transitionPanel.exiting) return
         showCatalogReturn(activeGame ?: pendingLoadingGame,pendingLoadingGame==null)
@@ -1173,7 +1274,51 @@ open class MainActivity : Activity() {
 
     private fun updateJoystickDispatch() { joystickDispatch.request(activityVisible && immediateJoystickForSession && gameplayInputEnabled()) }
 
-    private fun publishGamepad(slot: Int) { webrtcClient?.updateGamepad(controllers.combined(slot),slot) }
+    private fun combinedInput(slot: Int,physicalOverride: GamepadState?=null): GamepadState {
+        val raw=physicalOverride ?: controllers.physical(slot)
+        val device=controllers.deviceFor(slot)?.let(InputDevice::getDevice)
+        val physical=if(device==null) raw else controllerProfiles.read(controllerProfiles.key(device)).apply(raw)
+        val base=controllers.combined(slot,physical)
+        return if(slot==0) gyro.apply(if(sessionDesktopMode==DesktopInputMode.EMULATED) ControllerRouter.merge(base,desktopGamepad.state()) else base) else base
+    }
+    private fun publishGamepad(slot: Int) { webrtcClient?.updateGamepad(combinedInput(slot),slot) }
+    private fun setDesktopCapture(enabled: Boolean) {
+        val active=enabled && sessionDesktopMode!=DesktopInputMode.OFF && webrtcClient!=null
+        desktopCaptured=active;lastMousePosition=null
+        if(!active) { desktopGamepad.reset();auxiliaryHandler.removeCallbacks(releaseMouseMotion);webrtcClient?.releaseDesktop() }
+        if(Build.VERSION.SDK_INT>=26) {
+            if(active) {
+                if(desktopFocusState==null) desktopFocusState=window.decorView.isFocusable to window.decorView.isFocusableInTouchMode
+                window.decorView.isFocusableInTouchMode=true;window.decorView.isFocusable=true
+                window.decorView.setOnCapturedPointerListener { _,event -> handleDesktopMouse(event,true) }
+                window.decorView.requestFocus();window.decorView.requestPointerCapture()
+            } else { window.decorView.releasePointerCapture();window.decorView.setOnCapturedPointerListener(null)
+                desktopFocusState?.let { window.decorView.isFocusableInTouchMode=it.second;window.decorView.isFocusable=it.first };desktopFocusState=null }
+        }
+        if(webrtcClient!=null) publishGamepad(0)
+    }
+    private fun resumeAuxiliaryInput() {
+        val settings=sessionSettings ?: return
+        if(!gameplayInputEnabled()) return
+        gyro.start(settings.gyroMode,settings.gyroSensitivity,currentTouchMode==TouchMode.NATIVE)
+        if(sessionDesktopMode!=DesktopInputMode.OFF) setDesktopCapture(true)
+    }
+    private fun handleDesktopMouse(event: MotionEvent,captured: Boolean=false): Boolean {
+        if(!desktopCaptured || sessionDesktopMode==DesktopInputMode.OFF || !gameplayInputEnabled()) return false
+        val movement=event.actionMasked==MotionEvent.ACTION_MOVE || event.actionMasked==MotionEvent.ACTION_HOVER_MOVE
+        val previous=lastMousePosition
+        val dx=if(!movement) 0f else if(captured) event.x else if(previous==null) 0f else event.x-previous.first
+        val dy=if(!movement) 0f else if(captured) event.y else if(previous==null) 0f else event.y-previous.second
+        if(movement) lastMousePosition=event.x to event.y
+        if(sessionDesktopMode==DesktopInputMode.NATIVE) {
+            webrtcClient?.desktopMouse(NativeMouse(dx.toInt(),dy.toInt(),(event.getAxisValue(MotionEvent.AXIS_HSCROLL)*120).toInt(),
+                (event.getAxisValue(MotionEvent.AXIS_VSCROLL)*120).toInt(),event.buttonState))
+        } else {
+            desktopGamepad.mouse(dx,dy,event.buttonState,sessionSettings?.mouseSensitivity ?: 100);publishGamepad(0)
+            auxiliaryHandler.removeCallbacks(releaseMouseMotion);auxiliaryHandler.postDelayed(releaseMouseMotion,30)
+        }
+        return true
+    }
     private fun controllerSlot(deviceId: Int,source: Int): Int? =
         if(source and InputDevice.SOURCE_GAMEPAD==InputDevice.SOURCE_GAMEPAD || source and InputDevice.SOURCE_JOYSTICK==InputDevice.SOURCE_JOYSTICK)
             controllers.slot(deviceId) else 0
@@ -1193,7 +1338,7 @@ open class MainActivity : Activity() {
     private fun applyShortcut(update: ShortcutUpdate) {
         val base = gamepadState.buttons and ControllerShortcut.BOTH.inv()
         if (update.pulse != 0) {
-            webrtcClient?.updateGamepad(controllers.combined(0,gamepadState.copy(buttons = base or update.forwardedButtons or update.pulse)),0)
+            webrtcClient?.updateGamepad(combinedInput(0,gamepadState.copy(buttons = base or update.forwardedButtons or update.pulse)),0)
         }
         gamepadState = gamepadState.copy(buttons = base or update.forwardedButtons)
         publishGamepad(0)
@@ -1214,6 +1359,7 @@ open class MainActivity : Activity() {
     }
 
     private fun resetController() {
+        gyro.stop();setDesktopCapture(false)
         shortcutFlushJob?.cancel()
         shortcutFlushJob = null
         controllerShortcut.reset()
@@ -1224,6 +1370,7 @@ open class MainActivity : Activity() {
     }
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+        if(event.isFromSource(InputDevice.SOURCE_MOUSE) && handleDesktopMouse(event)) return true
         if (gameplayInputEnabled() &&
             event.source and android.view.InputDevice.SOURCE_JOYSTICK != 0 && event.action == MotionEvent.ACTION_MOVE) {
             val slot=controllerSlot(event.deviceId,event.source) ?: return true
@@ -1300,6 +1447,7 @@ open class MainActivity : Activity() {
         if (!hasFocus) resetController()
         else {
             rumble.enabled=playbackSettings.rumble && webrtcClient!=null
+            resumeAuxiliaryInput()
             window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
                 View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
         }
@@ -1338,7 +1486,7 @@ open class MainActivity : Activity() {
     }
 
     override fun onStart() {
-        super.onStart(); activityVisible=true; reportTracker?.setVisible(true); webrtcClient?.resumeAudio()
+        super.onStart(); activityVisible=true; reportTracker?.setVisible(true); webrtcClient?.resumeAudio();webrtcClient?.setAudioForeground(true)
         usbRumble.setForeground(true)
         rumble.enabled=playbackSettings.rumble && webrtcClient!=null
         updateJoystickDispatch()
@@ -1347,7 +1495,7 @@ open class MainActivity : Activity() {
             if(signaling!=null && library!=null) refreshCloudHistory(dashboard!!,signaling,library)
         }
     }
-    override fun onStop() { joystickDispatch.request(false);rumble.enabled=false;rumble.stop();usbRumble.setForeground(false);activityVisible=false; reportTracker?.setVisible(false); super.onStop() }
+    override fun onStop() { joystickDispatch.request(false);rumble.enabled=false;rumble.stop();usbRumble.setForeground(false);resetController();microphoneJob?.cancel();webrtcClient?.setAudioForeground(false);activityVisible=false; reportTracker?.setVisible(false); super.onStop() }
 
     override fun onDestroy() {
         joystickDispatch.request(false)
@@ -1355,6 +1503,7 @@ open class MainActivity : Activity() {
         reportTracker?.finish(android.os.SystemClock.elapsedRealtime(),SessionEnd.APP_CLOSED,webrtcClient?.currentInputMetrics())
         postSessionDialog?.dismiss()
         ++playbackGeneration
+        gyro.stop();setDesktopCapture(false);auxiliaryHandler.removeCallbacksAndMessages(null)
         mainScope.cancel()
         (getSystemService(Context.INPUT_SERVICE) as InputManager).unregisterInputDeviceListener(deviceListener)
         rumble.enabled=false; rumble.stop()

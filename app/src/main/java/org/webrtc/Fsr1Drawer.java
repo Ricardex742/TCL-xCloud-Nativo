@@ -17,6 +17,7 @@ public final class Fsr1Drawer implements FsrUpscaler {
     void prepare(Fsr1Plan plan);
     void copy(Input kind,int texture,int[] textures,float[] matrix,int fw,int fh,Fsr1Plan plan);
     void easu(Fsr1Plan plan);
+    default void colors(int brightness,int contrast) {}
     void rcas(Fsr1Plan plan,int x,int y,float strength,float saturation);
     void end();
     void release();
@@ -25,7 +26,7 @@ public final class Fsr1Drawer implements FsrUpscaler {
   private volatile boolean broken,closed;
   private int sourceWidth,sourceHeight,lastWidth=-1,lastHeight=-1,lastOutputWidth,lastOutputHeight;
   private int[] caps;
-  private volatile int sharpness=50,saturation=100;
+  private volatile int sharpness=50,saturation=100,brightness=0,contrast=100;
   private volatile Fsr1Plan plan;
   private volatile String status="aguardando ampliação";
   private volatile long frames,totalNs,maxNs;
@@ -34,6 +35,9 @@ public final class Fsr1Drawer implements FsrUpscaler {
   @Override public void configure(int width,int height,int sharpness,int saturation) {
     sourceWidth=width;sourceHeight=height;
     this.sharpness=Math.max(0,Math.min(100,sharpness));this.saturation=Math.max(0,Math.min(200,saturation));
+  }
+  @Override public void setColorAdjustments(int brightness,int contrast) {
+    this.brightness=Math.max(-50,Math.min(50,brightness));this.contrast=Math.max(50,Math.min(150,contrast));
   }
   @Override public boolean drawOes(int t,float[] m,int fw,int fh,int x,int y,int w,int h) {
     return draw(Input.OES,t,null,m,fw,fh,x,y,w,h);
@@ -61,6 +65,7 @@ public final class Fsr1Drawer implements FsrUpscaler {
       backend.prepare(plan);
       backend.copy(kind,texture,textures,matrix,fw,fh,plan);
       backend.easu(plan);
+      backend.colors(brightness,contrast);
       backend.rcas(plan,x,y,Fsr1Plan.rcasStrength(sharpness),saturation/100f);
       long elapsed=System.nanoTime()-start;
       totalNs+=elapsed;maxNs=Math.max(maxNs,elapsed);frames++;
@@ -118,18 +123,21 @@ public final class Fsr1Drawer implements FsrUpscaler {
   }
   private static final class Pass {
     final GlShader shader;
-    final int position,texture,input,output,origin,strength,saturation;
+    final int position,texture,input,output,origin,strength,saturation,brightness,contrast;
     Pass(Sources source,boolean rcas) {
       GlShader s=new GlShader(source.vertex,rcas?source.rcas:source.easu);
       try {
         position=s.getAttribLocation("in_pos");texture=s.getUniformLocation("source_tex");input=s.getUniformLocation("input_size");
         output=rcas?-1:s.getUniformLocation("output_size");origin=rcas?s.getUniformLocation("viewport_origin"):-1;
         strength=rcas?s.getUniformLocation("rcas_strength"):-1;saturation=rcas?s.getUniformLocation("saturation"):-1;
+        brightness=rcas?s.getUniformLocation("brightness"):-1;contrast=rcas?s.getUniformLocation("contrast_adjust"):-1;
         shader=s;
       } catch(RuntimeException error) { s.release();throw error; }
     }
   }
   private static final class GlesBackend implements Backend {
+    private float brightness,contrast;
+    @Override public void colors(int brightness,int contrast) { this.brightness=brightness/100f;this.contrast=contrast/100f-1f; }
     private static final FloatBuffer QUAD=GlUtil.createFloatBuffer(new float[]{-1,-1,1,-1,-1,1,1,1});
     private final Context context;
     private final int[] framebuffer=new int[1],viewport=new int[4],activeTexture=new int[1];
@@ -196,6 +204,7 @@ public final class Fsr1Drawer implements FsrUpscaler {
       if(scissor) GLES20.glEnable(GLES20.GL_SCISSOR_TEST);
       start(rcas,upscaled.getTextureId(),p.outputWidth,p.outputHeight,x,y,p.outputWidth,p.outputHeight);
       GLES20.glUniform2f(rcas.origin,x,y);GLES20.glUniform1f(rcas.strength,strength);GLES20.glUniform1f(rcas.saturation,saturation);
+      GLES20.glUniform1f(rcas.brightness,brightness);GLES20.glUniform1f(rcas.contrast,contrast);
       GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP,0,4);GlUtil.checkNoGLES2Error("FSR RCAS");
     }
     @Override public void end() {

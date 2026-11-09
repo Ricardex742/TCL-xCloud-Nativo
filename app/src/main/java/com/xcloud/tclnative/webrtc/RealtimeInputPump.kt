@@ -59,7 +59,8 @@ class RealtimeInputPump(
     initialGamepads: Set<Int> = setOf(0),
     private val touch: NativeTouchBuffer = NativeTouchBuffer(),
     private val inputHz: Int = INPUT_HZ,
-    initialTouchDimensions: TouchInputDimensions? = null
+    initialTouchDimensions: TouchInputDimensions? = null,
+    private val desktop: DesktopInputBuffer = DesktopInputBuffer()
 ) {
     init { require(inputHz in 60..INPUT_HZ) }
     private val running = AtomicBoolean(false)
@@ -74,6 +75,9 @@ class RealtimeInputPump(
         require(index in 0..3)
         synchronized(lock) { active.add(index); if (buffers[index].update(state)) thread?.let(LockSupport::unpark) }
     }
+    fun desktopKey(key: NativeKey) { desktop.key(key);thread?.let(LockSupport::unpark) }
+    fun desktopMouse(mouse: NativeMouse) { desktop.mouse(mouse);thread?.let(LockSupport::unpark) }
+    fun releaseDesktop() { desktop.release();thread?.let(LockSupport::unpark) }
     fun remove(index: Int) { synchronized(lock) { active.remove(index); buffers[index].update(GamepadState()); buffers[index].discardBacklog() } }
     fun pointers(events: List<NativePointer>) { touch.add(events); thread?.let(LockSupport::unpark) }
     fun setTouchDimensions(dimensions: TouchInputDimensions) {
@@ -98,7 +102,7 @@ class RealtimeInputPump(
                     val now = System.nanoTime()
                     val dimensions = touchDimensions
                     val hasEdges=synchronized(lock) { active.any { buffers[it].hasUrgent() } }
-                    if (now < deadline && (backpressured || (!hasEdges && (dimensions == null || !touch.pending())))) {
+                    if (now < deadline && (backpressured || (!hasEdges && !desktop.pending() && (dimensions == null || !touch.pending())))) {
                         LockSupport.parkNanos(deadline - now)
                         continue
                     }
@@ -116,8 +120,9 @@ class RealtimeInputPump(
                         val states=synchronized(lock) { active.associateWith { buffers[it].next() } }
                         // Coordinates have no meaning until ServerMetadata establishes their scale.
                         val pointers=if(dimensions == null) emptyList() else touch.next()
-                        val packet=if(states.isNotEmpty() || pointers.isNotEmpty()) GamepadPacket.encode(states, sequence++,
-                            (now - started) / 1_000_000.0,pointers,dimensions?.width ?: 1,dimensions?.height ?: 1) else null
+                        val desktopFrames=desktop.next()
+                        val packet=if(states.isNotEmpty() || pointers.isNotEmpty() || desktopFrames.first.isNotEmpty() || desktopFrames.second.isNotEmpty()) GamepadPacket.encode(states, sequence++,
+                            (now - started) / 1_000_000.0,pointers,dimensions?.width ?: 1,dimensions?.height ?: 1,desktopFrames.first,desktopFrames.second) else null
                         if (packet!=null && !send(packet)) {
                             if (running.get()) onFailure()
                             break

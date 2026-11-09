@@ -30,8 +30,8 @@ object CodecPreference {
         val repair=capabilities.filter { it.name.equals("rtx",true) &&
             (it.parameters["apt"]==null || it.parameters["apt"] in payloads) }
         val description=when {
-            compatibility -> "H.264 Baseline • Compatibilidade • 720p solicitado • até 6 Mbps solicitados"
-            baselineOnly -> "H.264 Baseline • 720p solicitado • até 6 Mbps solicitados"
+            compatibility -> "H.264 Baseline • Compatibilidade • 720p solicitado • orçamento do perfil/partida"
+            baselineOnly -> "H.264 Baseline • 720p solicitado • orçamento do perfil/partida"
             else -> "H.264 padrão"
         }
         return Offer(primary+repair,baselineOnly,description)

@@ -17,10 +17,10 @@ object StreamProfile {
     // xCloud's TV profile is the 1080p HQ selector used by Better xCloud.
     const val OS_NAME = "tizen"
 
-    fun receiveSdp(raw: String, profile: StreamResolution = StreamResolution.HD_1080_HQ, compatibility: Boolean = false): String {
-        val minKbps=if(compatibility) 1000 else profile.minKbps
-        val startKbps=if(compatibility) 2500 else profile.minKbps
-        val maxKbps=if(compatibility) 6000 else profile.maxKbps
+    fun receiveSdp(raw: String, profile: StreamResolution = StreamResolution.HD_1080_HQ, compatibility: Boolean = false, maxBitrateKbps: Int = 0): String {
+        val maxKbps=if(maxBitrateKbps==0) (if(compatibility) 6000 else profile.maxKbps) else maxBitrateKbps.coerceIn(1000,50000)
+        val minKbps=(if(compatibility) 1000 else profile.minKbps).coerceAtMost(maxKbps)
+        val startKbps=(if(compatibility) 2500 else profile.minKbps).coerceAtMost(maxKbps)
         val sections = mutableListOf<MutableList<String>>()
         raw.replace("\r\n", "\n").lineSequence().filter { it.isNotBlank() }.forEach { line ->
             if (sections.isEmpty() || line.startsWith("m=")) sections.add(mutableListOf())

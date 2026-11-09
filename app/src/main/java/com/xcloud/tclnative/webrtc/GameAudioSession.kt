@@ -47,7 +47,7 @@ class GameAudioSession(context: Context,private val onGain: (Double) -> Unit) {
     fun diagnostics(): String {
         val volume=runCatching { "${manager.getStreamVolume(AudioManager.STREAM_MUSIC)}/${manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)}" }.getOrDefault("n/d")
         val muted=runCatching { if(manager.isStreamMute(AudioManager.STREAM_MUSIC)) "sim" else "não" }.getOrDefault("n/d")
-        return "Áudio: mídia/jogo • estéreo solicitado • volume mídia $volume • mudo: $muted • foco: $focus • ganho local ${String.format(Locale.US,"%.0f",gain*100)}% • reprodução ${if(playing) "iniciada" else "aguardando"}"+
+        return "Áudio: mídia/jogo • estéreo solicitado • volume mídia $volume • mudo: $muted • foco: $focus • ganho de foco ${String.format(Locale.US,"%.0f",gain*100)}% • reprodução ${if(playing) "iniciada" else "aguardando"}"+
             (error?.let { " • erro: $it" } ?: "")
     }
     @Suppress("DEPRECATION")

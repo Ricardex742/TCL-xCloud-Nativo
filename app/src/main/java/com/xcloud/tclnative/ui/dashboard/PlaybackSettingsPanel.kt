@@ -15,7 +15,8 @@ class PlaybackSettingsPanel(
     private val logout: () -> Unit,
     private val testRumble: () -> Unit = {},
     private val homeShortcuts: () -> Unit = {},
-    private val lastReport: () -> Unit = {}
+    private val lastReport: () -> Unit = {},
+    private val sessionOptions: () -> Unit = {},private val controllerProfiles: () -> Unit = {}
 ) {
     fun show(): ConsoleDialog {
         val settings=store.read()
@@ -29,6 +30,9 @@ class PlaybackSettingsPanel(
             ConsoleAction("Proporção: ${settings.aspect.label}") { chooseAspect() },
             ConsoleAction("Nitidez e saturação") { showImageAdjustments() },
             ConsoleAction("Controles e toque") { showControls() },
+            ConsoleAction("Bitrate, região e idioma por jogo",sessionOptions),
+            ConsoleAction("Rede: ${settings.ipPreference.label}") { chooseNetwork() },
+            ConsoleAction("Áudio e microfone") { showAudio() },
             ConsoleAction("Diagnóstico pós-partida: ${if(settings.sessionReport) "Ativado" else "Desativado"}") {
                 choices("Diagnóstico pós-partida","Guarda apenas o último resumo local. O relatório reúne as amostras da sessão sem manter uma lista de toda a partida. As estatísticas durante o jogo continuam ocultas até você ativá-las.",
                     listOf("Ativado — abrir ao sair do jogo" to settings.sessionReport,"Desativado — consultar nas configurações" to !settings.sessionReport)) {
@@ -64,16 +68,16 @@ class PlaybackSettingsPanel(
     }
     fun chooseVideo(): ConsoleDialog {
         val current=store.read()
-        return choices("Modo de vídeo","Menor atraso reduz buffers. Adaptativo permite mais margem para a rede. Compatibilidade seleciona 720p, pede até 6 Mbps, prioriza H.264 Baseline e apresenta até 30 quadros/s. A decodificação ainda depende do fluxo recebido. Aplica-se à próxima partida.",
+        return choices("Modo de vídeo","Menor atraso reduz buffers. Adaptativo permite mais margem para a rede. Compatibilidade seleciona 720p, pede até 6 Mbps no Automático, prioriza H.264 Baseline e apresenta até 30 quadros/s. A decodificação ainda depende do fluxo recebido. Aplica-se à próxima partida.",
             VideoMode.entries.map { it.label to (it==current.videoMode) }) {
             val mode=VideoMode.entries[it]
             save(if(mode==VideoMode.COMPATIBILITY) current.copy(videoMode=mode,resolution=StreamResolution.HD_720,
-                nativeUpscaling=true,sharpness=0,saturation=100,videoCodec=VideoCodecMode.H264,fsr=FsrMode.OFF) else current.copy(videoMode=mode))
+                nativeUpscaling=true,sharpness=0,saturation=100,videoCodec=VideoCodecMode.H264,fsr=FsrMode.OFF,brightness=0,contrast=100) else current.copy(videoMode=mode))
         }
     }
     fun chooseCodec(): ConsoleDialog {
         val current=store.read()
-        return choices("Codec de vídeo","Padrão mantém a negociação H.264 habitual. Leve oferece somente Baseline, solicita 720p e até 6 Mbps. É um perfil do H.264, sem garantia de ganho se o jogo já usava Baseline. A resolução e o bitrate recebidos dependem do serviço. Compatibilidade também usa Baseline. Aplica-se à próxima partida.",
+        return choices("Codec de vídeo","Padrão mantém a negociação H.264 habitual. Leve oferece somente Baseline, solicita 720p e até 6 Mbps no Automático. O teto manual da partida pode substituir esse orçamento. É um perfil do H.264, sem garantia de ganho se o jogo já usava Baseline. A resolução e o bitrate recebidos dependem do serviço. Compatibilidade também usa Baseline. Aplica-se à próxima partida.",
             VideoCodecMode.entries.map { it.label to (it==current.videoCodec) }) { save(current.copy(videoCodec=VideoCodecMode.entries[it]).forSession()) }
     }
     fun chooseResolution(): ConsoleDialog {
@@ -117,6 +121,16 @@ class PlaybackSettingsPanel(
                     save(settings.copy(sharpness=levels[it]),::backToImage)
                 }
             }
+            addMenuItem("Brilho: ${settings.brightness}%") {
+                val levels=listOf(-50,-25,-10,0,10,25,50)
+                choices("Brilho","0% preserva a imagem original. Aplicado junto aos filtros existentes, inclusive no FSR.",
+                    levels.map { "$it%" to (it==settings.brightness) },::backToImage) { save(settings.copy(brightness=levels[it]),::backToImage) }
+            }
+            addMenuItem("Contraste: ${settings.contrast}%") {
+                val levels=listOf(50,75,90,100,110,125,150)
+                choices("Contraste","100% preserva o contraste original. Valores extremos podem esconder detalhes claros ou escuros.",
+                    levels.map { "$it%" to (it==settings.contrast) },::backToImage) { save(settings.copy(contrast=levels[it]),::backToImage) }
+            }
             addMenuItem("Saturação: ${settings.saturation}%") {
                 val levels=listOf(0,75,100,110,125,150,200)
                 choices("Saturação","100% mantém as cores originais. Valores maiores intensificam as cores; 0% deixa a imagem em cinza.",
@@ -149,7 +163,57 @@ class PlaybackSettingsPanel(
                     save(settings.copy(touchMode=modes[it])) { showControls() }
                 }
             },
+            ConsoleAction("Calibração e remapeamento por controle",controllerProfiles),
+            ConsoleAction("Mouse e teclado: ${settings.desktopInput.label}") { chooseDesktopInput() },
+            ConsoleAction("Sensibilidade do mouse: ${settings.mouseSensitivity}%") {
+                val values=listOf(25,50,75,100,125,150,200,250,300)
+                choices("Sensibilidade do mouse emulado","Ajusta a velocidade do analógico direito emulado. Mouse nativo usa os movimentos relativos e a sensibilidade do próprio jogo.",
+                    values.map { "$it%" to (it==settings.mouseSensitivity) },{ showControls() }) { save(settings.copy(mouseSensitivity=values[it])) { showControls() } }
+            },
+            ConsoleAction("Giroscópio: ${settings.gyroMode.label}") { chooseGyro() },
+            ConsoleAction("Sensibilidade do giroscópio: ${settings.gyroSensitivity}%") {
+                val values=listOf(25,50,75,100,125,150,200,250,300)
+                choices("Sensibilidade do giroscópio","Aplica-se à próxima partida.",values.map { "$it%" to (it==settings.gyroSensitivity) },{ showControls() }) {
+                    save(settings.copy(gyroSensitivity=values[it])) { showControls() }
+                }
+            },
+            ConsoleAction("Vibração do celular no toque: ${if(settings.touchRumble) "Ativada" else "Desativada"}") {
+                choices("Vibração do celular","Usa os comandos de rumble recebidos do jogo para o jogador de toque quando não há controle físico associado. Requer Vibração ativada e vibrador no celular; não usa o controle remoto da TV. Aplica-se à próxima partida.",
+                    listOf("Desativada" to !settings.touchRumble,"Ativada" to settings.touchRumble),{ showControls() }) { save(settings.copy(touchRumble=it==1)) { showControls() } }
+            },
             ConsoleAction("Testar vibração / verificar suporte",testRumble)
         ),onBack={ show() })
     }
+    fun chooseNetwork(): ConsoleDialog {
+        val current=store.read()
+        return choices("Preferência de rede","Automático mantém a escolha do WebRTC. O teste IPv6 adiciona candidatos IPv6 primeiro e mantém IPv4 disponível após até 750 ms. Não exige IPv6, não elimina IPv4 e não garante uma rota melhor. Vale na próxima partida.",
+            IpPreference.entries.map { it.label to (it==current.ipPreference) }) { save(current.copy(ipPreference=IpPreference.entries[it])) }
+    }
+    fun chooseDesktopInput(): ConsoleDialog {
+        val current=store.read()
+        return choices("Mouse e teclado","Emulação: WASD move, mouse mira, clique esquerdo RT, direito LT; Espaço A, Ctrl B, R/E X, Q Y, Shift L3, Tab View e Esc Menu. Nativo envia teclas e mouse apenas em jogos que anunciam suporte. F7 abre o menu do app; F8 captura/solta entradas. Captura relativa requer Android 8+. Vale na próxima partida.",
+            DesktopInputMode.entries.map { it.label to (it==current.desktopInput) },{ showControls() }) { save(current.copy(desktopInput=DesktopInputMode.entries[it])) { showControls() } }
+    }
+    fun chooseGyro(): ConsoleDialog {
+        val current=store.read()
+        val sensor=(context.getSystemService(Context.SENSOR_SERVICE) as? android.hardware.SensorManager)?.getDefaultSensor(android.hardware.Sensor.TYPE_GYROSCOPE)
+        if(sensor==null) return ConsoleDialogs.message(context,"Giroscópio","O Android não informou um giroscópio neste aparelho.",listOf(ConsoleAction("Voltar") { showControls() }),onCancel={ showControls() })
+        return choices("Mira por movimento","Emula o analógico direito, com ou sem toque/HUD. Toque nativo Xbox mantém o giroscópio desligado nesta versão; use o HUD ou controle. Vale na próxima partida.",
+            GyroMode.entries.map { it.label to (it==current.gyroMode) },{ showControls() }) { save(current.copy(gyroMode=GyroMode.entries[it])) { showControls() } }
+    }
+    fun showAudio(onBack: () -> Unit={ show() }): ConsoleDialog {
+        val current=store.read()
+        return ConsoleDialogs.menu(context,"Áudio e microfone",listOf(
+            ConsoleAction("Ganho de áudio: ${current.audioGain}%") {
+                val values=listOf(0,50,75,100,125,150,175,200,250,300)
+                choices("Ganho de áudio","100% preserva o volume. Acima disso, o app aumenta gradualmente e reduz o ganho ao detectar picos no áudio. Transientes ainda podem distorcer. Comece em 125%. O foco e o volume do Android continuam ativos.",
+                    values.map { "$it%" to (it==current.audioGain) },{ showAudio(onBack) }) { save(current.copy(audioGain=values[it])) { showAudio(onBack) } }
+            },
+            ConsoleAction("Microfone nas próximas partidas: ${if(current.microphone) "Disponível — inicia mudo" else "Desativado"}") {
+                choices("Microfone opcional","A sessão sempre inicia muda. Com esta opção, o app consulta suporte a chat; ative a captura no menu da partida, após conceder a permissão do Android. Ir para segundo plano silencia. Alguns servidores podem não oferecer chat.",
+                    listOf("Desativado" to !current.microphone,"Disponível — iniciar mudo" to current.microphone),{ showAudio(onBack) }) { save(current.copy(microphone=it==1)) { showAudio(onBack) } }
+            }
+        ),onBack=onBack)
+    }
+
 }

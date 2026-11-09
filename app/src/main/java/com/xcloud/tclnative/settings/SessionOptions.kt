@@ -4,7 +4,11 @@ import android.content.Context
 import org.json.JSONObject
 import java.security.MessageDigest
 
-enum class IpPreference(val label: String) { AUTO("Automático"), IPV6("Preferir IPv6 — experimental, com IPv4 disponível") }
+enum class IpPreference(val label: String,val preferredFamily: Int? = null) {
+    AUTO("Automático — IPv4/IPv6 durante a partida"),
+    IPV4("Preferir IPv4 — com IPv6 disponível",4),
+    IPV6("Preferir IPv6 — experimental, com IPv4 disponível",6)
+}
 enum class DesktopInputMode(val label: String) { OFF("Desativado"), EMULATED("Emular controle com mouse e teclado"), NATIVE("Mouse e teclado nativos — jogos compatíveis") }
 enum class GyroMode(val label: String) { OFF("Desativado"), LT("Enquanto segurar LT"), LB("Enquanto segurar LB"), ALWAYS("Sempre durante a partida") }
 

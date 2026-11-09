@@ -31,15 +31,15 @@ class GyroController(context: Context,private val rotation: () -> Int,private va
     private val expire=Runnable { if(mode!=GyroMode.OFF) { axes=0f to 0f;changed() } }
     var status="Giroscópio: desligado"
         private set
-    fun start(mode: GyroMode,sensitivity: Int,nativeTouch: Boolean) {
+    fun start(mode: GyroMode,sensitivity: Int,nativeTouch: Boolean,allowNativeTouch: Boolean=false) {
         stop();this.sensitivity=sensitivity
         if(mode==GyroMode.OFF) return
-        if(nativeTouch) { status="Giroscópio: indisponível com toque nativo; use controle/HUD";return }
+        if(nativeTouch && !allowNativeTouch) { status="Giroscópio: teste com toque nativo desativado";return }
         if(sensor==null) { status="Giroscópio: aparelho sem sensor";return }
         this.mode=mode
         val registered=manager?.registerListener(this,sensor,SensorManager.SENSOR_DELAY_GAME)==true
         if(!registered) this.mode=GyroMode.OFF
-        status=if(registered) "Giroscópio: ${mode.label}" else "Giroscópio: registro recusado pelo Android"
+        status=if(registered) "Giroscópio: ${mode.label}"+(if(nativeTouch) " • toque nativo experimental" else "") else "Giroscópio: registro recusado pelo Android"
     }
     fun apply(base: GamepadState): GamepadState = if(!GyroAim.active(mode,base)) base else base.copy(
         rightX=(base.rightX+axes.first).coerceIn(-1f,1f),rightY=(base.rightY+axes.second).coerceIn(-1f,1f))

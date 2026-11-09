@@ -66,6 +66,8 @@ class RealtimeInputPump(
     private val running = AtomicBoolean(false)
     private val buffers = Array(4) { GamepadInputBuffer() }
     private val active = initialGamepads.toMutableSet()
+    private val revisions = LongArray(4)
+    private val retireAfterNeutral = mutableMapOf<Int,Long>()
     private val lock = Any()
     @Volatile private var touchDimensions = initialTouchDimensions
     @Volatile private var thread: Thread? = null
@@ -73,12 +75,25 @@ class RealtimeInputPump(
         private set
     fun update(state: GamepadState, index: Int = 0) {
         require(index in 0..3)
-        synchronized(lock) { active.add(index); if (buffers[index].update(state)) thread?.let(LockSupport::unpark) }
+        synchronized(lock) {
+            revisions[index]++;retireAfterNeutral.remove(index)
+            active.add(index); if (buffers[index].update(state)) thread?.let(LockSupport::unpark)
+        }
     }
     fun desktopKey(key: NativeKey) { desktop.key(key);thread?.let(LockSupport::unpark) }
     fun desktopMouse(mouse: NativeMouse) { desktop.mouse(mouse);thread?.let(LockSupport::unpark) }
     fun releaseDesktop() { desktop.release();thread?.let(LockSupport::unpark) }
-    fun remove(index: Int) { synchronized(lock) { active.remove(index); buffers[index].update(GamepadState()); buffers[index].discardBacklog() } }
+    fun remove(index: Int) { synchronized(lock) { active.remove(index);retireAfterNeutral.remove(index);revisions[index]++; buffers[index].update(GamepadState()); buffers[index].discardBacklog() } }
+    /** Auxiliary aim must release its stick before becoming idle. The touch slot stays connected. */
+    fun releaseAfterNeutral(index: Int=0) {
+        require(index in 0..3)
+        synchronized(lock) {
+            if(index !in active || index in retireAfterNeutral) return
+            buffers[index].update(GamepadState());buffers[index].discardBacklog()
+            retireAfterNeutral[index]=++revisions[index]
+            thread?.let(LockSupport::unpark)
+        }
+    }
     fun pointers(events: List<NativePointer>) { touch.add(events); thread?.let(LockSupport::unpark) }
     fun setTouchDimensions(dimensions: TouchInputDimensions) {
         touchDimensions = dimensions
@@ -101,7 +116,7 @@ class RealtimeInputPump(
                 while (running.get()) {
                     val now = System.nanoTime()
                     val dimensions = touchDimensions
-                    val hasEdges=synchronized(lock) { active.any { buffers[it].hasUrgent() } }
+                    val hasEdges=synchronized(lock) { retireAfterNeutral.isNotEmpty() || active.any { buffers[it].hasUrgent() } }
                     if (now < deadline && (backpressured || (!hasEdges && !desktop.pending() && (dimensions == null || !touch.pending())))) {
                         LockSupport.parkNanos(deadline - now)
                         continue
@@ -117,7 +132,9 @@ class RealtimeInputPump(
                         synchronized(lock) { active.forEach { buffers[it].discardBacklog() } }
                     } else {
                         backpressured=false
-                        val states=synchronized(lock) { active.associateWith { buffers[it].next() } }
+                        val (states,retiring)=synchronized(lock) {
+                            active.associateWith { buffers[it].next() } to retireAfterNeutral.toMap()
+                        }
                         // Coordinates have no meaning until ServerMetadata establishes their scale.
                         val pointers=if(dimensions == null) emptyList() else touch.next()
                         val desktopFrames=desktop.next()
@@ -128,6 +145,14 @@ class RealtimeInputPump(
                             break
                         }
                         if(pointers.isNotEmpty()) touch.accepted(pointers)
+                        synchronized(lock) {
+                            retiring.forEach { (index,revision) ->
+                                // A sensor update racing the send keeps the new aim active.
+                                if(retireAfterNeutral[index]==revision) {
+                                    active.remove(index);retireAfterNeutral.remove(index)
+                                }
+                            }
+                        }
                         metrics = metrics.copy(sentState = states[0] ?: GamepadState(),pointerEventsSent=metrics.pointerEventsSent+pointers.size,
                             sentBytes=metrics.sentBytes+(packet?.size ?: 0))
                     }

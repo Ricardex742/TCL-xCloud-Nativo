@@ -13,7 +13,7 @@ import com.xcloud.tclnative.diagnostics.*
 
 /** Native post-match view, built only after playback ends. */
 object SessionReportPanel {
-    fun show(context: Context,report: SessionReport,disableAutomatic: (() -> Unit)?=null): ConsoleDialog {
+    fun show(context: Context,report: SessionReport,onBack: (() -> Unit)?=null,disableAutomatic: (() -> Unit)?=null): ConsoleDialog {
         val dialog=ConsoleDialog(context,"Diagnóstico pós-partida")
         val accent=when { report.score==null -> DashboardTheme.muted; report.score>=75 -> DashboardTheme.accent; report.score>=60 -> 0xffffcd66.toInt(); else -> 0xffff826d.toInt() }
         val hero=LinearLayout(context).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
@@ -70,7 +70,8 @@ object SessionReportPanel {
             Toast.makeText(context,"Diagnóstico copiado.",Toast.LENGTH_SHORT).show()
         }
         if(disableAutomatic!=null) dialog.addAction("Não abrir automaticamente") { disableAutomatic() }
-        val done=dialog.addAction("Concluir") {}
+        val done=dialog.addAction(if(onBack==null) "Concluir" else "Voltar") { onBack?.invoke() }
+        if(onBack!=null) dialog.setOnCancelListener { onBack() }
         dialog.focusFirst(done)
         dialog.show(); return dialog
     }

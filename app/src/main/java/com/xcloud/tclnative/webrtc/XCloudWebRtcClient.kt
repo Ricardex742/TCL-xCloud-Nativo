@@ -2,6 +2,7 @@ package com.xcloud.tclnative.webrtc
 
 import android.content.Context
 import com.xcloud.tclnative.settings.VideoCodecMode
+import com.xcloud.tclnative.settings.IpPreference
 import kotlinx.coroutines.*
 import org.json.JSONObject
 import org.webrtc.*
@@ -23,7 +24,7 @@ class XCloudWebRtcClient(
     private val onRumble: (RumbleCommand) -> Unit = {},
     private val compatibility: Boolean = false,
     private val videoCodec: VideoCodecMode = VideoCodecMode.H264,
-    private val maxBitrateKbps: Int = 0,private val preferIpv6: Boolean = false,
+    private val maxBitrateKbps: Int = 0,private val ipPreference: IpPreference = IpPreference.AUTO,
     private val nativeKeyboardMouse: Boolean = false,private val microphoneAllowed: Boolean = false,outputGain: Int = 100
 ) : StreamingPeer {
     private val appContext=context.applicationContext
@@ -33,8 +34,8 @@ class XCloudWebRtcClient(
     @Volatile private var iceGathering: LocalIceGathering?=null
     private val iceReports=CopyOnWriteArrayList<String>()
     private val connected = CompletableDeferred<Unit>()
-    private val ipv6ProbeFailed=CompletableDeferred<Unit>()
-    @Volatile private var probingIpv6=false
+    private val preferredProbeFailed=CompletableDeferred<Unit>()
+    @Volatile private var probingPreferredFamily: Int?=null
     private val channelsReady = CompletableDeferred<Unit>()
     private val handshake = ChannelHandshake(nativeTouch)
     private val channels = java.util.concurrent.ConcurrentHashMap<String, DataChannel>()
@@ -62,7 +63,8 @@ class XCloudWebRtcClient(
     private val codecTrace=CodecNegotiationTrace(effectiveCodec)
     private val decoderFactory: H264VideoDecoderFactory
     fun codecDiagnostics(): String = codecTrace.diagnostics()+"\nBitrate máximo solicitado: "+(if(maxBitrateKbps==0) "Automático" else "${maxBitrateKbps/1000.0} Mbps")
-    fun iceDiagnostics(): String = iceReports.joinToString("\n").ifBlank { "ICE local: aguardando coleta" }
+    private val networkRoutes=NetworkRouteMonitor(ipPreference)
+    fun iceDiagnostics(): String = iceReports.joinToString("\n").ifBlank { "ICE local: aguardando coleta" }+"\n"+networkRoutes.diagnostics()
     private val mainHandler=android.os.Handler(android.os.Looper.getMainLooper())
     private val audioDevice: JavaAudioDeviceModule
     private val peakGuard=AudioPeakGuard().apply { set(outputGain) }
@@ -260,6 +262,7 @@ class XCloudWebRtcClient(
             sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
             bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE
             rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE
+            AutomaticNetworkPolicy.configure(this,ipPreference)
         }
         val pc = factory.createPeerConnection(config, object : PeerConnection.Observer {
             override fun onSignalingChange(state: PeerConnection.SignalingState?) {}
@@ -272,11 +275,11 @@ class XCloudWebRtcClient(
             override fun onDataChannel(channel: DataChannel?) {}
             override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {
                 if (!current()) return
-                val preferring=probingIpv6
+                val preferring=probingPreferredFamily
                 onConnectionStateChanged(IceFamilyPolicy.connectionMessage(state?.name,preferring))
                 when (state) {
                     PeerConnection.IceConnectionState.CONNECTED, PeerConnection.IceConnectionState.COMPLETED -> connected.complete(Unit)
-                    PeerConnection.IceConnectionState.FAILED -> if(preferring) ipv6ProbeFailed.complete(Unit) else fail("TRANSPORT: ICE $state")
+                    PeerConnection.IceConnectionState.FAILED -> if(preferring!=null) preferredProbeFailed.complete(Unit) else fail("TRANSPORT: ICE $state")
                     PeerConnection.IceConnectionState.CLOSED -> fail("TRANSPORT: ICE $state")
                     else -> Unit
                 }
@@ -407,6 +410,7 @@ class XCloudWebRtcClient(
                                 val samples = report.statsMap.values.map { RtcSample(it.id, it.type, it.timestampUs, it.members) }
                                 micBytes=report.statsMap.values.filter { it.type=="outbound-rtp" && (it.members["kind"]=="audio" || it.members["mediaType"]=="audio") }
                                     .sumOf { (it.members["bytesSent"] as? Number)?.toLong() ?: 0L }
+                                networkRoutes.collect(samples)
                                 val metrics = statsCollector.collect(samples)
                                 if (!closed.get()) onStatistics(metrics, inputPump?.metrics ?: InputMetrics())
                             }
@@ -438,10 +442,14 @@ class XCloudWebRtcClient(
         val bytes=JSONObject().put("message","gamepadChanged").put("gamepadIndex",index).put("wasAdded",added).toString().toByteArray(Charsets.UTF_8)
         if(channels["control"]?.send(DataChannel.Buffer(ByteBuffer.wrap(bytes),false)) != true && !closed.get()) fail("CHANNELS: falha ao atualizar controle")
     }
-    fun updateGamepad(state: GamepadState, index: Int = 0) {
+    fun updateGamepad(state: GamepadState, index: Int = 0,auxiliary: Boolean=false) {
         require(index in 0..3)
         synchronized(pumpLock) {
             if(closed.get()) return
+            if(auxiliary && nativeTouch && index==0 && state==GamepadState()) {
+                if(gamepads.remove(index)!=null) inputPump?.releaseAfterNeutral(index)
+                return
+            }
             val added=index !in gamepads
             // Reserved menu chords and idle dongles must not start physical reports in a touch-only game.
             if ((nativeTouch || nativeKeyboardMouse) && added && state == GamepadState()) return
@@ -454,7 +462,8 @@ class XCloudWebRtcClient(
         synchronized(pumpLock) {
             if(index==0 && !nativeTouch) { gamepads[0]=GamepadState(); inputPump?.update(GamepadState()); return }
             if(gamepads.remove(index)!=null && channelsReady.isCompleted && gamepadConnections.remove(index)) sendGamepadChanged(index,false)
-            inputPump?.remove(index)
+            // Native touch owns logical slot zero even when its physical source disconnects.
+            if(index==0 && nativeTouch) inputPump?.releaseAfterNeutral(index) else inputPump?.remove(index)
         }
     }
     fun sendPointers(events: List<NativePointer>) { synchronized(pumpLock) {
@@ -503,16 +512,16 @@ class XCloudWebRtcClient(
 
     override suspend fun addRemoteCandidates(candidates: List<IceCandidate>) {
         val pc = peerConnection ?: throw IOException("TRANSPORT: PeerConnection ausente")
-        probingIpv6=preferIpv6 && candidates.any(IceFamilyPolicy::isIpv6) && candidates.any { !IceFamilyPolicy.isIpv6(it) }
+        probingPreferredFamily=ipPreference.preferredFamily?.takeIf { candidates.any(IceFamilyPolicy::isIpv6) && candidates.any { !IceFamilyPolicy.isIpv6(it) } }
         try {
-            val attempt=IceFamilyPolicy.add(candidates,preferIpv6,add={ candidate ->
+            val attempt=IceFamilyPolicy.add(candidates,ipPreference,add={ candidate ->
                 if(closed.get() || peerConnection!==pc) throw IOException("TRANSPORT: sessão encerrada")
                 pc.addIceCandidate(candidate)
             },awaitPreferred={ kotlinx.coroutines.selects.select<Unit> {
-                connected.onAwait { };ipv6ProbeFailed.onAwait { }
+                connected.onAwait { };preferredProbeFailed.onAwait { }
             } })
-            if(attempt.ipv6First) iceReports.add("ICE: IPv6 primeiro; IPv4 preservado após até ${IceFamilyPolicy.IPV6_HEAD_START_MS} ms; recusados: ${attempt.rejected}")
-        } finally { probingIpv6=false }
+            if(attempt.preferredFamily!=null) iceReports.add("ICE: IPv${attempt.preferredFamily} primeiro; outra família preservada após até ${IceFamilyPolicy.HEAD_START_MS} ms; recusados: ${attempt.rejected}")
+        } finally { probingPreferredFamily=null }
     }
 
     override suspend fun awaitReady() {

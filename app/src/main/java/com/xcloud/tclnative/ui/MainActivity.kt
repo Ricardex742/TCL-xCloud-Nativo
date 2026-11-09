@@ -30,6 +30,7 @@ import com.xcloud.tclnative.diagnostics.*
 import com.xcloud.tclnative.ui.dashboard.SessionReportPanel
 import com.xcloud.tclnative.ui.dashboard.SessionTransitionView
 import com.xcloud.tclnative.ui.dashboard.PlaybackSettingsPanel
+import com.xcloud.tclnative.ui.dashboard.SettingsPage
 import com.xcloud.tclnative.catalog.CatalogCache
 import java.io.File
 import com.xcloud.tclnative.signaling.GameTitle
@@ -586,36 +587,39 @@ open class MainActivity : Activity() {
         ConsoleDialogs.search(this, view.searchQuery) { query -> view.setSearch(query) }
     }
 
-    private fun showSettings(session: XCloudSession) {
+    private fun showSettings(session: XCloudSession,startPage: SettingsPage=SettingsPage.ROOT) {
+        var returnPage=startPage
+        fun back() { showSettings(session,returnPage) }
         PlaybackSettingsPanel(this,settingsStore,
             changed = ::applyPlaybackSettings,
             subscription = { openAccountPage("https://account.microsoft.com/services") },
             refresh = { renderGameDashboard(session) },
             logout = { authenticator.clearSession(); renderLoginMenu(); syncHomeShortcuts() },
-            testRumble = { showRumbleDiagnostics { showSettings(session) } },
-            homeShortcuts = { showHomeShortcuts() },lastReport={ showLatestReport() },
-            sessionOptions={ showSessionOptionsMenu(session) },controllerProfiles={ showControllerProfiles { showSettings(session) } }).show()
+            testRumble = { showRumbleDiagnostics(::back) },
+            homeShortcuts = { showHomeShortcuts(::back) },lastReport={ showLatestReport(::back) },
+            sessionOptions={ showSessionOptionsMenu(session,::back) },controllerProfiles={ showControllerProfiles(::back) },
+            onPageEntered={ returnPage=it }).open(startPage)
     }
     private fun showControllerProfiles(back: () -> Unit) {
         com.xcloud.tclnative.ui.dashboard.ControllerProfilePanel(this,controllerProfiles) { if(webrtcClient!=null) (0..3).filter { controllers.deviceFor(it)!=null }.forEach(::publishGamepad) }.show(back)
     }
-    private fun showSessionOptionsMenu(session: XCloudSession) {
+    private fun showSessionOptionsMenu(session: XCloudSession,onBack: () -> Unit={ if(webrtcClient!=null) showGameMenu() else showSettings(session,SettingsPage.NETWORK) }) {
         val game=activeGame ?: dashboard?.selectedGame
         val store=SessionOptionsStore(this,session.libraryAccountId)
         val actions=mutableListOf(ConsoleAction("Padrão para todas as partidas") {
-            com.xcloud.tclnative.ui.dashboard.SessionOptionsPanel(this,store,session.regions,back={ showSessionOptionsMenu(session) }).show()
+            com.xcloud.tclnative.ui.dashboard.SessionOptionsPanel(this,store,session.regions,back={ showSessionOptionsMenu(session,onBack) }).show()
         })
         if(game!=null) actions.add(ConsoleAction("Este jogo: ${game.name}") {
             com.xcloud.tclnative.ui.dashboard.SessionOptionsPanel(this,store,session.regions,game.titleId,game.name) {
-                showSessionOptionsMenu(session)
+                showSessionOptionsMenu(session,onBack)
             }.show()
         })
-        ConsoleDialogs.menu(this,"Opções das partidas",actions,onBack={ if(webrtcClient!=null) showGameMenu() else showSettings(session) })
+        ConsoleDialogs.menu(this,"Opções das partidas",actions,onBack=onBack)
     }
-    private fun showLatestReport() {
+    private fun showLatestReport(onBack: (() -> Unit)?=null) {
         val report=lastSessionReport ?: reportStore.read()
-        if(report==null) ConsoleDialogs.message(this,"Último diagnóstico","Ainda não há uma partida com vídeo para mostrar.")
-        else postSessionDialog=SessionReportPanel.show(this,report)
+        if(report==null) ConsoleDialogs.message(this,"Último diagnóstico","Ainda não há uma partida com vídeo para mostrar.",listOf(ConsoleAction("Voltar") { onBack?.invoke() }),onCancel=onBack)
+        else postSessionDialog=SessionReportPanel.show(this,report,onBack=onBack)
     }
     private suspend fun finishSessionReport(tracker: SessionReportTracker) {
         val report=tracker.takeReport()
@@ -674,7 +678,7 @@ open class MainActivity : Activity() {
                 else "O canal não ficou visível na tela inicial. Use Instalar atalho na TV: o jogo aparecerá em Aplicativos, inclusive no Google TV.")
         }
     }
-    private fun showHomeShortcuts() {
+    private fun showHomeShortcuts(onBack: (() -> Unit)?=null) {
         val favorites=currentGames.filter { gameLibrary?.isFavorite(it.titleId)==true }
         val actions=mutableListOf<ConsoleAction>()
         favorites.forEach { game ->
@@ -701,8 +705,8 @@ open class MainActivity : Activity() {
                 }
             }
         }
-        if(actions.isEmpty()) ConsoleDialogs.message(this,"Atalhos dos favoritos","Adicione jogos aos favoritos com Y para criar seus atalhos.")
-        else ConsoleDialogs.menu(this,"Atalhos dos favoritos",actions)
+        if(actions.isEmpty()) ConsoleDialogs.message(this,"Atalhos dos favoritos","Adicione jogos aos favoritos com Y para criar seus atalhos.",listOf(ConsoleAction("Voltar") { onBack?.invoke() }),onCancel=onBack)
+        else ConsoleDialogs.menu(this,"Atalhos dos favoritos",actions,onBack=onBack ?: {})
     }
     private fun createInstalledShortcut(game: GameTitle) {
         if(shortcutInstallJob?.isActive==true) return
@@ -1029,7 +1033,7 @@ open class MainActivity : Activity() {
                     nativeTouch = touchMode==TouchMode.NATIVE,
                     onRumble = { command -> if(generation==playbackGeneration) rumble.play(command) },compatibility=compatible,
                     videoCodec=settings.videoCodec,maxBitrateKbps=sessionOptions.maxBitrateKbps,
-                    preferIpv6=settings.ipPreference==IpPreference.IPV6,nativeKeyboardMouse=sessionDesktopMode==DesktopInputMode.NATIVE,
+                    ipPreference=settings.ipPreference,nativeKeyboardMouse=sessionDesktopMode==DesktopInputMode.NATIVE,
                     microphoneAllowed=settings.microphone,outputGain=settings.audioGain).also { allocatedRtc=it } }
                 webrtcClient = rtc
                 val appVersion=packageManager.getPackageInfo(packageName,0).versionName ?: "n/d"
@@ -1281,7 +1285,10 @@ open class MainActivity : Activity() {
         val base=controllers.combined(slot,physical)
         return if(slot==0) gyro.apply(if(sessionDesktopMode==DesktopInputMode.EMULATED) ControllerRouter.merge(base,desktopGamepad.state()) else base) else base
     }
-    private fun publishGamepad(slot: Int) { webrtcClient?.updateGamepad(combinedInput(slot),slot) }
+    private fun publishGamepad(slot: Int) {
+        val auxiliary=slot==0 && currentTouchMode==TouchMode.NATIVE && sessionSettings?.gyroNativeTouch==true && controllers.deviceFor(0)==null
+        webrtcClient?.updateGamepad(combinedInput(slot),slot,auxiliary)
+    }
     private fun setDesktopCapture(enabled: Boolean) {
         val active=enabled && sessionDesktopMode!=DesktopInputMode.OFF && webrtcClient!=null
         desktopCaptured=active;lastMousePosition=null
@@ -1300,7 +1307,7 @@ open class MainActivity : Activity() {
     private fun resumeAuxiliaryInput() {
         val settings=sessionSettings ?: return
         if(!gameplayInputEnabled()) return
-        gyro.start(settings.gyroMode,settings.gyroSensitivity,currentTouchMode==TouchMode.NATIVE)
+        gyro.start(settings.gyroMode,settings.gyroSensitivity,currentTouchMode==TouchMode.NATIVE,settings.gyroNativeTouch)
         if(sessionDesktopMode!=DesktopInputMode.OFF) setDesktopCapture(true)
     }
     private fun handleDesktopMouse(event: MotionEvent,captured: Boolean=false): Boolean {

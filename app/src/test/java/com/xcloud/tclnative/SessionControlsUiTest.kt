@@ -103,4 +103,52 @@ class SessionControlsUiTest {
         gyro.stop();assertFalse(shadowOf(manager).hasListener(gyro))
         controller.pause().stop().destroy()
     }
+    @Test fun categoriesAndBackKeepTheUserInTheRightSectionWithoutChangingPreferences() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        val activity=controller.get().apply { setContentView(FrameLayout(this)) };prepare(activity)
+        val store=PlaybackSettingsStore(activity);store.save(PlaybackSettings())
+        val pages=mutableListOf<SettingsPage>();var changes=0
+        val panel=PlaybackSettingsPanel(activity,store,{changes++},{},{},{},onPageEntered={pages.add(it)})
+        val root=panel.show();capture(root,"categorized-settings-0.31.7")
+        val rows=all(root.body).filterIsInstance<TextView>().filter { it.isClickable }.map { it.text.toString() }
+        assertEquals(listOf("Vídeo e transmissão","Imagem e tela","Rede e sessão","Controles e toque","Áudio e microfone","Diagnósticos","Biblioteca e conta"),rows)
+        choose(root,"Rede e sessão");choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"IPv4 / IPv6")
+        assertEquals(0,changes);assertEquals(PlaybackSettings(),store.read())
+        choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Preferir IPv4")
+        assertEquals(IpPreference.IPV4,store.read().ipPreference);assertEquals(SettingsPage.NETWORK,pages.last())
+        (ShadowDialog.getLatestDialog() as ConsoleDialog).cancel();shadowOf(Looper.getMainLooper()).idle();assertEquals(SettingsPage.ROOT,pages.last())
+        choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Controles e toque")
+        choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Giroscópio")
+        capture(ShadowDialog.getLatestDialog() as ConsoleDialog,"native-gyro-options-0.31.7")
+        assertEquals(SettingsPage.GYRO,pages.last())
+        (ShadowDialog.getLatestDialog() as ConsoleDialog).cancel();shadowOf(Looper.getMainLooper()).idle();assertEquals(SettingsPage.CONTROLS,pages.last())
+        (ShadowDialog.getLatestDialog() as ConsoleDialog).cancel();shadowOf(Looper.getMainLooper()).idle();assertEquals(SettingsPage.ROOT,pages.last())
+        (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss();controller.pause().stop().destroy()
+    }
+    @Test fun nativeGyroIsExplicitOptInAndRequiresASensorWithoutRequestingPermissions() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        val activity=controller.get().apply { setContentView(FrameLayout(this)) };prepare(activity)
+        val store=PlaybackSettingsStore(activity);store.save(PlaybackSettings())
+        val panel=PlaybackSettingsPanel(activity,store,{},{},{},{})
+        val manager=activity.getSystemService(android.content.Context.SENSOR_SERVICE) as SensorManager
+        val sensor=ShadowSensor.newInstance(Sensor.TYPE_GYROSCOPE);shadowOf(manager).addSensor(sensor)
+        choose(panel.showGyro(),"Toque nativo Xbox")
+        assertFalse(store.read().gyroNativeTouch);assertEquals(GyroMode.OFF,store.read().gyroMode)
+        choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Ativado — experimental")
+        assertTrue(store.read().gyroNativeTouch);assertEquals(GyroMode.ALWAYS,store.read().gyroMode)
+        assertTrue(PlaybackSettingsStore(activity).read().gyroNativeTouch)
+        assertNull(shadowOf(activity).lastRequestedPermission)
+        (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
+        var changes=0;val gyro=GyroController(activity,{0},{changes++})
+        gyro.start(GyroMode.ALWAYS,100,true,true);assertTrue(shadowOf(manager).hasListener(gyro))
+        val event=ShadowSensorManager.createSensorEvent(3);event.sensor=sensor;event.values[1]=2f
+        gyro.onSensorChanged(event);assertEquals(.5f,gyro.apply(GamepadState()).rightX,0f)
+        shadowOf(Looper.getMainLooper()).idleFor(101,TimeUnit.MILLISECONDS)
+        assertEquals(GamepadState(),gyro.apply(GamepadState()));assertEquals(2,changes)
+        gyro.start(GyroMode.LT,100,true,true);gyro.onSensorChanged(event)
+        assertEquals(GamepadState(),gyro.apply(GamepadState()))
+        assertEquals(.5f,gyro.apply(GamepadState(leftTrigger=1f)).rightX,0f)
+        gyro.stop();assertFalse(shadowOf(manager).hasListener(gyro));assertEquals(GamepadState(),gyro.apply(GamepadState()))
+        controller.pause().stop().destroy()
+    }
 }

@@ -1,6 +1,7 @@
 package com.xcloud.tclnative
 
 import com.xcloud.tclnative.webrtc.IceFamilyPolicy
+import com.xcloud.tclnative.settings.IpPreference
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.*
 import org.junit.Assert.*
@@ -44,5 +45,12 @@ class IceFamilyPolicyTest {
         val task=launch { IceFamilyPolicy.add(listOf(four,six),true,{added.add(it);true},{awaitCancellation()}) }
         runCurrent();task.cancelAndJoin();advanceUntilIdle()
         assertEquals(listOf(six),added)
+    }
+    @Test fun ipv4PreferenceHasTheSameBoundedFallbackAndPreservesIpv6()=runTest {
+        val added=mutableListOf<IceCandidate>()
+        val result=IceFamilyPolicy.add(listOf(six,four),IpPreference.IPV4,{added.add(it);true},{awaitCancellation()})
+        assertEquals(4,result.preferredFamily);assertEquals(listOf(four,six),added);assertEquals(750L,currentTime)
+        assertTrue(IceFamilyPolicy.connectionMessage("FAILED",4).contains("tentando IPv6"))
+        assertFalse(IceFamilyPolicy.connectionMessage("FAILED",4).contains("FAILED"))
     }
 }

@@ -89,7 +89,7 @@ class SessionReportUiTest {
         val c=Robolectric.buildActivity(Activity::class.java).setup(); val a=c.get(); val store=PlaybackSettingsStore(a)
         store.save(PlaybackSettings()); var opened=0
         val panel=PlaybackSettingsPanel(a,store,{},{},{},{},lastReport={opened++})
-        var d=panel.show()
+        var d=panel.showDiagnostics()
         label(d.body,"Diagnóstico pós-partida: Ativado").performClick()
         d=ShadowDialog.getLatestDialog() as ConsoleDialog
         assertTrue(store.read().sessionReport)

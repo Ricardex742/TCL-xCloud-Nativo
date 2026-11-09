@@ -45,7 +45,8 @@ data class PlaybackSettings(
     val ipPreference: IpPreference = IpPreference.AUTO,
     val desktopInput: DesktopInputMode = DesktopInputMode.OFF,val mouseSensitivity: Int = 100,
     val gyroMode: GyroMode = GyroMode.OFF,val gyroSensitivity: Int = 100,
-    val microphone: Boolean = false,val audioGain: Int = 100,val touchRumble: Boolean = false
+    val microphone: Boolean = false,val audioGain: Int = 100,val touchRumble: Boolean = false,
+    val gyroNativeTouch: Boolean = false
 ) {
     fun forSession(): PlaybackSettings = if(videoCodec==VideoCodecMode.H264_BASELINE || videoMode==VideoMode.COMPATIBILITY)
         copy(resolution=StreamResolution.HD_720) else this
@@ -82,7 +83,7 @@ class PlaybackSettingsStore(context: Context) {
             prefs.getInt("mouse_sensitivity",100).coerceIn(25,300),
             GyroMode.entries.firstOrNull { it.name==prefs.getString("gyro_mode",null) } ?: GyroMode.OFF,
             prefs.getInt("gyro_sensitivity",100).coerceIn(25,300),prefs.getBoolean("microphone",false),
-            prefs.getInt("audio_gain",100).coerceIn(0,300),prefs.getBoolean("touch_rumble",false))
+            prefs.getInt("audio_gain",100).coerceIn(0,300),prefs.getBoolean("touch_rumble",false),prefs.getBoolean("gyro_native_touch",false))
     }
     fun save(settings: PlaybackSettings) {
         prefs.edit().putString("video_mode",settings.videoMode.name).putBoolean("low_latency_video",settings.videoMode.lowLatency)
@@ -96,7 +97,8 @@ class PlaybackSettingsStore(context: Context) {
             .putString("ip_preference",settings.ipPreference.name).putString("desktop_input",settings.desktopInput.name)
             .putInt("mouse_sensitivity",settings.mouseSensitivity.coerceIn(25,300)).putString("gyro_mode",settings.gyroMode.name)
             .putInt("gyro_sensitivity",settings.gyroSensitivity.coerceIn(25,300)).putBoolean("microphone",settings.microphone)
-            .putInt("audio_gain",settings.audioGain.coerceIn(0,300)).putBoolean("touch_rumble",settings.touchRumble).apply()
+            .putInt("audio_gain",settings.audioGain.coerceIn(0,300)).putBoolean("touch_rumble",settings.touchRumble)
+            .putBoolean("gyro_native_touch",settings.gyroNativeTouch).apply()
     }
 }
 

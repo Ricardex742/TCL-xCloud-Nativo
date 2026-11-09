@@ -36,7 +36,7 @@ class SessionOptionsTest {
         assertEquals(PlaybackSettings(),store.read())
         val selected=PlaybackSettings(brightness=25,contrast=125,ipPreference=IpPreference.IPV6,
             desktopInput=DesktopInputMode.NATIVE,mouseSensitivity=150,gyroMode=GyroMode.LT,gyroSensitivity=75,
-            microphone=true,audioGain=175,touchRumble=true)
+            microphone=true,audioGain=175,touchRumble=true,gyroNativeTouch=true)
         store.save(selected)
         assertEquals(selected,PlaybackSettingsStore(context).read())
         store.save(selected.copy(brightness=500,contrast=999,audioGain=1000,mouseSensitivity=-1,gyroSensitivity=500))

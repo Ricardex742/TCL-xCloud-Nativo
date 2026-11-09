@@ -6,7 +6,7 @@
   <p>
     <a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aperf%2Fdecoder-display-latency-0.31"><img src="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml/badge.svg?branch=perf%2Fdecoder-display-latency-0.31" alt="Compilação Android" /></a>
     <img src="https://img.shields.io/badge/Android-7.0%2B-54de69?logo=android&logoColor=white" alt="Android 7 ou superior" />
-    <img src="https://img.shields.io/badge/vers%C3%A3o-0.31.6-173d29" alt="Versão 0.31.6" />
+    <img src="https://img.shields.io/badge/vers%C3%A3o-0.31.7-173d29" alt="Versão 0.31.7" />
   </p>
   <p><a href="#baixar-e-instalar">Baixar</a> · <a href="#telas-do-aplicativo">Telas</a> · <a href="#controles-de-toque-por-jogo">HUDs de toque</a> · <a href="#funcionalidades">Funcionalidades</a> · <a href="#atalhos-dos-jogos-na-tv">Atalhos na TV</a> · <a href="#compilar">Compilar</a></p>
 </div>
@@ -24,6 +24,8 @@ A branch `perf/decoder-display-latency-0.31` continua a 0.30 com solicitações 
 Na **0.31.5**, os experimentos H.264 High/HEVC foram substituídos pela opção **H.264 leve — Baseline (720p)**. Há também um teste opcional de vibração USB/XInput para receptores reconhecidos, sujeito à autorização e ao driver Android. Veja [mudanças, limites e roteiro de teste](docs/light-codec-usb-rumble-0.31.5.md).
 
 A **0.31.6** acrescenta bitrate/região/idioma por jogo, perfis de controle, preferência IPv6 com alternativa IPv4, mouse/teclado nativos ou emulados, giroscópio, microfone opcional, ganho de áudio com controle adaptativo de picos, brilho/contraste e vibração do celular no toque. Veja [acesso, limitações e validação das dez adições](docs/session-controls-audio-0.31.6.md). As novas capturas de entrada/voz começam desativadas; a rede mantém Automático.
+
+A **0.31.7** organiza as configurações em sete categorias, aprimora os checks contínuos de rota no Automático IPv4/IPv6 e oferece giroscópio opcional junto ao toque nativo Xbox, em aparelhos com sensor. Veja [acesso, funcionamento e limites](docs/categories-network-native-gyro-0.31.7.md). A seleção de rota depende do WebRTC/servidor; o giroscópio nativo é experimental.
 
 Nesta branch, **GAME PASS** consulta a galeria cloud atual do site oficial, e **TRANSMITA SEU JOGO** mostra a galeria oficial “Transmita seu próprio jogo”. As listas completas usam os produtos da região BR, sem limitar a exibição aos títulos já associados ao motor nativo. Uma edição ainda sem associação é verificada no serviço autenticado ao selecionar. A galeria de compra não é um inventário da conta: jogar exige a licença e as condições do serviço. Veja [fontes, contagens e funcionamento das abas](docs/official-catalog-galleries-0.31.md) e o [contexto completo das modificações desta branch](docs/contexto-completo-branch-perf-0.31.md).
 
@@ -135,8 +137,8 @@ Campos ausentes aparecem como **n/d**, e o índice de qualidade só é calculado
 | Imagem | Nitidez, saturação, brilho e contraste durante a partida. AMD FSR 1.0.2 opcional, com ajustes no passe final RCAS. |
 | HDR10 | Diagnóstico do suporte anunciado pela tela, separado do formato do streaming. O motor nativo atual usa H.264 SDR de 8 bits e não ativa HDR10 real. |
 | Controle físico | USB, Bluetooth e dongles reconhecidos pelo Android. Perfis por dispositivo com zonas mortas, sensibilidade, curvas, inversão, gatilhos e remapeamento. |
-| Opções por jogo | Bitrate máximo Automático/1–50 Mbps, regiões oferecidas à conta e idioma solicitado. Preferência IPv6 opcional, mantendo IPv4. |
-| Mouse e sensores | Emulação de controle ou MKB nativo nos títulos/sessões compatíveis; F7 menu e F8 captura. Giroscópio opcional com LT/LB/sempre quando há sensor, fora do toque nativo Xbox. |
+| Opções por jogo | Bitrate máximo Automático/1–50 Mbps, regiões oferecidas à conta e idioma solicitado. Automático IPv4/IPv6 durante a partida ou preferência inicial por uma família, mantendo a alternativa. |
+| Mouse e sensores | Emulação de controle ou MKB nativo nos títulos/sessões compatíveis; F7 menu e F8 captura. Giroscópio opcional com LT/LB/sempre quando há sensor; teste adicional para toque nativo Xbox (use Sempre sem controle físico). |
 | Coop local | Até quatro jogadores com estados independentes, quando aceitos pelo jogo e pela sessão cloud. |
 | Vibração | Via Android, teste USB/XInput opcional e vibração do celular no toque. Suporte depende do aparelho, jogo, controle, dongle e driver. |
 | Toque | HUDs por jogo, múltiplos dedos, câmera por arrasto, pedais, ataque/defesa no futebol, comandos combinados e gestos editáveis. Posição, tamanho, opacidade e ações salvas por título. Toque nativo experimental no mesmo motor WebRTC. |

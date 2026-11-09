@@ -59,6 +59,7 @@ class PlaybackSettingsPanel(
             ConsoleAction("Proporção: ${value.aspect.label}") { chooseAspect() },
             ConsoleAction("Upscaling nativo: ${if(value.nativeUpscaling) "Ativado" else "Desativado"}") { chooseUpscaling() },
             ConsoleAction("AMD FSR: ${if(value.videoMode==VideoMode.COMPATIBILITY) "Desativado (Compatibilidade)" else value.fsr.label}") { chooseFsr() },
+            ConsoleAction("Saída do FSR: ${value.fsrOutput.label}") { chooseFsrOutput() },
             ConsoleAction("Ajustes da imagem — nitidez, saturação, brilho e contraste") { showImageAdjustments() },
             ConsoleAction("HDR10: verificar tela e transmissão") { showHdrStatus() }
         ))
@@ -135,8 +136,14 @@ class PlaybackSettingsPanel(
     fun chooseFsr(): ConsoleDialog {
         enter(SettingsPage.IMAGE)
         val current=store.read()
-        return choices("AMD FidelityFX Super Resolution","FSR 1.0.2 amplia o vídeo recebido com EASU e nitidez RCAS. É um teste opcional com custo extra de GPU, principalmente em 4K. Comece em 720p → 1080p e compare imagem e resposta dos comandos. Ajuste RCAS em Imagem e tela › Ajustes da imagem. Compatibilidade mantém FSR desligado. Aplica-se à próxima partida.",
+        return choices("AMD FidelityFX Super Resolution","FSR 1.0.2 amplia o vídeo recebido com EASU e nitidez RCAS. É um teste opcional com custo extra de GPU, principalmente em 4K. Escolha Automático, 1440p ou 4K experimental em Saída do FSR e compare imagem e resposta dos comandos. O FSR assume a escala mesmo com Upscaling nativo ligado. Ajuste RCAS em Imagem e tela › Ajustes da imagem. Compatibilidade mantém FSR desligado. Aplica-se à próxima partida.",
             FsrMode.entries.map { it.label to (it==current.fsr) }) { save(current.copy(fsr=FsrMode.entries[it])) }
+    }
+    fun chooseFsrOutput(): ConsoleDialog {
+        enter(SettingsPage.IMAGE)
+        val current=store.read()
+        return choices("Saída do FSR","Define a apresentação local, sem aumentar a resolução recebida nem o consumo de rede. Automático acompanha a janela nos celulares e usa até 1440p nas TVs 4K. As escolhas são limitadas pela saída física disponível e preservam a proporção. 4K tem custo maior de GPU; não garante 60 FPS. Requer AMD FSR ativado; Compatibilidade mantém o filtro desligado. Se o filtro/Surface falhar, o app retorna à escala padrão. Aplica-se à próxima partida.",
+            FsrOutput.entries.map { it.label to (it==current.fsrOutput) }) { save(current.copy(fsrOutput=FsrOutput.entries[it])) }
     }
     fun chooseAspect(): ConsoleDialog {
         enter(SettingsPage.IMAGE)

@@ -2,6 +2,7 @@ package org.webrtc;
 
 /** Bound FSR working storage before any texture allocation. No change to stream/input coordinates. */
 public final class Fsr1Plan {
+  public static final String NO_UPSCALING="sem ampliação; escala padrão";
   public static final long MAX_PIXELS=3840L*2160;
   public static final long MAX_BYTES=64L*1024*1024;
   public final int inputWidth,inputHeight,outputWidth,outputHeight;
@@ -18,7 +19,7 @@ public final class Fsr1Plan {
     else if(precision<23) reason="GPU sem precisão highp de 23 bits";
     else if(ow>maxTexture || oh>maxTexture || ow>maxRenderbuffer || oh>maxRenderbuffer) reason="limite de textura da GPU";
     else if((long)ow*oh>MAX_PIXELS) reason="saída acima do limite 4K";
-    else if(ow<=iw && oh<=ih) reason="sem ampliação; escala padrão";
+    else if(ow<=iw && oh<=ih) reason=NO_UPSCALING;
     // If aspect selection reduces one axis, do that reduction during RGB preparation.
     int inputW=Math.min(Math.max(0,iw),Math.max(0,ow)),inputH=Math.min(Math.max(0,ih),Math.max(0,oh));
     if(reason==null && 4L*((long)inputW*inputH+(long)ow*oh)>MAX_BYTES) reason="limite de memória do filtro";

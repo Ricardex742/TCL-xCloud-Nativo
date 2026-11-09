@@ -5,10 +5,10 @@ import android.graphics.Color
 import android.view.Gravity
 import android.widget.FrameLayout
 import com.xcloud.tclnative.settings.VideoAspect
+import com.xcloud.tclnative.settings.FsrOutput
 import com.xcloud.tclnative.webrtc.ClientDisplayDimensions
 import org.webrtc.EglBase
 import org.webrtc.RendererCommon
-import org.webrtc.SurfaceViewRenderer
 import org.webrtc.VideoTrack
 import org.webrtc.VideoSink
 import java.util.concurrent.atomic.AtomicLong
@@ -21,8 +21,27 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     var onRenderError: ((Exception) -> Unit)? = null
     var onDisplayDimensionsChanged: ((ClientDisplayDimensions) -> Unit)? = null
     private var lastDisplayDimensions: ClientDisplayDimensions? = null
+    private val displayManager=context.getSystemService(Context.DISPLAY_SERVICE) as android.hardware.display.DisplayManager
+    private var watchingDisplay=false
+    private val displayListener=object: android.hardware.display.DisplayManager.DisplayListener {
+        override fun onDisplayAdded(id: Int) {}
+        override fun onDisplayRemoved(id: Int) {}
+        override fun onDisplayChanged(id: Int) { if(!released && fsrEnabled && display?.displayId==id) updateOutputBuffer() }
+    }
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if(!watchingDisplay && !released) {
+            displayManager.registerDisplayListener(displayListener,android.os.Handler(android.os.Looper.getMainLooper()))
+            watchingDisplay=true
+        }
+        if(fsrEnabled) updateOutputBuffer()
+    }
+    override fun onDetachedFromWindow() {
+        stopWatchingDisplay();cancelBufferVerification();super.onDetachedFromWindow()
+    }
+    private fun stopWatchingDisplay() { if(watchingDisplay) { displayManager.unregisterDisplayListener(displayListener);watchingDisplay=false } }
     private var currentTrack: VideoTrack? = null
-    private var renderer: SurfaceViewRenderer? = null
+    private var renderer: OutputSurfaceViewRenderer? = null
     private var aspectDrawer: AspectVideoDrawer? = null
     private var trackSink: VideoSink? = null
     @Volatile private var generation = 0
@@ -66,12 +85,16 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     private var contrast=100
     private var fsrRequested=false
     private var fsrSharpness=50
-    private val fsrEnabled get()=fsrRequested && !compatibility
+    private var fsrOutput=FsrOutput.AUTO
+    private var fsrFailure: String?=null
+    private var requestedBuffer: VideoViewport?=null
+    private var bufferVerification: Runnable?=null
+    private val fsrEnabled get()=fsrRequested && !compatibility && fsrFailure==null
     var compatibility = false
-    fun setFsr(requested: Boolean,sharpness: Int) {
-        fsrRequested=requested;setFsrSharpness(sharpness)
+    fun setFsr(requested: Boolean,sharpness: Int,output: FsrOutput=FsrOutput.AUTO) {
+        fsrFailure=null;fsrOutput=output;fsrRequested=requested;setFsrSharpness(sharpness)
         aspectDrawer?.fsrEnabled=fsrEnabled
-        renderer?.setEnableHardwareScaler(nativeUpscaling && !fsrEnabled)
+        updateOutputBuffer()
     }
     fun setFsrSharpness(sharpness: Int) { fsrSharpness=sharpness.coerceIn(0,100);aspectDrawer?.fsrSharpness=fsrSharpness }
     fun setImageAdjustments(sharpness: Int,saturation: Int,brightness: Int=0,contrast: Int=100) {
@@ -98,7 +121,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     var nativeUpscaling = true
         set(value) {
             field = value
-            renderer?.setEnableHardwareScaler(value && !fsrEnabled)
+            updateOutputBuffer()
             updateVideoLayout()
         }
 
@@ -107,6 +130,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     /** A new renderer has a new first-frame event for every session, including retries. */
     fun prepareForSession(expectedWidth: Int = 1920, expectedHeight: Int = 1080) {
         check(!released)
+        fsrFailure=null
         videoWidth = expectedWidth; videoHeight = expectedHeight
         lastDeliveryMs.set(Long.MIN_VALUE)
         presentedToken.set(0)
@@ -114,20 +138,25 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     }
     private fun replaceRenderer() {
         detachTrack()
+        cancelBufferVerification();requestedBuffer=null
         generation++
         probePending.set(false)
         frameRateHintRequested = false
         renderer?.let { removeView(it); it.release() }
         val id = generation
-        val drawer=AspectVideoDrawer(aspect.stretch,{ org.webrtc.Fsr1Drawer(context) }).also {
+        val drawer=AspectVideoDrawer(aspect.stretch,{ org.webrtc.Fsr1Drawer(context) },onFsrFailure={ reason ->
+            post { if(!released && generation==id) fallbackFsr(reason) }
+        }).also {
             it.sharpness=sharpness;it.saturation=saturation;it.brightness=brightness;it.contrast=contrast;it.fsrEnabled=fsrEnabled;it.fsrSharpness=fsrSharpness;aspectDrawer=it
         }
-        renderer = object : SurfaceViewRenderer(context) {
+        renderer = object : OutputSurfaceViewRenderer(context) {
             override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
                 drawer.layoutAspect=(right-left).toFloat()/(bottom-top).coerceAtLeast(1)
                 super.onLayout(changed,left,top,right,bottom)
+                updateOutputBuffer()
             }
         }.also { view ->
+            view.onBufferFailure={ post { if(!released && generation==id) fallbackFsr("Surface recusou o tamanho solicitado") } }
             view.init(eglBase.eglBaseContext, object : RendererCommon.RendererEvents {
                 override fun onFirstFrameRendered() {
                     post { if (!released && generation == id) onFirstFrameRendered?.invoke() }
@@ -151,9 +180,12 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
                         }.isSuccess
                     }
                 }
-                override fun surfaceCreated(holder: android.view.SurfaceHolder) { frameRate(holder) }
-                override fun surfaceChanged(holder: android.view.SurfaceHolder, format: Int, width: Int, height: Int) { frameRate(holder) }
-                override fun surfaceDestroyed(holder: android.view.SurfaceHolder) { if (generation == id) frameRateHintRequested = false }
+                override fun surfaceCreated(holder: android.view.SurfaceHolder) { frameRate(holder);if(!released && generation==id) updateOutputBuffer() }
+                override fun surfaceChanged(holder: android.view.SurfaceHolder, format: Int, width: Int, height: Int) {
+                    frameRate(holder)
+                    if(!released && generation==id) updateOutputBuffer()
+                }
+                override fun surfaceDestroyed(holder: android.view.SurfaceHolder) { if (generation == id) { frameRateHintRequested = false;cancelBufferVerification() } }
             })
             addView(view, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
         }
@@ -178,6 +210,44 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         if (old == null || old.width != targetWidth || old.height != targetHeight || old.gravity != Gravity.CENTER) {
             view.layoutParams = LayoutParams(targetWidth,targetHeight,Gravity.CENTER)
         }
+        updateOutputBuffer()
+    }
+    private fun updateOutputBuffer() {
+        val view=renderer ?: return
+        val mode=display?.mode
+        val tv=(context.getSystemService(Context.UI_MODE_SERVICE) as android.app.UiModeManager).currentModeType==android.content.res.Configuration.UI_MODE_TYPE_TELEVISION
+        val activity=context as? android.app.Activity
+        val fullScreen=activity?.let { !it.isInMultiWindowMode && !it.isInPictureInPictureMode } ?: true
+        val viewport=VideoScalingPolicy.viewport(width,height,videoWidth,videoHeight,aspect)
+        val target=if(fsrEnabled) FsrOutputPolicy.target(fsrOutput,width,height,viewport,
+            mode?.physicalWidth ?: 0,mode?.physicalHeight ?: 0,tv,fullScreen) else null
+        if(target!=requestedBuffer) cancelBufferVerification()
+        requestedBuffer=target
+        view.setOutputBuffer(target)
+        view.setEnableHardwareScaler(nativeUpscaling && !fsrEnabled)
+        verifyOutputBuffer()
+    }
+    private fun cancelBufferVerification() { bufferVerification?.let(::removeCallbacks);bufferVerification=null }
+    private fun verifyOutputBuffer() {
+        val target=requestedBuffer ?: return
+        val view=renderer ?: return
+        val actual=view.holder.surfaceFrame
+        if(actual.width()==target.width && actual.height()==target.height) { cancelBufferVerification();return }
+        if(bufferVerification!=null) return
+        val id=generation
+        bufferVerification=Runnable {
+            bufferVerification=null
+            if(released || generation!=id || requestedBuffer!=target || !view.isAttachedToWindow || !view.holder.surface.isValid) return@Runnable
+            val frame=view.holder.surfaceFrame
+            if(frame.width()!=target.width || frame.height()!=target.height)
+                fallbackFsr("Surface não confirmou ${target.width}x${target.height}; mantendo escala padrão")
+        }.also { postDelayed(it,2000) }
+    }
+    private fun fallbackFsr(reason: String) {
+        if(!fsrEnabled) return
+        fsrFailure=reason
+        aspectDrawer?.fsrEnabled=false
+        updateOutputBuffer()
     }
     fun attachVideoTrack(track: VideoTrack) {
         val id = generation
@@ -213,8 +283,14 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     fun clearSession() {
         if (released) return
         generation++
+        cancelBufferVerification()
         detachTrack()
         renderer?.clearImage()
+        if(fsrRequested) {
+            renderer?.let { removeView(it);it.release() }
+            renderer=null;aspectDrawer=null;requestedBuffer=null
+        }
+        fsrRequested=false
         onFirstFrameRendered = null
         onRenderError = null
     }
@@ -233,7 +309,8 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
             "Layout do vídeo: $layout | Área calculada: ${expected.width}x${expected.height} | Quadro do renderer: ${videoWidth}x$videoHeight\n" +
             "Escala da Surface: ${if(fsrEnabled) "renderer em resolução de saída para FSR" else if (nativeUpscaling) "HW solicitada" else "HW desativada"}; imagem ajustada à janela | Conteúdo ${if(compatibility) 30 else 60} FPS sinalizado à Surface: ${if (frameRateHintRequested) "sim" else "não confirmado"} | Pós-processamento mínimo: ${if (minimalPostProcessingRequested) "solicitado" else "padrão"}; suporte Android declarado: $minimalLabel\n" +
             "Proporção: ${aspect.label} | Nitidez padrão: $sharpness% | Saturação: $saturation% | Brilho: $brightness% | Contraste: $contrast% | Apresentação: até ${if(compatibility) 30 else 60} FPS | AiPQ: não verificável pelo app\n"+
-            (if(fsrRequested && compatibility) "AMD FSR 1.0.2: inativo no modo Compatibilidade" else aspectDrawer?.fsrDiagnostics() ?: "AMD FSR 1.0.2: desligado")
+            (if(fsrRequested) "Saída FSR solicitada: ${fsrOutput.label} | buffer solicitado: ${requestedBuffer?.let { "${it.width}x${it.height}" } ?: "escala padrão"}\n" else "")+
+            (if(fsrFailure!=null) "AMD FSR 1.0.2: retorno à escala padrão — $fsrFailure" else if(fsrRequested && compatibility) "AMD FSR 1.0.2: inativo no modo Compatibilidade" else aspectDrawer?.fsrDiagnostics() ?: "AMD FSR 1.0.2: desligado")
     }
 
     fun compactDiagnostics(): String {
@@ -247,6 +324,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         if (released) return
         clearSession()
         released = true
+        stopWatchingDisplay()
         renderer?.release()
         renderer = null
         if(egl.isInitialized()) eglBase.release()

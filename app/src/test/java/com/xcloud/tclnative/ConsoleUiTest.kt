@@ -270,6 +270,27 @@ class ConsoleUiTest {
             (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
         } finally { controller.pause().stop().destroy() }
     }
+    @Test fun fsrOutputOffersThreeExplicitChoicesAndSavingKeepsStreamAndNativeScalingPreferences() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        try {
+            val activity=controller.get().apply { setContentView(FrameLayout(this)) }
+            layout(activity.window.decorView,1280,720)
+            val store=PlaybackSettingsStore(activity);val original=PlaybackSettings()
+            store.save(original)
+            val panel=PlaybackSettingsPanel(activity,store,{},{},{},{})
+            val choices=panel.chooseFsrOutput();render(choices,"fsr-output-0.31.8")
+            val rows=all(choices.body).filterIsInstance<TextView>().filter { it.isClickable }
+            assertEquals(3,rows.size);assertEquals(original,store.read())
+            rows.single { it.text.contains("4K —") }.performClick()
+            assertEquals(original.copy(fsrOutput=FsrOutput.UHD_4K),store.read())
+            assertTrue(all((ShadowDialog.getLatestDialog() as ConsoleDialog).body).filterIsInstance<TextView>().any { it.text.contains("Saída do FSR: 4K") })
+            (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
+            val again=panel.chooseFsrOutput()
+            all(again.body).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("1440p —") }.performClick()
+            assertEquals(original.copy(fsrOutput=FsrOutput.QHD_1440),store.read())
+            (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
+        } finally { controller.pause().stop().destroy() }
+    }
     @Test fun loginAndQrUseTheNewThemeAndTheRenderedQrStillScans() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()
         val activity=controller.get()

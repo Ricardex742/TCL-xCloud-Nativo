@@ -16,7 +16,7 @@ class FsrRenderingTest {
         override fun drawYuv(t: IntArray,m: FloatArray,fw: Int,fh: Int,x: Int,y: Int,w: Int,h: Int)=draw(m)
         override fun release() { released=true }
     }
-    private class Upscaler(var succeeds: Boolean=true): FsrUpscaler {
+    private class Upscaler(var succeeds: Boolean=true,var rejection: String?=null): FsrUpscaler {
         var width=0;var height=0;var sharpness=0;var saturation=0;var released=false;var calls=0
         var matrix: FloatArray?=null
         override fun configure(w: Int,h: Int,s: Int,c: Int) { width=w;height=h;sharpness=s;saturation=c }
@@ -25,6 +25,7 @@ class FsrRenderingTest {
         override fun drawRgb(t: Int,m: FloatArray,fw: Int,fh: Int,x: Int,y: Int,w: Int,h: Int)=draw(m)
         override fun drawYuv(t: IntArray,m: FloatArray,fw: Int,fh: Int,x: Int,y: Int,w: Int,h: Int)=draw(m)
         override fun diagnostics()="FSR test status"
+        override fun failureReason()=rejection
         override fun release() { released=true }
     }
     @Test fun offUsesOnlyTheOrdinaryDrawerAndNeverCreatesGpuUpscalingResources() {
@@ -50,6 +51,15 @@ class FsrRenderingTest {
         drawer.drawRgb(1,identity,1280,720,0,0,1920,1080)
         drawer.drawYuv(intArrayOf(1,2,3),identity,1280,720,0,0,1920,1080)
         assertEquals(3,base.draws);assertEquals(3,fsr.calls);assertArrayEquals(identity,base.matrix,0f)
+    }
+    @Test fun gpuRejectionRequestsOneSurfaceFallbackWhileNoUpscalingDoesNotDisableTheFilter() {
+        val failures=mutableListOf<String>();val base=Ordinary();val fsr=Upscaler(false)
+        val drawer=AspectVideoDrawer(false,{fsr},base) { failures.add(it) }.apply { fsrEnabled=true }
+        drawer.drawRgb(1,identity,1920,1080,0,0,1920,1080)
+        assertTrue(failures.isEmpty())
+        fsr.rejection="limite de textura da GPU"
+        repeat(3) { drawer.drawRgb(1,identity,1920,1080,0,0,3840,2160) }
+        assertEquals(listOf("limite de textura da GPU"),failures);assertEquals(4,base.draws)
     }
     @Test fun stretchingUsesTheUncroppedSourceAndPreservesRotationMirroringAndOffsetsForFsr() {
         val base=Ordinary();val fsr=Upscaler(false)

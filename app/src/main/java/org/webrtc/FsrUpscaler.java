@@ -8,5 +8,7 @@ public interface FsrUpscaler {
   boolean drawRgb(int texture,float[] matrix,int frameWidth,int frameHeight,int x,int y,int width,int height);
   boolean drawYuv(int[] textures,float[] matrix,int frameWidth,int frameHeight,int x,int y,int width,int height);
   String diagnostics();
+  /** A persistent GPU/size rejection, distinct from a frame that needs no enlargement. */
+  default String failureReason() { return null; }
   void release();
 }

@@ -190,8 +190,8 @@ def texture(w,h,data=None,linear=False):
     return t
 
 
-def draw(p,source,iw,ih,ow,oh,strength=.5,saturation=1.,origin=(0,0),matrix=None,brightness=0.,contrast=0.):
-    x,y=origin;tw,th=ow+x+2,oh+y+2
+def draw(p,source,iw,ih,ow,oh,strength=.5,saturation=1.,origin=(0,0),matrix=None,brightness=0.,contrast=0.,keep_texture=False,sample_points=None):
+    x,y=origin;tw,th=(ow,oh) if keep_texture else (ow+x+2,oh+y+2)
     result=texture(tw,th)
     fbo=uint();gen_framebuffers(1,C.byref(fbo));bind_framebuffer(0x8D40,fbo)
     framebuffer_texture(0x8D40,0x8CE0,0x0DE1,result,0)
@@ -212,12 +212,23 @@ def draw(p,source,iw,ih,ow,oh,strength=.5,saturation=1.,origin=(0,0),matrix=None
     uniform1f(uniform_location(p,b"contrast_adjust"),contrast)
     if matrix is not None:uniform_matrix(uniform_location(p,b"tex_mat"),1,0,(C.c_float*16)(*matrix))
     viewport(x,y,ow,oh);draw_arrays(5,0,4)
-    pixels=(C.c_ubyte*(ow*oh*4))();read_pixels(x,y,ow,oh,0x1908,0x1401,pixels)
+    if keep_texture:
+        pixels=[]
+    elif sample_points is not None:
+        pixels=[]
+        for px,py in sample_points:
+            pixel=(C.c_ubyte*4)();read_pixels(x+px,y+py,1,1,0x1908,0x1401,pixel)
+            pixels.extend(pixel)
+    else:
+        pixels=(C.c_ubyte*(ow*oh*4))();read_pixels(x,y,ow,oh,0x1908,0x1401,pixels)
     assert get_error()==0,"GL draw/readback failed"
     # The padding outside the viewport must remain untouched.
-    sentinel=(C.c_ubyte*4)();read_pixels(tw-1,th-1,1,1,0x1908,0x1401,sentinel)
-    assert list(sentinel)==[7,13,19,255],list(sentinel)
-    bind_framebuffer(0x8D40,0);delete_framebuffers(1,C.byref(fbo));delete_textures(1,C.byref(result))
+    if not keep_texture:
+        sentinel=(C.c_ubyte*4)();read_pixels(tw-1,th-1,1,1,0x1908,0x1401,sentinel)
+        assert list(sentinel)==[7,13,19,255],list(sentinel)
+    bind_framebuffer(0x8D40,0);delete_framebuffers(1,C.byref(fbo))
+    if keep_texture:return result
+    delete_textures(1,C.byref(result))
     return list(pixels)
 
 
@@ -313,12 +324,26 @@ for brightness,contrast in [(.1,0.),(0.,.25),(-.2,-.25)]:
     assert all(abs(a-b)<=2 for a,b in zip(pixels[:3],expected)),(pixels[:3],expected)
     checks+=1
 delete_textures(1,C.byref(source))
+# Full-size targets: keep EASU output on the GPU and probe pixels after RCAS.
+# Small-pattern tests above compare the kernel to AMD; these also check real 1440p/4K allocation.
+full_resolution=[]
+source=texture(1920,1080,bytes([80,140,210,255])*(1920*1080))
+for ow,oh in [(2560,1440),(3840,2160)]:
+    enlarged=draw(app_easu,source,1920,1080,ow,oh,keep_texture=True)
+    points=[(0,0),(ow-1,0),(0,oh-1),(ow-1,oh-1),(ow//2,oh//2)]
+    pixels=draw(app_rcas,enlarged,ow,oh,ow,oh,sample_points=points)
+    assert all(abs(value-[80,140,210,255][i%4])<=1 for i,value in enumerate(pixels)),(ow,oh,pixels)
+    delete_textures(1,C.byref(enlarged))
+    full_resolution.append(dict(input=[1920,1080],output=[ow,oh],probed_pixels=len(points)))
+    checks+=1
+delete_textures(1,C.byref(source))
+
 report=dict(renderer=get_string(0x1F01).decode(),version=get_string(0x1F02).decode(),checks=checks,
-            upstream_commit="a21ffb8f6c13233ba336352bdff293894c706575",comparisons=comparisons,
+            upstream_commit="a21ffb8f6c13233ba336352bdff293894c706575",comparisons=comparisons,full_resolution=full_resolution,
             note="Readback is test-only. Software timings do not measure Android GPU or streaming latency.")
 output=root/"app/build/reports/dashboard";output.mkdir(parents=True,exist_ok=True)
 (output/"fsr1-validation.json").write_text(json.dumps(report,indent=2)+"\n")
-summary=f"{report['version']} / {report['renderer']}\nFSR EASU/RCAS and actual WebRTC highp OES/RGB/YUV copy shaders compiled; pinned AMD stock/exact reference shaders compiled.\n{checks} pixel-output/reference/rotation/border/viewport/color checks passed.\n"
+summary=f"{report['version']} / {report['renderer']}\nFSR EASU/RCAS and actual WebRTC highp OES/RGB/YUV copy shaders compiled; pinned AMD stock/exact reference shaders compiled.\n{checks} pixel-output/reference/rotation/border/viewport/color checks passed, including 1080p to 1440p and 4K targets.\n"
 (output/"fsr1-validation.txt").write_text(summary)
 print(summary,end="")
 make_current(display,None,None,None);terminate(display)

@@ -25,7 +25,8 @@ object AspectTransform {
 /** The default path remains stock WebRTC; FSR allocates its passes only after an explicit opt-in. */
 class AspectVideoDrawer(@Volatile var stretch: Boolean,
     private val fsrFactory: (() -> FsrUpscaler)? = null,
-    private val delegate: RendererCommon.GlDrawer = GlRectDrawer()) : RendererCommon.GlDrawer {
+    private val delegate: RendererCommon.GlDrawer = GlRectDrawer(),
+    private val onFsrFailure: (String) -> Unit = {}) : RendererCommon.GlDrawer {
     @Volatile var sourceAspect = 16f/9
     @Volatile var layoutAspect = 16f/9
     @Volatile var sourceWidth=1920
@@ -38,6 +39,10 @@ class AspectVideoDrawer(@Volatile var stretch: Boolean,
     @Volatile var fsrSharpness=50
     @Volatile private var fsr: FsrUpscaler?=null
     private var adjusted: ImageAdjustmentDrawer? = null
+    private var failureReported=false
+    private fun checkFailure() {
+        if(!failureReported) fsr?.failureReason()?.let { failureReported=true;onFsrFailure(it) }
+    }
     fun fsrDiagnostics(): String = if(!fsrEnabled) "AMD FSR 1.0.2: desligado"
         else fsr?.diagnostics() ?: "AMD FSR 1.0.2: solicitado; aguardando vídeo"
     private fun upscaler(width: Int,height: Int): FsrUpscaler? {
@@ -63,18 +68,21 @@ class AspectVideoDrawer(@Volatile var stretch: Boolean,
                          x: Int, y: Int, width: Int, height: Int) {
         val m=matrix(texMatrix)
         if(upscaler(frameWidth,frameHeight)?.drawOes(texture,m,frameWidth,frameHeight,x,y,width,height)==true) return
+        checkFailure()
         drawer(frameWidth,frameHeight).drawOes(texture,m,frameWidth,frameHeight,x,y,width,height)
     }
     override fun drawRgb(texture: Int, texMatrix: FloatArray, frameWidth: Int, frameHeight: Int,
                          x: Int, y: Int, width: Int, height: Int) {
         val m=matrix(texMatrix)
         if(upscaler(frameWidth,frameHeight)?.drawRgb(texture,m,frameWidth,frameHeight,x,y,width,height)==true) return
+        checkFailure()
         drawer(frameWidth,frameHeight).drawRgb(texture,m,frameWidth,frameHeight,x,y,width,height)
     }
     override fun drawYuv(textures: IntArray, texMatrix: FloatArray, frameWidth: Int, frameHeight: Int,
                          x: Int, y: Int, width: Int, height: Int) {
         val m=matrix(texMatrix)
         if(upscaler(frameWidth,frameHeight)?.drawYuv(textures,m,frameWidth,frameHeight,x,y,width,height)==true) return
+        checkFailure()
         drawer(frameWidth,frameHeight).drawYuv(textures,m,frameWidth,frameHeight,x,y,width,height)
     }
     override fun release() {

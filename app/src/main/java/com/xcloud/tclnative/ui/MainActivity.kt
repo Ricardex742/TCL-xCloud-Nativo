@@ -974,7 +974,7 @@ open class MainActivity : Activity() {
             rumble.enabled=settings.rumble
             rumble.touchRumble=settings.touchRumble
             surfaceRenderer.compatibility=compatible
-            surfaceRenderer.setFsr(settings.fsr==com.xcloud.tclnative.settings.FsrMode.FSR1,settings.fsrSharpness)
+            surfaceRenderer.setFsr(settings.fsr==com.xcloud.tclnative.settings.FsrMode.FSR1,settings.fsrSharpness,settings.fsrOutput)
             surfaceRenderer.nativeUpscaling = settings.nativeUpscaling
             surfaceRenderer.aspect = settings.aspect
             surfaceRenderer.setImageAdjustments(settings.sharpness,settings.saturation,settings.brightness,settings.contrast)

@@ -76,6 +76,11 @@ public final class Fsr1Drawer implements FsrUpscaler {
       return false;
     } finally { if(begun) backend.end(); }
   }
+  @Override public String failureReason() {
+    if(broken) return status;
+    Fsr1Plan p=plan;
+    return p!=null && !p.active() && !Fsr1Plan.NO_UPSCALING.equals(p.bypass)?p.bypass:null;
+  }
   @Override public String diagnostics() {
     Fsr1Plan p=plan;
     String dimensions=!broken && !closed && p!=null && p.active()?" | "+p.inputWidth+"x"+p.inputHeight+" → "+p.outputWidth+"x"+p.outputHeight+

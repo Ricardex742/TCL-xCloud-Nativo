@@ -62,7 +62,16 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     private var videoHeight = 1080
     private var sharpness=0
     private var saturation=100
+    private var fsrRequested=false
+    private var fsrSharpness=50
+    private val fsrEnabled get()=fsrRequested && !compatibility
     var compatibility = false
+    fun setFsr(requested: Boolean,sharpness: Int) {
+        fsrRequested=requested;setFsrSharpness(sharpness)
+        aspectDrawer?.fsrEnabled=fsrEnabled
+        renderer?.setEnableHardwareScaler(nativeUpscaling && !fsrEnabled)
+    }
+    fun setFsrSharpness(sharpness: Int) { fsrSharpness=sharpness.coerceIn(0,100);aspectDrawer?.fsrSharpness=fsrSharpness }
     fun setImageAdjustments(sharpness: Int,saturation: Int) {
         this.sharpness=sharpness.coerceIn(0,100); this.saturation=saturation.coerceIn(0,200)
         aspectDrawer?.sharpness=this.sharpness; aspectDrawer?.saturation=this.saturation
@@ -85,7 +94,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     var nativeUpscaling = true
         set(value) {
             field = value
-            renderer?.setEnableHardwareScaler(value)
+            renderer?.setEnableHardwareScaler(value && !fsrEnabled)
             updateVideoLayout()
         }
 
@@ -106,7 +115,9 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         frameRateHintRequested = false
         renderer?.let { removeView(it); it.release() }
         val id = generation
-        val drawer=AspectVideoDrawer(aspect.stretch).also { it.sharpness=sharpness; it.saturation=saturation; aspectDrawer=it }
+        val drawer=AspectVideoDrawer(aspect.stretch,{ org.webrtc.Fsr1Drawer(context) }).also {
+            it.sharpness=sharpness;it.saturation=saturation;it.fsrEnabled=fsrEnabled;it.fsrSharpness=fsrSharpness;aspectDrawer=it
+        }
         renderer = object : SurfaceViewRenderer(context) {
             override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
                 drawer.layoutAspect=(right-left).toFloat()/(bottom-top).coerceAtLeast(1)
@@ -126,7 +137,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
                 }
             },EglBase.CONFIG_PLAIN,drawer)
             view.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL)
-            view.setEnableHardwareScaler(nativeUpscaling)
+            view.setEnableHardwareScaler(nativeUpscaling && !fsrEnabled)
             if(compatibility) view.setFpsReduction(30f) else view.disableFpsReduction()
             view.holder.addCallback(object : android.view.SurfaceHolder.Callback {
                 private fun frameRate(holder: android.view.SurfaceHolder) {
@@ -216,8 +227,9 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         val minimalLabel=when(minimalSupport) { true -> "sim";false -> "não";null -> "n/d" }
         return "Surface $size → janela ${width}x$height | Saída Android: $output\n" +
             "Layout do vídeo: $layout | Área calculada: ${expected.width}x${expected.height} | Quadro do renderer: ${videoWidth}x$videoHeight\n" +
-            "Escala da Surface: ${if (nativeUpscaling) "HW solicitada" else "HW desativada"}; imagem ajustada à janela | Conteúdo ${if(compatibility) 30 else 60} FPS sinalizado à Surface: ${if (frameRateHintRequested) "sim" else "não confirmado"} | Pós-processamento mínimo: ${if (minimalPostProcessingRequested) "solicitado" else "padrão"}; suporte Android declarado: $minimalLabel\n" +
-            "Proporção: ${aspect.label} | Nitidez: $sharpness% | Saturação: $saturation% | Apresentação: até ${if(compatibility) 30 else 60} FPS | AiPQ: não verificável pelo app"
+            "Escala da Surface: ${if(fsrEnabled) "renderer em resolução de saída para FSR" else if (nativeUpscaling) "HW solicitada" else "HW desativada"}; imagem ajustada à janela | Conteúdo ${if(compatibility) 30 else 60} FPS sinalizado à Surface: ${if (frameRateHintRequested) "sim" else "não confirmado"} | Pós-processamento mínimo: ${if (minimalPostProcessingRequested) "solicitado" else "padrão"}; suporte Android declarado: $minimalLabel\n" +
+            "Proporção: ${aspect.label} | Nitidez padrão: $sharpness% | Saturação: $saturation% | Apresentação: até ${if(compatibility) 30 else 60} FPS | AiPQ: não verificável pelo app\n"+
+            (if(fsrRequested && compatibility) "AMD FSR 1.0.2: inativo no modo Compatibilidade" else aspectDrawer?.fsrDiagnostics() ?: "AMD FSR 1.0.2: desligado")
     }
 
     fun compactDiagnostics(): String {

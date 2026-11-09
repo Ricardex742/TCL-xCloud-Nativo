@@ -158,13 +158,14 @@ class ConsoleUiTest {
         val activity=controller.get().apply { setContentView(FrameLayout(this)) }
         layout(activity.window.decorView,1280,720)
         val store=PlaybackSettingsStore(activity)
-        store.save(PlaybackSettings(sharpness=75,saturation=150,videoCodec=VideoCodecMode.HEVC))
+        store.save(PlaybackSettings(sharpness=75,saturation=150,videoCodec=VideoCodecMode.HEVC,fsr=FsrMode.FSR1))
         val panel=PlaybackSettingsPanel(activity,store,{}, {}, {}, {})
         val choices=panel.chooseVideo()
         render(choices,"compatibility-choice")
         all(choices.body).filterIsInstance<TextView>().single { it.text.contains("Compatibilidade —") }.performClick()
         assertEquals(VideoMode.COMPATIBILITY,store.read().videoMode)
         assertEquals(VideoCodecMode.H264,store.read().videoCodec)
+        assertEquals(FsrMode.OFF,store.read().fsr)
         assertEquals(StreamResolution.HD_720,store.read().resolution)
         assertTrue(store.read().nativeUpscaling)
         assertEquals(0,store.read().sharpness); assertEquals(100,store.read().saturation)
@@ -251,6 +252,29 @@ class ConsoleUiTest {
         choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Testar vibração")
         assertEquals(1,tested)
         controller.pause().stop().destroy()
+    }
+    @Test fun fsrIsAnExplicitOptInAndRcasStrengthCanBeChangedWithoutChangingTheStreamProfile() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        try {
+            val activity=controller.get().apply { setContentView(FrameLayout(this)) }
+            layout(activity.window.decorView,1280,720)
+            activity.getSharedPreferences("stream_preferences",0).edit().clear().commit()
+            val store=PlaybackSettingsStore(activity)
+            val panel=PlaybackSettingsPanel(activity,store,{}, {}, {}, {})
+            val choices=panel.chooseFsr();render(choices,"amd-fsr-choice")
+            assertEquals(FsrMode.OFF,store.read().fsr)
+            all(choices.body).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("AMD FSR 1.0.2") }.performClick()
+            assertEquals(FsrMode.FSR1,store.read().fsr)
+            assertEquals(StreamResolution.HD_1080_HQ,store.read().resolution)
+            (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
+            val image=panel.showImageAdjustments();render(image,"amd-fsr-image-adjustments")
+            all(image.body).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("Nitidez FSR (RCAS)") }.performClick()
+            val strength=ShadowDialog.getLatestDialog() as ConsoleDialog
+            all(strength.body).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("75%") }.performClick()
+            assertEquals(75,store.read().fsrSharpness);assertEquals(0,store.read().sharpness)
+            assertEquals(FsrMode.FSR1,store.read().fsr)
+            (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
+        } finally { controller.pause().stop().destroy() }
     }
     @Test fun loginAndQrUseTheNewThemeAndTheRenderedQrStillScans() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()

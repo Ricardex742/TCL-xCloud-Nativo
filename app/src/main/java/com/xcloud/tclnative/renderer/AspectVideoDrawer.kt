@@ -3,6 +3,7 @@ package com.xcloud.tclnative.renderer
 import org.webrtc.GlRectDrawer
 import org.webrtc.RendererCommon
 import org.webrtc.ImageAdjustmentDrawer
+import org.webrtc.FsrUpscaler
 
 /** Removes only EglRenderer's centered aspect crop; decoder transforms/rotation remain intact. */
 object AspectTransform {
@@ -21,16 +22,28 @@ object AspectTransform {
     }
 }
 
-/** Uses the stock WebRTC drawer: one texture matrix correction, no extra render pass/readback. */
-class AspectVideoDrawer(@Volatile var stretch: Boolean) : RendererCommon.GlDrawer {
+/** The default path remains stock WebRTC; FSR allocates its passes only after an explicit opt-in. */
+class AspectVideoDrawer(@Volatile var stretch: Boolean,
+    private val fsrFactory: (() -> FsrUpscaler)? = null,
+    private val delegate: RendererCommon.GlDrawer = GlRectDrawer()) : RendererCommon.GlDrawer {
     @Volatile var sourceAspect = 16f/9
     @Volatile var layoutAspect = 16f/9
     @Volatile var sourceWidth=1920
     @Volatile var sourceHeight=1080
     @Volatile var sharpness=0
     @Volatile var saturation=100
-    private val delegate=GlRectDrawer()
+    @Volatile var fsrEnabled=false
+    @Volatile var fsrSharpness=50
+    @Volatile private var fsr: FsrUpscaler?=null
     private var adjusted: ImageAdjustmentDrawer? = null
+    fun fsrDiagnostics(): String = if(!fsrEnabled) "AMD FSR 1.0.2: desligado"
+        else fsr?.diagnostics() ?: "AMD FSR 1.0.2: solicitado; aguardando vídeo"
+    private fun upscaler(width: Int,height: Int): FsrUpscaler? {
+        if(!fsrEnabled) { fsr?.release();fsr=null;return null }
+        return (fsr ?: fsrFactory?.invoke()?.also { fsr=it })?.also {
+            it.configure(if(stretch) sourceWidth else width,if(stretch) sourceHeight else height,fsrSharpness,saturation)
+        }
+    }
     private fun drawer(width: Int,height: Int): RendererCommon.GlDrawer {
         if(sharpness==0 && saturation==100) return delegate
         return (adjusted ?: ImageAdjustmentDrawer().also { adjusted=it }).also {
@@ -44,13 +57,27 @@ class AspectVideoDrawer(@Volatile var stretch: Boolean) : RendererCommon.GlDrawe
         return transformed
     }
     override fun drawOes(texture: Int, texMatrix: FloatArray, frameWidth: Int, frameHeight: Int,
-                         x: Int, y: Int, width: Int, height: Int) =
-        drawer(frameWidth,frameHeight).drawOes(texture,matrix(texMatrix),frameWidth,frameHeight,x,y,width,height)
+                         x: Int, y: Int, width: Int, height: Int) {
+        val m=matrix(texMatrix)
+        if(upscaler(frameWidth,frameHeight)?.drawOes(texture,m,frameWidth,frameHeight,x,y,width,height)==true) return
+        drawer(frameWidth,frameHeight).drawOes(texture,m,frameWidth,frameHeight,x,y,width,height)
+    }
     override fun drawRgb(texture: Int, texMatrix: FloatArray, frameWidth: Int, frameHeight: Int,
-                         x: Int, y: Int, width: Int, height: Int) =
-        drawer(frameWidth,frameHeight).drawRgb(texture,matrix(texMatrix),frameWidth,frameHeight,x,y,width,height)
+                         x: Int, y: Int, width: Int, height: Int) {
+        val m=matrix(texMatrix)
+        if(upscaler(frameWidth,frameHeight)?.drawRgb(texture,m,frameWidth,frameHeight,x,y,width,height)==true) return
+        drawer(frameWidth,frameHeight).drawRgb(texture,m,frameWidth,frameHeight,x,y,width,height)
+    }
     override fun drawYuv(textures: IntArray, texMatrix: FloatArray, frameWidth: Int, frameHeight: Int,
-                         x: Int, y: Int, width: Int, height: Int) =
-        drawer(frameWidth,frameHeight).drawYuv(textures,matrix(texMatrix),frameWidth,frameHeight,x,y,width,height)
-    override fun release() { delegate.release(); adjusted?.release(); adjusted=null }
+                         x: Int, y: Int, width: Int, height: Int) {
+        val m=matrix(texMatrix)
+        if(upscaler(frameWidth,frameHeight)?.drawYuv(textures,m,frameWidth,frameHeight,x,y,width,height)==true) return
+        drawer(frameWidth,frameHeight).drawYuv(textures,m,frameWidth,frameHeight,x,y,width,height)
+    }
+    override fun release() {
+        try { fsr?.release() } finally {
+            fsr=null
+            try { adjusted?.release() } finally { adjusted=null;delegate.release() }
+        }
+    }
 }

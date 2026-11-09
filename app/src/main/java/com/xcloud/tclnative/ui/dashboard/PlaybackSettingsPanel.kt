@@ -25,6 +25,7 @@ class PlaybackSettingsPanel(
             ConsoleAction("Resolução: ${settings.resolution.label}") { chooseResolution() },
             ConsoleAction("HDR10: verificar tela e transmissão") { showHdrStatus() },
             ConsoleAction("Upscaling nativo: ${if(settings.nativeUpscaling) "Ativado" else "Desativado"}") { chooseUpscaling() },
+            ConsoleAction("AMD FSR: ${if(settings.videoMode==VideoMode.COMPATIBILITY) "Desativado (Compatibilidade)" else settings.fsr.label}") { chooseFsr() },
             ConsoleAction("Proporção: ${settings.aspect.label}") { chooseAspect() },
             ConsoleAction("Nitidez e saturação") { showImageAdjustments() },
             ConsoleAction("Controles e toque") { showControls() },
@@ -67,7 +68,7 @@ class PlaybackSettingsPanel(
             VideoMode.entries.map { it.label to (it==current.videoMode) }) {
             val mode=VideoMode.entries[it]
             save(if(mode==VideoMode.COMPATIBILITY) current.copy(videoMode=mode,resolution=StreamResolution.HD_720,
-                nativeUpscaling=true,sharpness=0,saturation=100,videoCodec=VideoCodecMode.H264) else current.copy(videoMode=mode))
+                nativeUpscaling=true,sharpness=0,saturation=100,videoCodec=VideoCodecMode.H264,fsr=FsrMode.OFF) else current.copy(videoMode=mode))
         }
     }
     fun chooseCodec(): ConsoleDialog {
@@ -82,10 +83,15 @@ class PlaybackSettingsPanel(
     }
     fun chooseUpscaling(): ConsoleDialog {
         val current=store.read()
-        return choices("Upscaling nativo","A imagem se ajusta à janela nos dois modos, respeitando a proporção escolhida. Ativado solicita a escala da Surface Android; desativado usa a escala do renderer. O processamento da TV é ajustado na própria TV. Aplica-se à próxima partida.",
+        return choices("Upscaling nativo","A imagem se ajusta à janela nos dois modos, respeitando a proporção escolhida. Ativado solicita a escala da Surface Android; desativado usa a escala do renderer. Quando o FSR está ativo, ele usa o renderer na resolução de saída. O processamento da TV é ajustado na própria TV. Aplica-se à próxima partida.",
             listOf("Ativado — escala da Surface" to current.nativeUpscaling,"Desativado — escala do renderer" to !current.nativeUpscaling)) {
             save(current.copy(nativeUpscaling=it==0))
         }
+    }
+    fun chooseFsr(): ConsoleDialog {
+        val current=store.read()
+        return choices("AMD FidelityFX Super Resolution","FSR 1.0.2 amplia o vídeo recebido com EASU e nitidez RCAS. É um teste opcional com custo extra de GPU, principalmente em 4K. Comece em 720p → 1080p e compare imagem e resposta dos comandos. Ajuste RCAS em Nitidez e saturação. Compatibilidade mantém FSR desligado. Aplica-se à próxima partida.",
+            FsrMode.entries.map { it.label to (it==current.fsr) }) { save(current.copy(fsr=FsrMode.entries[it])) }
     }
     fun chooseAspect(): ConsoleDialog {
         val current=store.read()
@@ -97,6 +103,13 @@ class PlaybackSettingsPanel(
         fun backToImage() { showImageAdjustments(onBack) }
         return ConsoleDialog(context,"Nitidez e saturação").apply {
             body.addView(text("Ajustes opcionais da imagem. Nitidez pode realçar ruído e exigir mais GPU. Durante uma partida, as mudanças são imediatas.",20,color=DashboardTheme.muted))
+            if(settings.fsr==FsrMode.FSR1) addMenuItem("Nitidez FSR (RCAS): ${settings.fsrSharpness}%") {
+                val levels=listOf(0,25,50,75,100)
+                choices("Nitidez FSR (RCAS)","RCAS é o filtro de nitidez do FSR. Comece com 50%; 0% mantém somente a ampliação EASU. A nitidez padrão abaixo é usada quando o FSR não está ativo.",
+                    levels.map { "$it%" to (it==settings.fsrSharpness) },::backToImage) {
+                    save(settings.copy(fsrSharpness=levels[it]),::backToImage)
+                }
+            }
             addMenuItem("Nitidez: ${settings.sharpness}%") {
                 val levels=listOf(0,25,50,75,100)
                 choices("Nitidez","0% mantém a imagem original. Comece com 25% e compare o tempo de renderização.",

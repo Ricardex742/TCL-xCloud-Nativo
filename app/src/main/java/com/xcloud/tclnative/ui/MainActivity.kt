@@ -319,7 +319,8 @@ open class MainActivity : Activity() {
             value.modeId,value.physicalWidth,value.physicalHeight,value.refreshRate)
         val current=mode(display.mode)
         val supported=display.supportedModes.map(::mode)
-        val tv4k = if (uiMode.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION && settings.nativeUpscaling)
+        val tv4k = if (uiMode.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION &&
+            (settings.nativeUpscaling || (settings.fsr==com.xcloud.tclnative.settings.FsrMode.FSR1 && settings.videoMode!=VideoMode.COMPATIBILITY)))
             com.xcloud.tclnative.renderer.DisplayModePolicy.preferred4k60(current,supported) else null
         val fps=if(settings.videoMode==VideoMode.COMPATIBILITY) 30 else 60
         playbackDisplay.request(tv4k ?: com.xcloud.tclnative.renderer.DisplayModePolicy.preferredCadence(current,supported,fps))
@@ -731,6 +732,7 @@ open class MainActivity : Activity() {
     private fun applyPlaybackSettings(settings: PlaybackSettings) {
         playbackSettings=settings
         surfaceRenderer.setImageAdjustments(settings.sharpness,settings.saturation)
+        surfaceRenderer.setFsrSharpness(settings.fsrSharpness)
     }
     private fun showRumbleDiagnostics(back: () -> Unit) {
         ConsoleDialogs.message(this,"Vibração do controle",rumble.describe(),listOf(
@@ -909,6 +911,7 @@ open class MainActivity : Activity() {
             }.sortedWith(compareBy<InputDevice> { it.id!=preferredControllerId }.thenBy { it.id }).forEach { controllers.slot(it.id) }
             rumble.enabled=settings.rumble
             surfaceRenderer.compatibility=compatible
+            surfaceRenderer.setFsr(settings.fsr==com.xcloud.tclnative.settings.FsrMode.FSR1,settings.fsrSharpness)
             surfaceRenderer.nativeUpscaling = settings.nativeUpscaling
             surfaceRenderer.aspect = settings.aspect
             surfaceRenderer.setImageAdjustments(settings.sharpness,settings.saturation)

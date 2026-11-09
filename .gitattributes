@@ -1,0 +1,5 @@
+# Preserve the official AMD reference bytes and its intentional upstream whitespace.
+third_party/amd-fsr1/ffx_a.h -text -whitespace
+third_party/amd-fsr1/ffx_fsr1.h -text -whitespace
+third_party/amd-fsr1/LICENSE -text
+app/src/main/assets/fsr1/LICENSE.txt -text

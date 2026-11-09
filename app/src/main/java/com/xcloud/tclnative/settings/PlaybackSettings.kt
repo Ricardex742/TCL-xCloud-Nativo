@@ -10,6 +10,7 @@ enum class VideoMode(val label: String, val lowLatency: Boolean) {
 enum class VideoCodecMode(val label: String) {
     H264("H.264 — padrão"), H264_HIGH("H.264 High — experimental"), HEVC("H.265/HEVC — experimental")
 }
+enum class FsrMode(val label: String) { OFF("Desativado"), FSR1("AMD FSR 1.0.2 — experimental") }
 enum class TouchMode(val label: String) {
     AUTO("Automático — detectar dispositivo e jogo"), OFF("Desativado — controle físico"), VIRTUAL("Exclusivo — controle virtual"),
     NATIVE("Toque nativo Xbox — experimental")
@@ -37,7 +38,9 @@ data class PlaybackSettings(
     val sharpness: Int = 0,
     val saturation: Int = 100,
     val sessionReport: Boolean = true,
-    val videoCodec: VideoCodecMode = VideoCodecMode.H264
+    val videoCodec: VideoCodecMode = VideoCodecMode.H264,
+    val fsr: FsrMode = FsrMode.OFF,
+    val fsrSharpness: Int = 50
 )
 
 class PlaybackSettingsStore(context: Context) {
@@ -60,7 +63,9 @@ class PlaybackSettingsStore(context: Context) {
             prefs.getBoolean("local_coop",false),prefs.getBoolean("rumble",true),
             TouchMode.entries.firstOrNull { it.name==prefs.getString("touch_mode",null) } ?: TouchMode.AUTO,
             prefs.getInt("sharpness",0).coerceIn(0,100),prefs.getInt("saturation",100).coerceIn(0,200),prefs.getBoolean("session_report",true),
-            VideoCodecMode.entries.firstOrNull { it.name==prefs.getString("video_codec",null) } ?: VideoCodecMode.H264)
+            VideoCodecMode.entries.firstOrNull { it.name==prefs.getString("video_codec",null) } ?: VideoCodecMode.H264,
+            FsrMode.entries.firstOrNull { it.name==prefs.getString("fsr_mode",null) } ?: FsrMode.OFF,
+            prefs.getInt("fsr_sharpness",50).coerceIn(0,100))
     }
     fun save(settings: PlaybackSettings) {
         prefs.edit().putString("video_mode",settings.videoMode.name).putBoolean("low_latency_video",settings.videoMode.lowLatency)
@@ -68,7 +73,8 @@ class PlaybackSettingsStore(context: Context) {
             .putString("aspect",settings.aspect.name).putBoolean("local_coop",settings.localCoOp)
             .putBoolean("rumble",settings.rumble).putString("touch_mode",settings.touchMode.name)
             .putInt("sharpness",settings.sharpness.coerceIn(0,100)).putInt("saturation",settings.saturation.coerceIn(0,200))
-            .putBoolean("session_report",settings.sessionReport).putString("video_codec",settings.videoCodec.name).apply()
+            .putBoolean("session_report",settings.sessionReport).putString("video_codec",settings.videoCodec.name)
+            .putString("fsr_mode",settings.fsr.name).putInt("fsr_sharpness",settings.fsrSharpness.coerceIn(0,100)).apply()
     }
 }
 

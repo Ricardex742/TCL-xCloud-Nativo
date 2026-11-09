@@ -62,4 +62,18 @@ class PlaybackSettingsTest {
         assertEquals(2,visibility.cycle())
         assertEquals(0,visibility.cycle())
     }
+    @Test fun fsrDefaultsOffPersistsIndependentlyAndUnknownModesStayOff() {
+        val context=RuntimeEnvironment.getApplication()
+        val prefs=context.getSharedPreferences("stream_preferences",Context.MODE_PRIVATE)
+        prefs.edit().clear().commit()
+        val store=PlaybackSettingsStore(context)
+        assertEquals(FsrMode.OFF,store.read().fsr)
+        val selected=PlaybackSettings(fsr=FsrMode.FSR1,fsrSharpness=75,nativeUpscaling=false,
+            videoCodec=VideoCodecMode.HEVC,touchMode=TouchMode.NATIVE)
+        store.save(selected);assertEquals(selected,PlaybackSettingsStore(context).read())
+        prefs.edit().putString("fsr_mode","future-or-invalid").putInt("fsr_sharpness",400).commit()
+        assertEquals(selected.copy(fsr=FsrMode.OFF,fsrSharpness=100),store.read())
+        prefs.edit().putInt("fsr_sharpness",-10).commit()
+        assertEquals(0,store.read().fsrSharpness)
+    }
 }

@@ -8,7 +8,7 @@ enum class VideoMode(val label: String, val lowLatency: Boolean) {
     COMPATIBILITY("Compatibilidade — TVs mais fracas", false)
 }
 enum class VideoCodecMode(val label: String) {
-    H264("H.264 — padrão"), H264_HIGH("H.264 High — experimental"), HEVC("H.265/HEVC — experimental")
+    H264("H.264 — padrão"), H264_BASELINE("H.264 leve — Baseline (720p)")
 }
 enum class FsrMode(val label: String) { OFF("Desativado"), FSR1("AMD FSR 1.0.2 — experimental") }
 enum class TouchMode(val label: String) {
@@ -41,11 +41,16 @@ data class PlaybackSettings(
     val videoCodec: VideoCodecMode = VideoCodecMode.H264,
     val fsr: FsrMode = FsrMode.OFF,
     val fsrSharpness: Int = 50
-)
+) {
+    fun forSession(): PlaybackSettings = if(videoCodec==VideoCodecMode.H264_BASELINE || videoMode==VideoMode.COMPATIBILITY)
+        copy(resolution=StreamResolution.HD_720) else this
+}
 
 class PlaybackSettingsStore(context: Context) {
     private val prefs = context.getSharedPreferences("stream_preferences",Context.MODE_PRIVATE)
     init {
+        if(prefs.getString("video_codec",null) in setOf("H264_HIGH","HEVC"))
+            prefs.edit().putString("video_codec",VideoCodecMode.H264.name).apply()
         if(prefs.getString("touch_mode",null)=="WEB_NATIVE") prefs.edit().putString("touch_mode",TouchMode.NATIVE.name).putBoolean("game_hud_migrated",true).commit()
         if(!prefs.getBoolean("game_hud_migrated",false)) {
             val editor=prefs.edit().putBoolean("game_hud_migrated",true)

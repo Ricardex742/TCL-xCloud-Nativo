@@ -51,16 +51,11 @@ class XCloudWebRtcClient(
     fun recordControllerEvent(eventUptimeMs: Long,arrivalUptimeMs: Long,historySize: Int,name: String?) =
         controllerEventTiming.record(eventUptimeMs,arrivalUptimeMs,historySize,name)
     private val decoderLatency = java.util.concurrent.atomic.AtomicReference("Codec LL: aguardando vídeo")
-    private val effectiveCodec=if(compatibility) VideoCodecMode.H264 else videoCodec
+    private val effectiveCodec=if(compatibility) VideoCodecMode.H264_BASELINE else videoCodec
     private val codecTrace=CodecNegotiationTrace(effectiveCodec)
-    @Volatile private var experimentalOffered=false
-    @Volatile private var answerVideo: VideoCodecAnswer?=null
-    private val decoderFactory: ExperimentalVideoDecoderFactory
-    fun codecDiagnostics(): String = "${codecTrace.diagnostics()}\n${decoderFactory.diagnostics()}"
-    fun codecFallbackSummary(error: Exception): String = codecTrace.fallbackSummary(error)
+    private val decoderFactory: H264VideoDecoderFactory
+    fun codecDiagnostics(): String = codecTrace.diagnostics()
     fun iceDiagnostics(): String = iceReports.joinToString("\n").ifBlank { "ICE local: aguardando coleta" }
-    fun shouldRetryH264(error: Exception, firstFrame: Boolean): Boolean = ExperimentalCodecRetry.allowed(
-        effectiveCodec,experimentalOffered,answerVideo,firstFrame,codecTrace.retryReason(error))
     private val audioLock=Any()
     private val audioTracks=mutableSetOf<AudioTrack>()
     private val audioSession=GameAudioSession(context) { gain -> synchronized(audioLock) {
@@ -81,9 +76,8 @@ class XCloudWebRtcClient(
         PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(context.applicationContext)
             .setFieldTrials(VideoLatencyPolicy.fieldTrials(lowLatencyVideo))
             .setEnableInternalTracer(false).createInitializationOptions())
-        decoderFactory=ExperimentalVideoDecoderFactory(eglBase.eglBaseContext,lowLatencyVideo,decoderRecovery,
-            { decoderLatency.set(it) }, { codecTrace.decoderRejected(it);if(!closed.get()) onConnectionStateChanged(it) },effectiveCodec.name,
-            streamResolution.width,streamResolution.height,if(compatibility) 30 else 60)
+        decoderFactory=H264VideoDecoderFactory(eglBase.eglBaseContext,lowLatencyVideo,decoderRecovery,
+            { decoderLatency.set(it) },effectiveCodec==VideoCodecMode.H264_BASELINE)
         val audio=JavaAudioDeviceModule.builder(context.applicationContext)
             .setAudioAttributes(GameAudioSession.attributes()).setUseStereoOutput(true).setEnableVolumeLogger(false)
             .setAudioTrackStateCallback(object: JavaAudioDeviceModule.AudioTrackStateCallback {
@@ -182,7 +176,6 @@ class XCloudWebRtcClient(
         val capabilities = factory.getRtpReceiverCapabilities(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO).codecs
         // Select supported codecs before creating/setLocalDescription. Never forge profile-level-id.
         val selection=CodecPreference.select(capabilities,effectiveCodec,compatibility || streamResolution==StreamResolution.HD_720,compatibility)
-        experimentalOffered=selection.experimental
         codecTrace.selected(selection)
         val result=video.setCodecPreferences(selection.codecs)
         if(result.isError) {
@@ -228,7 +221,7 @@ class XCloudWebRtcClient(
             override fun onCreateFailure(error: String?) { offer.completeExceptionally(IOException("SDP: createOffer falhou")) }
         }, MediaConstraints())
         val original = offer.await()
-        val description = SessionDescription(original.type, StreamProfile.receiveSdp(original.description, streamResolution,compatibility))
+        val description = SessionDescription(original.type, StreamProfile.receiveSdp(original.description, streamResolution,compatibility || effectiveCodec==VideoCodecMode.H264_BASELINE))
         codecTrace.localOffer(description.description)
         setDescription("SDP_LOCAL") { observer -> pc.setLocalDescription(observer, description) }
         val candidates=gathering.awaitCandidates()
@@ -354,10 +347,7 @@ class XCloudWebRtcClient(
 
     override suspend fun setRemoteAnswer(answerSdp: String) {
         val pc = peerConnection ?: throw IOException("TRANSPORT: PeerConnection ausente")
-        val selected=codecTrace.remoteAnswer(answerSdp)
-        answerVideo=selected
-        if(selected.name.equals("H265",true) && (effectiveCodec!=VideoCodecMode.HEVC || !experimentalOffered || !CodecPreference.mainHevc(selected.parameters)))
-            throw IOException("VIDEO_CODEC: resposta HEVC sem suporte anunciado para o perfil")
+        codecTrace.remoteAnswer(answerSdp)
         withTimeout(10_000) { setDescription("SDP_REMOTE") { pc.setRemoteDescription(it, SessionDescription(SessionDescription.Type.ANSWER, answerSdp)) } }
         codecTrace.answerApplied()
     }

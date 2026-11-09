@@ -21,90 +21,49 @@ class CodecNegotiationTraceTest {
         catch(error: IOException) { assertTrue(error.message!!.startsWith("VIDEO_CODEC:"));return error }
         throw AssertionError("Unreachable")
     }
-    @Test fun successfulExperimentsRecordThePreparedFormatPostAndAppliedAnswerSeparately() {
-        for((mode,sdp) in listOf(VideoCodecMode.HEVC to hevc,VideoCodecMode.H264_HIGH to high)) {
-            val trace=trace(mode)
-            trace.localOffer(sdp)
-            assertTrue(trace.diagnostics().contains("POST confirmado: não confirmado"))
-            trace.offerPosted()
-            val answer=trace.remoteAnswer(sdp)
-            assertTrue(answer.experimental(mode))
-            assertTrue(trace.diagnostics().contains("aplicada: não"))
-            trace.answerApplied()
-            val report=trace.diagnostics()
-            assertTrue(report.contains("POST confirmado: sim"))
-            assertTrue(report.contains("aplicada: sim"))
-            assertTrue(report.contains(if(mode==VideoCodecMode.HEVC) "H265/HEVC Main (level-id=153)" else "H264 High (640c1f)"))
-        }
-    }
-    @Test fun anSdkOfferThatStillIncludesBaselineIsRejectedBeforePostingTheExperiment() {
-        val mixed=hevc.replace(" 96 97\r\n"," 96 97 98\r\n")+
-            "a=rtpmap:98 H264/90000\r\na=fmtp:98 profile-level-id=42e01f\r\n"
-        val trace=trace(VideoCodecMode.HEVC)
-        val error=rejected { trace.localOffer(mixed) }
-        val summary=trace.fallbackSummary(error)
-        assertTrue(summary.contains("H265/HEVC Main (level-id=153), H264 Baseline (42e01f)"))
-        assertTrue(summary.contains("POST não confirmado"))
-        assertTrue(summary.contains("SDK não gerou oferta exclusiva"))
-    }
-    @Test fun fallbackRetainsTheRealServerBaselineResponseInsteadOfClaimingTheExperimentWorked() {
-        for((mode,sdp) in listOf(VideoCodecMode.HEVC to hevc,VideoCodecMode.H264_HIGH to high)) {
-            val trace=trace(mode)
-            trace.localOffer(sdp);trace.offerPosted()
-            val error=rejected { trace.remoteAnswer(baseline) }
-            val summary=trace.fallbackSummary(error)
-            assertTrue(summary.contains("POST confirmado"))
-            assertTrue(summary.contains("resposta H264 Baseline (42e01f)"))
-            assertTrue(summary.contains("serviço respondeu outro formato"))
-            assertTrue(summary.endsWith("Nova sessão em H.264 padrão."))
-            assertTrue(trace.diagnostics().contains("aplicada: não"))
-        }
-    }
-    @Test fun hevcExperimentsRejectMain10HighTierAndVideoRejectionWithoutPretendingTheyAreMain() {
-        for(answer in listOf(hevc.replace("profile-id=1","profile-id=2"),hevc.replace("tier-flag=0","tier-flag=1"),
-            video("H265",port=0),hevc+"a=inactive\r\n","v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n")) {
-            val trace=trace(VideoCodecMode.HEVC)
-            trace.localOffer(hevc);trace.offerPosted()
-            rejected { trace.remoteAnswer(answer) }
-            assertTrue(trace.diagnostics().contains("aplicada: não"))
-        }
-    }
-    @Test fun theStandardPathAllowsBaselineLevelAsymmetryAndNeverRetriesAsACodecExperiment() {
-        val trace=trace(VideoCodecMode.H264)
+    @Test fun baselineRecordsThePreparedFormatPostAndRealLevelAsymmetricAnswer() {
+        val trace=trace(VideoCodecMode.H264_BASELINE)
         trace.localOffer(baseline)
+        assertTrue(trace.diagnostics().contains("POST confirmado: não confirmado"))
+        trace.offerPosted()
         val answer=trace.remoteAnswer(baseline.replace("42e01f","42e02a"))
-        trace.answerApplied()
         assertEquals("H264 Baseline (42e02a)",answer.label)
-        assertFalse(ExperimentalCodecRetry.allowed(VideoCodecMode.H264,true,answer,false,"SDP_REMOTE: failure"))
+        assertTrue(trace.diagnostics().contains("aplicada: não"))
+        trace.answerApplied()
+        assertTrue(trace.diagnostics().contains("POST confirmado: sim"))
+        assertTrue(trace.diagnostics().contains("aplicada: sim"))
     }
-    @Test fun aRememberedDecoderFailureAllowsTheBoundedRetryEvenWhenReadinessLaterTimesOut() {
-        val trace=trace(VideoCodecMode.HEVC)
-        trace.localOffer(hevc);val answer=trace.remoteAnswer(hevc)
-        trace.decoderRejected("VIDEO_CODEC: dimensões/taxa 2080×992 não suportadas: candidate:private")
-        val reason=trace.retryReason(IOException("TRANSPORT: timeout"))
-        assertTrue(ExperimentalCodecRetry.allowed(VideoCodecMode.HEVC,true,answer,false,reason))
-        assertFalse(ExperimentalCodecRetry.allowed(VideoCodecMode.HEVC,true,answer,true,reason))
-        assertFalse(ExperimentalCodecRetry.allowed(VideoCodecMode.H264,true,answer,false,reason))
-        val summary=trace.fallbackSummary(IOException("TRANSPORT: timeout"))
-        assertTrue(summary.contains("2080×992"))
-        assertFalse(summary.contains("candidate:private"))
+    @Test fun lightRejectsHighMainHevcUnknownAndMixedOffersBeforePosting() {
+        val mixed=baseline.replace(" 96 97\r\n"," 96 97 98\r\n")+
+            "a=rtpmap:98 H264/90000\r\na=fmtp:98 profile-level-id=640c1f\r\n"
+        for(sdp in listOf(high,high.replace("640c1f","4d001f"),hevc,video("H264","profile-level-id=unknown"),mixed)) {
+            val trace=trace(VideoCodecMode.H264_BASELINE)
+            rejected { trace.localOffer(sdp) }
+            assertTrue(trace.diagnostics().contains("POST confirmado: não confirmado"))
+        }
     }
-    @Test fun fallbackDiagnosticsDoNotCopyRawSdpTokensAddressesOrServerBodies() {
-        val trace=trace(VideoCodecMode.HEVC)
-        val sdp=video("H265","profile-id=1;level-id=sensitive-level")+
-            "a=ice-pwd:secret-password\r\na=candidate:1 1 UDP 1 192.168.1.2 5000 typ host\r\n"
+    @Test fun lightRejectsAnIncompatibleOrInactiveAnswerWithoutClaimingItWasApplied() {
+        for(sdp in listOf(high,hevc,video("H264",port=0),baseline+"a=inactive\r\n")) {
+            val trace=trace(VideoCodecMode.H264_BASELINE)
+            trace.localOffer(baseline);trace.offerPosted()
+            rejected { trace.remoteAnswer(sdp) }
+            assertTrue(trace.diagnostics().contains("aplicada: não"))
+        }
+    }
+    @Test fun standardAcceptsRealHighAndBaselineButRejectsOtherCodecFamilies() {
+        val trace=trace(VideoCodecMode.H264)
+        trace.localOffer(high);trace.remoteAnswer(baseline);trace.answerApplied()
+        assertTrue(trace.diagnostics().contains("H264 High"))
+        assertTrue(trace.diagnostics().contains("H264 Baseline"))
+        rejected { trace.remoteAnswer(hevc) }
+        rejected { trace.localOffer(video("VP8")) }
+    }
+    @Test fun diagnosticsNeverCopyRawSdpCredentialsOrAddresses() {
+        val trace=trace(VideoCodecMode.H264_BASELINE)
+        val sdp=baseline+"a=ice-pwd:secret-password\r\na=candidate:1 1 UDP 1 192.168.1.2 5000 typ host\r\n"
         trace.localOffer(sdp);trace.offerPosted();trace.remoteAnswer(sdp)
-        val report=trace.diagnostics()+trace.fallbackSummary(IOException("SDP_REMOTE: secret-server-body"))
-        for(secret in listOf("sensitive-level","secret-password","192.168.1.2","secret-server-body","a=ice","a=candidate"))
-            assertFalse(report,report.contains(secret))
-        assertTrue(report.contains("SDK recusou a resposta"))
-    }
-    @Test fun anUnsupportedLocalExperimentRecordsTheStandardPolicyWithoutInventingAnAttempt() {
-        val trace=trace(VideoCodecMode.HEVC)
-        trace.selected(CodecPreference.Offer(emptyList(),false,"Experimental indisponível • H.264 padrão"))
-        trace.localOffer(baseline);trace.offerPosted();trace.remoteAnswer(baseline)
-        assertTrue(trace.diagnostics().contains("Experimental indisponível"))
-        assertTrue(trace.diagnostics().contains("H264 Baseline (42e01f)"))
+        val report=trace.diagnostics()
+        for(secret in listOf("secret-password","192.168.1.2","a=ice","a=candidate")) assertFalse(report.contains(secret))
     }
     @Test fun parsingSkipsInactiveVideoAndAudioAndPreservesPayloadOrderWithoutRepair() {
         val sdp="v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 96\r\na=rtpmap:96 opus/48000/2\r\n"+

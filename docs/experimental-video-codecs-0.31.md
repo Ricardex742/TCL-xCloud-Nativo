@@ -1,5 +1,7 @@
 # H.264 High e HEVC experimentais na 0.31
 
+> Registro histórico: na 0.31.5, os experimentos abaixo foram removidos após os testes do usuário. A seleção atual e sua migração estão em [H.264 leve e vibração USB](light-codec-usb-rumble-0.31.5.md).
+
 ## Escolha no aplicativo
 
 Em **Configurações → Codec**, estão disponíveis:

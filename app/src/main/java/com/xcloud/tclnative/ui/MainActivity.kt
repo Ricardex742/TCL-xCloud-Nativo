@@ -95,7 +95,8 @@ open class MainActivity : Activity() {
     private var gamepadState: GamepadState
         get()=controllers.physical(0)
         set(value) { controllers.update(0,value) }
-    private val rumble by lazy { ControllerRumble(controllers::deviceFor) }
+    private val usbRumble by lazy { com.xcloud.tclnative.webrtc.UsbControllerRumble(this) }
+    private val rumble by lazy { ControllerRumble(controllers::deviceFor,usbRumble) }
     private lateinit var touchView: GameTouchView
     private var currentTouchMode=TouchMode.OFF
     private val hudStore by lazy { com.xcloud.tclnative.touch.GameHudStore(this) }
@@ -735,8 +736,15 @@ open class MainActivity : Activity() {
         surfaceRenderer.setFsrSharpness(settings.fsrSharpness)
     }
     private fun showRumbleDiagnostics(back: () -> Unit) {
-        ConsoleDialogs.message(this,"Vibração do controle",rumble.describe(),listOf(
-            ConsoleAction("Testar agora") { rumble.test(); showRumbleDiagnostics(back) },ConsoleAction("Voltar",back)),onCancel=back)
+        val actions=mutableListOf(ConsoleAction("Testar via Android") { rumble.test();showRumbleDiagnostics(back) })
+        usbRumble.candidates().forEach { candidate ->
+            actions.add(ConsoleAction("Testar USB/XInput — ${candidate.label}") {
+                usbRumble.enableAndTest(candidate) { if(!isFinishing && !isDestroyed) showRumbleDiagnostics(back) }
+            })
+        }
+        actions.add(ConsoleAction("Desativar teste USB") { usbRumble.disable();showRumbleDiagnostics(back) })
+        actions.add(ConsoleAction("Voltar",back))
+        ConsoleDialogs.message(this,"Vibração do controle",rumble.describe()+"\n\n"+usbRumble.describe(),actions,onCancel=back)
     }
     private fun showGameMenu() {
         if (transitionPanel.visibility==View.VISIBLE || gameMenuDialog?.isShowing == true || webrtcClient == null || queuePanel.visibility == View.VISIBLE) return
@@ -858,8 +866,7 @@ open class MainActivity : Activity() {
         return super.dispatchKeyEvent(event)
     }
 
-    private fun launchCloudGame(signaling: XCloudSignalingClient, game: GameTitle, touchChoice: TouchMode? = null,
-                                codecOverride: com.xcloud.tclnative.settings.VideoCodecMode? = null, codecRetryNote: String? = null) {
+    private fun launchCloudGame(signaling: XCloudSignalingClient, game: GameTitle, touchChoice: TouchMode? = null) {
         recentHistoryJob?.cancel(); recentHistoryJob=null
         catalogReturnJob?.cancel(); catalogReturnJob=null
         startupArtJob?.cancel(); startupArtJob=null
@@ -867,11 +874,10 @@ open class MainActivity : Activity() {
         val titleId = game.titleId
         val gameName = game.name
         activeGame = game
-        val settings = playbackSettings
+        val settings = playbackSettings.forSession()
         joystickDispatch.request(false)
         immediateJoystickForSession=settings.videoMode.lowLatency
         val compatible=settings.videoMode==com.xcloud.tclnative.settings.VideoMode.COMPATIBILITY
-        val requestedCodec=codecOverride ?: settings.videoCodec
         reportTracker?.finish(android.os.SystemClock.elapsedRealtime(),SessionEnd.REPLACED,webrtcClient?.currentInputMetrics())
         joystickDispatch.beginSession()
         touchView.beginSession()
@@ -935,9 +941,6 @@ open class MainActivity : Activity() {
             surfaceRenderer.onRenderError = { error -> transportFailure.complete(error) }
             var allocatedRtc: XCloudWebRtcClient?=null
             var failed=false
-            var retryH264=false
-            var codecFailureNote: String?=null
-            var runtimeCodecFailure=false
             val playbackEgl=surfaceRenderer.eglBase
             try {
                 // Capability discovery and native factory initialization must not block the menu/UI.
@@ -947,17 +950,7 @@ open class MainActivity : Activity() {
                     },
                     onConnectionStateChanged = { state -> runOnUiThread {
                         if (generation == playbackGeneration) {
-                            if(state.startsWith("VIDEO_CODEC:") && firstFrame.isCompleted) {
-                                runtimeCodecFailure=true
-                                videoRecoveryDialog?.dismiss()
-                                videoRecoveryDialog=com.xcloud.tclnative.ui.dashboard.VideoCodecFallbackDialog.show(this@MainActivity,
-                                    retry = {
-                                        retryH264=true
-                                        launchCloudGame(signaling,game,touchMode,com.xcloud.tclnative.settings.VideoCodecMode.H264,
-                                            (allocatedRtc?.codecFallbackSummary(java.io.IOException("VIDEO_CODEC: decoder")) ?: "Experimento de codec falhou.")+
-                                                " Reabertura solicitada pelo jogador após o início da partida.")
-                                    }, leave = { cancelPlayback() })
-                            } else if (state.contains("FAILED") || state.contains("CLOSED") || state.startsWith("CHANNELS:") || state.startsWith("VIDEO_CODEC:")) {
+                            if (state.contains("FAILED") || state.contains("CLOSED") || state.startsWith("CHANNELS:") || state.startsWith("VIDEO_CODEC:")) {
                                 transportFailure.complete(java.io.IOException(state))
                             }
                             if (!firstFrame.isCompleted) hudTextView.text = state
@@ -981,13 +974,12 @@ open class MainActivity : Activity() {
                     }, lowLatencyVideo = settings.videoMode.lowLatency, streamResolution = settings.resolution,
                     nativeTouch = touchMode==TouchMode.NATIVE,
                     onRumble = { command -> if(generation==playbackGeneration) rumble.play(command) },compatibility=compatible,
-                    videoCodec=requestedCodec).also { allocatedRtc=it } }
+                    videoCodec=settings.videoCodec).also { allocatedRtc=it } }
                 webrtcClient = rtc
                 val appVersion=packageManager.getPackageInfo(packageName,0).versionName ?: "n/d"
                 tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}"+
                     (if(touchMode==TouchMode.NATIVE) "\n${touchView.nativeDiagnostics()}" else "")+
-                    "\n${joystickDispatch.diagnostics()}\n${signaling.profileDiagnostics()}\n${surfaceRenderer.diagnostics()}\n${playbackDisplay.diagnostics(window.decorView.display)}\n${rtc.audioDiagnostics()}\n${rtc.latencyDiagnostics()}\n${rtc.iceDiagnostics()}\n${rtc.codecDiagnostics()}"+
-                    (codecRetryNote?.let { "\n$it" } ?: "") }
+                    "\n${joystickDispatch.diagnostics()}\n${signaling.profileDiagnostics()}\n${surfaceRenderer.diagnostics()}\n${playbackDisplay.diagnostics(window.decorView.display)}\n${rtc.audioDiagnostics()}\n${rtc.latencyDiagnostics()}\n${rtc.iceDiagnostics()}\n${rtc.codecDiagnostics()}\n${rumble.diagnostics()}" }
                 surfaceRenderer.displayDimensions()?.let(rtc::updateDisplayDimensions)
                 if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
                 signaling.startAndConnectWebRtcSession(titleId, rtc, resolution = settings.resolution, nativeTouch=touchMode==TouchMode.NATIVE, onQueueStatus = { status -> runOnUiThread {
@@ -1019,7 +1011,7 @@ open class MainActivity : Activity() {
                     val now = android.os.SystemClock.elapsedRealtime()
                     val health = surfaceRenderer.probeVideoHealth()
                     val receiving=streamHistory.receivingVideo(now)
-                    val action = if(runtimeCodecFailure) VideoRecoveryAction.NONE else recovery.observe(now, health.presentedToken, health.deliveredRecently,receiving)
+                    val action = recovery.observe(now, health.presentedToken, health.deliveredRecently,receiving)
                     tracker.observe(now,health.presentedToken,receiving,action)
                     if (health.presentedToken != lastToken && recovering) {
                         recovering = false
@@ -1071,23 +1063,18 @@ open class MainActivity : Activity() {
                 throw cancelled
             } catch (error: Exception) {
                 failed=true
-                retryH264=allocatedRtc?.shouldRetryH264(error,firstFrame.isCompleted)==true
-                if(retryH264) codecFailureNote=allocatedRtc?.codecFallbackSummary(error)
-                if(retryH264 && generation==playbackGeneration) {
-                    Toast.makeText(this@MainActivity,"Codec experimental falhou. Reabrindo a sessão em H.264…",Toast.LENGTH_LONG).show()
-                }
-                if (!retryH264 && generation == playbackGeneration && (!firstFrame.isCompleted || !settingsStore.read().sessionReport)) {
+                if (generation == playbackGeneration && (!firstFrame.isCompleted || !settingsStore.read().sessionReport)) {
                     val details = error.message ?: "Falha na sessão"
                     hudTextView.text = details
                     hudTextView.setTextColor(Color.RED)
                     showCopyableErrorDialog(gameName, details)
                 }
             } finally {
-                // The server-side Xbox and the local decoder must both be released before retrying.
+                // Always release the local decoder and server session together.
                 withContext(NonCancellable) {
                     val rtc=allocatedRtc
                     tracker.finish(android.os.SystemClock.elapsedRealtime(),if(failed) SessionEnd.FAILURE else SessionEnd.USER,rtc?.currentInputMetrics())
-                    if (generation == playbackGeneration && !retryH264) {
+                    if (generation == playbackGeneration) {
                         showCatalogReturn(game,pendingLoadingGame==null)
                         finishLoading()
                         statsView.visibility = View.GONE
@@ -1101,12 +1088,10 @@ open class MainActivity : Activity() {
                     rtc?.close()
                     if (webrtcClient === rtc) webrtcClient = null
                     signaling.stop()
-                    if (generation == playbackGeneration && !retryH264) { activeGame=null; restoreDashboard() }
-                    if(!retryH264) finishSessionReport(tracker)
+                    if (generation == playbackGeneration) { activeGame=null; restoreDashboard() }
+                    finishSessionReport(tracker)
                 }
             }
-            if(retryH264 && isActive && generation==playbackGeneration) launchCloudGame(signaling,game,touchMode,
-                com.xcloud.tclnative.settings.VideoCodecMode.H264,codecFailureNote ?: "Experimento de codec falhou; sessão reaberta uma vez em H.264.")
         }
     }
 
@@ -1354,13 +1339,15 @@ open class MainActivity : Activity() {
 
     override fun onStart() {
         super.onStart(); activityVisible=true; reportTracker?.setVisible(true); webrtcClient?.resumeAudio()
+        usbRumble.setForeground(true)
+        rumble.enabled=playbackSettings.rumble && webrtcClient!=null
         updateJoystickDispatch()
         if(activeGame==null && dashboard!=null && controlPanel.visibility==View.VISIBLE && transitionPanel.visibility!=View.VISIBLE) {
             val signaling=currentSignaling; val library=gameLibrary
             if(signaling!=null && library!=null) refreshCloudHistory(dashboard!!,signaling,library)
         }
     }
-    override fun onStop() { joystickDispatch.request(false);activityVisible=false; reportTracker?.setVisible(false); super.onStop() }
+    override fun onStop() { joystickDispatch.request(false);rumble.enabled=false;rumble.stop();usbRumble.setForeground(false);activityVisible=false; reportTracker?.setVisible(false); super.onStop() }
 
     override fun onDestroy() {
         joystickDispatch.request(false)
@@ -1371,6 +1358,7 @@ open class MainActivity : Activity() {
         mainScope.cancel()
         (getSystemService(Context.INPUT_SERVICE) as InputManager).unregisterInputDeviceListener(deviceListener)
         rumble.enabled=false; rumble.stop()
+        usbRumble.close()
         dashboard?.close()
         shortcutPosters.close()
         gameMenuDialog?.dismiss()

@@ -6,7 +6,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import org.webrtc.RtpCapabilities
 
-class ExperimentalCodecTest {
+class H264CodecTest {
     private fun codec(name: String,payload: Int,vararg parameters: Pair<String,String>)=RtpCapabilities.CodecCapability().apply {
         this.name=name;preferredPayloadType=payload;this.parameters=parameters.toMap()
     }
@@ -16,37 +16,29 @@ class ExperimentalCodecTest {
     private val all=listOf(baseline,high,hevc,codec("VP9",102),codec("rtx",97,"apt" to "96"),
         codec("rtx",99,"apt" to "98"),codec("rtx",101,"apt" to "100"),codec("rtx",103,"apt" to "102"))
 
-    @Test fun experimentalOffersExcludeBaselineAndKeepOnlyTheirRepairPayloadsWithoutMutatingCapabilities() {
+    @Test fun standardKeepsH264ProfilesButLightOffersOnlyRealBaselineAndItsRepairPayload() {
         val original=all.map { it.parameters.toMap() }
         val standard=CodecPreference.select(all,VideoCodecMode.H264,false,false)
-        assertFalse(standard.experimental)
+        assertFalse(standard.baselineOnly)
         assertEquals(listOf(98,96,97,99),standard.codecs.map { it.preferredPayloadType })
-        val experimental=CodecPreference.select(all,VideoCodecMode.HEVC,false,false)
-        assertTrue(experimental.experimental)
-        assertEquals(listOf(100,101),experimental.codecs.map { it.preferredPayloadType })
-        assertSame(hevc,experimental.codecs.first())
-        assertEquals(listOf(98,99),CodecPreference.select(all,VideoCodecMode.H264_HIGH,true,false).codecs.map { it.preferredPayloadType })
+        val light=CodecPreference.select(all,VideoCodecMode.H264_BASELINE,false,false)
+        assertTrue(light.baselineOnly)
+        assertEquals(listOf(96,97),light.codecs.map { it.preferredPayloadType })
+        assertSame(baseline,light.codecs.first())
         assertEquals(original,all.map { it.parameters })
     }
-    @Test fun highCanBeRequestedAt720pButCompatibilityAlwaysPrefersTheLightweightCodec() {
-        assertSame(high,CodecPreference.select(all,VideoCodecMode.H264_HIGH,true,false).codecs.first())
+    @Test fun compatibilityRestrictsBothSelectionsToBaseline() {
         for(mode in VideoCodecMode.entries) {
             val offer=CodecPreference.select(all,mode,true,true)
-            assertFalse(offer.experimental);assertSame(baseline,offer.codecs.first())
-            assertFalse(offer.codecs.any { it.name=="H265" })
+            assertTrue(offer.baselineOnly)
+            assertEquals(listOf(96,97),offer.codecs.map { it.preferredPayloadType })
         }
     }
-    @Test fun missingOptionalSupportFallsBackWithoutInventingProfilesOrUsingTenBitHevc() {
-        val noHigh=CodecPreference.select(listOf(baseline),VideoCodecMode.H264_HIGH,false,false)
-        assertFalse(noHigh.experimental);assertEquals(listOf(baseline),noHigh.codecs)
-        val noHevc=CodecPreference.select(listOf(baseline,codec("H265",100,"profile-id" to "2"),
-            codec("H265",101,"tier-flag" to "1")),VideoCodecMode.HEVC,false,false)
-        assertFalse(noHevc.experimental);assertEquals(listOf(baseline),noHevc.codecs)
-        assertTrue(CodecPreference.mainHevc(emptyMap())) // RFC defaults: Main, main tier.
-    }
-    @Test fun h264MustRemainAvailableForExperimentalSessions() {
-        try { CodecPreference.select(listOf(hevc),VideoCodecMode.HEVC,false,false);fail("No H.264 fallback") }
-        catch(expected: java.io.IOException) { assertTrue(expected.message!!.contains("H.264")) }
+    @Test fun missingBaselineFailsExplicitlyRatherThanRelabelingHighOrInventingACapability() {
+        for(capabilities in listOf(listOf(high,hevc),listOf(hevc),listOf(codec("H264",96,"profile-level-id" to "42broken")))) {
+            try { CodecPreference.select(capabilities,VideoCodecMode.H264_BASELINE,true,false);fail("Baseline unavailable") }
+            catch(expected: java.io.IOException) { assertTrue(expected.message!!.contains("H.264")) }
+        }
     }
     private val sdp="""
         v=0
@@ -84,18 +76,5 @@ class ExperimentalCodecTest {
         assertTrue(output.contains("a=rtcp-fb:100 nack pli\r\n"))
         assertTrue(output.contains("a=ice-ufrag:test\r\n"))
         assertEquals(output,StreamProfile.receiveSdp(output))
-    }
-    @Test fun codecRetryIsBoundedByAnH264OverrideAndDoesNotRetryUnrelatedNetworkFailures() {
-        val answer=CodecPreference.answerVideo(sdp)
-        for(reason in listOf("VIDEO_CODEC: init failed","SDP: rejected","VIDEO: no first frame")) {
-            assertTrue(ExperimentalCodecRetry.allowed(VideoCodecMode.HEVC,true,answer,false,reason))
-            assertFalse(ExperimentalCodecRetry.allowed(VideoCodecMode.H264,true,answer,false,reason))
-            assertFalse(ExperimentalCodecRetry.allowed(VideoCodecMode.HEVC,false,answer,false,reason))
-        }
-        assertFalse(ExperimentalCodecRetry.allowed(VideoCodecMode.HEVC,true,answer,true,"VIDEO_CODEC: failed"))
-        assertFalse(ExperimentalCodecRetry.allowed(VideoCodecMode.HEVC,true,answer,true,"SDP: failed"))
-        assertFalse(ExperimentalCodecRetry.allowed(VideoCodecMode.HEVC,true,answer,false,"TRANSPORT: ICE failed"))
-        assertFalse(ExperimentalCodecRetry.allowed(VideoCodecMode.HEVC,true,answer,false,"PLAY: unauthorized"))
-        assertFalse(ExperimentalCodecRetry.allowed(VideoCodecMode.HEVC,true,VideoCodecAnswer("H264",emptyMap()),false,"VIDEO: no first frame"))
     }
 }

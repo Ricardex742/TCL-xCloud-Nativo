@@ -14,8 +14,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 35
-        versionName = "0.31.4-fsr1"
+        versionCode = 36
+        versionName = "0.31.5-light-codec-usb"
     }
 
     signingConfigs {
@@ -74,7 +74,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    // M137 includes the H.265 RTP depacketizer/parser; Java codec names alone are insufficient.
+    // Keep the pinned M137 runtime used by the native renderer and input pipeline.
     implementation("io.github.webrtc-sdk:android:137.7151.05")
     implementation("com.google.zxing:core:3.5.3")
     testImplementation("junit:junit:4.13.2")

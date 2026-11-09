@@ -158,7 +158,7 @@ class ConsoleUiTest {
         val activity=controller.get().apply { setContentView(FrameLayout(this)) }
         layout(activity.window.decorView,1280,720)
         val store=PlaybackSettingsStore(activity)
-        store.save(PlaybackSettings(sharpness=75,saturation=150,videoCodec=VideoCodecMode.HEVC,fsr=FsrMode.FSR1))
+        store.save(PlaybackSettings(sharpness=75,saturation=150,videoCodec=VideoCodecMode.H264_BASELINE,fsr=FsrMode.FSR1))
         val panel=PlaybackSettingsPanel(activity,store,{}, {}, {}, {})
         val choices=panel.chooseVideo()
         render(choices,"compatibility-choice")
@@ -183,7 +183,7 @@ class ConsoleUiTest {
         assertEquals(1,disconnected)
         controller.pause().stop().destroy()
     }
-    @Test fun experimentalCodecsRequireAnExplicitChoiceAndKeepOtherPlaybackPreferences() {
+    @Test fun lightCodecRequiresAnExplicitChoiceAndExperimentalChoicesAreRemoved() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()
         val activity=controller.get().apply { setContentView(FrameLayout(this)) }
         layout(activity.window.decorView,1280,720)
@@ -193,30 +193,17 @@ class ConsoleUiTest {
         val updates=mutableListOf<PlaybackSettings>()
         val panel=PlaybackSettingsPanel(activity,store,{updates.add(it)},{},{},{})
         val dialog=panel.chooseCodec()
-        render(dialog,"experimental-codec-choice")
+        render(dialog,"light-codec-choice")
         assertEquals(original,store.read());assertTrue(updates.isEmpty())
-        all(dialog.body).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("H.265/HEVC") }.performClick()
-        assertEquals(original.copy(videoCodec=VideoCodecMode.HEVC),store.read())
+        all(dialog.body).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("H.264 leve") }.performClick()
+        assertEquals(original.copy(videoCodec=VideoCodecMode.H264_BASELINE),store.read())
         (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
-        val high=panel.chooseCodec()
-        all(high.body).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("H.264 High") }.performClick()
-        assertEquals(original.copy(videoCodec=VideoCodecMode.H264_HIGH),store.read())
+        val standard=panel.chooseCodec()
+        assertFalse(all(standard.body).filterIsInstance<TextView>().any { it.isClickable && (it.text.contains("HEVC") || it.text.contains("High")) })
+        all(standard.body).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("H.264 — padrão") }.performClick()
+        assertEquals(original,store.read())
         assertEquals(2,updates.size)
         (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
-        controller.pause().stop().destroy()
-    }
-    @Test fun experimentalFailureDuringGameplayDoesNotReopenASessionWithoutThePlayersChoice() {
-        val controller=Robolectric.buildActivity(Activity::class.java).setup()
-        var restarted=0;var left=0
-        val dialog=VideoCodecFallbackDialog.show(controller.get(),{restarted++},{left++})
-        assertEquals(0,restarted);assertEquals(0,left)
-        assertTrue(all(dialog.body).filterIsInstance<TextView>().any { it.text.contains("progresso ainda não salvo") })
-        all(dialog.panel).filterIsInstance<TextView>().single { it.isClickable && it.text.toString().equals("Reabrir em H.264",true) }.performClick()
-        assertEquals(1,restarted);assertEquals(0,left)
-        val cancel=VideoCodecFallbackDialog.show(controller.get(),{restarted++},{left++})
-        cancel.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_BUTTON_B))
-        shadowOf(Looper.getMainLooper()).idle() // Dialog cancellation delivers its listener through Main.
-        assertEquals(1,restarted);assertEquals(1,left)
         controller.pause().stop().destroy()
     }
     @Test fun imageAndControllerChoicesPersistWithoutCyclingValuesWhenOpeningTheirMenus() {

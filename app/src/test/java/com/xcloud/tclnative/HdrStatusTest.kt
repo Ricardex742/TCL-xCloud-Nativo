@@ -27,7 +27,7 @@ class HdrStatusTest {
         val panel=PlaybackSettingsPanel(activity,PlaybackSettingsStore(activity),{},{},{},{})
         val dialog=panel.showHdrStatus()
         val text=all(dialog.body).filterIsInstance<android.widget.TextView>().joinToString { it.text }
-        assertTrue(text.contains("HEVC Main experimental de 8 bits")); assertTrue(text.contains("SDR")); assertTrue(text.contains("BT.2020"))
+        assertTrue(text.contains("H.264 de 8 bits")); assertTrue(text.contains("SDR")); assertTrue(text.contains("BT.2020"))
         assertEquals(before,activity.window.colorMode)
         dialog.dismiss(); controller.pause().stop().destroy()
     }

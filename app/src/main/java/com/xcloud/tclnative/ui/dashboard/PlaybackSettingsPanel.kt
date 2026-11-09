@@ -73,12 +73,12 @@ class PlaybackSettingsPanel(
     }
     fun chooseCodec(): ConsoleDialog {
         val current=store.read()
-        return choices("Codec de vídeo","H.264 mantém o comportamento padrão. High e HEVC tentam exclusivamente o formato escolhido quando o hardware é compatível. O Xbox pode recusar; uma falha ao iniciar permite reabrir a sessão uma vez em H.264 padrão, com o motivo no diagnóstico. Compatibilidade sempre usa H.264 leve. Aplica-se à próxima partida.",
-            VideoCodecMode.entries.map { it.label to (it==current.videoCodec) }) { save(current.copy(videoCodec=VideoCodecMode.entries[it])) }
+        return choices("Codec de vídeo","Padrão mantém a negociação H.264 habitual. Leve oferece somente Baseline, solicita 720p e até 6 Mbps. É um perfil do H.264, sem garantia de ganho se o jogo já usava Baseline. A resolução e o bitrate recebidos dependem do serviço. Compatibilidade também usa Baseline. Aplica-se à próxima partida.",
+            VideoCodecMode.entries.map { it.label to (it==current.videoCodec) }) { save(current.copy(videoCodec=VideoCodecMode.entries[it]).forSession()) }
     }
     fun chooseResolution(): ConsoleDialog {
         val current=store.read()
-        return choices("Resolução da transmissão","720p solicita menos banda e trabalho de decodificação. A resolução recebida depende do Xbox, do jogo e da conexão. Aplica-se à próxima partida.",
+        return choices("Resolução da transmissão","H.264 leve e Compatibilidade usam 720p mesmo com outra escolha salva. 720p solicita menos banda e trabalho de decodificação. A resolução recebida depende do Xbox, do jogo e da conexão. Aplica-se à próxima partida.",
             StreamResolution.entries.map { it.label to (it==current.resolution) }) { save(current.copy(resolution=StreamResolution.entries[it])) }
     }
     fun chooseUpscaling(): ConsoleDialog {
@@ -137,7 +137,7 @@ class PlaybackSettingsPanel(
                 }
             },
             ConsoleAction("Vibração: ${if(settings.rumble) "Ativada" else "Desativada"}") {
-                choices("Vibração do controle","Recebe os comandos do jogo e aciona o controle correspondente. O dongle e o driver Android precisam expor um vibrador. Aplica-se à próxima partida.",
+                choices("Vibração do controle","Recebe os comandos do jogo e aciona o controle correspondente. A via Android exige suporte do driver. O teste USB/XInput opcional fica em Testar vibração / verificar suporte. Aplica-se à próxima partida.",
                     listOf("Ativada" to settings.rumble,"Desativada" to !settings.rumble),{ showControls() }) {
                     save(settings.copy(rumble=it==0)) { showControls() }
                 }

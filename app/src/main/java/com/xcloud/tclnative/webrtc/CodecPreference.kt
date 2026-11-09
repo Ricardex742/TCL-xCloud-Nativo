@@ -14,39 +14,28 @@ object CodecPreference {
         else -> 3
     }
 
-    data class Offer(val codecs: List<RtpCapabilities.CodecCapability>, val experimental: Boolean, val description: String)
+    data class Offer(val codecs: List<RtpCapabilities.CodecCapability>, val baselineOnly: Boolean, val description: String)
+    fun isBaseline(parameters: Map<String,String>): Boolean = parameters["profile-level-id"]
+        ?.matches(Regex("42[0-9a-fA-F]{4}")) == true
+
     fun select(capabilities: List<RtpCapabilities.CodecCapability>, requested: VideoCodecMode,
                lightweight: Boolean, compatibility: Boolean): Offer {
-        val mode=if(compatibility) VideoCodecMode.H264 else requested
+        val baselineOnly=compatibility || requested==VideoCodecMode.H264_BASELINE
         val h264=capabilities.filter { it.name.equals("H264",true) }
         if(h264.isEmpty()) throw IOException("VIDEO: o dispositivo não oferece decodificador H.264")
-        val hevc=if(mode==VideoCodecMode.HEVC) capabilities.filter {
-            it.name.equals("H265",true) && mainHevc(it.parameters)
-        } else emptyList()
-        val high=if(mode==VideoCodecMode.H264_HIGH) h264.filter { it.parameters["profile-level-id"]?.startsWith("64")==true } else emptyList()
-        // An experiment must actually try its format. Offering Baseline alongside it lets the
-        // service always select Baseline, as observed on the SM-A155M. H.264 stays available
-        // locally for the bounded retry with a fresh PeerConnection/session.
-        val primary=when {
-            hevc.isNotEmpty() -> hevc
-            high.isNotEmpty() -> high
-            else -> h264.sortedBy { rank(it.parameters["profile-level-id"],lightweight) }
-        }
+        val primary=if(baselineOnly) h264.filter { isBaseline(it.parameters) }
+            else h264.sortedBy { rank(it.parameters["profile-level-id"],lightweight) }
+        if(primary.isEmpty()) throw IOException("VIDEO_CODEC: H.264 Baseline não anunciado pelo dispositivo; selecione H.264 padrão")
         val payloads=primary.map { it.preferredPayloadType.toString() }.toSet()
         val repair=capabilities.filter { it.name.equals("rtx",true) &&
             (it.parameters["apt"]==null || it.parameters["apt"] in payloads) }
         val description=when {
-            compatibility -> "H.264 leve • modo Compatibilidade"
-            hevc.isNotEmpty() -> "Tentativa exclusiva HEVC Main • retorno a H.264 em nova sessão se necessário"
-            high.isNotEmpty() -> "Tentativa exclusiva H.264 High • retorno a H.264 padrão em nova sessão se necessário"
-            mode!=VideoCodecMode.H264 -> "Experimental indisponível • H.264 padrão"
+            compatibility -> "H.264 Baseline • Compatibilidade • 720p solicitado • até 6 Mbps solicitados"
+            baselineOnly -> "H.264 Baseline • 720p solicitado • até 6 Mbps solicitados"
             else -> "H.264 padrão"
         }
-        return Offer(primary+repair,hevc.isNotEmpty() || high.isNotEmpty(),description)
+        return Offer(primary+repair,baselineOnly,description)
     }
-
-    fun mainHevc(parameters: Map<String,String>): Boolean =
-        (parameters["profile-id"] ?: "1")=="1" && (parameters["tier-flag"] ?: "0")=="0"
 
     /** Only the first active video section; never interpret an audio/RTX payload as video. */
     fun answerVideo(sdp: String): VideoCodecAnswer? = videoFormats(sdp).firstOrNull()
@@ -84,19 +73,4 @@ object CodecPreference {
 
 data class VideoCodecAnswer(val name: String,val parameters: Map<String,String>) {
     val label: String get()=CodecPreference.label(name,parameters)
-    fun experimental(mode: VideoCodecMode): Boolean = when(mode) {
-        VideoCodecMode.HEVC -> name.equals("H265",true)
-        VideoCodecMode.H264_HIGH -> name.equals("H264",true) && parameters["profile-level-id"]?.startsWith("64")==true
-        else -> false
-    }
-}
-
-/** A retry uses a new session/PeerConnection, after cleanup; it never reinterprets encoded packets. */
-object ExperimentalCodecRetry {
-    fun allowed(mode: VideoCodecMode, offered: Boolean, answer: VideoCodecAnswer?, firstFrame: Boolean, reason: String): Boolean {
-        if(mode==VideoCodecMode.H264 || !offered) return false
-        if(firstFrame) return false
-        if(reason.startsWith("VIDEO_CODEC:")) return true
-        return reason.startsWith("SDP") || (reason.startsWith("VIDEO:") && answer?.experimental(mode)==true)
-    }
 }

@@ -36,7 +36,7 @@ class PlaybackSettingsTest {
         assertEquals(VideoViewport(405,720),VideoScalingPolicy.viewport(1280,720,1080,1920))
         assertEquals(VideoViewport(1,1),VideoScalingPolicy.viewport(0,0,0,0))
     }
-    @Test fun experimentalCodecIsOptInPersistsAndUnknownPreferencesReturnToH264() {
+    @Test fun lightCodecPersistsAndRemovedExperimentalPreferencesMigrateToStandard() {
         val context=RuntimeEnvironment.getApplication()
         val prefs=context.getSharedPreferences("stream_preferences",Context.MODE_PRIVATE)
         prefs.edit().clear().commit()
@@ -47,9 +47,20 @@ class PlaybackSettingsTest {
             store.save(selected)
             assertEquals(selected,PlaybackSettingsStore(context).read())
         }
+        for(removed in listOf("H264_HIGH","HEVC")) {
+            prefs.edit().putString("video_codec",removed).commit()
+            assertEquals(VideoCodecMode.H264,PlaybackSettingsStore(context).read().videoCodec)
+            assertEquals("H264",prefs.getString("video_codec",null))
+        }
         prefs.edit().putString("video_codec","removed-or-invalid").commit()
         assertEquals(VideoCodecMode.H264,store.read().videoCodec)
         assertEquals(StreamResolution.HD_720,store.read().resolution)
+    }
+    @Test fun lightSessionEnforces720pWithoutChangingFsrOrOtherSavedSettings() {
+        val saved=PlaybackSettings(videoCodec=VideoCodecMode.H264_BASELINE,fsr=FsrMode.FSR1,fsrSharpness=75)
+        assertEquals(StreamResolution.HD_1080_HQ,saved.resolution)
+        assertEquals(saved.copy(resolution=StreamResolution.HD_720),saved.forSession())
+        assertEquals(PlaybackSettings(),PlaybackSettings().forSession())
     }
     @Test fun statisticsRequireManualActivationAndEveryNewGameStartsHidden() {
         val visibility=StatisticsVisibility()
@@ -69,7 +80,7 @@ class PlaybackSettingsTest {
         val store=PlaybackSettingsStore(context)
         assertEquals(FsrMode.OFF,store.read().fsr)
         val selected=PlaybackSettings(fsr=FsrMode.FSR1,fsrSharpness=75,nativeUpscaling=false,
-            videoCodec=VideoCodecMode.HEVC,touchMode=TouchMode.NATIVE)
+            videoCodec=VideoCodecMode.H264_BASELINE,touchMode=TouchMode.NATIVE)
         store.save(selected);assertEquals(selected,PlaybackSettingsStore(context).read())
         prefs.edit().putString("fsr_mode","future-or-invalid").putInt("fsr_sharpness",400).commit()
         assertEquals(selected.copy(fsr=FsrMode.OFF,fsrSharpness=100),store.read())

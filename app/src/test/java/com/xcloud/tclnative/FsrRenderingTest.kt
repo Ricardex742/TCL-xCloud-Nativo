@@ -61,6 +61,19 @@ class FsrRenderingTest {
         repeat(3) { drawer.drawRgb(1,identity,1920,1080,0,0,3840,2160) }
         assertEquals(listOf("limite de textura da GPU"),failures);assertEquals(4,base.draws)
     }
+    @Test fun performanceCounterTracksOnlySuccessfulFsrDrawsAcrossAllInputTypes() {
+        val fsr=Upscaler();var count=0
+        val drawer=AspectVideoDrawer(false,{fsr},Ordinary()).apply { fsrEnabled=true;onFsrDraw={count++} }
+        drawer.drawOes(1,identity,1920,1080,0,0,3840,2160)
+        drawer.drawRgb(1,identity,1920,1080,0,0,3840,2160)
+        drawer.drawYuv(intArrayOf(1,2,3),identity,1920,1080,0,0,3840,2160)
+        assertEquals(3,count)
+        fsr.succeeds=false
+        drawer.drawRgb(1,identity,1920,1080,0,0,3840,2160)
+        drawer.fsrEnabled=false
+        drawer.drawRgb(1,identity,1920,1080,0,0,3840,2160)
+        assertEquals(3,count)
+    }
     @Test fun stretchingUsesTheUncroppedSourceAndPreservesRotationMirroringAndOffsetsForFsr() {
         val base=Ordinary();val fsr=Upscaler(false)
         val drawer=AspectVideoDrawer(true,{fsr},base).apply {

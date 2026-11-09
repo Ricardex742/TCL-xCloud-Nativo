@@ -37,6 +37,7 @@ class AspectVideoDrawer(@Volatile var stretch: Boolean,
     @Volatile var contrast=100
     @Volatile var fsrEnabled=false
     @Volatile var fsrSharpness=50
+    @Volatile var onFsrDraw: (() -> Unit)?=null
     @Volatile private var fsr: FsrUpscaler?=null
     private var adjusted: ImageAdjustmentDrawer? = null
     private var failureReported=false
@@ -67,21 +68,21 @@ class AspectVideoDrawer(@Volatile var stretch: Boolean,
     override fun drawOes(texture: Int, texMatrix: FloatArray, frameWidth: Int, frameHeight: Int,
                          x: Int, y: Int, width: Int, height: Int) {
         val m=matrix(texMatrix)
-        if(upscaler(frameWidth,frameHeight)?.drawOes(texture,m,frameWidth,frameHeight,x,y,width,height)==true) return
+        if(upscaler(frameWidth,frameHeight)?.drawOes(texture,m,frameWidth,frameHeight,x,y,width,height)==true) { onFsrDraw?.invoke();return }
         checkFailure()
         drawer(frameWidth,frameHeight).drawOes(texture,m,frameWidth,frameHeight,x,y,width,height)
     }
     override fun drawRgb(texture: Int, texMatrix: FloatArray, frameWidth: Int, frameHeight: Int,
                          x: Int, y: Int, width: Int, height: Int) {
         val m=matrix(texMatrix)
-        if(upscaler(frameWidth,frameHeight)?.drawRgb(texture,m,frameWidth,frameHeight,x,y,width,height)==true) return
+        if(upscaler(frameWidth,frameHeight)?.drawRgb(texture,m,frameWidth,frameHeight,x,y,width,height)==true) { onFsrDraw?.invoke();return }
         checkFailure()
         drawer(frameWidth,frameHeight).drawRgb(texture,m,frameWidth,frameHeight,x,y,width,height)
     }
     override fun drawYuv(textures: IntArray, texMatrix: FloatArray, frameWidth: Int, frameHeight: Int,
                          x: Int, y: Int, width: Int, height: Int) {
         val m=matrix(texMatrix)
-        if(upscaler(frameWidth,frameHeight)?.drawYuv(textures,m,frameWidth,frameHeight,x,y,width,height)==true) return
+        if(upscaler(frameWidth,frameHeight)?.drawYuv(textures,m,frameWidth,frameHeight,x,y,width,height)==true) { onFsrDraw?.invoke();return }
         checkFailure()
         drawer(frameWidth,frameHeight).drawYuv(textures,m,frameWidth,frameHeight,x,y,width,height)
     }

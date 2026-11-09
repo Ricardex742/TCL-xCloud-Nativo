@@ -142,7 +142,7 @@ class PlaybackSettingsPanel(
     fun chooseFsrOutput(): ConsoleDialog {
         enter(SettingsPage.IMAGE)
         val current=store.read()
-        return choices("Saída do FSR","Define a apresentação local, sem aumentar a resolução recebida nem o consumo de rede. Automático acompanha a janela nos celulares e usa até 1440p nas TVs 4K. As escolhas são limitadas pela saída física disponível e preservam a proporção. 4K tem custo maior de GPU; não garante 60 FPS. Requer AMD FSR ativado; Compatibilidade mantém o filtro desligado. Se o filtro/Surface falhar, o app retorna à escala padrão. Aplica-se à próxima partida.",
+        return choices("Saída do FSR","Define a apresentação local, sem aumentar a resolução recebida nem o consumo de rede. Automático acompanha a janela, limitado a 1080p nas TVs, priorizando a fluidez. As escolhas são limitadas pela saída física disponível e preservam a proporção. 1440p e 4K têm custo maior de GPU; não garantem 60 FPS. Requer AMD FSR ativado; Compatibilidade mantém o filtro desligado. O app retorna à escala padrão se o filtro falhar ou se a cadência ficar muito baixa por vários segundos com vídeo chegando. Aplica-se à próxima partida.",
             FsrOutput.entries.map { it.label to (it==current.fsrOutput) }) { save(current.copy(fsrOutput=FsrOutput.entries[it])) }
     }
     fun chooseAspect(): ConsoleDialog {
@@ -159,7 +159,7 @@ class PlaybackSettingsPanel(
             body.addView(text("Ajustes opcionais da imagem. Nitidez pode realçar ruído e exigir mais GPU. Durante uma partida, as mudanças são imediatas.",20,color=DashboardTheme.muted))
             if(settings.fsr==FsrMode.FSR1) addMenuItem("Nitidez FSR (RCAS): ${settings.fsrSharpness}%") {
                 val levels=listOf(0,25,50,75,100)
-                choices("Nitidez FSR (RCAS)","RCAS é o filtro de nitidez do FSR. Comece com 50%; 0% mantém somente a ampliação EASU. A nitidez padrão abaixo é usada quando o FSR não está ativo.",
+                choices("Nitidez FSR (RCAS)","RCAS ajusta a intensidade da nitidez; 50% não significa metade do custo de GPU. Comece com 50%; 0% mantém somente a ampliação EASU. A nitidez padrão abaixo é usada quando o FSR não está ativo.",
                     levels.map { "$it%" to (it==settings.fsrSharpness) },::backToImage) {
                     save(settings.copy(fsrSharpness=levels[it]),::backToImage)
                 }

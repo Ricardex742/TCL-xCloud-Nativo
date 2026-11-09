@@ -1018,6 +1018,10 @@ open class MainActivity : Activity() {
                         if(generation==playbackGeneration) {
                             val now=android.os.SystemClock.elapsedRealtime()
                             streamHistory.add(now,metrics,input); tracker.add(now,metrics,input)
+                            if(settings.fsr==com.xcloud.tclnative.settings.FsrMode.FSR1 && !compatible) runOnUiThread {
+                                if(generation==playbackGeneration) surfaceRenderer.observeFsrPerformance(now,metrics,
+                                    firstFrame.isCompleted && activityVisible && gameplayInputEnabled())
+                            }
                         }
                         if (statistics.mode == 0) return@stats
                         val complete = statistics.mode == 2

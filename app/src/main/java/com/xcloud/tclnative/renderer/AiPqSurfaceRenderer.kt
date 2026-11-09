@@ -11,6 +11,7 @@ import org.webrtc.EglBase
 import org.webrtc.RendererCommon
 import org.webrtc.VideoTrack
 import org.webrtc.VideoSink
+import com.xcloud.tclnative.webrtc.StreamMetrics
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -48,6 +49,8 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     private val lastDeliveryMs = AtomicLong(Long.MIN_VALUE)
     private val presentedToken = AtomicLong()
     private val probePending = AtomicBoolean()
+    private val fsrDraws=AtomicLong()
+    private val fsrPerformance=FsrPerformanceGuard()
     data class VideoHealth(val presentedToken: Long, val deliveredRecently: Boolean)
 
     /** One zero-scale callback per watchdog tick: no bitmap allocation or GPU pixel readback. */
@@ -92,6 +95,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     private val fsrEnabled get()=fsrRequested && !compatibility && fsrFailure==null
     var compatibility = false
     fun setFsr(requested: Boolean,sharpness: Int,output: FsrOutput=FsrOutput.AUTO) {
+        fsrPerformance.reset()
         fsrFailure=null;fsrOutput=output;fsrRequested=requested;setFsrSharpness(sharpness)
         aspectDrawer?.fsrEnabled=fsrEnabled
         updateOutputBuffer()
@@ -140,6 +144,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         detachTrack()
         cancelBufferVerification();requestedBuffer=null
         generation++
+        fsrDraws.set(0);fsrPerformance.reset()
         probePending.set(false)
         frameRateHintRequested = false
         renderer?.let { removeView(it); it.release() }
@@ -147,6 +152,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         val drawer=AspectVideoDrawer(aspect.stretch,{ org.webrtc.Fsr1Drawer(context) },onFsrFailure={ reason ->
             post { if(!released && generation==id) fallbackFsr(reason) }
         }).also {
+            it.onFsrDraw={ if(!released && generation==id) fsrDraws.incrementAndGet();Unit }
             it.sharpness=sharpness;it.saturation=saturation;it.brightness=brightness;it.contrast=contrast;it.fsrEnabled=fsrEnabled;it.fsrSharpness=fsrSharpness;aspectDrawer=it
         }
         renderer = object : OutputSurfaceViewRenderer(context) {
@@ -221,7 +227,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         val viewport=VideoScalingPolicy.viewport(width,height,videoWidth,videoHeight,aspect)
         val target=if(fsrEnabled) FsrOutputPolicy.target(fsrOutput,width,height,viewport,
             mode?.physicalWidth ?: 0,mode?.physicalHeight ?: 0,tv,fullScreen) else null
-        if(target!=requestedBuffer) cancelBufferVerification()
+        if(target!=requestedBuffer) { cancelBufferVerification();fsrPerformance.reset() }
         requestedBuffer=target
         view.setOutputBuffer(target)
         view.setEnableHardwareScaler(nativeUpscaling && !fsrEnabled)
@@ -248,6 +254,15 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         fsrFailure=reason
         aspectDrawer?.fsrEnabled=false
         updateOutputBuffer()
+    }
+    /** UI thread; fed independently of HUD visibility by the existing once-per-second stats. */
+    fun observeFsrPerformance(sampledAtMs: Long,metrics: StreamMetrics,foreground: Boolean) {
+        if(!fsrEnabled) { fsrPerformance.reset();return }
+        val now=android.os.SystemClock.elapsedRealtime()
+        val fresh=now>=sampledAtMs && now-sampledAtMs<=500
+        val slow=fsrPerformance.observe(now,fsrDraws.get(),metrics,foreground && fresh) ?: return
+        val rate=String.format(java.util.Locale.US,"%.1f",slow.drawsPerSecond)
+        fallbackFsr("proteção de fluidez: $rate desenhos FSR/s por ${slow.durationMs/1000}s; escala padrão nesta partida")
     }
     fun attachVideoTrack(track: VideoTrack) {
         val id = generation
@@ -283,7 +298,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     fun clearSession() {
         if (released) return
         generation++
-        cancelBufferVerification()
+        cancelBufferVerification();fsrPerformance.reset()
         detachTrack()
         renderer?.clearImage()
         if(fsrRequested) {
@@ -310,6 +325,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
             "Escala da Surface: ${if(fsrEnabled) "renderer em resolução de saída para FSR" else if (nativeUpscaling) "HW solicitada" else "HW desativada"}; imagem ajustada à janela | Conteúdo ${if(compatibility) 30 else 60} FPS sinalizado à Surface: ${if (frameRateHintRequested) "sim" else "não confirmado"} | Pós-processamento mínimo: ${if (minimalPostProcessingRequested) "solicitado" else "padrão"}; suporte Android declarado: $minimalLabel\n" +
             "Proporção: ${aspect.label} | Nitidez padrão: $sharpness% | Saturação: $saturation% | Brilho: $brightness% | Contraste: $contrast% | Apresentação: até ${if(compatibility) 30 else 60} FPS | AiPQ: não verificável pelo app\n"+
             (if(fsrRequested) "Saída FSR solicitada: ${fsrOutput.label} | buffer solicitado: ${requestedBuffer?.let { "${it.width}x${it.height}" } ?: "escala padrão"}\n" else "")+
+            (if(fsrEnabled) "Cadência local FSR: ${fsrPerformance.lastRate?.let { String.format(java.util.Locale.US,"%.1f desenhos/s",it) } ?: "aguardando amostras"} (não mede GPU nem FPS do jogo/tela)\n" else "")+
             (if(fsrFailure!=null) "AMD FSR 1.0.2: retorno à escala padrão — $fsrFailure" else if(fsrRequested && compatibility) "AMD FSR 1.0.2: inativo no modo Compatibilidade" else aspectDrawer?.fsrDiagnostics() ?: "AMD FSR 1.0.2: desligado")
     }
 

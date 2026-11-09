@@ -17,13 +17,13 @@ object FsrOutputPolicy {
             val pw=if(windowWidth>=windowHeight) long else short
             val ph=if(windowWidth>=windowHeight) short else long
             val available=min(pw/windowWidth,ph/windowHeight)
-            scale=if(isTv && fullScreen) available else min(1.0,available)
+            scale=if(output!=FsrOutput.AUTO && isTv && fullScreen) available else min(1.0,available)
         }
         val width=viewport.width*scale
         val height=viewport.height*scale
-        val cap1440=output==FsrOutput.QHD_1440 || (output==FsrOutput.AUTO && isTv)
-        val longCap=if(cap1440) 2560.0 else 3840.0
-        val shortCap=if(cap1440) 1440.0 else 2160.0
+        val automaticTv=output==FsrOutput.AUTO && isTv
+        val longCap=when { automaticTv -> 1920.0;output==FsrOutput.QHD_1440 -> 2560.0;else -> 3840.0 }
+        val shortCap=when { automaticTv -> 1080.0;output==FsrOutput.QHD_1440 -> 1440.0;else -> 2160.0 }
         val cap=min(1.0,min(longCap/max(width,height),shortCap/min(width,height)))
         return VideoViewport((width*cap).roundToInt().coerceAtLeast(1),(height*cap).roundToInt().coerceAtLeast(1))
     }

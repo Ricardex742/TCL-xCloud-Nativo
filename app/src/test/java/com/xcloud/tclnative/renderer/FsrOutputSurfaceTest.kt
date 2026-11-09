@@ -6,6 +6,11 @@ import android.view.SurfaceView
 import android.view.View
 import com.xcloud.tclnative.settings.*
 import org.junit.Assert.*
+import com.xcloud.tclnative.webrtc.StreamMetrics
+import org.robolectric.shadows.ShadowSystemClock
+import org.robolectric.util.ReflectionHelpers
+import java.time.Duration
+import java.util.concurrent.atomic.AtomicLong
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -72,6 +77,32 @@ class FsrOutputSurfaceTest {
         prefs.edit().putString("fsr_output","future-option").commit()
         assertEquals(FsrOutput.AUTO,PlaybackSettingsStore(context).read().fsrOutput)
         controller.pause().stop().destroy()
+    }
+    @Test fun slowFsrProtectionRestoresTheRealWebRtcHolderTo1080WithoutChangingTheUiOrInputSpace() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        val owner=AiPqSurfaceRenderer(controller.get());owner.layout(0,0,1920,1080)
+        owner.setFsr(true,50,FsrOutput.UHD_4K)
+        val dimensions=owner.displayDimensions()
+        val view=OutputSurfaceViewRenderer(controller.get())
+        view.measure(View.MeasureSpec.makeMeasureSpec(1920,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(1080,View.MeasureSpec.EXACTLY))
+        view.layout(0,0,1920,1080);view.onFrameResolutionChanged(1920,1080,0)
+        // The EGL/Surface boundary is simulated; run the real owner/guard/fallback/stock sizing.
+        ReflectionHelpers.setField(owner,"renderer",view)
+        ReflectionHelpers.setField(owner,"requestedBuffer",VideoViewport(3840,2160))
+        view.setOutputBuffer(VideoViewport(3840,2160))
+        val draws=ReflectionHelpers.getField<AtomicLong>(owner,"fsrDraws")
+        repeat(7) { second ->
+            draws.set((second+1L)*13)
+            val now=android.os.SystemClock.elapsedRealtime()
+            owner.observeFsrPerformance(now,StreamMetrics(receivedVideoBytes=500000,packetLossPercent=0.0,intervalSeconds=1.0),true)
+            ShadowSystemClock.advanceBy(Duration.ofSeconds(1))
+        }
+        assertEquals(VideoViewport(1920,1080),Shadow.extract<RecordingSurfaceShadow>(view).lastSize)
+        assertTrue(owner.diagnostics().contains("proteção de fluidez: 13.0 desenhos FSR/s"))
+        assertTrue(owner.diagnostics().contains("buffer solicitado: escala padrão"))
+        assertEquals(FsrOutput.UHD_4K,ReflectionHelpers.getField<FsrOutput>(owner,"fsrOutput"))
+        assertEquals(dimensions,owner.displayDimensions());assertEquals(.25f to .5f,owner.touchCoordinates(480f,540f))
+        owner.release();controller.pause().stop().destroy()
     }
     @Test fun changingFsrOutputKeepsTheActualVideoViewTouchSpaceAndClientMetadataInUiPixels() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()

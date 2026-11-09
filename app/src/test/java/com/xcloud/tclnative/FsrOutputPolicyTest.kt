@@ -9,7 +9,8 @@ class FsrOutputPolicyTest {
     private fun tv(mode: FsrOutput,w: Int=1920,h: Int=1080,viewport: VideoViewport=VideoViewport(w,h),pw: Int=3840,ph: Int=2160,full: Boolean=true)=
         FsrOutputPolicy.target(mode,w,h,viewport,pw,ph,true,full)
     @Test fun tcl1080UiCanRequest1440Or4kWithoutChangingTheLayoutOrSourceVideo() {
-        assertEquals(VideoViewport(2560,1440),tv(FsrOutput.AUTO))
+        assertEquals(VideoViewport(1920,1080),tv(FsrOutput.AUTO))
+        assertEquals(VideoViewport(1920,1080),tv(FsrOutput.AUTO,w=3840,h=2160))
         assertEquals(VideoViewport(2560,1440),tv(FsrOutput.QHD_1440))
         assertEquals(VideoViewport(3840,2160),tv(FsrOutput.UHD_4K))
         assertTrue(org.webrtc.Fsr1Plan.create(1920,1080,3840,2160,8192,8192,23).active())

@@ -6,7 +6,7 @@
   <p>
     <a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aperf%2Fdecoder-display-latency-0.31"><img src="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml/badge.svg?branch=perf%2Fdecoder-display-latency-0.31" alt="Compilação Android" /></a>
     <img src="https://img.shields.io/badge/Android-7.0%2B-54de69?logo=android&logoColor=white" alt="Android 7 ou superior" />
-    <img src="https://img.shields.io/badge/vers%C3%A3o-0.31.8-173d29" alt="Versão 0.31.8" />
+    <img src="https://img.shields.io/badge/vers%C3%A3o-0.31.9-173d29" alt="Versão 0.31.9" />
   </p>
   <p><a href="#baixar-e-instalar">Baixar</a> · <a href="#telas-do-aplicativo">Telas</a> · <a href="#controles-de-toque-por-jogo">HUDs de toque</a> · <a href="#funcionalidades">Funcionalidades</a> · <a href="#atalhos-dos-jogos-na-tv">Atalhos na TV</a> · <a href="#compilar">Compilar</a></p>
 </div>
@@ -27,7 +27,9 @@ A **0.31.6** acrescenta bitrate/região/idioma por jogo, perfis de controle, pre
 
 A **0.31.7** organiza as configurações em sete categorias, aprimora os checks contínuos de rota no Automático IPv4/IPv6 e oferece giroscópio opcional junto ao toque nativo Xbox, em aparelhos com sensor. Veja [acesso, funcionamento e limites](docs/categories-network-native-gyro-0.31.7.md). A seleção de rota depende do WebRTC/servidor; o giroscópio nativo é experimental.
 
-Na **0.31.8**, **Imagem e tela → Saída do FSR** oferece Automático, 1440p e 4K experimental. Em TVs 4K com interface 1080p, o app pode solicitar um buffer de vídeo maior sem mudar os menus ou as coordenadas do controle. Automático usa até 1440p nas TVs; 4K requer comparação de desempenho no aparelho. Veja [funcionamento, confirmação no diagnóstico e retorno à escala padrão](docs/fsr-output-0.31.8.md).
+Na **0.31.8**, **Imagem e tela → Saída do FSR** oferece Automático, 1440p e 4K experimental. Em TVs 4K com interface 1080p, o app pode solicitar um buffer de vídeo maior sem mudar os menus ou as coordenadas do controle. Na 0.31.8 o Automático usava até 1440p nas TVs; a 0.31.9 substitui essa política após o teste físico. Veja [funcionamento, confirmação no diagnóstico e retorno à escala padrão](docs/fsr-output-0.31.8.md).
+
+A **0.31.9** responde ao teste da TCL em que o FSR resultou em 13 FPS/1440p e 6 FPS/4K. Automático agora acompanha a janela e fica limitado a 1080p nas TVs; uma proteção retorna à escala padrão quando a cadência de desenhos FSR fica muito baixa por vários segundos com vídeo chegando. Veja [critérios, limites e evidência do teste](docs/fsr-fluency-guard-0.31.9.md). Para essa TCL, a recomendação atual é FSR desligado e upscaling nativo ligado.
 
 Nesta branch, **GAME PASS** consulta a galeria cloud atual do site oficial, e **TRANSMITA SEU JOGO** mostra a galeria oficial “Transmita seu próprio jogo”. As listas completas usam os produtos da região BR, sem limitar a exibição aos títulos já associados ao motor nativo. Uma edição ainda sem associação é verificada no serviço autenticado ao selecionar. A galeria de compra não é um inventário da conta: jogar exige a licença e as condições do serviço. Veja [fontes, contagens e funcionamento das abas](docs/official-catalog-galleries-0.31.md) e o [contexto completo das modificações desta branch](docs/contexto-completo-branch-perf-0.31.md).
 

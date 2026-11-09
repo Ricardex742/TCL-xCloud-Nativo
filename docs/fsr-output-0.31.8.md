@@ -2,6 +2,8 @@
 
 Versão `0.31.8-fsr-output`, versionCode **39**, na branch `perf/decoder-display-latency-0.31`.
 
+> Política histórica da 0.31.8. A [0.31.9](fsr-fluency-guard-0.31.9.md) muda o Automático e acrescenta proteção após a queda de FPS confirmada na TCL.
+
 ## Problema confirmado no teste da TV
 
 O TXT do usuário registrou TCL/Android 12, Fortnite, transmissão 1920×1080, Surface/janela 1920×1080 e saída Android 3840×2160@60. O diagnóstico do filtro foi `sem ampliação; escala padrão | RCAS 100%`. A opção FSR estava selecionada, mas EASU/RCAS não rodavam: entrada e alvo tinham o mesmo tamanho. O percentual RCAS era uma preferência, não confirmação de processamento.

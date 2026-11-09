@@ -44,6 +44,7 @@ class AspectVideoDrawer(@Volatile var stretch: Boolean,
     private fun checkFailure() {
         if(!failureReported) fsr?.failureReason()?.let { failureReported=true;onFsrFailure(it) }
     }
+    fun isFsrBypassed(): Boolean = fsr?.isBypassed()==true
     fun fsrDiagnostics(): String = if(!fsrEnabled) "AMD FSR 1.0.2: desligado"
         else fsr?.diagnostics() ?: "AMD FSR 1.0.2: solicitado; aguardando vídeo"
     private fun upscaler(width: Int,height: Int): FsrUpscaler? {

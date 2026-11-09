@@ -190,14 +190,14 @@ def texture(w,h,data=None,linear=False):
     return t
 
 
-def draw(p,source,iw,ih,ow,oh,strength=.5,saturation=1.,origin=(0,0),matrix=None,brightness=0.,contrast=0.,keep_texture=False,sample_points=None):
+def draw(p,source,iw,ih,ow,oh,strength=.5,saturation=1.,origin=(0,0),matrix=None,brightness=0.,contrast=0.,keep_texture=False,sample_points=None,source_target=0x0DE1,source_matrix=None):
     x,y=origin;tw,th=(ow,oh) if keep_texture else (ow+x+2,oh+y+2)
     result=texture(tw,th)
     fbo=uint();gen_framebuffers(1,C.byref(fbo));bind_framebuffer(0x8D40,fbo)
     framebuffer_texture(0x8D40,0x8CE0,0x0DE1,result,0)
     assert framebuffer_status(0x8D40)==0x8CD5,"Incomplete render target"
     viewport(0,0,tw,th);clear_color(7/255,13/255,19/255,1);clear(0x4000)
-    use_program(p);bind_texture(0x0DE1,source)
+    use_program(p);bind_texture(source_target,source)
     uniform1i(uniform_location(p,b"source_tex"),0)
     uniform1i(uniform_location(p,b"tex"),0)
     uniform1i(uniform_location(p,b"y_tex"),0)
@@ -210,6 +210,12 @@ def draw(p,source,iw,ih,ow,oh,strength=.5,saturation=1.,origin=(0,0),matrix=None
     uniform1f(uniform_location(p,b"saturation"),saturation)
     uniform1f(uniform_location(p,b"brightness"),brightness)
     uniform1f(uniform_location(p,b"contrast_adjust"),contrast)
+    if source_matrix is not None:
+        m=source_matrix
+        sx,sy=m[0]/iw,m[1]/iw;tx,ty=m[4]/ih,m[5]/ih
+        uniform2f(uniform_location(p,b"source_origin"),m[12]+.5*(sx+tx),m[13]+.5*(sy+ty))
+        uniform2f(uniform_location(p,b"source_step_x"),sx,sy)
+        uniform2f(uniform_location(p,b"source_step_y"),tx,ty)
     if matrix is not None:uniform_matrix(uniform_location(p,b"tex_mat"),1,0,(C.c_float*16)(*matrix))
     viewport(x,y,ow,oh);draw_arrays(5,0,4)
     if keep_texture:
@@ -294,6 +300,88 @@ for matrix,cw,ch,indices in transforms:
     checks+=1
 delete_textures(1,C.byref(source))
 
+
+# Import an actual EGLImage as an external OES texture. Merely compiling the OES
+# shader would miss sampler/transform/driver mistakes in the hardware input path.
+def extension(name,result,*arguments):
+    address=get_proc(name.encode());assert address,f"Missing {name}"
+    return C.CFUNCTYPE(result,*arguments)(address)
+create_image=extension("eglCreateImageKHR",ptr,ptr,ptr,uint,ptr,C.POINTER(integer))
+destroy_image=extension("eglDestroyImageKHR",boolean,ptr,ptr)
+image_target=extension("glEGLImageTargetTexture2DOES",None,uint,ptr)
+
+def external_texture(source):
+    image=create_image(display,context,0x30B1,ptr(source.value),(integer*3)(0x30BC,0,0x3038))
+    assert image,"Could not import RGB texture as EGLImage"
+    t=uint();gen_textures(1,C.byref(t));bind_texture(0x8D65,t);image_target(0x8D65,image)
+    for key,value in [(0x2801,0x2601),(0x2800,0x2601),(0x2802,0x812F),(0x2803,0x812F)]:
+        tex_parameter(0x8D65,key,value)
+    assert get_error()==0,"Could not sample external OES image"
+    return t,image
+
+
+def compare_direct(kind,source,target,data,iw,ih,cw,ch,matrix):
+    global checks
+    prepared=draw(copy_programs[kind],source,iw,ih,cw,ch,matrix=matrix,keep_texture=True,source_target=target)
+    errors=[]
+    # Rotated, mirrored, cropped, nonzero viewport origin, native RCAS and enlargement.
+    for ow,oh in [(cw,ch),(cw*2,ch*2)]:
+        for strength in (0.,.5,1.):
+            origin=(3,5)
+            if (ow,oh)==(cw,ch):
+                expected=draw(app_rcas,prepared,cw,ch,ow,oh,strength=strength,origin=origin)
+                actual=draw(direct_programs[kind]["rcas"],source,cw,ch,ow,oh,strength=strength,
+                            origin=origin,source_target=target,source_matrix=matrix)
+            else:
+                enlarged=draw(app_easu,prepared,cw,ch,ow,oh,keep_texture=True)
+                expected=draw(app_rcas,enlarged,ow,oh,ow,oh,strength=strength,origin=origin)
+                delete_textures(1,C.byref(enlarged))
+                enlarged=draw(direct_programs[kind]["easu"],source,cw,ch,ow,oh,keep_texture=True,
+                              source_target=target,source_matrix=matrix)
+                actual=draw(app_rcas,enlarged,ow,oh,ow,oh,strength=strength,origin=origin)
+                delete_textures(1,C.byref(enlarged))
+            error=max(abs(a-b) for a,b in zip(actual,expected))
+            # The removed RGBA8 preparation rounded cropped/interpolated colors;
+            # direct sampling intentionally avoids that quantization, within 6/255 here.
+            assert error<=6,(kind,(cw,ch,ow,oh),strength,matrix,error)
+            assert all(a==255 for a in actual[3::4])
+            errors.append(error);checks+=1
+    delete_textures(1,C.byref(prepared))
+    return max(errors)
+
+
+direct_programs={kind:{stage:program((generated/f"fsr1-direct-{kind}-{stage}.frag").read_text())
+                       for stage in ("easu","rcas")} for kind in ("rgb","oes")}
+direct_checks=[]
+identity=transforms[0][0]
+matrices=[(m,cw,ch) for m,cw,ch,_ in transforms]+[
+    ([.75,0,0,0,0,.65,0,0,0,0,1,0,.13,.19,0,1],8,6),
+    ([0,-.8,0,0,-.6,0,0,0,0,0,1,0,.8,.9,0,1],6,8)]
+for pattern in ("quadrants","noise","flat-black","flat-white"):
+    data=([v for y in range(6) for x in range(8) for v in colors[(2 if y>=3 else 0)+(1 if x>=4 else 0)]] if pattern=="quadrants"
+          else [rng.randrange(24,232) if i%4!=3 else 255 for i in range(8*6*4)] if pattern=="noise"
+          else ([0,0,0,255] if pattern=="flat-black" else [255,255,255,255])*48)
+    rgb=texture(8,6,data,linear=True);oes,image=external_texture(rgb)
+    for kind,source,target in [("rgb",rgb,0x0DE1),("oes",oes,0x8D65)]:
+        for matrix,cw,ch in matrices:
+            error=compare_direct(kind,source,target,data,8,6,cw,ch,matrix)
+            direct_checks.append(dict(kind=kind,pattern=pattern,prepared=[cw,ch],max_error=error))
+    delete_textures(1,C.byref(oes));assert destroy_image(display,image);delete_textures(1,C.byref(rgb))
+# A nontrivial native-size edge must visibly change with RCAS, without inventing detail
+# in flat patches. Brightness/contrast/saturation are verified in the same direct pass.
+data=[v for y in range(6) for x in range(8) for v in ([90,120,150,255] if x<4 else [150,170,210,255])]
+source=texture(8,6,data)
+plain=draw(direct_programs["rgb"]["rcas"],source,8,6,8,6,strength=0.,source_matrix=identity)
+sharp=draw(direct_programs["rgb"]["rcas"],source,8,6,8,6,strength=1.,source_matrix=identity)
+assert max(abs(a-b) for a,b in zip(plain,sharp))>=4,"Native RCAS had no effect on the edge"
+for brightness,contrast,saturation in [(.1,.25,.8),(-.1,-.25,0.)]:
+    expected=draw(app_rcas,source,8,6,8,6,brightness=brightness,contrast=contrast,saturation=saturation)
+    actual=draw(direct_programs["rgb"]["rcas"],source,8,6,8,6,brightness=brightness,contrast=contrast,
+                saturation=saturation,source_matrix=identity)
+    assert max(abs(a-b) for a,b in zip(actual,expected))<=1
+    checks+=1
+delete_textures(1,C.byref(source));checks+=1
+
 # Execute the actual highp WebRTC YUV adapter before EASU/RCAS too.
 def plane(w,h,value):
     t=texture(w,h)
@@ -328,22 +416,30 @@ delete_textures(1,C.byref(source))
 # Small-pattern tests above compare the kernel to AMD; these also check real 1440p/4K allocation.
 full_resolution=[]
 source=texture(1920,1080,bytes([80,140,210,255])*(1920*1080))
+oes,image=external_texture(source)
 for ow,oh in [(2560,1440),(3840,2160)]:
     enlarged=draw(app_easu,source,1920,1080,ow,oh,keep_texture=True)
     points=[(0,0),(ow-1,0),(0,oh-1),(ow-1,oh-1),(ow//2,oh//2)]
     pixels=draw(app_rcas,enlarged,ow,oh,ow,oh,sample_points=points)
     assert all(abs(value-[80,140,210,255][i%4])<=1 for i,value in enumerate(pixels)),(ow,oh,pixels)
     delete_textures(1,C.byref(enlarged))
-    full_resolution.append(dict(input=[1920,1080],output=[ow,oh],probed_pixels=len(points)))
+    for kind,source_texture,target in [("rgb",source,0x0DE1),("oes",oes,0x8D65)]:
+        enlarged=draw(direct_programs[kind]["easu"],source_texture,1920,1080,ow,oh,keep_texture=True,
+                      source_target=target,source_matrix=identity)
+        actual=draw(app_rcas,enlarged,ow,oh,ow,oh,sample_points=points)
+        assert actual==pixels,(kind,ow,oh,actual,pixels)
+        delete_textures(1,C.byref(enlarged));checks+=1
+    full_resolution.append(dict(input=[1920,1080],output=[ow,oh],probed_pixels=len(points),paths=["prepared","direct-rgb","direct-oes"]))
     checks+=1
+delete_textures(1,C.byref(oes));assert destroy_image(display,image)
 delete_textures(1,C.byref(source))
 
 report=dict(renderer=get_string(0x1F01).decode(),version=get_string(0x1F02).decode(),checks=checks,
-            upstream_commit="a21ffb8f6c13233ba336352bdff293894c706575",comparisons=comparisons,full_resolution=full_resolution,
+            upstream_commit="a21ffb8f6c13233ba336352bdff293894c706575",comparisons=comparisons,full_resolution=full_resolution,direct_comparisons=direct_checks,
             note="Readback is test-only. Software timings do not measure Android GPU or streaming latency.")
 output=root/"app/build/reports/dashboard";output.mkdir(parents=True,exist_ok=True)
 (output/"fsr1-validation.json").write_text(json.dumps(report,indent=2)+"\n")
-summary=f"{report['version']} / {report['renderer']}\nFSR EASU/RCAS and actual WebRTC highp OES/RGB/YUV copy shaders compiled; pinned AMD stock/exact reference shaders compiled.\n{checks} pixel-output/reference/rotation/border/viewport/color checks passed, including 1080p to 1440p and 4K targets.\n"
+summary=f"{report['version']} / {report['renderer']}\nFSR EASU/RCAS, direct OES/RGB variants and actual WebRTC highp OES/RGB/YUV copy shaders executed; pinned AMD stock/exact reference shaders compiled.\n{checks} pixel-output/reference/rotation/border/viewport/color checks passed, including native RCAS, actual external OES sampling and 1080p to 1440p and 4K targets.\n"
 (output/"fsr1-validation.txt").write_text(summary)
 print(summary,end="")
 make_current(display,None,None,None);terminate(display)

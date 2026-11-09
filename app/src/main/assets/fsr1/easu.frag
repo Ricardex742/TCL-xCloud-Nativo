@@ -2,12 +2,30 @@
 // MIT license: LICENSE.txt. FSR 1.0.2 EASU, adapted to GLES 2 highp fragment shaders.
 // Twelve RGB point loads replace per-channel textureGather. Exact reciprocals replace
 // ffx_a approximations; epsilon guards make uniform black/white neighborhoods finite.
+#ifdef FSR_SOURCE_OES
+#extension GL_OES_EGL_image_external : require
+#endif
 precision highp float;
+#ifdef FSR_SOURCE_OES
+uniform samplerExternalOES source_tex;
+#else
 uniform sampler2D source_tex;
+#endif
+#ifdef FSR_DIRECT_INPUT
+uniform vec2 source_origin;
+uniform vec2 source_step_x;
+uniform vec2 source_step_y;
+#endif
 uniform vec2 input_size;
 uniform vec2 output_size;
 vec3 loadPixel(vec2 p) {
-    return texture2D(source_tex,(clamp(p,vec2(0.0),input_size-1.0)+0.5)/input_size).rgb;
+    p=clamp(p,vec2(0.0),input_size-1.0);
+#ifdef FSR_DIRECT_INPUT
+    vec2 uv=source_origin+p.x*source_step_x+p.y*source_step_y;
+#else
+    vec2 uv=(p+0.5)/input_size;
+#endif
+    return clamp(texture2D(source_tex,uv).rgb,0.0,1.0);
 }
 float luma(vec3 c) { return c.b*0.5+(c.r*0.5+c.g); }
 void edge(inout vec2 dir,inout float len,float w,float a,float b,float c,float d,float e) {

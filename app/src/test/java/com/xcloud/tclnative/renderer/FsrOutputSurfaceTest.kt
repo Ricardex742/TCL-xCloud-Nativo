@@ -104,6 +104,44 @@ class FsrOutputSurfaceTest {
         assertEquals(dimensions,owner.displayDimensions());assertEquals(.25f to .5f,owner.touchCoordinates(480f,540f))
         owner.release();controller.pause().stop().destroy()
     }
+    @Test fun nativeBypassPausesTheGuardAndFilteringResumesWithANewWarmup() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        val owner=AiPqSurfaceRenderer(controller.get());owner.layout(0,0,1920,1080);owner.setFsr(true,0,FsrOutput.AUTO)
+        var bypass=true
+        val noOp=object: org.webrtc.RendererCommon.GlDrawer {
+            override fun drawOes(t: Int,m: FloatArray,fw: Int,fh: Int,x: Int,y: Int,w: Int,h: Int) {}
+            override fun drawRgb(t: Int,m: FloatArray,fw: Int,fh: Int,x: Int,y: Int,w: Int,h: Int) {}
+            override fun drawYuv(t: IntArray,m: FloatArray,fw: Int,fh: Int,x: Int,y: Int,w: Int,h: Int) {}
+            override fun release() {}
+        }
+        val fsr=object: org.webrtc.FsrUpscaler {
+            override fun configure(w: Int,h: Int,s: Int,c: Int) {}
+            override fun drawOes(t: Int,m: FloatArray,fw: Int,fh: Int,x: Int,y: Int,w: Int,h: Int)=!bypass
+            override fun drawRgb(t: Int,m: FloatArray,fw: Int,fh: Int,x: Int,y: Int,w: Int,h: Int)=!bypass
+            override fun drawYuv(t: IntArray,m: FloatArray,fw: Int,fh: Int,x: Int,y: Int,w: Int,h: Int)=!bypass
+            override fun isBypassed()=bypass
+            override fun diagnostics()="simulated GPU boundary"
+            override fun release() {}
+        }
+        val drawer=AspectVideoDrawer(false,{fsr},noOp).apply { fsrEnabled=true }
+        drawer.drawRgb(1,FloatArray(16),1920,1080,0,0,1920,1080)
+        ReflectionHelpers.setField(owner,"aspectDrawer",drawer)
+        val draws=ReflectionHelpers.getField<AtomicLong>(owner,"fsrDraws").apply { set(120) }
+        val metrics=StreamMetrics(receivedVideoBytes=500000,packetLossPercent=0.0,intervalSeconds=1.0)
+        repeat(10) {
+            owner.observeFsrPerformance(android.os.SystemClock.elapsedRealtime(),metrics,true)
+            ShadowSystemClock.advanceBy(Duration.ofSeconds(1))
+        }
+        assertFalse(owner.diagnostics().contains("proteção de fluidez"))
+        bypass=false
+        repeat(7) {
+            draws.addAndGet(13)
+            owner.observeFsrPerformance(android.os.SystemClock.elapsedRealtime(),metrics,true)
+            ShadowSystemClock.advanceBy(Duration.ofSeconds(1))
+        }
+        assertTrue(owner.diagnostics().contains("proteção de fluidez: 13.0 desenhos FSR/s"))
+        owner.release();controller.pause().stop().destroy()
+    }
     @Test fun changingFsrOutputKeepsTheActualVideoViewTouchSpaceAndClientMetadataInUiPixels() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()
         val view=AiPqSurfaceRenderer(controller.get())

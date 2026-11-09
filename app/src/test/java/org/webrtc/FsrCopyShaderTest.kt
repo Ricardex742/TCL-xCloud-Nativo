@@ -22,4 +22,14 @@ class FsrCopyShaderTest {
             File(directory,"fsr1-copy-${type.name.lowercase()}.frag").writeText(source)
         }
     }
+    @Test fun actualDirectVariantsAreExportedForOesAndRgbPixelTests() {
+        val directory=File("build/reports/dashboard").apply { mkdirs() }
+        for(kind in listOf(Fsr1Drawer.Input.OES,Fsr1Drawer.Input.RGB)) for(stage in listOf("easu","rcas")) {
+            val asset=File("src/main/assets/fsr1/$stage.frag").readText()
+            val source=Fsr1Drawer.directShader(asset,kind)
+            assertTrue(source.startsWith("#define FSR_DIRECT_INPUT 1"))
+            assertEquals(kind==Fsr1Drawer.Input.OES,source.contains("#define FSR_SOURCE_OES 1"))
+            File(directory,"fsr1-direct-${kind.name.lowercase()}-$stage.frag").writeText(source)
+        }
+    }
 }

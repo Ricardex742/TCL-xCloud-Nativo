@@ -136,7 +136,7 @@ class PlaybackSettingsPanel(
     fun chooseFsr(): ConsoleDialog {
         enter(SettingsPage.IMAGE)
         val current=store.read()
-        return choices("AMD FidelityFX Super Resolution","FSR 1.0.2 amplia o vídeo recebido com EASU e nitidez RCAS. É um teste opcional com custo extra de GPU, principalmente em 4K. Escolha Automático, 1440p ou 4K experimental em Saída do FSR e compare imagem e resposta dos comandos. O FSR assume a escala mesmo com Upscaling nativo ligado. Ajuste RCAS em Imagem e tela › Ajustes da imagem. Compatibilidade mantém FSR desligado. Aplica-se à próxima partida.",
+        return choices("AMD FidelityFX Super Resolution","FSR 1.0.2 amplia o vídeo com EASU e nitidez RCAS. Quando vídeo e saída têm o mesmo tamanho, aplica somente RCAS, sem ampliar. Comece com Saída do FSR em Automático e RCAS em 50%. Compare nitidez, fluidez e resposta dos comandos; 1440p e 4K exigem mais GPU. O diagnóstico distingue ampliação de RCAS nativo. O FSR assume a escala mesmo com Upscaling nativo ligado. Ajuste RCAS em Ajustes da imagem. Compatibilidade mantém FSR desligado. Aplica-se à próxima partida.",
             FsrMode.entries.map { it.label to (it==current.fsr) }) { save(current.copy(fsr=FsrMode.entries[it])) }
     }
     fun chooseFsrOutput(): ConsoleDialog {
@@ -159,7 +159,7 @@ class PlaybackSettingsPanel(
             body.addView(text("Ajustes opcionais da imagem. Nitidez pode realçar ruído e exigir mais GPU. Durante uma partida, as mudanças são imediatas.",20,color=DashboardTheme.muted))
             if(settings.fsr==FsrMode.FSR1) addMenuItem("Nitidez FSR (RCAS): ${settings.fsrSharpness}%") {
                 val levels=listOf(0,25,50,75,100)
-                choices("Nitidez FSR (RCAS)","RCAS ajusta a intensidade da nitidez; 50% não significa metade do custo de GPU. Comece com 50%; 0% mantém somente a ampliação EASU. A nitidez padrão abaixo é usada quando o FSR não está ativo.",
+                choices("Nitidez FSR (RCAS)","RCAS ajusta a intensidade da nitidez; 50% não significa metade do custo de GPU. Comece com 50%; 0% desliga a nitidez RCAS e mantém EASU quando houver ampliação. Sem ampliação e com RCAS em 0%, usa o filtro padrão. A nitidez padrão abaixo é usada quando o FSR não está ativo.",
                     levels.map { "$it%" to (it==settings.fsrSharpness) },::backToImage) {
                     save(settings.copy(fsrSharpness=levels[it]),::backToImage)
                 }

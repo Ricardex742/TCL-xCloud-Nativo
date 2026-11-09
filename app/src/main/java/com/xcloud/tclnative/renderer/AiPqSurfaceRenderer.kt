@@ -257,7 +257,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     }
     /** UI thread; fed independently of HUD visibility by the existing once-per-second stats. */
     fun observeFsrPerformance(sampledAtMs: Long,metrics: StreamMetrics,foreground: Boolean) {
-        if(!fsrEnabled) { fsrPerformance.reset();return }
+        if(!fsrEnabled || aspectDrawer?.isFsrBypassed()==true) { fsrPerformance.reset();return }
         val now=android.os.SystemClock.elapsedRealtime()
         val fresh=now>=sampledAtMs && now-sampledAtMs<=500
         val slow=fsrPerformance.observe(now,fsrDraws.get(),metrics,foreground && fresh) ?: return

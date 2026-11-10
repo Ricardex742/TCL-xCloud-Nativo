@@ -31,6 +31,8 @@ import com.xcloud.tclnative.ui.dashboard.SessionReportPanel
 import com.xcloud.tclnative.ui.dashboard.SessionTransitionView
 import com.xcloud.tclnative.ui.dashboard.PlaybackSettingsPanel
 import com.xcloud.tclnative.ui.dashboard.SettingsPage
+import com.xcloud.tclnative.catalog.CatalogCard
+import com.xcloud.tclnative.catalog.OfficialGalleryCards
 import com.xcloud.tclnative.catalog.CatalogCache
 import java.io.File
 import com.xcloud.tclnative.signaling.GameTitle
@@ -542,21 +544,21 @@ open class MainActivity : Activity() {
         Toast.makeText(this,"Verificando disponibilidade do jogo no Xbox Cloud…",Toast.LENGTH_SHORT).show()
         galleryLaunchJob=mainScope.launch {
             try {
-                val resolved=signaling.resolveGalleryProduct(product.productId)
+                val known=currentGames
+                val resolved=withContext(Dispatchers.Default) { OfficialGalleryCards.resolve(product,known) }
+                    ?: signaling.resolveGalleryProduct(product.productId)
                 if(dashboard!==view || currentSignaling!==signaling || generation!=playbackGeneration || controlPanel.visibility!=View.VISIBLE) return@launch
                 if(resolved==null) {
-                    ConsoleDialogs.message(this@MainActivity,"Jogo indisponível",
-                        "O produto está na galeria oficial, mas o serviço não retornou um título de nuvem disponível para esta conta/região. Nenhuma partida foi iniciada.")
+                    ConsoleDialogs.message(this@MainActivity,"Vínculo do jogo não confirmado",
+                        "Não foi possível associar esta edição a um título jogável do catálogo autenticado. Isso não confirma falta de acesso na sua conta/região. Atualize o catálogo e tente novamente. Produto: ${product.productId}.")
                     return@launch
                 }
                 val native=currentGames.firstOrNull { it.titleId.equals(resolved.titleId,true) } ?: resolved
-                val game=native.copy(name=if(native.name==native.titleId) product.name ?: native.name else native.name,
-                    posterUrl=native.posterUrl ?: product.posterUrl,tileUrl=native.tileUrl ?: product.tileUrl,
-                    heroUrl=native.heroUrl ?: product.heroUrl,gamePass=view.isGamePassProduct(product.productId))
-                currentGames=currentGames.filterNot { it.titleId.equals(game.titleId,true) }+game
+                val card=CatalogCard(native,product,view.isGamePassProduct(product.productId))
+                currentGames=currentGames.filterNot { it.titleId.equals(native.titleId,true) }+native
                 view.setGames(currentGames)
-                view.bindGalleryProduct(product.productId,game)
-                chooseLaunchMode(signaling,game)
+                view.bindGalleryProduct(product.productId,native)
+                chooseLaunchMode(signaling,card.playableGame()!!)
             } catch(cancelled: CancellationException) { throw cancelled }
             catch(_: Exception) {
                 if(dashboard===view && currentSignaling===signaling)

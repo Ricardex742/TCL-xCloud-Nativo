@@ -164,6 +164,38 @@ class OfficialGalleryUiTest {
         } finally { release.countDown();view.close();controller.pause().stop().destroy() }
     }
 
+    @Test fun battlefield6SearchCanLaunchAndFavoriteTheAuthenticatedHubWithoutAnExtraProductLookup() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup();val activity=controller.get()
+        val library=GameLibrary(activity,"battlefield-alias")
+        var launched: GameTitle?=null;var lookedUp: GalleryProduct?=null
+        val view=GameDashboardView(activity,library,{launched=it},{},{},{},onPlayProduct={lookedUp=it})
+        try {
+            val authenticated=GameTitle("BATTLEFIELD","Battlefield","BASE00000001",supportedInputTypes=setOf("NativeTouch"))
+            activity.setContentView(view);view.setGames(listOf(authenticated));view.selectTab(LibraryTab.ALL);layout(view)
+            val grid=all(view).filterIsInstance<RecyclerView>().single()
+            grid.getChildAt(0).requestFocus();val stable=grid.adapter!!.getItemId(0)
+            val data=org.json.JSONObject(javaClass.getResource("/catalog/battlefield6-br-2026-11-10.json")!!.readText())
+            val product=StoreMetadata.galleryProduct(StoreMetadata.products(data).single())!!.copy(posterUrl=null,tileUrl=null,heroUrl=null)
+            view.setOfficialGallery(OfficialGalleryKind.PURCHASED,OfficialGallery(OfficialGalleryKind.PURCHASED,listOf(product),true))
+            layout(view)
+            assertEquals(1,grid.adapter!!.itemCount);assertEquals(stable,grid.adapter!!.getItemId(0))
+            assertEquals("Battlefield™ 6",view.selectedGame!!.name)
+            assertTrue(all(view).filterIsInstance<TextView>().any { it.text.toString()=="BATTLEFIELD™\n6" })
+            view.setSearch("Battlefield 6");layout(view)
+            assertEquals(1,grid.adapter!!.itemCount)
+            grid.getChildAt(0).requestFocus();grid.getChildAt(0).performClick()
+            assertEquals("BATTLEFIELD",launched!!.titleId);assertEquals("Battlefield™ 6",launched!!.name)
+            assertEquals(authenticated.supportedInputTypes,launched!!.supportedInputTypes);assertNull(lookedUp)
+            view.handleKey(KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_BUTTON_Y));layout(view)
+            assertTrue(library.isFavorite("BATTLEFIELD"))
+            assertTrue(GameLibrary(activity,"battlefield-alias").isFavorite("BATTLEFIELD"))
+            view.setSearch("");view.selectTab(LibraryTab.FAVORITES);layout(view)
+            assertEquals(1,grid.adapter!!.itemCount);assertEquals("Battlefield™ 6",view.selectedGame!!.name)
+            grid.getChildAt(0).requestFocus();view.handleKey(KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_BUTTON_Y));layout(view)
+            assertFalse(library.isFavorite("BATTLEFIELD"));assertEquals(0,grid.adapter!!.itemCount)
+        } finally { view.close();controller.pause().stop().destroy() }
+    }
+
     @Test fun everyOfficialProductIsBrowsableWithoutInventingALaunchAndErrorsAreNotEmptySuccess() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup();val activity=controller.get()
         var selected: GalleryProduct?=null;var launched: GameTitle?=null

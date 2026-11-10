@@ -19,7 +19,7 @@ object StoreMetadata {
                 val programs=offerings.optJSONObject(key)?.optJSONArray("Programs") ?: return@let null
                 if((0 until programs.length()).any { programs.opt(it) !is String }) return@let null
                 programs.length()>0
-            })
+            }, (data.opt("XCloudTitleId") as? String)?.trim()?.takeIf { it.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,255}")) })
     }
     private fun JSONObject.text(key: String) = optString(key).takeIf { it.isNotBlank() && it != "null" }
     fun products(response: JSONObject): List<JSONObject> = when (val data = response.opt("Products")) {

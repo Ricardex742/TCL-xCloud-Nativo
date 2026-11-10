@@ -15,7 +15,8 @@ enum class OfficialGalleryKind(val id: String, val path: String) {
 data class GalleryProduct(
     val productId: String, val name: String? = null,
     val posterUrl: String? = null, val tileUrl: String? = null, val heroUrl: String? = null,
-    val seriesOptimized: Boolean = false, val cloudSupported: Boolean? = null
+    val seriesOptimized: Boolean = false, val cloudSupported: Boolean? = null,
+    val cloudTitleId: String? = null
 )
 
 data class OfficialGallery(
@@ -41,27 +42,59 @@ data class OfficialGallery(
 }
 
 /** A browse card may have no launch binding yet; a Store product never fabricates a titleId. */
-data class CatalogCard(val game: GameTitle? = null, val product: GalleryProduct? = null, val gamePass: Boolean = game?.gamePass == true) {
-    init { require(game != null || product != null) }
-    // Comparisons and stable IDs must not allocate a new String for each access.
-    val key = product?.let { "product:${it.productId}" } ?: "title:${game!!.titleId}"
+data class CatalogCard(val game: GameTitle? = null, val product: GalleryProduct? = null,
+                       val gamePass: Boolean = game?.gamePass == true, val nativeIdentity: Boolean = false) {
+    init { require(game != null || product != null);require(!nativeIdentity || game!=null) }
+    // A native row keeps its identity when official names/art arrive; gallery editions keep product IDs.
+    val key = if(nativeIdentity) "title:${game!!.titleId}" else product?.let { "product:${it.productId}" } ?: "title:${game!!.titleId}"
     val name get() = product?.name ?: game?.name ?: product!!.productId
     val sortKey = name.lowercase(Locale.ROOT)
     val posterUrl get() = product?.posterUrl ?: game?.posterUrl
     val tileUrl get() = product?.tileUrl ?: game?.tileUrl
     val seriesOptimized get() = product?.seriesOptimized == true || game?.seriesOptimized == true
+    /** Visual metadata never replaces authenticated identity, product or input capabilities. */
+    fun playableGame(): GameTitle? = game?.let { native ->
+        if(product==null && native.gamePass==gamePass) native else native.copy(
+            name=name,posterUrl=posterUrl,tileUrl=tileUrl,heroUrl=product?.heroUrl ?: native.heroUrl,
+            seriesOptimized=seriesOptimized,gamePass=gamePass)
+    }
+}
+
+/** An explicit Store link is useful only when its target exists unambiguously in this live catalog. */
+internal class CloudTitleIndex(games: List<GameTitle>) {
+    private val byProduct=games.filter { it.productId!=null }.groupBy { GamePassCatalog.productKey(it.productId!!) }
+    private val byTitle=games.groupBy { GamePassCatalog.productKey(it.titleId) }
+    fun resolve(product: GalleryProduct): GameTitle? {
+        val direct=byProduct[GamePassCatalog.productKey(product.productId)]
+        if(!direct.isNullOrEmpty()) return direct.singleOrNull()
+        if(product.cloudSupported!=true) return null
+        val id=product.cloudTitleId ?: return null
+        return byTitle[GamePassCatalog.productKey(id)]?.singleOrNull()
+    }
+}
+
+/** Trademarks, punctuation and accents must not make an otherwise matching title disappear. */
+internal class CatalogQuery(text: String) {
+    private val raw=text.trim()
+    private val compact=normalize(raw)
+    private fun matchesName(name: String)=name.contains(raw,true) || (compact.isNotEmpty() && normalize(name).contains(compact))
+    fun matches(card: CatalogCard)=raw.isEmpty() || matchesName(card.name) ||
+        (card.game?.name?.takeIf { it!=card.name }?.let(::matchesName) == true)
+    private fun normalize(text: String)=java.text.Normalizer.normalize(text,java.text.Normalizer.Form.NFD)
+        .filter { it.isLetterOrDigit() }.lowercase(Locale.ROOT)
 }
 
 object OfficialGalleryCards {
     fun select(gallery: OfficialGallery, games: List<GameTitle>, bindings: Map<String, GameTitle>,
-               gamePassProducts: Set<String>, query: String = ""): List<CatalogCard> {
-        val native = games.filter { it.productId != null }.groupBy { GamePassCatalog.productKey(it.productId!!) }
-        return matching(gallery,native,bindings,gamePassProducts,query).sortedBy { it.sortKey }.toList()
+               gamePassProducts: Set<String>, query: String = ""): List<CatalogCard> =
+        matching(gallery,CloudTitleIndex(games),bindings,gamePassProducts,query).sortedBy { it.sortKey }.toList()
+    fun resolve(product: GalleryProduct,games: List<GameTitle>): GameTitle? = CloudTitleIndex(games).resolve(product)
+    internal fun matching(gallery: OfficialGallery, native: CloudTitleIndex,
+                          bindings: Map<String,GameTitle>, gamePassProducts: Set<String>, query: String): Sequence<CatalogCard> {
+        val search=CatalogQuery(query)
+        return gallery.products.asSequence().filter { it.cloudSupported != false }.map { product ->
+            val game=bindings[GamePassCatalog.productKey(product.productId)] ?: native.resolve(product)
+            CatalogCard(game,product,GamePassCatalog.productKey(product.productId) in gamePassProducts)
+        }.filter(search::matches)
     }
-    internal fun matching(gallery: OfficialGallery, native: Map<String,List<GameTitle>>,
-                          bindings: Map<String,GameTitle>, gamePassProducts: Set<String>, query: String): Sequence<CatalogCard> =
-        gallery.products.asSequence().filter { it.cloudSupported != false }.map { product ->
-            val game = bindings[product.productId] ?: native[product.productId]?.singleOrNull()
-            CatalogCard(game, product, product.productId in gamePassProducts)
-        }.filter { query.isBlank() || it.name.contains(query.trim(), true) }
 }

@@ -78,7 +78,7 @@ class GameDashboardView(
     var searchQuery = ""
         private set
     private var selectedCard: CatalogCard? = null
-    val selectedGame: GameTitle? get() = selectedCard?.game
+    val selectedGame: GameTitle? get() = selectedCard?.playableGame()
     private var scale = 1f
     private var coverHeight = 1
     private var coverArtSize = ArtworkSize(192,320)
@@ -509,8 +509,8 @@ class GameDashboardView(
             .forEach { adapter.notifyItemChanged(it,"favorite") }
     }
     private fun playCard(card: CatalogCard) {
-        if(card.game!=null) onPlay(card.game.copy(gamePass=card.gamePass))
-        else card.product?.let(onPlayProduct)
+        val game=card.playableGame()
+        if(game!=null) onPlay(game) else card.product?.let(onPlayProduct)
     }
     fun back() {
         when {

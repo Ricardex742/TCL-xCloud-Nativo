@@ -1,0 +1,150 @@
+{
+  "Products": {
+    "9P2FF14JZLL3": {
+      "ProductTitle": "Battlefield™ 6",
+      "PublisherName": "Electronic Arts",
+      "XCloudTitleId": "BATTLEFIELD",
+      "Image_Tile": {
+        "URL": "//store-images.s-microsoft.com/image/apps.8290.14559138935406168.e7f01a08-ebf9-41d8-88ba-39fb1a148711.d19697e7-b1c1-4200-9327-5f3640f65b75"
+      },
+      "Image_Poster": {
+        "URL": "//store-images.s-microsoft.com/image/apps.65490.14559138935406168.e7f01a08-ebf9-41d8-88ba-39fb1a148711.c65ba007-7378-497e-b934-101230f24e82"
+      },
+      "Streamability": {
+        "WithGPU": true
+      },
+      "Categories": [
+        "Shooter"
+      ],
+      "LocalizedCategories": [
+        "Jogos de tiros"
+      ],
+      "XCloudOfferings": {
+        "XGPU": {
+          "Programs": [
+            "GPULTIMATE",
+            "CALLISTO",
+            "IO",
+            "GANYMEDE"
+          ],
+          "IsAdditionalProduct": true,
+          "SupportedInputTypes": [
+            "controller",
+            "mkb"
+          ]
+        },
+        "XGPUBETA": {
+          "Programs": [
+            "GPULTIMATE",
+            "CALLISTO",
+            "IO",
+            "GANYMEDE"
+          ],
+          "IsAdditionalProduct": true,
+          "SupportedInputTypes": [
+            "controller",
+            "mkb"
+          ]
+        },
+        "XGPUWEB": {
+          "Programs": [
+            "GPULTIMATE",
+            "CALLISTO",
+            "IO",
+            "GANYMEDE"
+          ],
+          "IsAdditionalProduct": true,
+          "SupportedInputTypes": [
+            "controller",
+            "mkb"
+          ]
+        },
+        "XGPUPCAPP": {
+          "Programs": [
+            "GPULTIMATE",
+            "CALLISTO",
+            "IO",
+            "GANYMEDE"
+          ],
+          "IsAdditionalProduct": true,
+          "SupportedInputTypes": [
+            "controller",
+            "mkb"
+          ]
+        },
+        "XGPUCONSOLE": {
+          "Programs": [
+            "GPULTIMATE",
+            "CALLISTO",
+            "IO",
+            "GANYMEDE"
+          ],
+          "IsAdditionalProduct": true,
+          "SupportedInputTypes": [
+            "controller",
+            "mkb"
+          ]
+        },
+        "TAKEHOMECONSOLE": {
+          "Programs": [
+            "GPULTIMATE",
+            "CALLISTO",
+            "IO",
+            "GANYMEDE"
+          ],
+          "IsAdditionalProduct": true,
+          "SupportedInputTypes": [
+            "controller",
+            "mkb"
+          ]
+        },
+        "TAKEHOME": {
+          "Programs": [
+            "GPULTIMATE",
+            "CALLISTO",
+            "IO",
+            "GANYMEDE"
+          ],
+          "IsAdditionalProduct": true,
+          "SupportedInputTypes": [
+            "controller",
+            "mkb"
+          ]
+        },
+        "TAKEHOMEWEB": {
+          "Programs": [
+            "GPULTIMATE",
+            "CALLISTO",
+            "IO",
+            "GANYMEDE"
+          ],
+          "IsAdditionalProduct": true,
+          "SupportedInputTypes": [
+            "controller",
+            "mkb"
+          ]
+        },
+        "CLOUDGAMING": {
+          "Programs": [
+            "GPULTIMATE",
+            "CALLISTO",
+            "IO",
+            "GANYMEDE"
+          ],
+          "IsAdditionalProduct": true,
+          "SupportedInputTypes": [
+            "controller",
+            "mkb",
+            "caccsg"
+          ]
+        }
+      },
+      "XboxTitleId": null,
+      "ChildXboxTitleIds": [
+        "1840884885"
+      ],
+      "StoreId": "9P2FF14JZLL3"
+    }
+  },
+  "InvalidIds": []
+}

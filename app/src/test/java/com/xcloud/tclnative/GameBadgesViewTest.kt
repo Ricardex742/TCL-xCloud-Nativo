@@ -60,6 +60,7 @@ class GameBadgesViewTest {
                 val pass=view.getChildAt(0) as ImageView;val series=view.getChildAt(1) as ImageView
                 assertTrue(pass.left>=0 && pass.top>=0 && pass.right<=series.left)
                 assertTrue(series.top>=0 && series.right<=width && series.bottom<=height)
+                assertTrue("Compact poster badges",series.right<=130*scale && pass.height<=30*scale && series.height<=30*scale)
                 assertEquals(ImageView.ScaleType.FIT_CENTER,pass.scaleType)
                 assertEquals(ImageView.ScaleType.FIT_CENTER,series.scaleType)
             }

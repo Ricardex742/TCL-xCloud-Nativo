@@ -46,7 +46,8 @@ class GameHudStore(private val context: Context) {
             data.optInt("opacity",62).coerceIn(20,100),data.optInt("scale",100).coerceIn(75,150),
             data.optInt("sensitivity",100).coerceIn(40,1200),overrides,
             data.optInt("lookDeadzone",12).coerceIn(0,35),
-            FootballScheme.entries.firstOrNull { it.name==data.optString("footballScheme") } ?: FootballScheme.CLASSIC)
+            FootballScheme.entries.firstOrNull { it.name==data.optString("footballScheme") } ?: FootballScheme.CLASSIC,
+            data.optBoolean("aimAndFire",false),data.optBoolean("sprintGesture",true))
     } catch(_: Exception) { HudSettings() } }
     fun save(id: String,settings: HudSettings) {
         val controls=JSONObject()
@@ -60,9 +61,10 @@ class GameHudStore(private val context: Context) {
             }
             controls.put(key,control)
         }
-        val data=JSONObject().put("version",2).put("preset",settings.preset?.name).put("opacity",settings.opacity)
+        val data=JSONObject().put("version",3).put("preset",settings.preset?.name).put("opacity",settings.opacity)
             .put("scale",settings.scale).put("sensitivity",settings.sensitivity).put("controls",controls)
             .put("lookDeadzone",settings.lookDeadzone).put("footballScheme",settings.footballScheme.name)
+            .put("aimAndFire",settings.aimAndFire).put("sprintGesture",settings.sprintGesture)
         if(!prefs(id).edit().putString("layout",data.toString()).commit()) throw java.io.IOException("Não foi possível salvar o HUD neste aparelho.")
     }
 }

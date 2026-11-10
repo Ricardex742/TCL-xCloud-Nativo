@@ -1044,7 +1044,7 @@ open class MainActivity : Activity() {
                 webrtcClient = rtc
                 val appVersion=packageManager.getPackageInfo(packageName,0).versionName ?: "n/d"
                 tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}"+
-                    (if(touchMode==TouchMode.NATIVE) "\n${touchView.nativeDiagnostics()}" else "")+
+                    (when(touchMode) { TouchMode.NATIVE -> "\n${touchView.nativeDiagnostics()}";TouchMode.VIRTUAL -> "\n${touchView.hudDiagnostics()}";else -> "" })+
                     "\n${joystickDispatch.diagnostics()}\n${signaling.profileDiagnostics()}\n${surfaceRenderer.diagnostics()}\n${playbackDisplay.diagnostics(window.decorView.display)}\n${rtc.audioDiagnostics()}\n${rtc.latencyDiagnostics()}\n${rtc.iceDiagnostics()}\n${rtc.codecDiagnostics()}\n${rumble.diagnostics()}\n${gyro.status} | Mouse/teclado: ${sessionDesktopMode.label} | Entrada MKB ativa: $desktopCaptured | Captura Android: ${if(Build.VERSION.SDK_INT>=26) window.decorView.hasPointerCapture() else false}" }
                 surfaceRenderer.displayDimensions()?.let(rtc::updateDisplayDimensions)
                 if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }

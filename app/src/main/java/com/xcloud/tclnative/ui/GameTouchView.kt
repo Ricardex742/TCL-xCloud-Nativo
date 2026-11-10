@@ -36,10 +36,11 @@ class GameTouchView(context: Context,
         var down=0L;var up=0L;var moves=0L;var cancel=0L;var menu=0L;var outside=0L;var ignored=0L
         var releases=0L;var generatedDown=0L;var generatedUp=0L
         var immediate=0L;var refused=0L
-        var samples=0L;var totalAge=0.0;var maxAge=0L
+        var samples=0L;var totalAge=0.0;var maxAge=0L;var hudUpdates=0L;var staleHudContacts=0L
     }
     /** Reset after the previous report was frozen, not when opening a menu or hiding the view. */
-    fun beginSession() { releaseInputs();nativeEvents=NativeEvents() }
+    fun beginSession() { releaseInputs();nativeEvents=NativeEvents();lastHudPress="nenhum" }
+    private var lastHudPress="nenhum"
     fun nativeDiagnostics(): String {
         val s=nativeEvents
         val age=if(s.samples==0L) "n/d" else java.lang.String.format(java.util.Locale.US,"%.2f/%d ms",s.totalAge/s.samples,s.maxAge)
@@ -48,6 +49,12 @@ class GameTouchView(context: Context,
             "inícios fora do vídeo ${s.outside}; contatos ignorados ${s.ignored}; menu ${s.menu}; "+
             "despacho imediato por gesto: pedidos ${s.immediate}, recusados ${s.refused}"
     }
+    fun hudDiagnostics(): String = "HUD: ${preset.label}; "+
+        (if(preset.football) "esquema ${configuration.footballScheme.label}; " else "")+
+        "sensibilidade ${configuration.sensitivity}%; zona morta ${configuration.lookDeadzone}%; "+
+        "mirar ao atirar ${if(configuration.aimAndFire) "ativado" else "desativado"}; "+
+        "corrida por arrasto ${if(configuration.sprintGesture) "ativada" else "desativada"}; "+
+        "atualizações ${nativeEvents.hudUpdates}; contatos interrompidos descartados ${nativeEvents.staleHudContacts}; último controle: $lastHudPress\n${nativeDiagnostics()}"
     private fun emitNative(events: List<NativePointer>) {
         nativeEvents.generatedDown+=events.count { it.type==1 };nativeEvents.generatedUp+=events.count { it.type==2 }
         onPointers(events)
@@ -126,13 +133,14 @@ class GameTouchView(context: Context,
     private fun menuHit(x: Float,y: Float)=hypot(x-width*.50f,y-height*.055f)<=height*.038f
     private fun publish() {
         val now=SystemClock.uptimeMillis()
-        onGamepad(model.state(now)); removeCallbacks(lookReset)
+        nativeEvents.hudUpdates++;onGamepad(model.state(now)); removeCallbacks(lookReset)
         model.nextUpdate(now)?.let { postDelayed(lookReset,(it-now).coerceAtLeast(1)) }
         postInvalidateOnAnimation()
     }
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if(isEditing) return editTouch(event)
-        if(mode==TouchMode.NATIVE) {
+        val receivedAt=SystemClock.uptimeMillis()
+        if(mode==TouchMode.NATIVE || mode==TouchMode.VIRTUAL) {
             val s=nativeEvents
             when(event.actionMasked) {
                 MotionEvent.ACTION_DOWN,MotionEvent.ACTION_POINTER_DOWN -> s.down++
@@ -140,8 +148,11 @@ class GameTouchView(context: Context,
                 MotionEvent.ACTION_MOVE -> s.moves++
                 MotionEvent.ACTION_CANCEL -> s.cancel++
             }
-            val age=SystemClock.uptimeMillis()-event.eventTime
+            val age=receivedAt-event.eventTime
             if(age>=0) { s.samples++;s.totalAge+=age;s.maxAge=maxOf(s.maxAge,age) }
+        }
+        if(mode==TouchMode.NATIVE) {
+            val s=nativeEvents
             if(event.actionMasked==MotionEvent.ACTION_DOWN) {
                 // A fresh Android gesture must not reuse a contact left by an interrupted one.
                 if(native.isNotEmpty()) releaseInputs()
@@ -152,8 +163,9 @@ class GameTouchView(context: Context,
             }
         }
         if(mode==TouchMode.VIRTUAL && event.actionMasked==MotionEvent.ACTION_DOWN) {
+            nativeEvents.staleHudContacts+=model.startGesture()
             parent?.requestDisallowInterceptTouchEvent(true)
-            if(preset.shooter) requestUnbufferedDispatch(event)
+            if(runCatching { requestUnbufferedDispatch(event) }.isSuccess) nativeEvents.immediate++ else nativeEvents.refused++
         }
         val action=event.actionMasked
         val index=event.actionIndex
@@ -198,13 +210,27 @@ class GameTouchView(context: Context,
             if(events.isNotEmpty()) emitNative(events)
         } else {
             when(action) {
-                MotionEvent.ACTION_DOWN,MotionEvent.ACTION_POINTER_DOWN -> model.down(id,event.getX(index),event.getY(index),event.eventTime)
-                MotionEvent.ACTION_UP,MotionEvent.ACTION_POINTER_UP -> {
-                    model.move(id,event.getX(index),event.getY(index),event.eventTime)
-                    model.up(id,event.eventTime)
+                MotionEvent.ACTION_DOWN,MotionEvent.ACTION_POINTER_DOWN -> {
+                    model.down(id,event.getX(index),event.getY(index),event.eventTime,receivedAt)?.let {
+                        lastHudPress="${it.label} [${it.id}] → ${it.action?.label ?: it.kind.name}"
+                    }
                 }
-                MotionEvent.ACTION_MOVE -> repeat(event.pointerCount) { i ->
-                    if(event.getPointerId(i)!=menuPointer) model.move(event.getPointerId(i),event.getX(i),event.getY(i),event.eventTime)
+                MotionEvent.ACTION_UP,MotionEvent.ACTION_POINTER_UP -> {
+                    model.move(id,event.getX(index),event.getY(index),event.eventTime,receivedAt)
+                    model.up(id,event.eventTime,receivedAt)
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    // Estimate current velocity from the recent samples of a batched event.
+                    // Publish only its final state, rather than replaying old motion reports.
+                    if(preset.shooter) for(history in maxOf(0,event.historySize-2) until event.historySize) {
+                        repeat(event.pointerCount) { i ->
+                            if(event.getPointerId(i)!=menuPointer) model.move(event.getPointerId(i),event.getHistoricalX(i,history),
+                                event.getHistoricalY(i,history),event.getHistoricalEventTime(history),receivedAt)
+                        }
+                    }
+                    repeat(event.pointerCount) { i ->
+                        if(event.getPointerId(i)!=menuPointer) model.move(event.getPointerId(i),event.getX(i),event.getY(i),event.eventTime,receivedAt)
+                    }
                 }
             }
             publish()
@@ -248,7 +274,7 @@ class GameTouchView(context: Context,
                 editPointer=null; editAction=null
                 when(command) {
                     "cancel" -> cancelEditing()
-                    "reset" -> { configuration=HudSettings(preset=configuration.preset); rebuild(); selected=null }
+                    "reset" -> { configuration=HudSettings(preset=configuration.preset,footballScheme=configuration.footballScheme); rebuild(); selected=null }
                     "save" -> if(onHudSaved(configuration)) { releaseInputs(); isEditing=false }
                     "smaller","larger" -> model.controls.firstOrNull { it.id==selected }?.let { control ->
                         placement(control) { it.copy(scale=(it.scale+if(command=="larger") .10f else -.10f).coerceIn(.55f,1.7f)) }
@@ -266,7 +292,7 @@ class GameTouchView(context: Context,
         super.onDraw(canvas)
         val state=model.state(SystemClock.uptimeMillis())
         if(mode==TouchMode.VIRTUAL) {
-            model.controls.filter { it.kind!=TouchKind.CAMERA }.forEach { drawControl(canvas,it,state) }
+            for(control in model.controls) if(control.kind!=TouchKind.CAMERA) drawControl(canvas,control,state)
             if(isEditing) drawEditor(canvas)
         }
         if(!isEditing) {

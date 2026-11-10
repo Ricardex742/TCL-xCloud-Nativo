@@ -126,7 +126,9 @@ As imagens abaixo mostram a interface do app com perfil e dados de demonstraçã
 - Controle Xbox virtual e layouts para tiro, corrida, futebol e ação.
 - HUDs para Call of Duty, Forza, EA SPORTS FC/FIFA e Hades.
 - Movimento com múltiplos dedos, câmera por arrasto e pedais nos jogos de corrida.
-- Alternância manual entre ataque e defesa no futebol.
+- Alternância manual entre ataque e defesa no futebol, com esquemas Clássico e Alternativo.
+- Aplicação do esquema de futebol com restauração dos comandos, mantendo posições e tamanhos personalizados.
+- No CoD, arrasto no botão de mira, opção de mirar ao atirar e corrida ao estender o analógico na direção de Correr.
 - Editor de posição, tamanho, opacidade, comandos combinados e gestos por jogo.
 - Toque nativo Xbox experimental nos títulos compatíveis, incluindo Fortnite.
 
@@ -146,6 +148,10 @@ As imagens abaixo mostram a interface do app com perfil e dados de demonstraçã
   <tr>
     <td width="50%"><img src="docs/screenshots/hud-settings.png" alt="Ajustes do HUD — Layout, opacidade e sensibilidade por jogo." /><br /><strong>Ajustes do HUD</strong> — Layout, opacidade e sensibilidade por jogo.</td>
     <td width="50%"><img src="docs/screenshots/touch-modes.png" alt="Modo de toque — Detecção automática, HUD virtual ou toque nativo." /><br /><strong>Modo de toque</strong> — Detecção automática, HUD virtual ou toque nativo.</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/hud-cod-options.png" alt="Opções de mira e corrida do HUD de CoD" /><br /><strong>CoD</strong> — mirar ao atirar e corrida por gesto, configuráveis por jogo.</td>
+    <td width="50%"><img src="docs/screenshots/hud-football-scheme.png" alt="Seleção do esquema Alternativo no HUD de futebol" /><br /><strong>Esquema de futebol</strong> — aplicar Clássico ou Alternativo e restaurar os comandos sem mover os botões.</td>
   </tr>
 </table>
 
@@ -198,6 +204,7 @@ As posições, tamanhos, ações e gestos podem ser ajustados por jogo. No futeb
 - Estatísticas durante a partida com ativação manual.
 - Resumo local pós-partida com médias, picos, pausas observadas e recuperações.
 - Motivo do encerramento em destaque, quando identificado.
+- Diagnóstico do HUD com idade dos toques, opções do layout e último controle identificado.
 - Último diagnóstico salvo no aparelho e exibição automática opcional.
 
 <table>

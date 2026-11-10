@@ -50,28 +50,38 @@ class VirtualGamepad(private val width: Int,private val height: Int,
             else -> hypot(dx,dy)<=r
         }
     }
-    fun hit(x: Float,y: Float): TouchControl? = controls.asReversed().firstOrNull {
-        it.kind!=TouchKind.CAMERA && inside(it,x,y)
-    } ?: controls.firstOrNull { it.kind==TouchKind.CAMERA && x>=width*.36f && x<=width*.985f && y>=height*.18f && y<=height*.95f }
-    fun down(id: Int,x: Float,y: Float,now: Long=System.nanoTime()/1_000_000) {
-        val control=hit(x,y) ?: return
-        if(control.kind in setOf(TouchKind.LEFT_STICK,TouchKind.RIGHT_STICK,TouchKind.DPAD,TouchKind.CAMERA) &&
-            contacts.values.any { it.control.id==control.id }) return
-        releases.removeAll { it.id==control.id }
-        contacts[id]=Contact(control,x,y,now)
+    fun hit(x: Float,y: Float): TouchControl? {
+        var closest: TouchControl?=null;var distance=Float.POSITIVE_INFINITY
+        // A large overlapping button must not steal a tap on another button's center.
+        for(index in controls.indices.reversed()) {
+            val c=controls[index]
+            if(c.kind==TouchKind.CAMERA || !inside(c,x,y)) continue
+            val squared=(x-c.x)*(x-c.x)+(y-c.y)*(y-c.y)
+            if(squared<distance) { closest=c;distance=squared }
+        }
+        return closest ?: controls.firstOrNull { it.kind==TouchKind.CAMERA && x>=width*.36f && x<=width*.985f && y>=height*.18f && y<=height*.95f }
     }
-    fun move(id: Int,x: Float,y: Float,now: Long=System.nanoTime()/1_000_000) {
+    fun down(id: Int,x: Float,y: Float,now: Long=System.nanoTime()/1_000_000,receivedAt: Long=now): TouchControl? {
+        val control=hit(x,y) ?: return null
+        if(control.kind in setOf(TouchKind.LEFT_STICK,TouchKind.RIGHT_STICK,TouchKind.DPAD,TouchKind.CAMERA) &&
+            contacts.values.any { it.control.id==control.id }) return null
+        releases.removeAll { it.id==control.id }
+        contacts[id]=Contact(control,x,y,now,actionAt=receivedAt)
+        return control
+    }
+    fun move(id: Int,x: Float,y: Float,now: Long=System.nanoTime()/1_000_000,receivedAt: Long=now) {
         val c=contacts[id] ?: return
         val dx=x-c.x; val dy=y-c.y
         if((c.control.kind==TouchKind.CAMERA || c.control.dragLook) && (dx!=0f || dy!=0f)) {
             val dt=(now-c.time).coerceIn(1,64)
-            val multiplier=settings.sensitivity.coerceIn(40,1200)/100f*3f/(height.coerceAtLeast(1)*.0018f*dt)
+            val response=if(preset.family==HudPreset.CALL_OF_DUTY) 1.6f else 1f
+            val multiplier=response*settings.sensitivity.coerceIn(40,1200)/100f*3f/(height.coerceAtLeast(1)*.0018f*dt)
             val vx=dx*multiplier; val vy=dy*multiplier
             val magnitude=hypot(vx,vy)
             if(magnitude>0f) {
                 val dz=settings.lookDeadzone.coerceIn(0,35)/100f
                 val strength=(dz+(1-dz)*magnitude.coerceAtMost(1f).pow(.75f)).coerceAtMost(1f)
-                c.lookX=vx/magnitude*strength; c.lookY=vy/magnitude*strength; c.lookAt=now
+                c.lookX=vx/magnitude*strength; c.lookY=vy/magnitude*strength; c.lookAt=receivedAt
             }
         }
         if(c.control.gestures.isNotEmpty()) {
@@ -81,7 +91,7 @@ class VirtualGamepad(private val width: Int,private val height: Int,
             if(hypot(totalX,totalY)>threshold) {
                 val direction=if(abs(totalX)>abs(totalY)) { if(totalX<0) HudSwipe.LEFT else HudSwipe.RIGHT }
                     else if(totalY<0) HudSwipe.UP else HudSwipe.DOWN
-                if(direction in c.control.gestures && direction!=c.gesture) { c.gesture=direction; c.actionAt=now }
+                if(direction in c.control.gestures && direction!=c.gesture) { c.gesture=direction; c.actionAt=receivedAt }
             }
         }
         c.x=x; c.y=y; c.time=now
@@ -89,15 +99,19 @@ class VirtualGamepad(private val width: Int,private val height: Int,
     private fun action(c: Contact)=c.control.gestures[c.gesture]?.action ?: c.control.action
     fun gestureLabel(control: TouchControl): String?=contacts.values.firstOrNull { it.control.id==control.id }
         ?.let { it.control.gestures[it.gesture]?.label }
-    fun up(id: Int,now: Long=System.nanoTime()/1_000_000) {
+    fun up(id: Int,now: Long=System.nanoTime()/1_000_000,receivedAt: Long=now) {
         val contact=contacts.remove(id) ?: return
         val control=contact.control
-        // FC shoots on release; keep the chosen modifiers visible for at least a cloud game frame.
-        // This only settles user-selected gestures, never repeats or generates a sequence of actions.
-        if(control.gestures.isNotEmpty()) action(contact)?.let { chosen ->
-            val until=contact.actionAt+GESTURE_SETTLE_MS
-            if(until>now) releases.add(Release(control.id,chosen,until))
+        val chosen=action(contact)
+        val settle=when {
+            control.gestures.isNotEmpty() -> GESTURE_SETTLE_MS
+            preset.football && control.id in FOOTBALL_TAP_IDS && chosen!=null && chosen.buttons!=0 -> FOOTBALL_TAP_MS
+            else -> 0L
         }
+        // Delivery time matters when Android drains old DOWN/UP events in one batch.
+        // Keep only the action the user actually pressed; never replay a tap sequence.
+        val until=contact.actionAt+settle
+        if(chosen!=null && settle>0 && until>receivedAt) releases.add(Release(control.id,chosen,until))
         control.page?.takeIf { inside(control,contact.x,contact.y,1.3f) }?.let(::setPage)
     }
     /** Movement survives page changes; removed actions and pending gesture releases are cleared. */
@@ -109,42 +123,68 @@ class VirtualGamepad(private val width: Int,private val height: Int,
             if(control==null || control.action!=contact.control.action) true else { contact.control=control; false }
         }
     }
+    /** ACTION_DOWN begins a new Android gesture: old fingers can no longer be held. */
+    fun startGesture(): Int = contacts.size.also { contacts.clear() }
     fun clear() { contacts.clear(); releases.clear() }
-    fun held(control: TouchControl)=contacts.values.any { it.control.id==control.id } || releases.any { it.id==control.id }
-    fun nextLookReset(now: Long): Long? = contacts.values.map { it.lookAt }.filter {
-        it!=Long.MIN_VALUE && it+LOOK_IDLE_MS>now
-    }.maxOrNull()?.plus(LOOK_IDLE_MS)
-    fun nextUpdate(now: Long): Long?=listOfNotNull(nextLookReset(now),releases.filter { it.until>now }.minOfOrNull { it.until }).minOrNull()
+    private fun sprinting(contact: Contact,sprint: TouchControl?): Boolean {
+        if(!settings.sprintGesture || preset.family!=HudPreset.CALL_OF_DUTY ||
+            contact.control.kind!=TouchKind.LEFT_STICK || sprint==null) return false
+        val x=contact.x-contact.control.x;val y=contact.y-contact.control.y
+        val distance=hypot(x,y)
+        if(distance<contact.control.radius*1.35f || y>=0) return false
+        val tx=sprint.x-contact.control.x;val ty=sprint.y-contact.control.y
+        val target=hypot(tx,ty)
+        return target>0 && (x*tx+y*ty)/(distance*target)>=.85f
+    }
+    fun held(control: TouchControl)=contacts.values.any { it.control.id==control.id ||
+        control.id=="sprint" && sprinting(it,control) } || releases.any { it.id==control.id }
+    fun nextLookReset(now: Long): Long? {
+        var latest=Long.MIN_VALUE
+        for(c in contacts.values) if(c.lookAt!=Long.MIN_VALUE && c.lookAt+LOOK_IDLE_MS>now) latest=maxOf(latest,c.lookAt)
+        return if(latest==Long.MIN_VALUE) null else latest+LOOK_IDLE_MS
+    }
+    fun nextUpdate(now: Long): Long? {
+        var next=nextLookReset(now)
+        for(release in releases) if(release.until>now && (next==null || release.until<next)) next=release.until
+        return next
+    }
     fun state(now: Long=System.nanoTime()/1_000_000): GamepadState {
         releases.removeAll { it.until<=now }
-        var state=GamepadState(); var steering=0f
+        var buttons=0;var leftX=0f;var leftY=0f;var rightX=0f;var rightY=0f
+        var leftTrigger=0f;var rightTrigger=0f;var steering=0f
+        var look: Contact?=null
         fun combine(action: HudAction?) {
             if(action==null) return
-            state=state.copy(buttons=state.buttons or action.buttons,
-                leftTrigger=maxOf(state.leftTrigger,if(HudBinding.LT in action.keys) 1f else 0f),
-                rightTrigger=maxOf(state.rightTrigger,if(HudBinding.RT in action.keys) 1f else 0f))
+            buttons=buttons or action.buttons
+            if(HudBinding.LT in action.keys) leftTrigger=1f
+            if(HudBinding.RT in action.keys) rightTrigger=1f
             if(HudBinding.STEER_LEFT in action.keys) steering-=1f
             if(HudBinding.STEER_RIGHT in action.keys) steering+=1f
         }
-        contacts.values.forEach { contact ->
+        val sprint=if(preset.family==HudPreset.CALL_OF_DUTY && settings.sprintGesture) controls.firstOrNull { it.id=="sprint" } else null
+        for(contact in contacts.values) {
             val control=contact.control
-            val dx=(contact.x-control.x)/control.radius; val dy=(contact.y-control.y)/control.radius
+            val dx=(contact.x-control.x)/control.radius;val dy=(contact.y-control.y)/control.radius
             val length=maxOf(1f,hypot(dx,dy))
             when(control.kind) {
-                TouchKind.LEFT_STICK -> state=state.copy(leftX=dx/length,leftY=dy/length)
-                TouchKind.RIGHT_STICK -> state=state.copy(rightX=dx/length,rightY=dy/length)
-                TouchKind.DPAD -> state=state.copy(buttons=state.buttons or
+                TouchKind.LEFT_STICK -> { leftX=dx/length;leftY=dy/length;if(sprinting(contact,sprint)) combine(sprint?.action) }
+                TouchKind.RIGHT_STICK -> { rightX=dx/length;rightY=dy/length }
+                TouchKind.DPAD -> buttons=buttons or
                     (if(dx<-.25f) 1024 else if(dx>.25f) 2048 else 0) or
-                    (if(dy<-.25f) 256 else if(dy>.25f) 512 else 0))
+                    (if(dy<-.25f) 256 else if(dy>.25f) 512 else 0)
                 TouchKind.CAMERA -> Unit
                 else -> combine(action(contact))
             }
+            if(contact.lookAt!=Long.MIN_VALUE && now-contact.lookAt<LOOK_IDLE_MS &&
+                (look==null || contact.lookAt>look.lookAt)) look=contact
         }
-        releases.forEach { combine(it.action) }
-        if(steering!=0f) state=state.copy(leftX=steering.coerceIn(-1f,1f))
-        val look=contacts.values.filter { it.lookAt!=Long.MIN_VALUE && now-it.lookAt<LOOK_IDLE_MS }.maxByOrNull { it.lookAt }
-        if(look!=null) state=state.copy(rightX=look.lookX,rightY=look.lookY)
-        return state
+        for(release in releases) combine(release.action)
+        if(steering!=0f) leftX=steering.coerceIn(-1f,1f)
+        if(look!=null) { rightX=look.lookX;rightY=look.lookY }
+        return GamepadState(buttons,leftX,leftY,rightX,rightY,leftTrigger,rightTrigger)
     }
-    companion object { const val LOOK_IDLE_MS=32L; const val GESTURE_SETTLE_MS=64L }
+    companion object {
+        const val LOOK_IDLE_MS=32L;const val GESTURE_SETTLE_MS=64L;const val FOOTBALL_TAP_MS=32L
+        private val FOOTBALL_TAP_IDS=setOf("pass","shoot","through","cross")
+    }
 }

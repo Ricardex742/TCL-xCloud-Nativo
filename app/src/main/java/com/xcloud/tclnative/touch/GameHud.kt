@@ -38,7 +38,22 @@ data class HudPlacement(val x: Float,val y: Float,val scale: Float=1f,val bindin
                         val action: HudAction?=null,val gestures: Map<HudSwipe,HudGesture>?=null)
 data class HudSettings(val preset: HudPreset?=null,val opacity: Int=62,val scale: Int=100,
                        val sensitivity: Int=100,val placements: Map<String,HudPlacement> = emptyMap(),
-                       val lookDeadzone: Int=12,val footballScheme: FootballScheme=FootballScheme.CLASSIC)
+                       val lookDeadzone: Int=12,val footballScheme: FootballScheme=FootballScheme.CLASSIC,
+                       val aimAndFire: Boolean=false,val sprintGesture: Boolean=true) {
+    /** Applying a scheme restores its commands without moving the user's buttons. */
+    fun withFootballScheme(scheme: FootballScheme)=copy(footballScheme=scheme,
+        placements=placements.mapValues { (id,p) ->
+            if(id in FOOTBALL_ACTIONS) p.copy(binding=null,action=null,gestures=null) else p
+        })
+    fun withAimAndFire(enabled: Boolean)=copy(aimAndFire=enabled,
+        placements=placements.mapValues { (id,p) ->
+            if(id=="fire" || id=="fire-left") p.copy(binding=null,action=null,gestures=null) else p
+        })
+    companion object {
+        private val FOOTBALL_ACTIONS=setOf("pass","shoot","through","cross","sprint","protect",
+            "defend-contain","defend-tackle","defend-slide","defend-switch","defend-jockey","defend-press","defend-keeper")
+    }
+}
 data class HudElement(val id: String,val label: String,val x: Float,val y: Float,val radius: Float,
                       val kind: TouchKind=TouchKind.BUTTON,val binding: HudBinding?=null,
                       val icon: HudIcon=HudIcon.TEXT,val shape: HudShape=HudShape.CIRCLE,
@@ -97,14 +112,15 @@ object GameHud {
             }
             HudPreset.CALL_OF_DUTY,HudPreset.SHOOTER -> {
                 stick("move","Mover",.15f,.76f,TouchKind.LEFT_STICK); camera(); menus()
-                button("fire-left","Atirar",.13f,.27f,HudBinding.RT,HudIcon.FIRE,.065f,dragLook=true)
-                button("fire","Atirar",.91f,.49f,HudBinding.RT,HudIcon.FIRE,.083f,dragLook=true)
-                button("aim","Mirar",.79f,.32f,HudBinding.LT,HudIcon.AIM,.055f)
+                val fireAction=if(preset==HudPreset.CALL_OF_DUTY && settings.aimAndFire) HudAction(HudBinding.LT,HudBinding.RT) else HudAction(HudBinding.RT)
+                button("fire-left","Atirar",.13f,.27f,HudBinding.RT,HudIcon.FIRE,.065f,dragLook=true,action=fireAction)
+                button("fire","Atirar",.91f,.49f,HudBinding.RT,HudIcon.FIRE,.083f,dragLook=true,action=fireAction)
+                button("aim","Mirar",.79f,.32f,HudBinding.LT,HudIcon.AIM,.055f,dragLook=true)
                 button("jump","Pular",.92f,.75f,HudBinding.A,HudIcon.JUMP,.058f)
                 button("crouch","Agachar / deslizar",.81f,.86f,HudBinding.B,HudIcon.CROUCH,.051f)
                 button("reload","Usar / recarregar",.72f,.68f,HudBinding.X,HudIcon.RELOAD,.050f)
                 button("weapon","Trocar arma",.62f,.86f,HudBinding.Y,HudIcon.WEAPON,.046f)
-                button("sprint","Correr",.10f,.46f,HudBinding.L3,HudIcon.SPRINT,.046f)
+                button("sprint","Correr",.15f,.43f,HudBinding.L3,HudIcon.SPRINT,.046f)
                 button("melee","Corpo a corpo",.62f,.58f,HudBinding.R3,HudIcon.MELEE,.043f)
                 button("tactical","Tática",.68f,.25f,HudBinding.LB,HudIcon.GRENADE,.040f)
                 button("grenade","Granada",.88f,.22f,HudBinding.RB,HudIcon.GRENADE,.040f)

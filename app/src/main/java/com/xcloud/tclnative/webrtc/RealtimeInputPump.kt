@@ -14,7 +14,7 @@ class GamepadInputBuffer {
         private set
     @Synchronized fun update(state: GamepadState): Boolean {
         val edge = state.buttons != latest.buttons || (state.leftTrigger>0)!=(latest.leftTrigger>0) || (state.rightTrigger>0)!=(latest.rightTrigger>0)
-        val motion=state.rightX!=latest.rightX || state.rightY!=latest.rightY || state.leftTrigger!=latest.leftTrigger || state.rightTrigger!=latest.rightTrigger
+        val motion=state.leftX!=latest.leftX || state.leftY!=latest.leftY || state.rightX!=latest.rightX || state.rightY!=latest.rightY || state.leftTrigger!=latest.leftTrigger || state.rightTrigger!=latest.rightTrigger
         motionPending=motionPending || motion
         // Strength changes within the same held press are analog motion, not a replay queue.
         if(state.leftTrigger>0 && latest.leftTrigger>0) {

@@ -6,7 +6,7 @@
   <p><a href="#conta-e-biblioteca">Biblioteca</a> · <a href="#transmissão-e-fila">Transmissão</a> · <a href="#imagem-e-tela">Imagem</a> · <a href="#controles-e-periféricos">Controles</a> · <a href="#touch-nativo">Touch nativo</a> · <a href="#controles-de-toque">HUDs</a><br /><a href="#áudio-e-microfone">Áudio</a> · <a href="#rede-e-preferências">Rede</a> · <a href="#estatísticas-e-diagnósticos">Diagnósticos</a> · <a href="#tela-inicial-da-tv">Atalhos na TV</a> · <a href="#compatibilidade">Compatibilidade</a></p>
 </div>
 
-![Voltar a jogar no xCLOUD](docs/screenshots/return-to-play.png)
+![Menu inicial do xCLOUD com a aba Voltar a jogar](docs/screenshots/home-return-to-play.jpg)
 
 ## Telas do aplicativo
 
@@ -37,7 +37,7 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
     <td width="50%"><img src="docs/screenshots/qr-login.png" alt="Login por QR Code — Autorização pelo celular." /><br /><strong>Login por QR Code</strong> — Autorização pelo celular.</td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/catalog.png" alt="Biblioteca — Capas, favoritos e categorias de jogos." /><br /><strong>Biblioteca</strong> — Capas, favoritos e categorias de jogos.</td>
+    <td width="50%"><img src="docs/screenshots/catalog-all-games.jpg" alt="Biblioteca do xCLOUD com a aba Todos os jogos selecionada." /><br /><strong>Biblioteca</strong> — Todos os jogos, com capas, selos e categorias.</td>
     <td width="50%"><img src="docs/screenshots/search.png" alt="Pesquisa — Busca por nome usando o teclado." /><br /><strong>Pesquisa</strong> — Busca por nome usando o teclado.</td>
   </tr>
 </table>

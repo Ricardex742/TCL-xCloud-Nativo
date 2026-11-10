@@ -3,7 +3,7 @@
   <h1>xCLOUD</h1>
   <p><strong>Seus jogos. Na sua tela.</strong></p>
   <p>Cliente Android independente para Xbox Cloud Gaming, com transmissão nativa e interface para Android TV, Google TV e celulares.</p>
-  <p><a href="#conta-e-biblioteca">Biblioteca</a> · <a href="#transmissão-e-fila">Transmissão</a> · <a href="#imagem-e-tela">Imagem</a> · <a href="#controles-e-periféricos">Controles</a> · <a href="#controles-de-toque">Toque</a><br /><a href="#áudio-e-microfone">Áudio</a> · <a href="#rede-e-preferências">Rede</a> · <a href="#estatísticas-e-diagnósticos">Diagnósticos</a> · <a href="#tela-inicial-da-tv">Atalhos na TV</a> · <a href="#compatibilidade">Compatibilidade</a></p>
+  <p><a href="#conta-e-biblioteca">Biblioteca</a> · <a href="#transmissão-e-fila">Transmissão</a> · <a href="#imagem-e-tela">Imagem</a> · <a href="#controles-e-periféricos">Controles</a> · <a href="#touch-nativo">Touch nativo</a> · <a href="#controles-de-toque">HUDs</a><br /><a href="#áudio-e-microfone">Áudio</a> · <a href="#rede-e-preferências">Rede</a> · <a href="#estatísticas-e-diagnósticos">Diagnósticos</a> · <a href="#tela-inicial-da-tv">Atalhos na TV</a> · <a href="#compatibilidade">Compatibilidade</a></p>
 </div>
 
 ![Voltar a jogar no xCLOUD](docs/screenshots/return-to-play.png)
@@ -75,6 +75,8 @@ As imagens abaixo mostram a interface do app com perfil e dados de demonstraçã
 
 - Upscaling nativo do Android.
 - Proporção original, 16:9, 18:9, 21:9, 16:10, 4:3, esticar e zoom.
+- Troca de proporção durante o jogo pelo menu da partida, com aplicação imediata.
+- Original preserva o quadro recebido; Esticar preenche a tela com deformação; Zoom preenche com corte, mantendo a proporção.
 - Ajustes de nitidez, saturação, brilho e contraste durante a partida.
 - **AMD FSR 1.0.2 experimental**, com ampliação EASU e nitidez RCAS; em resolução nativa, aplica somente RCAS.
 - Saída do FSR em **Automático, 1440p ou 4K experimental**, com proteção para retorno à escala padrão.
@@ -121,6 +123,16 @@ As imagens abaixo mostram a interface do app com perfil e dados de demonstraçã
   </tr>
 </table>
 
+## Touch nativo
+
+- Toque nativo Xbox nos jogos que anunciam suporte no catálogo, incluindo **Fortnite**.
+- Os toques são enviados ao jogo, que apresenta seus próprios botões e gestos, sem o HUD virtual do aplicativo.
+- No celular, **Automático** prioriza o toque nativo quando disponível; a opção **Toque nativo Xbox — experimental** permite selecioná-lo manualmente nos títulos compatíveis.
+- Mapeamento dos toques conforme a área do vídeo, incluindo os modos Original, Esticar e Zoom.
+- Giroscópio opcional junto ao toque nativo, em aparelhos com sensor e jogos que aceitem essa combinação de entradas.
+
+O suporte depende do jogo e da sessão. Ter um layout de controle virtual na nuvem não significa ter toque nativo direto. Jogos com vídeo 16:9 podem apresentar barras laterais em celulares largos.
+
 ## Controles de toque
 
 - Controle Xbox virtual e layouts para tiro, corrida, futebol e ação.
@@ -130,7 +142,6 @@ As imagens abaixo mostram a interface do app com perfil e dados de demonstraçã
 - Aplicação do esquema de futebol com restauração dos comandos, mantendo posições e tamanhos personalizados.
 - No CoD, arrasto no botão de mira, opção de mirar ao atirar e corrida ao estender o analógico na direção de Correr.
 - Editor de posição, tamanho, opacidade, comandos combinados e gestos por jogo.
-- Toque nativo Xbox experimental nos títulos compatíveis, incluindo Fortnite.
 
 <table>
   <tr>

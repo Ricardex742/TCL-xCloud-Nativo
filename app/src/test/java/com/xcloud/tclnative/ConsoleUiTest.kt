@@ -174,7 +174,7 @@ class ConsoleUiTest {
         assertEquals(0,store.read().sharpness); assertEquals(100,store.read().saturation)
         (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
         var stats=0; var disconnected=0; var hudOpened=0
-        val game=GameMenuPanel.show(activity,{}, {stats++}, {}, {disconnected++},hud={hudOpened++})
+        val game=GameMenuPanel.show(activity,{}, {stats++}, {}, {disconnected++},hud={hudOpened++},aspect={})
         render(game,"game-menu")
         all(game.body).filterIsInstance<TextView>().single { it.text.contains("HUD e controles") }.performClick()
         assertEquals(1,hudOpened)

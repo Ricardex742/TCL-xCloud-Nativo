@@ -6,8 +6,11 @@ import android.content.Context
 object GameMenuPanel {
     fun show(context: Context,image: () -> Unit,statistics: () -> Unit,diagnostics: () -> Unit,
              disconnect: () -> Unit,virtualTouch: (() -> Unit)? = null,hud: (() -> Unit)? = null,sessionOptions: (() -> Unit)? = null,audio: (() -> Unit)? = null,
-             microphone: (() -> Unit)? = null,microphoneLabel: String="Ativar microfone",mouse: (() -> Unit)? = null,controllerProfiles: (() -> Unit)?=null): ConsoleDialog {
-        val actions=mutableListOf(ConsoleAction("Nitidez e saturação",image))
+             microphone: (() -> Unit)? = null,microphoneLabel: String="Ativar microfone",mouse: (() -> Unit)? = null,controllerProfiles: (() -> Unit)?=null,
+             aspect: (() -> Unit)? = null): ConsoleDialog {
+        val actions=mutableListOf<ConsoleAction>()
+        if(aspect!=null) actions+=ConsoleAction("Proporção da imagem",aspect)
+        actions+=ConsoleAction("Ajustes da imagem",image)
         if(virtualTouch!=null) actions+=ConsoleAction("Usar controle virtual nesta partida",virtualTouch)
         if(hud!=null) actions+=ConsoleAction("HUD e controles deste jogo",hud)
         if(sessionOptions!=null) actions+=ConsoleAction("Bitrate, região e idioma deste jogo",sessionOptions)

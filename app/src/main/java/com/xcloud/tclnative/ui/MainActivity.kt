@@ -759,6 +759,11 @@ open class MainActivity : Activity() {
     }
     private fun applyPlaybackSettings(settings: PlaybackSettings) {
         playbackSettings=settings
+        if(surfaceRenderer.aspect!=settings.aspect) {
+            // End contacts in the old coordinate space before changing the displayed video.
+            touchView.releaseInputs()
+            surfaceRenderer.aspect=settings.aspect
+        }
         surfaceRenderer.setImageAdjustments(settings.sharpness,settings.saturation,settings.brightness,settings.contrast)
         surfaceRenderer.setFsrSharpness(settings.fsrSharpness)
         webrtcClient?.setOutputGain(settings.audioGain)
@@ -779,6 +784,7 @@ open class MainActivity : Activity() {
         resetController()
         gameMenuDialog = com.xcloud.tclnative.ui.dashboard.GameMenuPanel.show(this,
             image={ PlaybackSettingsPanel(this,settingsStore,::applyPlaybackSettings,{}, {}, {}).showImageAdjustments(onBack={ showGameMenu() }) },
+            aspect={ PlaybackSettingsPanel(this,settingsStore,::applyPlaybackSettings,{}, {}, {}).chooseAspect(onBack={ showGameMenu() }) },
             statistics={ cycleStatistics() },
             diagnostics={ showCopyableErrorDialog("Áudio e vídeo","${Build.MANUFACTURER} ${Build.MODEL} | Android ${Build.VERSION.RELEASE} | ${Build.HARDWARE}\n${surfaceRenderer.diagnostics()}\n${currentSignaling?.profileDiagnostics() ?: ""}\n${webrtcClient?.audioDiagnostics() ?: ""}\n${streamHistory.report()}") },
             disconnect={ cancelPlayback() },

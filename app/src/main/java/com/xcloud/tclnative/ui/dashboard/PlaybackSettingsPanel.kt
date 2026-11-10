@@ -145,11 +145,13 @@ class PlaybackSettingsPanel(
         return choices("Saída do FSR","Define a apresentação local, sem aumentar a resolução recebida nem o consumo de rede. Automático acompanha a janela, limitado a 1080p nas TVs, priorizando a fluidez. As escolhas são limitadas pela saída física disponível e preservam a proporção. 1440p e 4K têm custo maior de GPU; não garantem 60 FPS. Requer AMD FSR ativado; Compatibilidade mantém o filtro desligado. O app retorna à escala padrão se o filtro falhar ou se a cadência ficar muito baixa por vários segundos com vídeo chegando. Aplica-se à próxima partida.",
             FsrOutput.entries.map { it.label to (it==current.fsrOutput) }) { save(current.copy(fsrOutput=FsrOutput.entries[it])) }
     }
-    fun chooseAspect(): ConsoleDialog {
+    fun chooseAspect(onBack: () -> Unit = { showImage() }): ConsoleDialog {
         enter(SettingsPage.IMAGE)
         val current=store.read()
-        return choices("Proporção da imagem","Original preserva o formato recebido e usa o maior tamanho que cabe na janela. 16:9 pode deixar barras em telas largas. Proporções fixas e Esticar podem deformar; Zoom mantém a proporção e corta as bordas. Use ↑/↓ ou deslize para ver todas as opções. Aplica-se à próxima partida.",
-            VideoAspect.entries.map { it.label to (it==current.aspect) }) { save(current.copy(aspect=VideoAspect.entries[it])) }
+        return choices("Proporção da imagem","Original preserva o formato recebido e usa o maior tamanho que cabe na janela. Um vídeo 16:9 pode deixar barras laterais no celular; alguns jogos com toque nativo oferecem vídeo mais largo. Esticar preenche sem cortar, mas deforma a imagem. Zoom preenche sem deformar, cortando as bordas. Proporções fixas também podem deformar. Use ↑/↓ ou deslize para ver todas as opções. A mudança é imediata durante a partida e fica salva para os próximos jogos.",
+            VideoAspect.entries.map { it.label to (it==current.aspect) },onBack=onBack) {
+            save(current.copy(aspect=VideoAspect.entries[it]),onBack)
+        }
     }
     fun showImageAdjustments(onBack: () -> Unit = { showImage() }): ConsoleDialog {
         enter(SettingsPage.IMAGE)

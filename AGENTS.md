@@ -5,3 +5,4 @@
 - Não publique esses documentos nem transcreva seu conteúdo em commits, descrições de PR, issues, releases ou artefatos públicos.
 - Antes de retirar documentos da árvore pública, preserve uma cópia privada e verifique sua integridade.
 - Licenças e avisos de terceiros, fixtures de APIs públicas, testes automatizados e capturas de interface com dados de demonstração têm finalidade própria e não devem ser confundidos com os documentos privados do usuário.
+- Ao limpar a documentação, preserve as imagens do aplicativo e sua exibição no README.

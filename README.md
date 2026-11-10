@@ -5,6 +5,35 @@
   <p>Cliente Android independente para Xbox Cloud Gaming, com transmissão nativa e interface para Android TV, Google TV e celulares.</p>
 </div>
 
+![Voltar a jogar no xCLOUD](docs/screenshots/return-to-play.png)
+
+## Telas do aplicativo
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/transition-startup.png" alt="Abertura com a logo do xCLOUD" /><br /><strong>Abertura</strong> — restauração da sessão com a identidade do aplicativo.</td>
+    <td width="50%"><img src="docs/screenshots/transition-shortcut.png" alt="Prévia da entrada por atalho com imagem de demonstração" /><br /><strong>Atalho</strong> — arte do jogo durante a preparação.</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/login.png" alt="Tela de entrada do xCLOUD" /><br /><strong>Login</strong> — acesso à conta Microsoft.</td>
+    <td width="50%"><img src="docs/screenshots/qr-login.png" alt="Login Microsoft com QR Code de demonstração" /><br /><strong>QR Code</strong> — autorização pelo celular.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/queue.png" alt="Fila com capa, estimativa e tempo aguardado" /><br /><strong>Fila</strong> — estimativa do serviço e etapas da conexão.</td>
+    <td><img src="docs/screenshots/settings.png" alt="Configurações de vídeo e controles" /><br /><strong>Configurações</strong> — preferências salvas no aparelho.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/compatibility.png" alt="Modos de vídeo, incluindo compatibilidade para TVs mais fracas" /><br /><strong>Vídeo</strong> — menor atraso, adaptativo ou compatibilidade.</td>
+    <td><img src="docs/screenshots/game-menu.png" alt="Menu da partida com diagnóstico e desconexão" /><br /><strong>Partida</strong> — ajustes, estatísticas e desconexão.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/controls.png" alt="Configurações de coop, vibração e toque" /><br /><strong>Controles</strong> — coop local, vibração e toque.</td>
+    <td><img src="docs/screenshots/image.png" alt="Ajustes de nitidez e saturação" /><br /><strong>Imagem</strong> — nitidez e saturação durante a partida.</td>
+  </tr>
+</table>
+
+Capturas da interface com perfil e dados de demonstração. O QR Code é ilustrativo.
+
 ## Conta e biblioteca
 
 - Login Microsoft por QR Code e restauração da sessão salva.
@@ -25,6 +54,10 @@
 - Fila com arte do jogo, estimativa do serviço, tempo aguardado e cancelamento.
 - Recuperação de vídeo por solicitação de quadro-chave, decoder e superfície de exibição.
 - Menu da partida com ajustes e desconexão para retornar ao catálogo.
+
+### Gameplay
+
+![Gameplay transmitido pelo xCLOUD em uma TV](docs/screenshots/gameplay.jpg)
 
 ## Imagem e tela
 
@@ -55,6 +88,33 @@
 - Editor de posição, tamanho, opacidade, comandos combinados e gestos por jogo.
 - Toque nativo Xbox experimental nos títulos compatíveis.
 
+### HUDs e editor
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/hud-fortnite.png" alt="Prévia do HUD de combate do Fortnite" /><br /><strong>Fortnite</strong> — movimento, câmera por arrasto, tiro e troca de armas.</td>
+    <td width="50%"><img src="docs/screenshots/hud-fortnite-build.png" alt="Prévia do HUD de construção do Fortnite" /><br /><strong>Construção</strong> — parede, rampa, piso e teto com comandos Builder Pro.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/hud-call-of-duty.png" alt="Prévia do HUD de tiro com dois botões de disparo" /><br /><strong>Tiro</strong> — mirar, disparar, recarregar, agachar e granadas.</td>
+    <td><img src="docs/screenshots/hud-forza.png" alt="Prévia do HUD de corrida com setas e pedais" /><br /><strong>Corrida</strong> — direção, acelerador, freio e marchas.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/hud-ea-fc.png" alt="Prévia do HUD de futebol em ataque com gestos no chute" /><br /><strong>Ataque</strong> — passe, chute, enfiada, corrida e gestos para finalização.</td>
+    <td><img src="docs/screenshots/hud-ea-fc-defense.png" alt="Prévia do HUD de futebol em defesa" /><br /><strong>Defesa</strong> — marcar, bote, carrinho, troca de jogador e contenção.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/hud-hades.png" alt="Prévia do HUD de Hades com ações de combate" /><br /><strong>Hades</strong> — ataque, especial, feitiço e esquiva.</td>
+    <td><img src="docs/screenshots/hud-editor.png" alt="Editor de posição, tamanho, combos e gestos de cada botão" /><br /><strong>Editor</strong> — posição, tamanho, comandos combinados e gestos.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/hud-settings.png" alt="Configurações do HUD por jogo" /><br /><strong>Ajustes</strong> — layout, tamanho, opacidade e sensibilidade.</td>
+    <td><strong>Gestos no futebol</strong><br />No chute: ↓ colocado, ↑ cavadinha, ← / → superchute.<br />No passe: ↑ tabela, ↓ passe forte.<br />Na enfiada: ↑ lançamento.<br />Na defesa, Marcar combina RT + A.</td>
+  </tr>
+</table>
+
+Prévias dos controles sobre fundo neutro. Os layouts e comandos podem ser ajustados por jogo.
+
 ## Áudio e microfone
 
 - Reprodução estéreo com gerenciamento de foco de áudio do Android.
@@ -71,6 +131,8 @@
 - Modo automático IPv4/IPv6 e opções de preferência por uma família de rede.
 
 ## Estatísticas e diagnósticos
+
+![Tela de diagnóstico pós-partida com dados de demonstração](docs/screenshots/session-report.png)
 
 - Resolução e codec recebidos, FPS decodificados e bitrate.
 - RTT, jitter, perda de pacotes, buffer, descartes e tempo de decodificação.
@@ -92,6 +154,10 @@
 - Interface adaptada para navegação pelo controle e por toque.
 - Recursos experimentais e suporte a periféricos dependem do aparelho, do driver, do jogo e do serviço.
 - A disponibilidade dos jogos depende da conta, região, assinatura ou licença exigida pelo Xbox Cloud Gaming.
+
+## Licença
+
+O código original do projeto está sob a [licença MIT](LICENSE). Bibliotecas, fontes e componentes de terceiros mantêm suas próprias licenças; consulte os [avisos de terceiros](THIRD_PARTY_NOTICES.md). A licença do código não concede direitos sobre nomes, marcas ou artes de jogos de terceiros.
 
 ---
 

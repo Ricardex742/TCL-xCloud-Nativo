@@ -40,7 +40,8 @@ google-services.json
 
 # Private development reports and conversation notes
 /docs/*.md
-/docs/branding/
+/docs/branding/*.md
+/docs/branding/*.txt
 /docs/private/
 /docs/internal/
 /.private-docs/

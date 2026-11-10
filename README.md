@@ -10,7 +10,7 @@
 
 ## Telas do aplicativo
 
-As imagens abaixo mostram a interface do app com perfil e dados de demonstração. O QR Code é ilustrativo; as prévias dos HUDs usam fundo neutro.
+A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Code é ilustrativo; algumas prévias dos HUDs usam fundo neutro.
 
 <table>
   <tr>
@@ -54,7 +54,7 @@ As imagens abaixo mostram a interface do app com perfil e dados de demonstraçã
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/queue.png" alt="Fila — Arte do jogo, estimativa e etapas da conexão." /><br /><strong>Fila</strong> — Arte do jogo, estimativa e etapas da conexão.</td>
+    <td width="50%"><img src="docs/screenshots/queue-hades-ii.jpg" alt="Hades II na fila — Arte do jogo, estimativa do Xbox e etapas da conexão." /><br /><strong>Fila</strong> — Hades II aguardando uma vaga, com estimativa do Xbox e etapas da conexão.</td>
     <td width="50%"><img src="docs/screenshots/video-settings.png" alt="Vídeo e transmissão — Modo de vídeo, codec e resolução." /><br /><strong>Vídeo e transmissão</strong> — Modo de vídeo, codec e resolução.</td>
   </tr>
   <tr>
@@ -131,6 +131,8 @@ As imagens abaixo mostram a interface do app com perfil e dados de demonstraçã
 - Mapeamento dos toques conforme a área do vídeo, incluindo os modos Original, Esticar e Zoom.
 - Giroscópio opcional junto ao toque nativo, em aparelhos com sensor e jogos que aceitem essa combinação de entradas.
 
+![Fortnite no celular com toque nativo Xbox](docs/screenshots/native-touch-fortnite.jpg)
+
 O suporte depende do jogo e da sessão. Ter um layout de controle virtual na nuvem não significa ter toque nativo direto. Jogos com vídeo 16:9 podem apresentar barras laterais em celulares largos.
 
 ## Controles de toque
@@ -145,7 +147,7 @@ O suporte depende do jogo e da sessão. Ter um layout de controle virtual na nuv
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/hud-call-of-duty.png" alt="Tiro — Mirar, disparar, recarregar e usar granadas." /><br /><strong>Tiro</strong> — Mirar, disparar, recarregar e usar granadas.</td>
+    <td width="50%"><img src="docs/screenshots/hud-call-of-duty-gameplay.jpg" alt="Call of Duty durante uma partida com o HUD virtual do aplicativo." /><br /><strong>Call of Duty</strong> — Gameplay com analógico virtual, mira, disparo e ações na tela.</td>
     <td width="50%"><img src="docs/screenshots/hud-forza.png" alt="Corrida — Direção, acelerador, freio e marchas." /><br /><strong>Corrida</strong> — Direção, acelerador, freio e marchas.</td>
   </tr>
   <tr>
@@ -235,7 +237,7 @@ As posições, tamanhos, ações e gestos podem ser ajustados por jogo. No futeb
 <table>
   <tr>
     <td width="50%"><img src="docs/screenshots/library-settings.png" alt="Biblioteca e conta — Acesso ao menu Atalhos dos favoritos." /><br /><strong>Biblioteca e conta</strong> — Acesso ao menu Atalhos dos favoritos.</td>
-    <td width="50%"><img src="docs/screenshots/transition-shortcut.png" alt="Entrada por atalho — Arte do jogo durante a preparação da sessão." /><br /><strong>Entrada por atalho</strong> — Arte do jogo durante a preparação da sessão.</td>
+    <td width="50%"><img src="docs/screenshots/shortcut-fortnite.png" alt="Fortnite entrando por atalho — Preparação da sessão com a arte do jogo." /><br /><strong>Entrada por atalho</strong> — Fortnite durante a preparação da sessão pelo atalho.</td>
   </tr>
 </table>
 

@@ -26,6 +26,10 @@ class CloudHttpException(val stage: String, val status: Int, val serviceCode: St
     IOException("$stage: HTTP $status" + (serviceCode?.let { " — código $it" } ?: "") +
         (requestId?.let { " (requisição $it)" } ?: ""))
 
+/** Preserve the failed request stage; raw socket messages can contain private endpoint URLs. */
+class CloudRequestException(val stage: String,cause: IOException):
+    IOException("$stage: falha na requisição (${cause.javaClass.simpleName})",cause)
+
 /** Report diagnostic codes, never a response body, credential or signed URL. */
 fun Response.checkedBody(stage: String): String {
     val text = body?.string().orEmpty()

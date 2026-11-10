@@ -38,6 +38,7 @@ class SessionReportStore(context: Context) {
             .put("inputBytes",r.inputBytes).put("inputDetails",r.inputDetails?.take(SessionReport.MAX_INPUT_DETAILS)).put("dropped",r.droppedFrames).put("pointers",r.pointerEvents)
             .put("waits",r.inputWaits).put("coalesced",r.inputCoalesced).put("stallMs",r.stalledMs)
             .put("stalls",r.stalledEvents).put("noData",r.stalledWithoutDataMs).put("withData",r.stalledWithDataMs).put("score",r.score)
+        r.failure?.let { data.put("failure",it.json()) }
         val metrics=JSONObject()
         r.metrics.forEach { (key,m) -> metrics.put(key.name,JSONObject().put("avg",m.average).put("min",m.minimum).put("peak",m.peak).put("samples",m.samples)) }
         data.put("metrics",metrics)
@@ -64,7 +65,7 @@ class SessionReportStore(context: Context) {
                     SessionEnd.entries.firstOrNull { it.name==d.optString("end") } ?: return null,metrics,s("resolution",48),s("codec",80),s("decoder",160),
                     if(d.has("efficient")) d.optBoolean("efficient") else null,l("videoBytes"),l("receivedBytes"),l("uploadedBytes"),n("inputBytes"),
                     l("dropped"),n("pointers"),n("waits"),n("coalesced"),n("stallMs"),n("stalls"),n("noData"),n("withData"),recovery,
-                    if(d.has("score")) d.optInt("score").takeIf { it in 0..100 } else null,s("inputDetails",SessionReport.MAX_INPUT_DETAILS))
+                    if(d.has("score")) d.optInt("score").takeIf { it in 0..100 } else null,s("inputDetails",SessionReport.MAX_INPUT_DETAILS),SessionFailure.read(d.optJSONObject("failure")))
             }
         }
     } catch(_: Exception) { null } }

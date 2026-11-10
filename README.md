@@ -6,7 +6,7 @@
   <p>
     <a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml?query=branch%3Aperf%2Fdecoder-display-latency-0.31"><img src="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml/badge.svg?branch=perf%2Fdecoder-display-latency-0.31" alt="Compilação Android" /></a>
     <img src="https://img.shields.io/badge/Android-7.0%2B-54de69?logo=android&logoColor=white" alt="Android 7 ou superior" />
-    <img src="https://img.shields.io/badge/vers%C3%A3o-0.31.10-173d29" alt="Versão 0.31.10" />
+    <img src="https://img.shields.io/badge/vers%C3%A3o-0.31.11-173d29" alt="Versão 0.31.11" />
   </p>
   <p><a href="#baixar-e-instalar">Baixar</a> · <a href="#telas-do-aplicativo">Telas</a> · <a href="#controles-de-toque-por-jogo">HUDs de toque</a> · <a href="#funcionalidades">Funcionalidades</a> · <a href="#atalhos-dos-jogos-na-tv">Atalhos na TV</a> · <a href="#compilar">Compilar</a></p>
 </div>
@@ -32,6 +32,8 @@ Na **0.31.8**, **Imagem e tela → Saída do FSR** oferece Automático, 1440p e 
 A **0.31.9** responde ao teste da TCL em que o FSR resultou em 13 FPS/1440p e 6 FPS/4K. Automático agora acompanha a janela e fica limitado a 1080p nas TVs; uma proteção retorna à escala padrão quando a cadência de desenhos FSR fica muito baixa por vários segundos com vídeo chegando. Veja [critérios, limites e evidência do teste](docs/fsr-fluency-guard-0.31.9.md). Naquele teste, FSR desligado e upscaling nativo ligado preservaram perto de 60 FPS.
 
 A **0.31.10** otimiza o FSR: entradas OES/RGB usam duas passagens na ampliação, eliminando a cópia RGB separada; em resolução nativa, aplica apenas RCAS em uma passagem. A proteção de fluidez e os limites de saída permanecem. Para testar na TCL, comece com **FSR ligado → Saída Automático → RCAS 50%**; o ganho de FPS físico ainda precisa ser confirmado. Veja [caminhos, testes e diagnóstico](docs/fsr-direct-0.31.10.md).
+
+A **0.31.11** passa a guardar o motivo técnico de uma falha e mostrá-lo acima das métricas do diagnóstico, para leitura/foto na TV. Mantém a origem de erros HTTP/socket de manutenção da sessão, diferencia transporte/controle/decoder/apresentação e esclarece que um índice alto não exclui uma interrupção no fim. Essa versão corrige a falta de informação; não determina retrospectivamente a causa da queda relatada no Forza. Veja [análise e limites](docs/session-failure-reason-0.31.11.md).
 
 Nesta branch, **GAME PASS** consulta a galeria cloud atual do site oficial, e **TRANSMITA SEU JOGO** mostra a galeria oficial “Transmita seu próprio jogo”. As listas completas usam os produtos da região BR, sem limitar a exibição aos títulos já associados ao motor nativo. Uma edição ainda sem associação é verificada no serviço autenticado ao selecionar. A galeria de compra não é um inventário da conta: jogar exige a licença e as condições do serviço. Veja [fontes, contagens e funcionamento das abas](docs/official-catalog-galleries-0.31.md) e o [contexto completo das modificações desta branch](docs/contexto-completo-branch-perf-0.31.md).
 

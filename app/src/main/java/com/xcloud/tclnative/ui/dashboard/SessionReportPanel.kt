@@ -36,6 +36,12 @@ object SessionReportPanel {
         intro.addView(dialog.text("${report.resolution ?: "Resolução n/d"} • ${report.codec ?: "Codec n/d"} • ${report.end.label}",20,color=DashboardTheme.muted))
         intro.addView(dialog.text(report.network,19,color=DashboardTheme.muted))
         hero.addView(intro,LinearLayout.LayoutParams(0,-2,1f)); dialog.body.addView(hero)
+        if(report.end==SessionEnd.FAILURE) {
+            dialog.body.addView(dialog.text("MOTIVO DO ENCERRAMENTO\n"+
+                (report.failure?.description ?: "Não registrado nesta versão do relatório."),20,true,0xffffcd66.toInt()).apply {
+                isFocusable=true;isFocusableInTouchMode=true;DashboardTheme.customFocus(this)
+            },LinearLayout.LayoutParams(-1,-2).apply { topMargin=dialog.px(12) })
+        }
         dialog.body.addView(dialog.text("MÉDIA / PICO • ${report.samples} amostras • ${SessionReport.duration(report.observedMs)} observados • ↑/↓ ou deslize para detalhes",17,true,DashboardTheme.muted),
             LinearLayout.LayoutParams(-1,-2).apply { topMargin=dialog.px(14); bottomMargin=dialog.px(10) })
         val keys=listOf(ReportMetric.RTT,ReportMetric.LOSS,ReportMetric.FPS,ReportMetric.BITRATE,ReportMetric.JITTER,ReportMetric.DECODE,

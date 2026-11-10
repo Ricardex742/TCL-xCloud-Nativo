@@ -14,8 +14,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 41
-        versionName = "0.31.10-fsr-direct"
+        versionCode = 42
+        versionName = "0.31.11-failure-reason"
     }
 
     signingConfigs {

@@ -7,6 +7,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import com.xcloud.tclnative.net.awaitResponse
 import com.xcloud.tclnative.net.checkedBody
+import com.xcloud.tclnative.net.CloudHttpException
+import com.xcloud.tclnative.net.CloudRequestException
 import com.xcloud.tclnative.webrtc.StreamingPeer
 import com.xcloud.tclnative.webrtc.StreamResolution
 import com.xcloud.tclnative.catalog.XboxProfile
@@ -84,7 +86,13 @@ class XCloudSignalingClient(
             "POST" -> builder.post((body?.toString() ?: "").toRequestBody(jsonType))
             "DELETE" -> builder.delete()
         }
-        return client.newCall(builder.build()).awaitResponse().use { it.checkedBody(stage) }
+        return try {
+            client.newCall(builder.build()).awaitResponse().use { it.checkedBody(stage) }
+        } catch(error: CloudHttpException) {
+            throw error
+        } catch(error: IOException) {
+            throw CloudRequestException(stage,error)
+        }
     }
 
     suspend fun fetchCatalogGames(): List<GameTitle> = withContext(Dispatchers.IO) {

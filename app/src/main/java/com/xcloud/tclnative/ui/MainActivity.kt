@@ -996,7 +996,7 @@ open class MainActivity : Activity() {
                     statsView.visibility = if (statistics.mode != 0) View.VISIBLE else View.GONE
                 }
             }
-            surfaceRenderer.onRenderError = { error -> transportFailure.complete(error) }
+            surfaceRenderer.onRenderError = { error -> transportFailure.complete(RenderFailureException(error)) }
             var allocatedRtc: XCloudWebRtcClient?=null
             var failed=false
             val playbackEgl=surfaceRenderer.eglBase
@@ -1127,6 +1127,7 @@ open class MainActivity : Activity() {
                 throw cancelled
             } catch (error: Exception) {
                 failed=true
+                tracker.recordFailure(error)
                 if (generation == playbackGeneration && (!firstFrame.isCompleted || !settingsStore.read().sessionReport)) {
                     val details = error.message ?: "Falha na sessão"
                     hudTextView.text = details

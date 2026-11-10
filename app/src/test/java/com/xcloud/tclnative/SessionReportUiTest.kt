@@ -85,6 +85,33 @@ class SessionReportUiTest {
             assertEquals(SessionReport.MAX_INPUT_DETAILS,store.read()!!.inputDetails!!.length)
         } finally { c.pause().stop().destroy() }
     }
+    @Test fun failureReasonSurvivesRecreationAndIsVisibleAndCopyableWithoutRequiringAPhonePaste() {
+        val c=Robolectric.buildActivity(Activity::class.java).setup();val activity=c.get()
+        try {
+            val reason=SessionFailure(FailureStage.KEEPALIVE,FailureKind.HTTP,503,"ServiceUnavailable","CloudHttpException")
+            val report=demo().copy(end=SessionEnd.FAILURE,failure=reason)
+            val store=SessionReportStore(activity);store.save(report)
+            assertEquals(report,SessionReportStore(activity).read())
+            val dialog=SessionReportPanel.show(activity,report)
+            val reasonView=all(dialog.body).filterIsInstance<TextView>().single { it.text.contains("MOTIVO DO ENCERRAMENTO") }
+            assertTrue(reasonView.text.contains("KEEPALIVE/HTTP_503"));assertTrue(reasonView.isFocusable)
+            label(dialog.panel,"COPIAR").performClick()
+            assertTrue((activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
+                .primaryClip!!.getItemAt(0).text.toString().contains("KEEPALIVE/HTTP_503"))
+            val decor=dialog.window!!.decorView
+            decor.measure(View.MeasureSpec.makeMeasureSpec(1050,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(648,View.MeasureSpec.EXACTLY))
+            decor.layout(0,0,1050,648)
+            val bitmap=Bitmap.createBitmap(decor.width,decor.height,Bitmap.Config.ARGB_8888);decor.draw(Canvas(bitmap))
+            val output=File("build/reports/dashboard/session-failure-reason.png");output.parentFile?.mkdirs()
+            output.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG,100,it) };bitmap.recycle()
+            dialog.dismiss()
+            val legacy=demo().copy(end=SessionEnd.FAILURE)
+            store.save(legacy);assertNull(store.read()!!.failure)
+            val old=SessionReportPanel.show(activity,store.read()!!)
+            assertTrue(all(old.body).filterIsInstance<TextView>().any { it.text.contains("Não registrado nesta versão") })
+            old.dismiss()
+        } finally { c.pause().stop().destroy() }
+    }
     @Test fun settingsOfferExplicitAutomaticReportChoiceAndLastReportAction() {
         val c=Robolectric.buildActivity(Activity::class.java).setup(); val a=c.get(); val store=PlaybackSettingsStore(a)
         store.save(PlaybackSettings()); var opened=0

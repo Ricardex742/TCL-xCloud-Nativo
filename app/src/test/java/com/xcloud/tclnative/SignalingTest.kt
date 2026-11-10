@@ -327,6 +327,34 @@ class SignalingTest {
         assertEquals(1,requests.count { it.method=="DELETE" })
     }
 
+    @Test fun keepAliveSocketFailureKeepsTheRequestStageForThePostMatchReport() = runBlocking {
+        val client=XCloudSignalingClient(
+            XCloudSession("test-token",server.url("/").toString(),"hash",transferToken="console-token"),
+            OkHttpClient.Builder().proxy(Proxy.NO_PROXY).callTimeout(3,TimeUnit.SECONDS).addInterceptor { chain ->
+                if(chain.request().url.encodedPath=="/session/keepalive")
+                    throw java.net.SocketTimeoutException("private endpoint token must not appear in report")
+                chain.proceed(chain.request())
+            }.build(),{now+=it},{now})
+        assertTrue(client.startAndConnectWebRtcSession("real-id",peer) {}.isSuccess)
+        val error=try { client.keepAlive();null } catch(e: com.xcloud.tclnative.net.CloudRequestException) { e }
+        assertNotNull(error);assertEquals("KEEPALIVE",error!!.stage)
+        val reason=com.xcloud.tclnative.diagnostics.SessionFailure.from(error)
+        assertEquals("KEEPALIVE/TIMEOUT",reason.code);assertFalse(reason.description.contains("private endpoint"))
+        client.stop()
+    }
+    @Test fun keepAliveHttpRejectionPreservesStatusWithoutExposingTheResponseBody() = runBlocking {
+        val original=server.dispatcher
+        server.dispatcher=object: Dispatcher() {
+            override fun dispatch(request: RecordedRequest)=if(request.path=="/session/keepalive")
+                response("""{"code":"ServiceUnavailable","token":"private-body"}""",503) else original.dispatch(request)
+        }
+        val client=signaling();assertTrue(client.startAndConnectWebRtcSession("real-id",peer) {}.isSuccess)
+        val error=try { client.keepAlive();null } catch(e: com.xcloud.tclnative.net.CloudHttpException) { e }
+        assertNotNull(error)
+        val reason=com.xcloud.tclnative.diagnostics.SessionFailure.from(error!!)
+        assertEquals("KEEPALIVE/HTTP_503",reason.code);assertTrue(reason.description.contains("ServiceUnavailable"))
+        assertFalse(reason.description.contains("private-body"));client.stop()
+    }
     @Test fun queueLongerThanNinetySecondsCanStillProvisionAndConnect() = runBlocking {
         queuedStates = 70
         val progress = mutableListOf<String>()

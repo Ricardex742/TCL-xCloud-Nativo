@@ -37,3 +37,15 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Private development reports and conversation notes
+/docs/*.md
+/docs/branding/
+/docs/private/
+/docs/internal/
+/.private-docs/
+/private/
+/contexto*.md
+/contexto*.txt
+/relatorio*.md
+/relatorio*.txt

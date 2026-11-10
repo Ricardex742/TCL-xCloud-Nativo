@@ -60,6 +60,7 @@ class MobileHudResponseUiTest {
             val panel=GameHudPanel(a,game,store,{view.applyHud(it)},{},{},{})
             panel.show();choose("Mirar ao atirar:");choose("Ativado — mirar e atirar")
             assertTrue(GameHudStore(a).read(game.titleId).aimAndFire)
+            assertTrue(view.hudDiagnostics().contains("mirar ao atirar ativado"))
             val settings=ShadowDialog.getLatestDialog() as ConsoleDialog
             repeat(2) { shadowOf(Looper.getMainLooper()).idle();settings.panel.measure(View.MeasureSpec.makeMeasureSpec(1050,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(1296,View.MeasureSpec.AT_MOST));settings.panel.layout(0,0,settings.panel.measuredWidth,settings.panel.measuredHeight) }
             settings.panel.scrollTo(0,0);save(settings.panel,"cod-mobile-settings");settings.dismiss()
@@ -105,6 +106,8 @@ class MobileHudResponseUiTest {
             shadowOf(Looper.getMainLooper()).idleFor(65,TimeUnit.MILLISECONDS)
             assertEquals(GamepadState(),state)
             assertTrue(view.hudDiagnostics().contains("Enfiada [through] → Y"))
+            assertFalse(view.hudDiagnostics().contains("corrida por arrasto"))
+            assertFalse(view.hudDiagnostics().contains("mirar ao atirar"))
             GameHudPanel(a,game,store,{view.applyHud(it)},{},{},{}).show();choose("Restaurar HUD deste jogo")
             assertEquals(FootballScheme.ALTERNATE,GameHudStore(a).read(game.titleId).footballScheme)
         } finally { view.releaseInputs();c.pause().stop().destroy() }

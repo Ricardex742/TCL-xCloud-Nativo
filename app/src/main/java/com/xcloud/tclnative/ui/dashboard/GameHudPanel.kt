@@ -39,7 +39,7 @@ class GameHudPanel(private val context: Context,private val game: GameTitle,priv
             }
             actions+=ConsoleAction("Arrastar analógico para correr: ${if(settings.sprintGesture) "Ativado" else "Desativado"}") {
                 val dialog=ConsoleDialog(context,"Corrida pelo analógico")
-                dialog.body.addView(dialog.text("Arraste o analógico de movimento para cima, na direção de Correr, além da borda do analógico. A corrida termina ao recuar ou soltar o dedo. O botão Correr também funciona por toque.",20,color=DashboardTheme.muted))
+                dialog.body.addView(dialog.text("Arraste o analógico de movimento para cima, na direção de Correr, além da borda do analógico. Recuar solta o comando de corrida; soltar o dedo também zera o movimento. As opções do jogo definem o comportamento da corrida. O botão Correr também funciona por toque.",20,color=DashboardTheme.muted))
                 listOf(false,true).forEach { enabled ->
                     val row=dialog.addMenuItem("${if(enabled==settings.sprintGesture) "✓" else "○"} ${if(enabled) "Ativado" else "Desativado"}") { save(settings.copy(sprintGesture=enabled)) }
                     if(enabled==settings.sprintGesture) dialog.focusFirst(row)

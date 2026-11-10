@@ -52,8 +52,8 @@ class GameTouchView(context: Context,
     fun hudDiagnostics(): String = "HUD: ${preset.label}; "+
         (if(preset.football) "esquema ${configuration.footballScheme.label}; " else "")+
         "sensibilidade ${configuration.sensitivity}%; zona morta ${configuration.lookDeadzone}%; "+
-        "mirar ao atirar ${if(configuration.aimAndFire) "ativado" else "desativado"}; "+
-        "corrida por arrasto ${if(configuration.sprintGesture) "ativada" else "desativada"}; "+
+        (if(preset.family==HudPreset.CALL_OF_DUTY) "mirar ao atirar ${if(configuration.aimAndFire) "ativado" else "desativado"}; "+
+            "corrida por arrasto ${if(configuration.sprintGesture) "ativada" else "desativada"}; " else "")+
         "atualizações ${nativeEvents.hudUpdates}; contatos interrompidos descartados ${nativeEvents.staleHudContacts}; último controle: $lastHudPress\n${nativeDiagnostics()}"
     private fun emitNative(events: List<NativePointer>) {
         nativeEvents.generatedDown+=events.count { it.type==1 };nativeEvents.generatedUp+=events.count { it.type==2 }

@@ -3,36 +3,21 @@
   <h1>xCLOUD</h1>
   <p><strong>Seus jogos. Na sua tela.</strong></p>
   <p>Cliente Android independente para Xbox Cloud Gaming, com transmissão nativa e interface para Android TV, Google TV e celulares.</p>
+  <p><a href="#conta-e-biblioteca">Biblioteca</a> · <a href="#transmissão-e-fila">Transmissão</a> · <a href="#imagem-e-tela">Imagem</a> · <a href="#controles-e-periféricos">Controles</a> · <a href="#controles-de-toque">Toque</a><br /><a href="#áudio-e-microfone">Áudio</a> · <a href="#rede-e-preferências">Rede</a> · <a href="#estatísticas-e-diagnósticos">Diagnósticos</a> · <a href="#tela-inicial-da-tv">Atalhos na TV</a> · <a href="#compatibilidade">Compatibilidade</a></p>
 </div>
 
 ![Voltar a jogar no xCLOUD](docs/screenshots/return-to-play.png)
 
 ## Telas do aplicativo
 
+As imagens abaixo mostram a interface do app com perfil e dados de demonstração. O QR Code é ilustrativo; as prévias dos HUDs usam fundo neutro.
+
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/transition-startup.png" alt="Abertura com a logo do xCLOUD" /><br /><strong>Abertura</strong> — restauração da sessão com a identidade do aplicativo.</td>
-    <td width="50%"><img src="docs/screenshots/transition-shortcut.png" alt="Prévia da entrada por atalho com imagem de demonstração" /><br /><strong>Atalho</strong> — arte do jogo durante a preparação.</td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="docs/screenshots/login.png" alt="Tela de entrada do xCLOUD" /><br /><strong>Login</strong> — acesso à conta Microsoft.</td>
-    <td width="50%"><img src="docs/screenshots/qr-login.png" alt="Login Microsoft com QR Code de demonstração" /><br /><strong>QR Code</strong> — autorização pelo celular.</td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/queue.png" alt="Fila com capa, estimativa e tempo aguardado" /><br /><strong>Fila</strong> — estimativa do serviço e etapas da conexão.</td>
-    <td><img src="docs/screenshots/settings.png" alt="Configurações de vídeo e controles" /><br /><strong>Configurações</strong> — preferências salvas no aparelho.</td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/compatibility.png" alt="Modos de vídeo, incluindo compatibilidade para TVs mais fracas" /><br /><strong>Vídeo</strong> — menor atraso, adaptativo ou compatibilidade.</td>
-    <td><img src="docs/screenshots/game-menu.png" alt="Menu da partida com diagnóstico e desconexão" /><br /><strong>Partida</strong> — ajustes, estatísticas e desconexão.</td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/controls.png" alt="Configurações de coop, vibração e toque" /><br /><strong>Controles</strong> — coop local, vibração e toque.</td>
-    <td><img src="docs/screenshots/image.png" alt="Ajustes de nitidez e saturação" /><br /><strong>Imagem</strong> — nitidez e saturação durante a partida.</td>
+    <td width="50%"><img src="docs/screenshots/transition-startup.png" alt="Abertura — Restauração da sessão com a identidade do aplicativo." /><br /><strong>Abertura</strong> — Restauração da sessão com a identidade do aplicativo.</td>
+    <td width="50%"><img src="docs/screenshots/settings.png" alt="Configurações por categoria — Vídeo, imagem, rede, controles, áudio, diagnósticos e conta." /><br /><strong>Configurações por categoria</strong> — Vídeo, imagem, rede, controles, áudio, diagnósticos e conta.</td>
   </tr>
 </table>
-
-Capturas da interface com perfil e dados de demonstração. O QR Code é ilustrativo.
 
 ## Conta e biblioteca
 
@@ -45,6 +30,17 @@ Capturas da interface com perfil e dados de demonstração. O QR Code é ilustra
 - Pesquisa por nome, tolerando diferenças de acentos, pontuação e marcas.
 - Navegação por controle ou toque e cache de imagens do catálogo.
 
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/login.png" alt="Conta Microsoft — Tela de entrada do aplicativo." /><br /><strong>Conta Microsoft</strong> — Tela de entrada do aplicativo.</td>
+    <td width="50%"><img src="docs/screenshots/qr-login.png" alt="Login por QR Code — Autorização pelo celular." /><br /><strong>Login por QR Code</strong> — Autorização pelo celular.</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/catalog.png" alt="Biblioteca — Capas, favoritos e categorias de jogos." /><br /><strong>Biblioteca</strong> — Capas, favoritos e categorias de jogos.</td>
+    <td width="50%"><img src="docs/screenshots/search.png" alt="Pesquisa — Busca por nome usando o teclado." /><br /><strong>Pesquisa</strong> — Busca por nome usando o teclado.</td>
+  </tr>
+</table>
+
 ## Transmissão e fila
 
 - Reprodução nativa por WebRTC/H.264, com preferência por decodificação de hardware.
@@ -54,6 +50,21 @@ Capturas da interface com perfil e dados de demonstração. O QR Code é ilustra
 - Fila com arte do jogo, estimativa do serviço, tempo aguardado e cancelamento.
 - Recuperação de vídeo por solicitação de quadro-chave, decoder e superfície de exibição.
 - Menu da partida com ajustes e desconexão para retornar ao catálogo.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/queue.png" alt="Fila — Arte do jogo, estimativa e etapas da conexão." /><br /><strong>Fila</strong> — Arte do jogo, estimativa e etapas da conexão.</td>
+    <td width="50%"><img src="docs/screenshots/video-settings.png" alt="Vídeo e transmissão — Modo de vídeo, codec e resolução." /><br /><strong>Vídeo e transmissão</strong> — Modo de vídeo, codec e resolução.</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/stream-resolution.png" alt="Resolução — Perfis 720p, 1080p e 1080p HQ." /><br /><strong>Resolução</strong> — Perfis 720p, 1080p e 1080p HQ.</td>
+    <td width="50%"><img src="docs/screenshots/video-modes.png" alt="Modo de vídeo — Menor atraso, adaptativo e compatibilidade." /><br /><strong>Modo de vídeo</strong> — Menor atraso, adaptativo e compatibilidade.</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/game-menu.png" alt="Menu da partida — Ajustes, estatísticas e desconexão." /><br /><strong>Menu da partida</strong> — Ajustes, estatísticas e desconexão.</td>
+    <td width="50%"><img src="docs/screenshots/transition-exit.png" alt="Saída da partida — Retorno ao catálogo com a arte do jogo." /><br /><strong>Saída da partida</strong> — Retorno ao catálogo com a arte do jogo.</td>
+  </tr>
+</table>
 
 ### Gameplay
 
@@ -69,6 +80,21 @@ Capturas da interface com perfil e dados de demonstração. O QR Code é ilustra
 - Preferência por uma taxa de atualização compatível com a apresentação do vídeo.
 - Verificação do suporte HDR anunciado pela tela; a transmissão atual utiliza SDR.
 
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/image-settings.png" alt="Imagem e tela — Opções de proporção, escala e FSR." /><br /><strong>Imagem e tela</strong> — Opções de proporção, escala e FSR.</td>
+    <td width="50%"><img src="docs/screenshots/image.png" alt="Ajustes básicos — Nitidez e saturação do vídeo." /><br /><strong>Ajustes básicos</strong> — Nitidez e saturação do vídeo.</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/fsr-settings.png" alt="AMD FSR — Explicação e ativação do filtro experimental." /><br /><strong>AMD FSR</strong> — Explicação e ativação do filtro experimental.</td>
+    <td width="50%"><img src="docs/screenshots/fsr-output.png" alt="Saída do FSR — Automático, 1440p e 4K experimental." /><br /><strong>Saída do FSR</strong> — Automático, 1440p e 4K experimental.</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/image-adjustments.png" alt="Ajustes da imagem — RCAS, nitidez, brilho, contraste e saturação." /><br /><strong>Ajustes da imagem</strong> — RCAS, nitidez, brilho, contraste e saturação.</td>
+    <td width="50%"><img src="docs/screenshots/aspect-ratio.png" alt="Proporção — Formato original, proporções fixas, esticar e zoom." /><br /><strong>Proporção</strong> — Formato original, proporções fixas, esticar e zoom.</td>
+  </tr>
+</table>
+
 ## Controles e periféricos
 
 - Controles USB, Bluetooth e dongles reconhecidos pelo Android.
@@ -79,6 +105,21 @@ Capturas da interface com perfil e dados de demonstração. O QR Code é ilustra
 - Opção experimental de giroscópio junto ao toque nativo Xbox.
 - Vibração nos dispositivos compatíveis, teste USB/XInput opcional e vibração do celular no toque.
 
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/controls.png" alt="Controles — Preferências de coop local, vibração e toque." /><br /><strong>Controles</strong> — Preferências de coop local, vibração e toque.</td>
+    <td width="50%"><img src="docs/screenshots/physical-controls.png" alt="Controle físico — Acesso à calibração e ao remapeamento." /><br /><strong>Controle físico</strong> — Acesso à calibração e ao remapeamento.</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/mouse-keyboard.png" alt="Mouse e teclado — Entrada nativa ou emulação de controle." /><br /><strong>Mouse e teclado</strong> — Entrada nativa ou emulação de controle.</td>
+    <td width="50%"><img src="docs/screenshots/gyro-settings.png" alt="Giroscópio — Modo de mira e sensibilidade do movimento." /><br /><strong>Giroscópio</strong> — Modo de mira e sensibilidade do movimento.</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/rumble-settings.png" alt="Vibração — Opções para o controle e para o celular." /><br /><strong>Vibração</strong> — Opções para o controle e para o celular.</td>
+    <td width="50%"><img src="docs/screenshots/native-touch-gyro.png" alt="Giroscópio com toque nativo — Ativação experimental quando há sensor." /><br /><strong>Giroscópio com toque nativo</strong> — Ativação experimental quando há sensor.</td>
+  </tr>
+</table>
+
 ## Controles de toque
 
 - Controle Xbox virtual e layouts para tiro, corrida, futebol e ação.
@@ -88,32 +129,30 @@ Capturas da interface com perfil e dados de demonstração. O QR Code é ilustra
 - Editor de posição, tamanho, opacidade, comandos combinados e gestos por jogo.
 - Toque nativo Xbox experimental nos títulos compatíveis.
 
-### HUDs e editor
-
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/hud-fortnite.png" alt="Prévia do HUD de combate do Fortnite" /><br /><strong>Fortnite</strong> — movimento, câmera por arrasto, tiro e troca de armas.</td>
-    <td width="50%"><img src="docs/screenshots/hud-fortnite-build.png" alt="Prévia do HUD de construção do Fortnite" /><br /><strong>Construção</strong> — parede, rampa, piso e teto com comandos Builder Pro.</td>
+    <td width="50%"><img src="docs/screenshots/hud-fortnite.png" alt="Fortnite — Movimento, câmera, tiro e troca de armas." /><br /><strong>Fortnite</strong> — Movimento, câmera, tiro e troca de armas.</td>
+    <td width="50%"><img src="docs/screenshots/hud-fortnite-build.png" alt="Construção — Parede, rampa, piso e teto." /><br /><strong>Construção</strong> — Parede, rampa, piso e teto.</td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/hud-call-of-duty.png" alt="Prévia do HUD de tiro com dois botões de disparo" /><br /><strong>Tiro</strong> — mirar, disparar, recarregar, agachar e granadas.</td>
-    <td><img src="docs/screenshots/hud-forza.png" alt="Prévia do HUD de corrida com setas e pedais" /><br /><strong>Corrida</strong> — direção, acelerador, freio e marchas.</td>
+    <td width="50%"><img src="docs/screenshots/hud-call-of-duty.png" alt="Tiro — Mirar, disparar, recarregar e usar granadas." /><br /><strong>Tiro</strong> — Mirar, disparar, recarregar e usar granadas.</td>
+    <td width="50%"><img src="docs/screenshots/hud-forza.png" alt="Corrida — Direção, acelerador, freio e marchas." /><br /><strong>Corrida</strong> — Direção, acelerador, freio e marchas.</td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/hud-ea-fc.png" alt="Prévia do HUD de futebol em ataque com gestos no chute" /><br /><strong>Ataque</strong> — passe, chute, enfiada, corrida e gestos para finalização.</td>
-    <td><img src="docs/screenshots/hud-ea-fc-defense.png" alt="Prévia do HUD de futebol em defesa" /><br /><strong>Defesa</strong> — marcar, bote, carrinho, troca de jogador e contenção.</td>
+    <td width="50%"><img src="docs/screenshots/hud-ea-fc.png" alt="Futebol em ataque — Passes, chute, enfiada e corrida." /><br /><strong>Futebol em ataque</strong> — Passes, chute, enfiada e corrida.</td>
+    <td width="50%"><img src="docs/screenshots/hud-ea-fc-defense.png" alt="Futebol em defesa — Marcação, bote, carrinho e troca de jogador." /><br /><strong>Futebol em defesa</strong> — Marcação, bote, carrinho e troca de jogador.</td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/hud-hades.png" alt="Prévia do HUD de Hades com ações de combate" /><br /><strong>Hades</strong> — ataque, especial, feitiço e esquiva.</td>
-    <td><img src="docs/screenshots/hud-editor.png" alt="Editor de posição, tamanho, combos e gestos de cada botão" /><br /><strong>Editor</strong> — posição, tamanho, comandos combinados e gestos.</td>
+    <td width="50%"><img src="docs/screenshots/hud-hades.png" alt="Hades — Ataque, especial, feitiço e esquiva." /><br /><strong>Hades</strong> — Ataque, especial, feitiço e esquiva.</td>
+    <td width="50%"><img src="docs/screenshots/hud-editor.png" alt="Editor — Posição, tamanho, comandos combinados e gestos." /><br /><strong>Editor</strong> — Posição, tamanho, comandos combinados e gestos.</td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/hud-settings.png" alt="Configurações do HUD por jogo" /><br /><strong>Ajustes</strong> — layout, tamanho, opacidade e sensibilidade.</td>
-    <td><strong>Gestos no futebol</strong><br />No chute: ↓ colocado, ↑ cavadinha, ← / → superchute.<br />No passe: ↑ tabela, ↓ passe forte.<br />Na enfiada: ↑ lançamento.<br />Na defesa, Marcar combina RT + A.</td>
+    <td width="50%"><img src="docs/screenshots/hud-settings.png" alt="Ajustes do HUD — Layout, opacidade e sensibilidade por jogo." /><br /><strong>Ajustes do HUD</strong> — Layout, opacidade e sensibilidade por jogo.</td>
+    <td width="50%"><img src="docs/screenshots/touch-modes.png" alt="Modo de toque — Detecção automática, HUD virtual ou toque nativo." /><br /><strong>Modo de toque</strong> — Detecção automática, HUD virtual ou toque nativo.</td>
   </tr>
 </table>
 
-Prévias dos controles sobre fundo neutro. Os layouts e comandos podem ser ajustados por jogo.
+As posições, tamanhos, ações e gestos podem ser ajustados por jogo. No futebol, a alternância entre ataque e defesa é manual.
 
 ## Áudio e microfone
 
@@ -121,6 +160,16 @@ Prévias dos controles sobre fundo neutro. Os layouts e comandos podem ser ajust
 - Ganho ajustável até 300%, com redução adaptativa de picos.
 - Microfone opcional com permissão ao ativar e início em mudo.
 - Controle de mudo durante a sessão.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/audio-settings.png" alt="Áudio e microfone — Ganho local e disponibilidade do microfone." /><br /><strong>Áudio e microfone</strong> — Ganho local e disponibilidade do microfone.</td>
+    <td width="50%"><img src="docs/screenshots/microphone-settings.png" alt="Microfone opcional — Habilitação para as próximas partidas, iniciando em mudo." /><br /><strong>Microfone opcional</strong> — Habilitação para as próximas partidas, iniciando em mudo.</td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><img src="docs/screenshots/audio-gain.png" width="70%" alt="Ganho de áudio — Seleção do volume local até 300%." /><br /><strong>Ganho de áudio</strong> — Seleção do volume local até 300%.</td>
+  </tr>
+</table>
 
 ## Rede e preferências
 
@@ -130,9 +179,22 @@ Prévias dos controles sobre fundo neutro. Os layouts e comandos podem ser ajust
 - Idioma solicitado à sessão configurável por jogo.
 - Modo automático IPv4/IPv6 e opções de preferência por uma família de rede.
 
-## Estatísticas e diagnósticos
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/network-settings.png" alt="Rede e sessão — Família de rede e opções por jogo." /><br /><strong>Rede e sessão</strong> — Família de rede e opções por jogo.</td>
+    <td width="50%"><img src="docs/screenshots/ip-preference.png" alt="IPv4 e IPv6 — Automático e preferências por família de rede." /><br /><strong>IPv4 e IPv6</strong> — Automático e preferências por família de rede.</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/session-options.png" alt="Opções por jogo — Bitrate, região e idioma da sessão." /><br /><strong>Opções por jogo</strong> — Bitrate, região e idioma da sessão.</td>
+    <td width="50%"><img src="docs/screenshots/bitrate-options.png" alt="Teto de bitrate — Automático ou limite manual solicitado." /><br /><strong>Teto de bitrate</strong> — Automático ou limite manual solicitado.</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/server-region.png" alt="Região do servidor — Exemplo com uma região oferecida à conta de demonstração." /><br /><strong>Região do servidor</strong> — Exemplo com uma região oferecida à conta de demonstração.</td>
+    <td width="50%"><img src="docs/screenshots/session-language.png" alt="Idioma da sessão — Idioma solicitado ao jogo, separado da interface." /><br /><strong>Idioma da sessão</strong> — Idioma solicitado ao jogo, separado da interface.</td>
+  </tr>
+</table>
 
-![Tela de diagnóstico pós-partida com dados de demonstração](docs/screenshots/session-report.png)
+## Estatísticas e diagnósticos
 
 - Resolução e codec recebidos, FPS decodificados e bitrate.
 - RTT, jitter, perda de pacotes, buffer, descartes e tempo de decodificação.
@@ -141,6 +203,13 @@ Prévias dos controles sobre fundo neutro. Os layouts e comandos podem ser ajust
 - Motivo do encerramento em destaque, quando identificado.
 - Último diagnóstico salvo no aparelho e exibição automática opcional.
 
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/session-report.png" alt="Resumo pós-partida — Métricas de rede e vídeo com dados de demonstração." /><br /><strong>Resumo pós-partida</strong> — Métricas de rede e vídeo com dados de demonstração.</td>
+    <td width="50%"><img src="docs/screenshots/diagnostic-settings.png" alt="Preferências do diagnóstico — Abertura automática e consulta ao último resumo." /><br /><strong>Preferências do diagnóstico</strong> — Abertura automática e consulta ao último resumo.</td>
+  </tr>
+</table>
+
 ## Tela inicial da TV
 
 - Atalhos instaláveis para abrir jogos diretamente no xCLOUD.
@@ -148,12 +217,26 @@ Prévias dos controles sobre fundo neutro. Os layouts e comandos podem ser ajust
 - Solicitação de atalhos fixados quando oferecida pelo sistema.
 - Restauração da sessão e entrada na fila ao abrir um atalho.
 
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/library-settings.png" alt="Biblioteca e conta — Acesso ao menu Atalhos dos favoritos." /><br /><strong>Biblioteca e conta</strong> — Acesso ao menu Atalhos dos favoritos.</td>
+    <td width="50%"><img src="docs/screenshots/transition-shortcut.png" alt="Entrada por atalho — Arte do jogo durante a preparação da sessão." /><br /><strong>Entrada por atalho</strong> — Arte do jogo durante a preparação da sessão.</td>
+  </tr>
+</table>
+
 ## Compatibilidade
 
 - Android 7.0 ou superior, incluindo Android TV, Google TV e celulares compatíveis.
 - Interface adaptada para navegação pelo controle e por toque.
 - Recursos experimentais e suporte a periféricos dependem do aparelho, do driver, do jogo e do serviço.
 - A disponibilidade dos jogos depende da conta, região, assinatura ou licença exigida pelo Xbox Cloud Gaming.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/compatibility.png" alt="Modo de compatibilidade — Opção de vídeo para dispositivos mais modestos." /><br /><strong>Modo de compatibilidade</strong> — Opção de vídeo para dispositivos mais modestos.</td>
+    <td width="50%"><img src="docs/screenshots/light-codec.png" alt="H.264 leve — Perfil Baseline com solicitação de 720p." /><br /><strong>H.264 leve</strong> — Perfil Baseline com solicitação de 720p.</td>
+  </tr>
+</table>
 
 ## Licença
 

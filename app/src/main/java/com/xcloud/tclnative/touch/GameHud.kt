@@ -4,16 +4,16 @@ import com.xcloud.tclnative.webrtc.TouchKind
 import java.util.Locale
 
 enum class HudPreset(val label: String) {
-    GAMEPAD("Controle Xbox"), FORTNITE("Fortnite — combate"), FORTNITE_BUILD("Fortnite — construção"),
+    GAMEPAD("Controle Xbox"),
     CALL_OF_DUTY("Call of Duty"), SHOOTER("Tiro — padrão"), FORZA("Forza Horizon / Motorsport"),
     RACING("Corrida — padrão"), EA_FC("EA SPORTS FC / FIFA"), FOOTBALL("Futebol — padrão"),
     HADES("Hades / Hades II"), ACTION("Ação — padrão"),
     EA_FC_DEFENSE("EA SPORTS FC — defesa"), FOOTBALL_DEFENSE("Futebol — defesa");
     val family: HudPreset get()=when(this) {
-        FORTNITE_BUILD -> FORTNITE; EA_FC_DEFENSE -> EA_FC; FOOTBALL_DEFENSE -> FOOTBALL; else -> this
+        EA_FC_DEFENSE -> EA_FC; FOOTBALL_DEFENSE -> FOOTBALL; else -> this
     }
     val football: Boolean get()=family==EA_FC || family==FOOTBALL
-    val shooter: Boolean get()=family in setOf(FORTNITE,CALL_OF_DUTY,SHOOTER)
+    val shooter: Boolean get()=family in setOf(CALL_OF_DUTY,SHOOTER)
 }
 enum class HudBinding(val label: String,val button: Int=0) {
     A("A",16),B("B",32),X("X",64),Y("Y",128),LB("LB",4096),RB("RB",8192),
@@ -52,7 +52,6 @@ object GameHud {
         val names=listOf(key(titleId),key(name))
         fun contains(vararg terms: String)=names.any { n -> terms.any { n.contains(it) } }
         return when {
-            contains("FORTNITE") -> HudPreset.FORTNITE
             contains("CALLOFDUTY","CODWARZONE","CODBLACKOPS","WARZONE") -> HudPreset.CALL_OF_DUTY
             contains("FORZAHORIZON","FORZAMOTORSPORT") -> HudPreset.FORZA
             names.any { it=="HADES" || it.startsWith("HADES2") || it.startsWith("HADESII") } -> HudPreset.HADES
@@ -95,29 +94,6 @@ object GameHud {
                 stick("move","L",.18f,.73f,TouchKind.LEFT_STICK,.12f)
                 stick("right","R",.68f,.73f,TouchKind.RIGHT_STICK,.12f)
                 stick("dpad","+",.35f,.75f,TouchKind.DPAD,.080f)
-            }
-            HudPreset.FORTNITE,HudPreset.FORTNITE_BUILD -> {
-                stick("move","Mover",.145f,.74f,TouchKind.LEFT_STICK); camera(); menus()
-                button("sprint","Correr",.10f,.42f,HudBinding.L3,HudIcon.SPRINT,.045f)
-                button("inventory","Mochila",.32f,.42f,HudBinding.UP,HudIcon.USE,.043f)
-                button("jump","Pular",.92f,.69f,HudBinding.A,HudIcon.JUMP,.064f)
-                button("crouch","Agachar",.83f,.86f,HudBinding.R3,HudIcon.CROUCH,.047f)
-                button("pickaxe","Picareta",.69f,.84f,HudBinding.Y,HudIcon.MELEE,.048f)
-                if(preset==HudPreset.FORTNITE) {
-                    button("fire","Atirar",.91f,.46f,HudBinding.RT,HudIcon.FIRE,.083f,dragLook=true)
-                    button("aim","Mirar",.79f,.33f,HudBinding.LT,HudIcon.AIM,.054f)
-                    button("reload","Usar / recarregar",.71f,.62f,HudBinding.X,HudIcon.RELOAD,.050f)
-                    button("weapon-prev","Anterior",.37f,.86f,HudBinding.LB,HudIcon.WEAPON,.039f)
-                    button("weapon-next","Próxima",.47f,.86f,HudBinding.RB,HudIcon.WEAPON,.039f)
-                    button("build-toggle","Construir",.59f,.84f,HudBinding.B,HudIcon.BUILD,.052f,page=HudPreset.FORTNITE_BUILD)
-                } else {
-                    button("wall","Parede",.91f,.43f,HudBinding.RT,HudIcon.WALL,.070f,HudShape.SQUARE)
-                    button("stairs","Rampa",.79f,.38f,HudBinding.LT,HudIcon.STAIRS,.056f,HudShape.SQUARE)
-                    button("floor","Piso",.69f,.57f,HudBinding.RB,HudIcon.FLOOR,.053f,HudShape.SQUARE)
-                    button("roof","Teto",.78f,.65f,HudBinding.LB,HudIcon.ROOF,.053f,HudShape.SQUARE)
-                    button("trap","Armadilha",.59f,.65f,HudBinding.X,HudIcon.BUILD,.048f)
-                    button("build-toggle","Combate",.59f,.84f,HudBinding.B,HudIcon.WEAPON,.052f,page=HudPreset.FORTNITE)
-                }
             }
             HudPreset.CALL_OF_DUTY,HudPreset.SHOOTER -> {
                 stick("move","Mover",.15f,.76f,TouchKind.LEFT_STICK); camera(); menus()

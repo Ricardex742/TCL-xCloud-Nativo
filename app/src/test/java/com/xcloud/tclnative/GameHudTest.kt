@@ -19,10 +19,7 @@ class GameHudTest {
         val chip=fc.controls.single { it.id=="football-mode" }
         fc.down(1,chip.x+chip.radius*1.7f,chip.y,0); fc.up(1,1)
         assertEquals(HudPreset.EA_FC_DEFENSE,fc.preset)
-        val build=VirtualGamepad(1280,720,HudPreset.FORTNITE_BUILD)
-        val wall=build.controls.single { it.id=="wall" }
-        build.down(2,wall.x+wall.radius*.9f,wall.y+wall.radius*.9f,0)
-        assertEquals(1f,build.state(0).rightTrigger,0f)
+
     }
     @Test fun footballShotSwipesProduceTheActualModifiersInBothConsoleSchemesAndReleaseThem() {
         for(scheme in FootballScheme.entries) for(direction in HudSwipe.entries) {
@@ -85,13 +82,13 @@ class GameHudTest {
         input.clear(); assertEquals(GamepadState(),input.state(101))
     }
     @Test fun gameFamiliesChooseTheirHudWithoutDependingOnTranslatedCatalogIds() {
-        val cases=mapOf("Fortnite" to HudPreset.FORTNITE,"Call of Duty®: Black Ops 7" to HudPreset.CALL_OF_DUTY,
+        val cases=mapOf("Fortnite" to HudPreset.GAMEPAD,"Call of Duty®: Black Ops 7" to HudPreset.CALL_OF_DUTY,
             "Forza Horizon 6 Premium Edition" to HudPreset.FORZA,"Forza Motorsport" to HudPreset.FORZA,
             "EA SPORTS FC™ 26" to HudPreset.EA_FC,"FIFA 19" to HudPreset.EA_FC,
             "Hades II" to HudPreset.HADES,"Hades 2" to HudPreset.HADES,"Hades" to HudPreset.HADES,
             "F1 25" to HudPreset.RACING,"Halo Infinite" to HudPreset.SHOOTER,"Unknown Adventure" to HudPreset.GAMEPAD)
         cases.forEach { (name,preset) -> assertEquals(name,preset,GameHud.automatic("opaque-cloud-id",name)) }
-        assertEquals(HudPreset.FORTNITE,GameHud.automatic("FORTNITE","Nome indisponível"))
+        assertEquals(HudPreset.GAMEPAD,GameHud.automatic("FORTNITE","Nome indisponível"))
     }
     @Test fun everyLayoutFitsPhoneAndTabletBoundsAndHasUniqueEditableControls() {
         for(preset in HudPreset.entries) for((width,height) in listOf(1280 to 590,2400 to 1080,1024 to 768)) {
@@ -124,7 +121,7 @@ class GameHudTest {
         input.up(2); assertEquals(GamepadState(),input.state(21))
     }
     @Test fun swipeCameraStopsWhenTheFingerStopsAndHasConsistentSensitivityAcrossEventRates() {
-        fun swipe(dt: Long,dx: Float): VirtualGamepad = VirtualGamepad(1280,720,HudPreset.FORTNITE).apply {
+        fun swipe(dt: Long,dx: Float): VirtualGamepad = VirtualGamepad(1280,720,HudPreset.SHOOTER).apply {
             down(1,700f,300f,0); move(1,700f+dx,300f,dt)
         }
         val slow=swipe(16,8f); val fast=swipe(8,4f)
@@ -134,23 +131,13 @@ class GameHudTest {
         assertEquals(0f,slow.state(97).rightX,0f)
         assertNull(slow.nextLookReset(97))
     }
-    @Test fun fortniteConstructionKeepsTheMovementFingerAndUsesBuilderProButtons() {
-        val input=VirtualGamepad(1280,720,HudPreset.FORTNITE)
-        val move=input.controls.single { it.id=="move" }
-        input.down(1,move.x,move.y,0); input.move(1,move.x+move.radius,move.y,10)
-        val build=input.controls.single { it.id=="build-toggle" }
-        input.down(2,build.x,build.y,10); assertEquals(32,input.state(10).buttons)
-        input.up(2)
-        assertEquals(HudPreset.FORTNITE_BUILD,input.preset)
-        assertEquals(1f,input.state(11).leftX,.0001f)
-        assertEquals(0,input.state(11).buttons)
-        val wall=input.controls.single { it.id=="wall" }; input.down(3,wall.x,wall.y,12)
-        assertEquals(1f,input.state(12).rightTrigger,0f)
-        input.up(3)
-        assertEquals(HudBinding.LT,input.controls.single { it.id=="stairs" }.binding)
-        assertEquals(HudBinding.RB,input.controls.single { it.id=="floor" }.binding)
-        assertEquals(HudBinding.LB,input.controls.single { it.id=="roof" }.binding)
+    @Test fun removedFortniteLayoutsAreNotOfferedAndGenericControlsStayAvailable() {
+        assertFalse(HudPreset.entries.any { it.name.startsWith("FORTNITE") })
+        val input=VirtualGamepad(1280,720,GameHud.automatic("FORTNITE","Fortnite"))
+        assertEquals(HudPreset.GAMEPAD,input.preset)
+        assertFalse(input.controls.any { it.id in setOf("build-toggle","wall","stairs","floor","roof") })
     }
+
     @Test fun savedButtonRemapsChangeTheActualControllerReport() {
         val layout=HudSettings(placements=mapOf("pass" to HudPlacement(.62f,.80f,1.2f,HudBinding.X)))
         val input=VirtualGamepad(1280,720,HudPreset.EA_FC,layout)

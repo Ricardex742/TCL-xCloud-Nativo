@@ -126,10 +126,10 @@ class ShortcutStartupTest {
             assertEquals(View.GONE,transition.visibility)
             assertFalse(all(root(activity)).any { it is GameDashboardView || it is ConsoleLoginView })
             val artDeadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(8)
-            while(all(queue).filterIsInstance<ImageView>().none { it.drawable is BitmapDrawable } && System.nanoTime()<artDeadline) {
+            while(all(queue).filterIsInstance<com.xcloud.tclnative.ui.dashboard.FixedArtworkView>().none { it.drawable is BitmapDrawable } && System.nanoTime()<artDeadline) {
                 shadowOf(Looper.getMainLooper()).idleFor(16,TimeUnit.MILLISECONDS); Thread.sleep(10)
             }
-            assertTrue("The queue must receive artwork even though the catalog/grid was never built",all(queue).filterIsInstance<ImageView>().any { it.drawable is BitmapDrawable })
+            assertTrue("The queue must receive artwork even though the catalog/grid was never built",all(queue).filterIsInstance<com.xcloud.tclnative.ui.dashboard.FixedArtworkView>().any { it.drawable is BitmapDrawable })
             val hydration=requests.filter { it.requestUrl!!.encodedPath=="/store/v7.0/products" }
             assertEquals(if(cached) 0 else 1,hydration.size)
             if(!cached) assertEquals("PRODUCT",hydration.single().requestUrl!!.queryParameter("bigIds"))

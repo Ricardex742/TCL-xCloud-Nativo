@@ -14,8 +14,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 43
-        versionName = "0.31.12-catalog-aliases"
+        versionCode = 44
+        versionName = "0.31.13-native-touch-badges"
     }
 
     signingConfigs {

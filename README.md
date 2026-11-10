@@ -27,6 +27,7 @@ As imagens abaixo mostram a interface do app com perfil e dados de demonstraçã
 - Favoritos separados por conta e salvos no aparelho.
 - **Game Pass**, **Transmita seu jogo**, **Adições recentes** e **Todos os jogos**.
 - Catálogos oficiais com nomes, capas e identificação das edições.
+- Selos de Game Pass e Xbox Series X|S conforme a inclusão e otimização informadas pelo catálogo.
 - Pesquisa por nome, tolerando diferenças de acentos, pontuação e marcas.
 - Navegação por controle ou toque e cache de imagens do catálogo.
 
@@ -123,17 +124,13 @@ As imagens abaixo mostram a interface do app com perfil e dados de demonstraçã
 ## Controles de toque
 
 - Controle Xbox virtual e layouts para tiro, corrida, futebol e ação.
-- HUDs para Fortnite, Call of Duty, Forza, EA SPORTS FC/FIFA e Hades.
+- HUDs para Call of Duty, Forza, EA SPORTS FC/FIFA e Hades.
 - Movimento com múltiplos dedos, câmera por arrasto e pedais nos jogos de corrida.
 - Alternância manual entre ataque e defesa no futebol.
 - Editor de posição, tamanho, opacidade, comandos combinados e gestos por jogo.
-- Toque nativo Xbox experimental nos títulos compatíveis.
+- Toque nativo Xbox experimental nos títulos compatíveis, incluindo Fortnite.
 
 <table>
-  <tr>
-    <td width="50%"><img src="docs/screenshots/hud-fortnite.png" alt="Fortnite — Movimento, câmera, tiro e troca de armas." /><br /><strong>Fortnite</strong> — Movimento, câmera, tiro e troca de armas.</td>
-    <td width="50%"><img src="docs/screenshots/hud-fortnite-build.png" alt="Construção — Parede, rampa, piso e teto." /><br /><strong>Construção</strong> — Parede, rampa, piso e teto.</td>
-  </tr>
   <tr>
     <td width="50%"><img src="docs/screenshots/hud-call-of-duty.png" alt="Tiro — Mirar, disparar, recarregar e usar granadas." /><br /><strong>Tiro</strong> — Mirar, disparar, recarregar e usar granadas.</td>
     <td width="50%"><img src="docs/screenshots/hud-forza.png" alt="Corrida — Direção, acelerador, freio e marchas." /><br /><strong>Corrida</strong> — Direção, acelerador, freio e marchas.</td>

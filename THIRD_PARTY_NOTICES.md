@@ -26,3 +26,14 @@ and shipped inside the APK as `assets/fonts/OFL.txt`.
 Xbox, Microsoft, game names, logos and game artwork belong to their respective
 owners. The project's MIT license does not grant rights to those assets or
 imply endorsement by their owners.
+
+## Catalog badge artwork
+
+The Game Pass and Xbox Series X|S marks belong to Microsoft. The local badge
+assets use public copies of the black artwork matching the supplied references:
+
+- [Xbox Game Pass mark](https://commons.wikimedia.org/wiki/File:Xbox_Game_Pass_new_logo_-_black_color_version.svg)
+- [Xbox Series X|S mark](https://commons.wikimedia.org/wiki/File:Xbox_Series_X_S_black.svg)
+
+These marks retain their owners' rights and are not covered by the project's
+MIT license. They identify catalog capabilities and do not imply endorsement.

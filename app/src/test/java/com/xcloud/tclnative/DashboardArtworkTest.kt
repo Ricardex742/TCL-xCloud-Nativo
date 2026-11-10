@@ -8,10 +8,10 @@ import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.xcloud.tclnative.catalog.GameLibrary
 import com.xcloud.tclnative.signaling.GameTitle
+import com.xcloud.tclnative.ui.dashboard.FixedArtworkView
 import com.xcloud.tclnative.ui.dashboard.GameDashboardView
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -65,7 +65,7 @@ class DashboardArtworkTest {
         try {
             activity.setContentView(view); view.setGames(games); view.selectTab(com.xcloud.tclnative.catalog.LibraryTab.ALL); layout(view)
             val grid=all(view).filterIsInstance<RecyclerView>().single()
-            val images=all(grid).filterIsInstance<ImageView>()
+            val images=all(grid).filterIsInstance<FixedArtworkView>()
             assertTrue(images.isNotEmpty())
             await { images.all { it.drawable is BitmapDrawable } }
             val bitmaps=images.map { (it.drawable as BitmapDrawable).bitmap }

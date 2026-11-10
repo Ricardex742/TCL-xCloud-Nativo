@@ -36,10 +36,6 @@ class GameHudPanel(private val context: Context,private val game: GameTitle,priv
             actions+=ConsoleAction("Mostrar HUD de ataque") { page(effective.family) }
             actions+=ConsoleAction("Mostrar HUD de defesa") { page(if(effective.family==HudPreset.EA_FC) HudPreset.EA_FC_DEFENSE else HudPreset.FOOTBALL_DEFENSE) }
         }
-        if(effective==HudPreset.FORTNITE || effective==HudPreset.FORTNITE_BUILD) {
-            actions+=ConsoleAction("Mostrar HUD de combate") { page(HudPreset.FORTNITE) }
-            actions+=ConsoleAction("Mostrar HUD de construção") { page(HudPreset.FORTNITE_BUILD) }
-        }
         actions+=ConsoleAction("Restaurar HUD deste jogo") { save(HudSettings()) }
         actions+=ConsoleAction("Guia de gestos e modos") {
             ConsoleDialogs.message(context,"Gestos e comandos combinados",

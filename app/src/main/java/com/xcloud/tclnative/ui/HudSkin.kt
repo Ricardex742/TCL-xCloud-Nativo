@@ -11,7 +11,6 @@ internal class HudSkin {
     private val path=Path()
     private val icons=HudIcons()
     private val tactical=RadialGradient(-.25f,-.4f,1.6f,intArrayOf(0xff54616a.toInt(),0xff111820.toInt()),null,Shader.TileMode.CLAMP)
-    private val blue=LinearGradient(0f,-1f,0f,1f,0xff318bc3.toInt(),0xff10335f.toInt(),Shader.TileMode.CLAMP)
     private val teal=LinearGradient(0f,-1f,0f,1f,0xff26717a.toInt(),0xff082b36.toInt(),Shader.TileMode.CLAMP)
     private val metal=LinearGradient(-1f,-1f,1f,1f,intArrayOf(0xfff1f6fa.toInt(),0xff4a555e.toInt(),0xff141e26.toInt()),floatArrayOf(0f,.2f,1f),Shader.TileMode.CLAMP)
     private val obsidian=RadialGradient(-.2f,-.5f,1.6f,intArrayOf(0xff413940.toInt(),0xff17151f.toInt()),null,Shader.TileMode.CLAMP)
@@ -47,7 +46,6 @@ internal class HudSkin {
              opacity: Int,editor: Boolean,gesture: String?) {
         val family=preset.family
         val cod=family==HudPreset.CALL_OF_DUTY || family==HudPreset.SHOOTER
-        val fort=family==HudPreset.FORTNITE
         val football=preset.football
         val race=family==HudPreset.FORZA || family==HudPreset.RACING
         val hades=family==HudPreset.HADES || family==HudPreset.ACTION
@@ -59,7 +57,7 @@ internal class HudSkin {
                 "through","defend-slide" -> 0xffd7ca70.toInt()
                 else -> 0xff8cddaa.toInt()
             }
-            cod -> 0xffffcb58.toInt(); fort -> 0xff82e3ff.toInt(); race -> 0xffe2faff.toInt()
+            cod -> 0xffffcb58.toInt(); race -> 0xffe2faff.toInt()
             hades -> gold; else -> 0xff67ed97.toInt()
         }
         p.typeface=when {
@@ -71,7 +69,7 @@ internal class HudSkin {
         canvas.save(); canvas.translate(c.x,c.y); canvas.scale(c.radius,c.radius)
         p.style=Paint.Style.FILL; p.color=0xff050c12.toInt(); p.alpha=(alpha*.72f).toInt()
         canvas.save(); canvas.translate(.015f,.065f); canvas.drawPath(outline(c,cod),p); canvas.restore()
-        p.shader=when { football -> teal; fort -> blue; race -> metal; hades -> obsidian; else -> tactical }
+        p.shader=when { football -> teal; race -> metal; hades -> obsidian; else -> tactical }
         p.alpha=(alpha*.88f).toInt(); canvas.drawPath(outline(c,cod),p); p.shader=null
         if(active || selected) { p.color=accent; p.alpha=(alpha*.40f).toInt(); canvas.drawPath(outline(c,cod),p) }
         p.style=Paint.Style.STROKE; p.strokeWidth=if(selected) .065f else if(football || race) .055f else .026f
@@ -117,7 +115,7 @@ internal class HudSkin {
                     val iconY=if(c.id in setOf("map","pause") || race && c.shape==HudShape.PEDAL) 0f else -.12f
                     canvas.save(); canvas.translate(0f,iconY)
                     p.color=if(active && hades) accent else white; p.alpha=alpha
-                    if(cod || fort) icons.drawSolid(canvas,p,c.icon,0f,0f,.55f) else icons.draw(canvas,p,c.icon,0f,0f,.54f)
+                    if(cod) icons.drawSolid(canvas,p,c.icon,0f,0f,.55f) else icons.draw(canvas,p,c.icon,0f,0f,.54f)
                     canvas.restore()
                     if(c.id !in setOf("map","pause") && c.shape!=HudShape.PEDAL) text(canvas,gesture ?: c.label,.63f,.24f,1.62f,if(hades) gold else white)
                 }

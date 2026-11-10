@@ -74,14 +74,14 @@ class ShowcaseCaptureTest {
             view.setProfile(XboxProfile("JOGADOR","PERFIL DEMO",subscription="ULTIMATE"))
             layout(view); view.restoreFocus(); layout(view)
             val grid=all(view).filterIsInstance<RecyclerView>().single()
-            await { grid.childCount>=6 && (0 until 6).all { i -> all(grid.getChildAt(i)).filterIsInstance<ImageView>().any { it.drawable is BitmapDrawable } } }
+            await { grid.childCount>=6 && (0 until 6).all { i -> all(grid.getChildAt(i)).filterIsInstance<FixedArtworkView>().any { it.drawable is BitmapDrawable } } }
             assertEquals(6,grid.adapter!!.itemCount)
             save(view,"catalog")
             val header=all(view).filterIsInstance<ImageView>().single { it.contentDescription=="Ícone de ${games[0].name}" }
             val oldHeader=header.drawable
             view.setRecentHistory(listOf(games[5].titleId,games[1].titleId,games[0].titleId))
             view.selectTab(com.xcloud.tclnative.catalog.LibraryTab.RECENT); view.restoreFocus(); layout(view)
-            await { grid.childCount>=3 && (0 until 3).all { i -> all(grid.getChildAt(i)).filterIsInstance<ImageView>().any { it.drawable is BitmapDrawable } } }
+            await { grid.childCount>=3 && (0 until 3).all { i -> all(grid.getChildAt(i)).filterIsInstance<FixedArtworkView>().any { it.drawable is BitmapDrawable } } }
             assertEquals(games[5].titleId,view.selectedGame?.titleId)
             shadowOf(Looper.getMainLooper()).idleFor(200,java.util.concurrent.TimeUnit.MILLISECONDS)
             await { header.drawable is BitmapDrawable && header.drawable!==oldHeader }
@@ -94,7 +94,7 @@ class ShowcaseCaptureTest {
             loading.begin(games[1].copy(gamePass=true),0)
             loading.updateQueue(QueueStatus(0,7000,QueueEstimate(180),0),8000)
             layout(loading)
-            await { all(loading).filterIsInstance<ImageView>().any { it.drawable is BitmapDrawable } }
+            await { all(loading).filterIsInstance<FixedArtworkView>().any { it.drawable is BitmapDrawable } }
             save(loading,"queue"); loading.close()
         } finally { view.close(); controller.pause().stop().destroy(); server.shutdown() }
     }

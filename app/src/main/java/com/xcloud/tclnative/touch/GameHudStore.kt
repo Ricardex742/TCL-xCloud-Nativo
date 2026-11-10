@@ -21,6 +21,11 @@ class GameHudStore(private val context: Context) {
         val text=prefs(id).getString("layout",null) ?: return HudSettings()
         if(text.length>65536) return HudSettings()
         val data=JSONObject(text)
+        // Removed presets must not carry their combat/build bindings into another layout.
+        if(data.optString("preset") in setOf("FORTNITE","FORTNITE_BUILD")) {
+            prefs(id).edit().remove("layout").apply()
+            return HudSettings()
+        }
         val positions=data.optJSONObject("controls") ?: JSONObject()
         val overrides=positions.keys().asSequence().take(64).mapNotNull { key ->
             val item=positions.optJSONObject(key) ?: return@mapNotNull null

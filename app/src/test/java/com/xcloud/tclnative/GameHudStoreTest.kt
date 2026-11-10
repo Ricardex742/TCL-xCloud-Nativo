@@ -16,17 +16,31 @@ import org.robolectric.annotation.Config
 class GameHudStoreTest {
     @Test fun perGameLayoutsPersistAcrossRecreationWithoutChangingOtherGames() {
         val first=Robolectric.buildActivity(Activity::class.java).setup()
-        val settings=HudSettings(HudPreset.FORTNITE,75,115,160,
+        val settings=HudSettings(HudPreset.CALL_OF_DUTY,75,115,160,
             mapOf("fire" to HudPlacement(.8f,.4f,1.2f,HudBinding.RT)))
-        GameHudStore(first.get()).save("FORTNITE",settings)
+        GameHudStore(first.get()).save("CALLOFDUTY",settings)
         first.pause().stop().destroy()
         val next=Robolectric.buildActivity(Activity::class.java).setup()
         val store=GameHudStore(next.get())
-        assertEquals(settings,store.read("fortnite"))
+        assertEquals(settings,store.read("callofduty"))
         assertEquals(HudSettings(),store.read("FORZAHORIZON6"))
-        store.save("FORTNITE",HudSettings())
-        assertEquals(HudSettings(),GameHudStore(next.get()).read("FORTNITE"))
+        store.save("CALLOFDUTY",HudSettings())
+        assertEquals(HudSettings(),GameHudStore(next.get()).read("CALLOFDUTY"))
         next.pause().stop().destroy()
+    }
+    @Test fun removedFortnitePresetsDiscardTheirBindingsWithoutChangingOtherGames() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        val activity=controller.get();val store=GameHudStore(activity)
+        val other=HudSettings(preset=HudPreset.HADES,opacity=75)
+        store.save("HADES",other)
+        for(preset in listOf("FORTNITE","FORTNITE_BUILD")) {
+            val prefs=activity.getSharedPreferences("hud_"+GameLibrary.accountKey(preset),0)
+            prefs.edit().putString("layout","""{"preset":"$preset","opacity":90,"controls":{"fire":{"x":0.8,"y":0.4,"binding":"RT"}}}""").commit()
+            assertEquals(HudSettings(),store.read(preset))
+            assertFalse(prefs.contains("layout"))
+        }
+        assertEquals(other,store.read("HADES"))
+        controller.pause().stop().destroy()
     }
     @Test fun invalidStoredCoordinatesAreIgnoredAndOutOfRangeValuesAreClamped() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()

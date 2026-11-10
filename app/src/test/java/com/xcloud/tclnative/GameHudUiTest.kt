@@ -127,8 +127,8 @@ class GameHudUiTest {
         var state=GamepadState()
         val view=GameTouchView(controller.get(),{state=it},{fail("The virtual HUD sent native touch")},{x,y -> x/1280 to y/720},{})
         controller.get().setContentView(view)
-        view.configure(TouchMode.VIRTUAL,GameTitle("FORTNITE","Fortnite")); layout(view)
-        val controls=VirtualGamepad(1280,720,HudPreset.FORTNITE).controls
+        view.configure(TouchMode.VIRTUAL,GameTitle("CALLOFDUTY","Call of Duty")); layout(view)
+        val controls=VirtualGamepad(1280,720,HudPreset.CALL_OF_DUTY).controls
         val move=controls.single { it.id=="move" }; val fire=controls.single { it.id=="fire" }; val jump=controls.single { it.id=="jump" }
         val left=Triple(3,move.x+move.radius,move.y)
         val shooting=Triple(7,fire.x,fire.y)
@@ -155,7 +155,7 @@ class GameHudUiTest {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()
         var state=GamepadState()
         val view=GameTouchView(controller.get(),{state=it},{},{_,_ -> null},{})
-        controller.get().setContentView(view); view.configure(TouchMode.VIRTUAL,GameTitle("FORTNITE","Fortnite")); layout(view)
+        controller.get().setContentView(view); view.configure(TouchMode.VIRTUAL,GameTitle("CALLOFDUTY","Call of Duty")); layout(view)
         val now=SystemClock.uptimeMillis()
         event(view,MotionEvent.ACTION_DOWN,now,Triple(0,700f,300f))
         event(view,MotionEvent.ACTION_MOVE,now+16,Triple(0,712f,300f))
@@ -202,8 +202,8 @@ class GameHudUiTest {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()
         val activity=controller.get().apply { setContentView(FrameLayout(this)) }
         layout(activity.window.decorView)
-        val store=GameHudStore(activity); val game=GameTitle("FORTNITE","Fortnite")
-        var applied=HudSettings(); var edits=0; var hidden=0; var page=HudPreset.FORTNITE
+        val store=GameHudStore(activity); val game=GameTitle("EAFC26","EA SPORTS FC 26")
+        var applied=HudSettings(); var edits=0; var hidden=0; var page=HudPreset.EA_FC
         val panel=GameHudPanel(activity,game,store,{ applied=it },{ edits++ },{ hidden++ },{ page=it })
         fun all(view: View): List<View> = listOf(view)+if(view is ViewGroup)
             (0 until view.childCount).flatMap { all(view.getChildAt(it)) } else emptyList()
@@ -219,7 +219,7 @@ class GameHudUiTest {
         save(root,"settings")
         choose("Opacidade:"); choose("75%")
         assertEquals(75,applied.opacity); assertEquals(applied,GameHudStore(activity).read(game.titleId))
-        choose("Mostrar HUD de construção"); assertEquals(HudPreset.FORTNITE_BUILD,page)
+        choose("Mostrar HUD de defesa"); assertEquals(HudPreset.EA_FC_DEFENSE,page)
         panel.show(); choose("Editar posição"); assertEquals(1,edits)
         panel.show(); choose("Layout:"); choose("Corrida — padrão")
         assertEquals(HudPreset.RACING,applied.preset)
@@ -233,8 +233,7 @@ class GameHudUiTest {
         val root=FrameLayout(activity).apply { setBackgroundColor(Color.rgb(43,49,57)) }
         val view=GameTouchView(activity,{}, {},{_,_ -> null},{})
         root.addView(view,FrameLayout.LayoutParams(-1,-1)); activity.setContentView(root)
-        val profiles=mapOf("fortnite" to HudPreset.FORTNITE,"fortnite-build" to HudPreset.FORTNITE_BUILD,
-            "call-of-duty" to HudPreset.CALL_OF_DUTY,"forza" to HudPreset.FORZA,"ea-fc" to HudPreset.EA_FC,
+        val profiles=mapOf("call-of-duty" to HudPreset.CALL_OF_DUTY,"forza" to HudPreset.FORZA,"ea-fc" to HudPreset.EA_FC,
             "ea-fc-defense" to HudPreset.EA_FC_DEFENSE,"hades" to HudPreset.HADES)
         for((name,preset) in profiles) {
             view.configure(TouchMode.VIRTUAL,GameTitle("DEMO","Demonstração"),HudSettings(preset=preset))
@@ -242,10 +241,6 @@ class GameHudUiTest {
             layout(root,2400,1080)
             assertEquals(preset,view.preset)
         }
-        view.configure(TouchMode.VIRTUAL,GameTitle("FORTNITE","Fortnite"),HudSettings())
-        view.showPage(HudPreset.FORTNITE_BUILD)
-        view.applyHud(view.configuration.copy(opacity=75))
-        assertEquals(HudPreset.FORTNITE_BUILD,view.preset)
         view.configure(TouchMode.VIRTUAL,GameTitle("FC","EA SPORTS FC"),HudSettings())
         view.showPage(HudPreset.EA_FC_DEFENSE); view.applyHud(view.configuration.copy(opacity=75))
         assertEquals(HudPreset.EA_FC_DEFENSE,view.preset)

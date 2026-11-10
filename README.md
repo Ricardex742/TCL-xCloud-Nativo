@@ -62,14 +62,9 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
     <td width="50%"><img src="docs/screenshots/video-modes.png" alt="Modo de vídeo — Menor atraso, adaptativo e compatibilidade." /><br /><strong>Modo de vídeo</strong> — Menor atraso, adaptativo e compatibilidade.</td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/game-menu.png" alt="Menu da partida — Ajustes, estatísticas e desconexão." /><br /><strong>Menu da partida</strong> — Ajustes, estatísticas e desconexão.</td>
-    <td width="50%"><img src="docs/screenshots/transition-exit.png" alt="Saída da partida — Retorno ao catálogo com a arte do jogo." /><br /><strong>Saída da partida</strong> — Retorno ao catálogo com a arte do jogo.</td>
+    <td colspan="2" align="center"><img src="docs/screenshots/game-menu.png" width="70%" alt="Menu da partida — Ajustes, estatísticas e desconexão." /><br /><strong>Menu da partida</strong> — Ajustes, estatísticas e desconexão.</td>
   </tr>
 </table>
-
-### Gameplay
-
-![Gameplay transmitido pelo xCLOUD em uma TV](docs/screenshots/gameplay.jpg)
 
 ## Imagem e tela
 

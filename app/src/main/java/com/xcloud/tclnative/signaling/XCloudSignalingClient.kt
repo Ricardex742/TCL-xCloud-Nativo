@@ -58,6 +58,8 @@ class XCloudSignalingClient(
     private var sdpRequest=1
     private val activePath = AtomicReference<String?>(null)
     private val waitTimeClient = httpClient.newBuilder().callTimeout(3, TimeUnit.SECONDS).build()
+    private val keepAliveClient = httpClient.newBuilder().callTimeout(5, TimeUnit.SECONDS).build()
+    private var sessionKeepAlive=SessionKeepAlive(pause,clockMs)
     private val jsonType = "application/json; charset=utf-8".toMediaType()
     private var activeResolution = StreamResolution.HD_1080_HQ
     private var mobileTouchSession=false
@@ -243,6 +245,7 @@ class XCloudSignalingClient(
         sdpRequest=1
         activeResolution = resolution
         mobileTouchSession=nativeTouch
+        sessionKeepAlive=SessionKeepAlive(pause,clockMs)
         try {
             val play = JSONObject().put("clientSessionId", java.util.UUID.randomUUID().toString())
                 .put("titleId", titleId).put("systemUpdateGroup", "").put("serverId", "")
@@ -307,7 +310,22 @@ class XCloudSignalingClient(
     }
 
     suspend fun keepAlive() {
-        activePath.get()?.let { request("$it/keepalive", "KEEPALIVE", "POST") }
+        withContext(Dispatchers.IO) {
+            activePath.get()?.let { request("$it/keepalive", "KEEPALIVE", "POST",client=keepAliveClient) }
+        }
+    }
+
+    fun keepAliveDiagnostics()=sessionKeepAlive.diagnostics()
+
+    suspend fun maintainSession() {
+        // Reading an HTTP error body can block even after awaitResponse resumes.
+        withContext(Dispatchers.IO) {
+            val path=activePath.get() ?: return@withContext
+            sessionKeepAlive.run {
+                if(activePath.get()!=path) throw CancellationException("Manutenção da sessão substituída")
+                request("$path/keepalive","KEEPALIVE","POST",client=keepAliveClient)
+            }
+        }
     }
 
     suspend fun stop() {

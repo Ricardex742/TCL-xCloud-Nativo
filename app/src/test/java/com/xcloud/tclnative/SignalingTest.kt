@@ -355,6 +355,42 @@ class SignalingTest {
         assertEquals("KEEPALIVE/HTTP_503",reason.code);assertTrue(reason.description.contains("ServiceUnavailable"))
         assertFalse(reason.description.contains("private-body"));client.stop()
     }
+    @Test fun backgroundKeepAliveRecoversHttp502WithoutDeletingOrRecreatingThePlayingSession() = runBlocking {
+        val original=server.dispatcher
+        val pulses=java.util.concurrent.atomic.AtomicInteger()
+        server.dispatcher=object: Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                if(request.path!="/session/keepalive") return original.dispatch(request)
+                requests.add(request)
+                return when(pulses.incrementAndGet()) {
+                    1 -> response("{}",502).setHeader("Retry-After","2")
+                    2 -> response("{}",503)
+                    else -> response("",204)
+                }
+            }
+        }
+        val confirmed=CompletableDeferred<Unit>();val waits=CopyOnWriteArrayList<Long>()
+        val client=XCloudSignalingClient(
+            XCloudSession("test-token",server.url("/").toString(),"hash",transferToken="console-token"),
+            OkHttpClient.Builder().proxy(Proxy.NO_PROXY).build(),
+            { wait ->
+                now+=wait;waits.add(wait)
+                if(wait==30_000L && pulses.get()>=3) { confirmed.complete(Unit);awaitCancellation() }
+            },{now})
+        assertTrue(client.startAndConnectWebRtcSession("real-id",peer) {}.isSuccess)
+        waits.clear()
+        val maintenance=launch { client.maintainSession() }
+        try {
+            withTimeout(4000) { confirmed.await() }
+            assertEquals(3,pulses.get())
+            assertEquals(listOf(30_000L,2000L,2000L,30_000L),waits.toList())
+            assertEquals(1,requests.count { it.path=="/v5/sessions/cloud/play" })
+            assertEquals(1,requests.count { it.method=="POST" && it.path=="/session/sdp" })
+            assertFalse(requests.any { it.method=="DELETE" })
+            assertTrue(client.keepAliveDiagnostics().contains("recuperações 1"))
+            assertTrue(client.keepAliveDiagnostics().contains("falhas 2"))
+        } finally { maintenance.cancelAndJoin();client.stop() }
+    }
     @Test fun queueLongerThanNinetySecondsCanStillProvisionAndConnect() = runBlocking {
         queuedStates = 70
         val progress = mutableListOf<String>()

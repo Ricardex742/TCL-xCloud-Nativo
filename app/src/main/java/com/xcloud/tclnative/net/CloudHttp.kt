@@ -6,6 +6,9 @@ import okhttp3.Callback
 import okhttp3.Response
 import org.json.JSONObject
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 import kotlin.coroutines.resumeWithException
 
 /** Cancel the socket along with the coroutine, and close responses arriving after cancellation. */
@@ -22,13 +25,27 @@ suspend fun Call.awaitResponse(): Response = suspendCancellableCoroutine { conti
     })
 }
 
-class CloudHttpException(val stage: String, val status: Int, val serviceCode: String?, requestId: String?) :
+class CloudHttpException(val stage: String, val status: Int, val serviceCode: String?, requestId: String?,
+                         val retryAfterMs: Long?=null) :
     IOException("$stage: HTTP $status" + (serviceCode?.let { " — código $it" } ?: "") +
         (requestId?.let { " (requisição $it)" } ?: ""))
 
 /** Preserve the failed request stage; raw socket messages can contain private endpoint URLs. */
 class CloudRequestException(val stage: String,cause: IOException):
     IOException("$stage: falha na requisição (${cause.javaClass.simpleName})",cause)
+
+internal fun retryAfterDelayMs(value: String?,nowMs: Long=System.currentTimeMillis()): Long? {
+    val text=value?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+    text.toLongOrNull()?.let { seconds ->
+        return if(seconds<0) null else seconds.coerceAtMost(Long.MAX_VALUE/1000)*1000
+    }
+    return runCatching {
+        val format=SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz",Locale.US).apply {
+            timeZone=TimeZone.getTimeZone("GMT");isLenient=false
+        }
+        format.parse(text)?.time?.let { (it-nowMs).coerceAtLeast(0) }
+    }.getOrNull()
+}
 
 /** Report diagnostic codes, never a response body, credential or signed URL. */
 fun Response.checkedBody(stage: String): String {
@@ -40,7 +57,7 @@ fun Response.checkedBody(stage: String): String {
         }
         val id = (header("x-ms-request-id") ?: header("ms-cv"))
             ?.takeIf { it.matches(Regex("[A-Za-z0-9_.:-]{1,100}")) }
-        throw CloudHttpException(stage, code, error, id)
+        throw CloudHttpException(stage, code, error, id,retryAfterDelayMs(header("Retry-After")))
     }
     return text
 }

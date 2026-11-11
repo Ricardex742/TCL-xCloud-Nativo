@@ -1051,7 +1051,7 @@ open class MainActivity : Activity() {
                 val appVersion=packageManager.getPackageInfo(packageName,0).versionName ?: "n/d"
                 tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}"+
                     (when(touchMode) { TouchMode.NATIVE -> "\n${touchView.nativeDiagnostics()}";TouchMode.VIRTUAL -> "\n${touchView.hudDiagnostics()}";else -> "" })+
-                    "\n${joystickDispatch.diagnostics()}\n${signaling.profileDiagnostics()}\n${surfaceRenderer.diagnostics()}\n${playbackDisplay.diagnostics(window.decorView.display)}\n${rtc.audioDiagnostics()}\n${rtc.latencyDiagnostics()}\n${rtc.iceDiagnostics()}\n${rtc.codecDiagnostics()}\n${rumble.diagnostics()}\n${gyro.status} | Mouse/teclado: ${sessionDesktopMode.label} | Entrada MKB ativa: $desktopCaptured | Captura Android: ${if(Build.VERSION.SDK_INT>=26) window.decorView.hasPointerCapture() else false}" }
+                    "\n${joystickDispatch.diagnostics()}\n${signaling.profileDiagnostics()}\n${signaling.keepAliveDiagnostics()}\n${surfaceRenderer.diagnostics()}\n${playbackDisplay.diagnostics(window.decorView.display)}\n${rtc.audioDiagnostics()}\n${rtc.latencyDiagnostics()}\n${rtc.iceDiagnostics()}\n${rtc.codecDiagnostics()}\n${rumble.diagnostics()}\n${gyro.status} | Mouse/teclado: ${sessionDesktopMode.label} | Entrada MKB ativa: $desktopCaptured | Captura Android: ${if(Build.VERSION.SDK_INT>=26) window.decorView.hasPointerCapture() else false}" }
                 surfaceRenderer.displayDimensions()?.let(rtc::updateDisplayDimensions)
                 if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
                 signaling.startAndConnectWebRtcSession(titleId, rtc, resolution = settings.resolution, nativeTouch=touchMode==TouchMode.NATIVE,options=sessionOptions,microphone=settings.microphone, onQueueStatus = { status -> runOnUiThread {
@@ -1077,58 +1077,56 @@ open class MainActivity : Activity() {
                 val recovery = VideoRecoveryPolicy(compatible)
                 var lastToken = -1L
                 var recovering = false
-                var nextKeepAlive = android.os.SystemClock.elapsedRealtime() + 30_000
-                while (isActive) {
-                    withTimeoutOrNull(1000) { transportFailure.await() }?.let { throw it }
-                    val now = android.os.SystemClock.elapsedRealtime()
-                    val health = surfaceRenderer.probeVideoHealth()
-                    val receiving=streamHistory.receivingVideo(now)
-                    val action = recovery.observe(now, health.presentedToken, health.deliveredRecently,receiving)
-                    tracker.observe(now,health.presentedToken,receiving,action)
-                    if (health.presentedToken != lastToken && recovering) {
-                        recovering = false
-                        hudTextView.visibility = View.GONE
-                        videoRecoveryDialog?.dismiss()
-                        hudTextView.text = "Vídeo nativo ativo [$gameName]"
-                        hudTextView.setTextColor(Color.GREEN)
-                    }
-                    lastToken = health.presentedToken
-                    when (action) {
-                        VideoRecoveryAction.NONE -> Unit
-                        VideoRecoveryAction.REQUEST_KEYFRAME -> {
-                            recovering = true
-                            hudTextView.visibility = View.VISIBLE
-                            hudTextView.text = "Vídeo sem novos quadros. Solicitando atualização da imagem…"
-                            hudTextView.setTextColor(Color.YELLOW)
-                            rtc.requestVideoKeyframe()
+                kotlinx.coroutines.coroutineScope {
+                    launch { signaling.maintainSession() }
+                    while (isActive) {
+                        withTimeoutOrNull(1000) { transportFailure.await() }?.let { throw it }
+                        val now = android.os.SystemClock.elapsedRealtime()
+                        val health = surfaceRenderer.probeVideoHealth()
+                        val receiving=streamHistory.receivingVideo(now)
+                        val action = recovery.observe(now, health.presentedToken, health.deliveredRecently,receiving)
+                        tracker.observe(now,health.presentedToken,receiving,action)
+                        if (health.presentedToken != lastToken && recovering) {
+                            recovering = false
+                            hudTextView.visibility = View.GONE
+                            videoRecoveryDialog?.dismiss()
+                            hudTextView.text = "Vídeo nativo ativo [$gameName]"
+                            hudTextView.setTextColor(Color.GREEN)
                         }
-                        VideoRecoveryAction.RESET_DECODER -> {
-                            hudTextView.text = "Recuperando vídeo: reiniciando decoder no próximo quadro-chave…"
-                            rtc.recoverVideoDecoder()
+                        lastToken = health.presentedToken
+                        when (action) {
+                            VideoRecoveryAction.NONE -> Unit
+                            VideoRecoveryAction.REQUEST_KEYFRAME -> {
+                                recovering = true
+                                hudTextView.visibility = View.VISIBLE
+                                hudTextView.text = "Vídeo sem novos quadros. Solicitando atualização da imagem…"
+                                hudTextView.setTextColor(Color.YELLOW)
+                                rtc.requestVideoKeyframe()
+                            }
+                            VideoRecoveryAction.RESET_DECODER -> {
+                                hudTextView.text = "Recuperando vídeo: reiniciando decoder no próximo quadro-chave…"
+                                rtc.recoverVideoDecoder()
+                            }
+                            VideoRecoveryAction.REBUILD_SURFACE -> {
+                                hudTextView.text = "Recuperando vídeo: recriando superfície de exibição…"
+                                surfaceRenderer.rebuildSurface()
+                                rtc.requestVideoKeyframe()
+                            }
+                            VideoRecoveryAction.OFFER_RETRY -> {
+                                hudTextView.text = "O vídeo ainda não voltou. A sessão Xbox continua aberta."
+                                resetController()
+                                val dialog = ConsoleDialogs.message(this@MainActivity,"Imagem sem atualização",
+                                    "A imagem não voltou após 30 segundos. Recuperar o vídeo mantém a partida aberta. Voltar ao catálogo encerra a sessão.",
+                                    listOf(ConsoleAction("Recuperar vídeo") {
+                                        recovery.retry(android.os.SystemClock.elapsedRealtime())
+                                        if (surfaceRenderer.probeVideoHealth().deliveredRecently) surfaceRenderer.rebuildSurface()
+                                        rtc.recoverVideoDecoder()
+                                    }, ConsoleAction("Voltar ao catálogo") { cancelPlayback() }),
+                                    onCancel = { cancelPlayback() })
+                                videoRecoveryDialog = dialog
+                                dialog.setOnDismissListener { if (videoRecoveryDialog === dialog) videoRecoveryDialog = null }
+                            }
                         }
-                        VideoRecoveryAction.REBUILD_SURFACE -> {
-                            hudTextView.text = "Recuperando vídeo: recriando superfície de exibição…"
-                            surfaceRenderer.rebuildSurface()
-                            rtc.requestVideoKeyframe()
-                        }
-                        VideoRecoveryAction.OFFER_RETRY -> {
-                            hudTextView.text = "O vídeo ainda não voltou. A sessão Xbox continua aberta."
-                            resetController()
-                            val dialog = ConsoleDialogs.message(this@MainActivity,"Imagem sem atualização",
-                                "A imagem não voltou após 30 segundos. Recuperar o vídeo mantém a partida aberta. Voltar ao catálogo encerra a sessão.",
-                                listOf(ConsoleAction("Recuperar vídeo") {
-                                    recovery.retry(android.os.SystemClock.elapsedRealtime())
-                                    if (surfaceRenderer.probeVideoHealth().deliveredRecently) surfaceRenderer.rebuildSurface()
-                                    rtc.recoverVideoDecoder()
-                                }, ConsoleAction("Voltar ao catálogo") { cancelPlayback() }),
-                                onCancel = { cancelPlayback() })
-                            videoRecoveryDialog = dialog
-                            dialog.setOnDismissListener { if (videoRecoveryDialog === dialog) videoRecoveryDialog = null }
-                        }
-                    }
-                    if (now >= nextKeepAlive) {
-                        signaling.keepAlive()
-                        nextKeepAlive = android.os.SystemClock.elapsedRealtime() + 30_000
                     }
                 }
             } catch (cancelled: CancellationException) {

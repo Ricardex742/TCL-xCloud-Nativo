@@ -121,7 +121,9 @@ class ConsoleUiTest {
         choose(resolution,"720p")
         assertEquals(StreamResolution.HD_720,store.read().resolution)
         (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
-        choose(panel.showImage(),"Upscaling nativo:")
+        val imageCategory=panel.showImage()
+        render(imageCategory,"image-settings-0.32.0")
+        choose(imageCategory,"Upscaling nativo:")
         val upscale=ShadowDialog.getLatestDialog() as ConsoleDialog
         render(upscale,"green-upscaling-choice")
         choose(upscale,"Desativado —")

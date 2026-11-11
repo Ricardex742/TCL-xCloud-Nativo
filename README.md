@@ -10,7 +10,7 @@
 
 ## Telas do aplicativo
 
-A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Code é ilustrativo; algumas prévias dos HUDs usam fundo neutro.
+A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Code é ilustrativo.
 
 <table>
   <tr>
@@ -52,16 +52,16 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/theme-cyber-blue.png" alt="Tema Azul Cibernético, com fundo azul escuro e destaques ciano." /><br /><strong>Azul Cibernético</strong></td>
-    <td width="50%"><img src="docs/screenshots/theme-volcanic-red.png" alt="Tema Vermelho Vulcânico, com fundo vermelho escuro e destaques vermelhos." /><br /><strong>Vermelho Vulcânico</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-cyber-blue.jpg" alt="Tema Azul Cibernético, com fundo azul escuro e destaques ciano." /><br /><strong>Azul Cibernético</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-volcanic-red.jpg" alt="Tema Vermelho Vulcânico, com fundo vermelho escuro e destaques vermelhos." /><br /><strong>Vermelho Vulcânico</strong></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/theme-prestige-gold.png" alt="Tema Dourado Prestígio, com fundo escuro e destaques dourados." /><br /><strong>Dourado Prestígio</strong></td>
-    <td width="50%"><img src="docs/screenshots/theme-industrial-orange.png" alt="Tema Laranja Industrial, com fundo grafite e destaques laranja." /><br /><strong>Laranja Industrial</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-prestige-gold.jpg" alt="Tema Dourado Prestígio, com fundo escuro e destaques dourados." /><br /><strong>Dourado Prestígio</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-industrial-orange.jpg" alt="Tema Laranja Industrial, com fundo grafite e destaques laranja." /><br /><strong>Laranja Industrial</strong></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/theme-galaxy-purple.png" alt="Tema Roxo Galáxia, com fundo roxo escuro e destaques violeta." /><br /><strong>Roxo Galáxia</strong></td>
-    <td width="50%"><img src="docs/screenshots/theme-platinum-silver.png" alt="Tema Prata Platina, com fundo cinza escuro e destaques prateados." /><br /><strong>Prata Platina</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-galaxy-purple.jpg" alt="Tema Roxo Galáxia, com fundo roxo escuro e destaques violeta." /><br /><strong>Roxo Galáxia</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-platinum-silver.jpg" alt="Tema Prata Platina, com fundo cinza escuro e destaques prateados." /><br /><strong>Prata Platina</strong></td>
   </tr>
 </table>
 
@@ -129,7 +129,6 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
 - **AMD FSR 1.0.2 experimental**, com ampliação EASU e nitidez RCAS; em resolução nativa, aplica somente RCAS.
 - Saída do FSR em **Automático, 1440p ou 4K experimental**, com proteção para retorno à escala padrão.
 - Preferência por uma taxa de atualização compatível com a apresentação do vídeo.
-- Verificação do suporte HDR anunciado pela tela; a transmissão atual utiliza SDR.
 
 <table>
   <tr>
@@ -196,14 +195,17 @@ O suporte depende do jogo e da sessão. Ter um layout de controle virtual na nuv
 <table>
   <tr>
     <td width="50%"><img src="docs/screenshots/hud-call-of-duty-gameplay.jpg" alt="Call of Duty durante uma partida com o HUD virtual do aplicativo." /><br /><strong>Call of Duty</strong> — Gameplay com analógico virtual, mira, disparo e ações na tela.</td>
-    <td width="50%"><img src="docs/screenshots/hud-forza.png" alt="Corrida — Direção, acelerador, freio e marchas." /><br /><strong>Corrida</strong> — Direção, acelerador, freio e marchas.</td>
+    <td width="50%"><img src="docs/screenshots/hud-forza-gameplay.jpg" alt="Corrida — Direção, acelerador, freio e marchas." /><br /><strong>Corrida</strong> — Direção, acelerador, freio e marchas.</td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/hud-ea-fc.png" alt="Futebol em ataque — Passes, chute, enfiada e corrida." /><br /><strong>Futebol em ataque</strong> — Passes, chute, enfiada e corrida.</td>
-    <td width="50%"><img src="docs/screenshots/hud-ea-fc-defense.png" alt="Futebol em defesa — Marcação, bote, carrinho e troca de jogador." /><br /><strong>Futebol em defesa</strong> — Marcação, bote, carrinho e troca de jogador.</td>
+    <td colspan="2" align="center"><img src="docs/screenshots/hud-battlefield-6-gameplay.jpg" width="70%" alt="Battlefield 6 durante uma partida com o HUD de tiro do aplicativo." /><br /><strong>Battlefield 6</strong> — Gameplay com movimento, mira, disparo e ações do HUD de tiro.</td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/hud-hades.png" alt="Hades — Ataque, especial, feitiço e esquiva." /><br /><strong>Hades</strong> — Ataque, especial, feitiço e esquiva.</td>
+    <td width="50%"><img src="docs/screenshots/hud-ea-fc-attack-gameplay.jpg" alt="Futebol em ataque — Passes, chute, enfiada e corrida." /><br /><strong>Futebol em ataque</strong> — Passes, chute, enfiada e corrida.</td>
+    <td width="50%"><img src="docs/screenshots/hud-ea-fc-defense-gameplay.jpg" alt="Futebol em defesa — Marcação, bote, carrinho e troca de jogador." /><br /><strong>Futebol em defesa</strong> — Marcação, bote, carrinho e troca de jogador.</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/hud-hades-gameplay.jpg" alt="Hades II durante uma partida com ataque, especial, feitiço e esquiva no HUD." /><br /><strong>Hades II</strong> — Ataque, especial, feitiço e esquiva.</td>
     <td width="50%"><img src="docs/screenshots/hud-editor.png" alt="Editor — Posição, tamanho, comandos combinados e gestos." /><br /><strong>Editor</strong> — Posição, tamanho, comandos combinados e gestos.</td>
   </tr>
   <tr>

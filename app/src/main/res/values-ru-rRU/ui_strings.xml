@@ -15,7 +15,6 @@
     <string name="ui_03561d241830a0e8" formatted="false">"Телевидение не создало избранный канал."</string>
     <string name="ui_043344ab2cab974f" formatted="false">"Отключить сеанс и вернуться в каталог"</string>
     <string name="ui_044419e9c7dfdf4f" formatted="false">"Видео декодер"</string>
-    <string name="ui_0471fc9b94d1d4e1" formatted="false">"Экран: HDR10, анонсированный Android."</string>
     <string name="ui_0482ab2f5e9555df" formatted="false">"эффективный: да"</string>
     <string name="ui_04fed7bc7eba27be" formatted="false">"Родной тач Xbox: {0}"</string>
     <string name="ui_0576a13b7f8da156" formatted="false">"Вибрация контроллера и мобильного телефона"</string>
@@ -33,7 +32,6 @@
     <string name="ui_08fcc1f5b2d705ea" formatted="false">"Целься при стрельбе: {0}"</string>
     <string name="ui_0964df415f982798" formatted="false">"Разрешение н/д"</string>
     <string name="ui_0a6ed0003ccbb5c5" formatted="false">"вибрация контроллера"</string>
-    <string name="ui_0a8a145f0c4c786b" formatted="false">"HDR10: экран и передача"</string>
     <string name="ui_0aadc3c5e893f94b" formatted="false">"Левая мертвая зона: {0}%"</string>
     <string name="ui_0af64325f77fe6bf" formatted="false">"Выберите ту же схему, что и в игре. Apply восстанавливает действия и жесты футбольных кнопок, сохраняя при этом пользовательские положения и размеры."</string>
     <string name="ui_0b23a612555311a0" formatted="false">"RTT повышен. Сравните подключение и регион обслуживания. RTT не измеряет полную задержку между командой и изображением."</string>
@@ -222,7 +220,6 @@
     <string name="ui_4750ad41b3122b74" formatted="false">"Ошибка xCloud"</string>
     <string name="ui_478c39f86a8161d1" formatted="false">"Ярлык игры"</string>
     <string name="ui_47a18fda47bdd27f" formatted="false">"AMD FSR 1.0.2: выключено"</string>
-    <string name="ui_47cf330e4355aac3" formatted="false">"Трансмиссия этого движка: 8-битная H.264, в SDR. Видео поверхность использует 8-битный RGB.\n\n"</string>
     <string name="ui_48020357dd273e65" formatted="false">"Ожидаем вашего одобрения в Microsoft…"</string>
     <string name="ui_48111b2c9ff4898e" formatted="false">"Местный кооператив: {0}"</string>
     <string name="ui_4875bd46f6938df1" formatted="false">"Гироскоп: {0}"</string>
@@ -250,7 +247,6 @@
     <string name="ui_504fb1a48efc40eb" formatted="false">"Режим экрана: не сообщается Android"</string>
     <string name="ui_5052c95dbb7a4d8d" formatted="false">"Восстановление сеанса…"</string>
     <string name="ui_507a9a8be3d145a8" formatted="false">"Да"</string>
-    <string name="ui_510c8504b7666c02" formatted="false">"Экран: HDR10, Android не анонсирован."</string>
     <string name="ui_5120d6e6ce58a9f2" formatted="false">"Аудио: Медиа/Игра • Запрошенное стерео • Громкость мультимедиа {0} • Отключение звука: {1} • Фокус: {2} • Усиление фокуса {3}% • Воспроизведение {4}"</string>
     <string name="ui_51807ae73e427a4e" formatted="false">"сбой сетевого подключения"</string>
     <string name="ui_519384df60862471" formatted="false">"WebRTC Минимум буферной сети"</string>
@@ -552,7 +548,6 @@
     <string name="ui_ac73aa9300406c83" formatted="false">"Не открывать автоматически"</string>
     <string name="ui_acf055bba88baa0f" formatted="false">"Выходное разрешение FSR"</string>
     <string name="ui_ad308eca51baa9f5" formatted="false">"Очередной матч начался"</string>
-    <string name="ui_ad6cf30be5863ae2" formatted="false">"HDR10: проверка экрана и трансляция"</string>
     <string name="ui_ad95a1eab4868093" formatted="false">"Канал на главном экране"</string>
     <string name="ui_ada597c825c967dc" formatted="false">"Попытки восстановления: {0}.\n\n"</string>
     <string name="ui_adc902bee601b133" formatted="false">"Избранное не удалось сохранить на устройстве."</string>
@@ -562,7 +557,6 @@
     <string name="ui_aef7cd5b2081351d" formatted="false">"Сохранить"</string>
     <string name="ui_af6f5bcb22418bc6" formatted="false">"Поиск игр"</string>
     <string name="ui_afb58c5ef14296d0" formatted="false">"Физический контроллер и локальный кооператив"</string>
-    <string name="ui_afbcc421a945e702" formatted="false">"Real HDR10 требует 10-битной потоковой передачи, цвета BT.2020, передачи PQ и полноцепного воспроизведения HDR. Текущий путь не предлагает эту комбинацию даже на совместимом телевизоре.\n\n"</string>
     <string name="ui_afd65886ed07d629" formatted="false">"ПОПРОБУЙТЕ ЕЩЕ РАЗ"</string>
     <string name="ui_b019906f6858044e" formatted="false">"xCLOUD {0} • Начальный ввод: {1} • {2}"</string>
     <string name="ui_b0944e467b311f8d" formatted="false">"Судьба {0}"</string>
@@ -729,7 +723,6 @@
     <string name="ui_e31fe0e7c18095f5" formatted="false">"Для этого аккаунта доступны только регионы, предложенные Xbox. Выбор запрашивает сеанс в этом регионе; не прогнозирует пинг или очередь игры. Если сохраненный регион больше не предлагается, приложение использует регион по умолчанию и сообщает вам об этом при диагностике. Действует в следующей игре."</string>
     <string name="ui_e35865317817e866" formatted="false">"Соединение WebRTC"</string>
     <string name="ui_e3ac02bd2ccd6d6e" formatted="false">"Получено: {0} | {1} | {2}\n"</string>
-    <string name="ui_e3c9951db767377e" formatted="false">"Экран: поддержка HDR не сообщается Android."</string>
     <string name="ui_e40b250bfbf97c8e" formatted="false">"Восстановление видео: перезапуск декодера на следующем ключевом кадре…"</string>
     <string name="ui_e41e160eef41ad25" formatted="false">"FSR 1.0.2 повышает качество видео с помощью повышения резкости EASU и RCAS. Если видео и вывод имеют одинаковый размер, примените только RCAS без увеличения. Начните с вывода FSR на Auto и RCAS на 50%. Сравнивать резкость, плавность и реакцию команд; Для 1440p и 4K требуется больше GPU. Диагностика отличает увеличение RCAS от родного. FSR берет на себя масштабирование даже при включенном Native Upscaling. Отрегулируйте RCAS в настройках изображения. Совместимость исключает FSR. Применяется к следующему матчу."</string>
     <string name="ui_e425c594c6c37587" formatted="false">"Оценка Xbox: менее 1 минуты."</string>
@@ -773,7 +766,6 @@
     <string name="ui_f0a5d0b85c1fe428" formatted="false">"Профиль не в курсе"</string>
     <string name="ui_f10cadbc47a09be6" formatted="false">"Галактический фиолетовый"</string>
     <string name="ui_f11e7df036a8fd99" formatted="false">"; заказ во время сеанса: {0}"</string>
-    <string name="ui_f12b9d29b2cf0da6" formatted="false">"Увеличение насыщенности или перевод телевизора в режим HDR не преобразует поток SDR в HDR10. Собственные элементы управления изображением телевизора по-прежнему доступны."</string>
     <string name="ui_f1a05e988e609704" formatted="false">"В телевизоре не предусмотрен установщик приложений по ярлыку."</string>
     <string name="ui_f1dd04ae0fde2ba0" formatted="false">"Масштабировать — заполнить кадрированием"</string>
     <string name="ui_f20f404de2b58f35" formatted="false">"Невозможно сохранить историю Xbox на этом устройстве."</string>

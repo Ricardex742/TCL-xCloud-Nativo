@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       tag:
-        description: Tag da versão, por exemplo v0.31.17
+        description: Tag da versão, por exemplo v0.32.0
         required: true
         type: string
 
@@ -32,7 +32,6 @@ jobs:
       BUILD_RUN: ${{ inputs.run_id }}
       RELEASE_TAG: ${{ inputs.tag }}
     steps:
-      - uses: actions/checkout@v5
       - name: Verificar origem e resultado da compilação
         shell: bash
         run: |
@@ -52,6 +51,9 @@ jobs:
               output.write('BUILD_SHA=' + run['head_sha'] + '\n')
           PY
           gh run download "$BUILD_RUN" --repo "$GH_REPO" --name TCL-xCloud-App-Debug-Android10 --dir "$RUNNER_TEMP/apk"
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.BUILD_SHA }}
       - name: Verificar APK e assinatura fixa
         shell: bash
         run: |
@@ -73,10 +75,8 @@ jobs:
           name = f'xCLOUD-{version}.apk'
           shutil.copyfile(apk, assets / name)
           (assets / 'SHA256SUMS.txt').write_text(f'{digest}  {name}\n')
-          (Path(os.environ['RUNNER_TEMP']) / 'release-body.md').write_text(
-              'Cliente independente de Xbox Cloud Gaming para Android, Android TV e Google TV.\n\n'
-              f'Requer Android 7.0 ou superior. Baixe o arquivo **{name}** anexado abaixo para instalar ou atualizar o aplicativo.\n')
           PY
+          python3 scripts/release_notes.py --version "${RELEASE_TAG#v}" --output "$RUNNER_TEMP/release-body.md"
       - name: Anexar APK e publicar Release
         shell: bash
         run: |

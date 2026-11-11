@@ -15,7 +15,6 @@
     <string name="ui_03561d241830a0e8" formatted="false">"电视没有创建收藏夹频道。"</string>
     <string name="ui_043344ab2cab974f" formatted="false">"断开会话并返回目录"</string>
     <string name="ui_044419e9c7dfdf4f" formatted="false">"视频解码器"</string>
-    <string name="ui_0471fc9b94d1d4e1" formatted="false">"屏幕：Android发布的HDR10。"</string>
     <string name="ui_0482ab2f5e9555df" formatted="false">"高效：是"</string>
     <string name="ui_04fed7bc7eba27be" formatted="false">"原生触摸Xbox：{0}"</string>
     <string name="ui_0576a13b7f8da156" formatted="false">"控制器和手机振动"</string>
@@ -33,7 +32,6 @@
     <string name="ui_08fcc1f5b2d705ea" formatted="false">"射击时瞄准：{0}"</string>
     <string name="ui_0964df415f982798" formatted="false">"分辨率 不适用"</string>
     <string name="ui_0a6ed0003ccbb5c5" formatted="false">"控制器振动"</string>
-    <string name="ui_0a8a145f0c4c786b" formatted="false">"HDR10：屏幕和传输"</string>
     <string name="ui_0aadc3c5e893f94b" formatted="false">"左死区：{0}%"</string>
     <string name="ui_0af64325f77fe6bf" formatted="false">"选择游戏中使用的相同方案。应用恢复足球按钮动作和手势，同时保持自定义位置和大小。"</string>
     <string name="ui_0b23a612555311a0" formatted="false">"RTT 升高。比较连接和服务区域。 RTT 不测量完整的命令到图像延迟。"</string>
@@ -222,7 +220,6 @@
     <string name="ui_4750ad41b3122b74" formatted="false">"xCloud 错误"</string>
     <string name="ui_478c39f86a8161d1" formatted="false">"游戏快捷键"</string>
     <string name="ui_47a18fda47bdd27f" formatted="false">"AMD FSR 1.0.2：关闭"</string>
-    <string name="ui_47cf330e4355aac3" formatted="false">"该引擎的传输：8位H.264，在SDR。视频表面使用8位RGB。\n\n"</string>
     <string name="ui_48020357dd273e65" formatted="false">"正在等待您在 Microsoft 的批准..."</string>
     <string name="ui_48111b2c9ff4898e" formatted="false">"本地合作社：{0}"</string>
     <string name="ui_4875bd46f6938df1" formatted="false">"陀螺仪：{0}"</string>
@@ -250,7 +247,6 @@
     <string name="ui_504fb1a48efc40eb" formatted="false">"屏幕模式：Android未报告"</string>
     <string name="ui_5052c95dbb7a4d8d" formatted="false">"正在恢复您的会话..."</string>
     <string name="ui_507a9a8be3d145a8" formatted="false">"是的"</string>
-    <string name="ui_510c8504b7666c02" formatted="false">"屏幕：HDR10 Android 未发布。"</string>
     <string name="ui_5120d6e6ce58a9f2" formatted="false">"音频：媒体/游戏 • 请求的立体声 • 媒体音量 {0} • 静音：{1} • 焦点：{2} • 焦点增益 {3}% • 播放 {4}"</string>
     <string name="ui_51807ae73e427a4e" formatted="false">"网络连接失败"</string>
     <string name="ui_519384df60862471" formatted="false">"WebRTC 缓冲网络最小值"</string>
@@ -552,7 +548,6 @@
     <string name="ui_ac73aa9300406c83" formatted="false">"不自动打开"</string>
     <string name="ui_acf055bba88baa0f" formatted="false">"FSR输出"</string>
     <string name="ui_ad308eca51baa9f5" formatted="false">"又一场比赛开始了"</string>
-    <string name="ui_ad6cf30be5863ae2" formatted="false">"HDR10：检查屏幕和流"</string>
     <string name="ui_ad95a1eab4868093" formatted="false">"主屏幕频道"</string>
     <string name="ui_ada597c825c967dc" formatted="false">"尝试恢复：{0}\n\n"</string>
     <string name="ui_adc902bee601b133" formatted="false">"无法将收藏夹保存到设备上。"</string>
@@ -562,7 +557,6 @@
     <string name="ui_aef7cd5b2081351d" formatted="false">"保存"</string>
     <string name="ui_af6f5bcb22418bc6" formatted="false">"搜索游戏"</string>
     <string name="ui_afb58c5ef14296d0" formatted="false">"物理控制器和本地coop"</string>
-    <string name="ui_afbcc421a945e702" formatted="false">"真正的HDR10需要10位流、BT.2020色彩、PQ传输和全链HDR播放。当前的路径不提供这种组合，即使在兼容的电视上也是如此。\n\n"</string>
     <string name="ui_afd65886ed07d629" formatted="false">"再试一次"</string>
     <string name="ui_b019906f6858044e" formatted="false">"xCLOUD {0} • 初始输入：{1} • {2}"</string>
     <string name="ui_b0944e467b311f8d" formatted="false">"{0}的命运"</string>
@@ -729,7 +723,6 @@
     <string name="ui_e31fe0e7c18095f5" formatted="false">"仅 Xbox 向此帐户提供的区域。选择请求该区域的会话；不预测 ping 或游戏队列。如果不再提供已保存的区域，应用程序将使用默认区域并在诊断中通知您。下一场比赛有效。"</string>
     <string name="ui_e35865317817e866" formatted="false">"WebRTC 连接"</string>
     <string name="ui_e3ac02bd2ccd6d6e" formatted="false">"收到：{0} | {1} | {2}\n"</string>
-    <string name="ui_e3c9951db767377e" formatted="false">"屏幕：Android 未报告 HDR 支持。"</string>
     <string name="ui_e40b250bfbf97c8e" formatted="false">"恢复视频：在下一个关键帧上重新启动解码器..."</string>
     <string name="ui_e41e160eef41ad25" formatted="false">"FSR 1.0.2 通过 EASU 和 RCAS 锐化来升级视频。当视频和输出大小相同时，仅应用RCAS，不放大。开始时 FSR 输出为自动，RCAS 为 50%。比较命令的清晰度、流畅度和反应； 1440p 和 4K 需要更多 GPU。诊断区分增大与天然 RCAS。即使本机升级打开，FSR 也会接管缩放。在图像调整中调整RCAS。兼容性使 FSR 保持关闭状态。适用于下一场比赛。"</string>
     <string name="ui_e425c594c6c37587" formatted="false">"Xbox估计：不到1分钟。"</string>
@@ -773,7 +766,6 @@
     <string name="ui_f0a5d0b85c1fe428" formatted="false">"个人资料未获通知"</string>
     <string name="ui_f10cadbc47a09be6" formatted="false">"星河紫"</string>
     <string name="ui_f11e7df036a8fd99" formatted="false">";会议期间订单：{0}"</string>
-    <string name="ui_f12b9d29b2cf0da6" formatted="false">"增加饱和度或强制电视进入 HDR 模式不会将 SDR 流转换为 HDR10。电视本身的图像控制仍然可用。"</string>
     <string name="ui_f1a05e988e609704" formatted="false">"电视没有提供快捷方式的应用程序安装程序。"</string>
     <string name="ui_f1dd04ae0fde2ba0" formatted="false">"缩放 — 填充裁剪"</string>
     <string name="ui_f20f404de2b58f35" formatted="false">"无法在此设备上保存 Xbox 历史记录。"</string>

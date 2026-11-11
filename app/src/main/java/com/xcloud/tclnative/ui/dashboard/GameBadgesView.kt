@@ -34,7 +34,7 @@ internal class GameBadgesView(context: Context) : FrameLayout(context) {
         visibility=if(gamePass || optimized) View.VISIBLE else View.GONE
         pass.visibility=if(gamePass) View.VISIBLE else View.GONE
         series.visibility=if(optimized) View.VISIBLE else View.GONE
-        val offset=((if(gamePass) 53 else 8)*scale).roundToInt()
+        val offset=((if(gamePass) 49 else 8)*scale).roundToInt()
         (series.layoutParams as? LayoutParams)?.let { params ->
             if(geometryScale==scale && params.leftMargin!=offset) {
                 params.leftMargin=offset;series.layoutParams=params
@@ -45,9 +45,9 @@ internal class GameBadgesView(context: Context) : FrameLayout(context) {
         val padding=(2*scale).roundToInt()
         pass.setPadding(padding,padding,padding,padding)
         series.setPadding(padding,padding,padding,padding)
-        pass.layoutParams=LayoutParams((40*scale).roundToInt(),(28*scale).roundToInt(),Gravity.BOTTOM or Gravity.START)
+        pass.layoutParams=LayoutParams((36*scale).roundToInt(),(25*scale).roundToInt(),Gravity.BOTTOM or Gravity.START)
             .apply { leftMargin=(8*scale).roundToInt();bottomMargin=(8*scale).roundToInt() }
-        series.layoutParams=LayoutParams((60*scale).roundToInt(),(28*scale).roundToInt(),Gravity.BOTTOM or Gravity.START)
+        series.layoutParams=LayoutParams((54*scale).roundToInt(),(25*scale).roundToInt(),Gravity.BOTTOM or Gravity.START)
             .apply { leftMargin=offset;bottomMargin=(8*scale).roundToInt() }
     }
 }

@@ -94,8 +94,7 @@ class PlaybackSettingsPanel(
             ConsoleAction(UiText.text("Upscaling nativo: {0}",UiText.nested(if(value.nativeUpscaling) UiText.text("Ativado") else UiText.text("Desativado")))) { chooseUpscaling() },
             ConsoleAction(UiText.text("AMD FSR: {0}",UiText.nested(if(value.videoMode==VideoMode.COMPATIBILITY) UiText.text("Desativado (Compatibilidade)") else value.fsr.label))) { chooseFsr() },
             ConsoleAction(UiText.text("Saída do FSR: {0}",UiText.nested(value.fsrOutput.label))) { chooseFsrOutput() },
-            ConsoleAction(UiText.text("Ajustes da imagem — nitidez, saturação, brilho e contraste")) { showImageAdjustments() },
-            ConsoleAction(UiText.text("HDR10: verificar tela e transmissão")) { showHdrStatus() }
+            ConsoleAction(UiText.text("Ajustes da imagem — nitidez, saturação, brilho e contraste")) { showImageAdjustments() }
         ))
     }
     fun showNetwork(): ConsoleDialog = category(SettingsPage.NETWORK,UiText.text("Rede e sessão"),listOf(
@@ -118,8 +117,6 @@ class PlaybackSettingsPanel(
         ConsoleAction(UiText.text("Atalhos dos favoritos"),homeShortcuts),ConsoleAction(UiText.text("Gerenciar assinatura Microsoft"),subscription),
         ConsoleAction(UiText.text("Atualizar catálogo"),refresh),ConsoleAction(UiText.text("Trocar conta"),logout)
     ))
-    fun showHdrStatus(): ConsoleDialog = ConsoleDialogs.message(context,UiText.text("HDR10: tela e transmissão"),
-        com.xcloud.tclnative.renderer.HdrStatus.report(context),listOf(ConsoleAction(UiText.text("Voltar")) { showImage() }),onCancel={ showImage() })
     private fun save(settings: PlaybackSettings, after: () -> Unit = { open(currentPage) }) { store.save(settings); changed(settings); after() }
     private fun choices(title: String, description: String, entries: List<Pair<String,Boolean>>,
                         onBack: () -> Unit = { open(currentPage) }, select: (Int) -> Unit): ConsoleDialog {

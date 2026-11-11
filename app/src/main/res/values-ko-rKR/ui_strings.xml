@@ -15,7 +15,6 @@
     <string name="ui_03561d241830a0e8" formatted="false">"TV가 즐겨찾기 채널을 만들지 않았습니다."</string>
     <string name="ui_043344ab2cab974f" formatted="false">"세션 연결을 끊고 카탈로그로 돌아가기"</string>
     <string name="ui_044419e9c7dfdf4f" formatted="false">"비디오 디코더"</string>
-    <string name="ui_0471fc9b94d1d4e1" formatted="false">"화면: Android에서 발표한 HDR10."</string>
     <string name="ui_0482ab2f5e9555df" formatted="false">"효율적인: 예"</string>
     <string name="ui_04fed7bc7eba27be" formatted="false">"네이티브 터치 Xbox: {0}"</string>
     <string name="ui_0576a13b7f8da156" formatted="false">"컨트롤러와 휴대폰의 진동"</string>
@@ -33,7 +32,6 @@
     <string name="ui_08fcc1f5b2d705ea" formatted="false">"촬영 시 조준: {0}"</string>
     <string name="ui_0964df415f982798" formatted="false">"해상도 해당 사항 없음"</string>
     <string name="ui_0a6ed0003ccbb5c5" formatted="false">"컨트롤러 진동"</string>
-    <string name="ui_0a8a145f0c4c786b" formatted="false">"HDR10: 화면 및 전송"</string>
     <string name="ui_0aadc3c5e893f94b" formatted="false">"왼쪽 데드존: {0}%"</string>
     <string name="ui_0af64325f77fe6bf" formatted="false">"게임 내에서 사용되는 것과 동일한 구성표를 선택하십시오. Apply는 사용자 지정 위치와 크기를 유지하면서 축구 버튼 동작과 동작을 복원합니다."</string>
     <string name="ui_0b23a612555311a0" formatted="false">"RTT 상승. 연결 및 서비스 지역을 비교해보세요. RTT는 전체 명령-이미지 대기 시간을 측정하지 않습니다."</string>
@@ -222,7 +220,6 @@
     <string name="ui_4750ad41b3122b74" formatted="false">"xCloud 오류"</string>
     <string name="ui_478c39f86a8161d1" formatted="false">"게임 바로가기"</string>
     <string name="ui_47a18fda47bdd27f" formatted="false">"AMD FSR 1.0.2: 꺼짐"</string>
-    <string name="ui_47cf330e4355aac3" formatted="false">"이 엔진의 전송: SDR의 8비트 H.264. 비디오 표면은 8비트 RGB를 사용합니다.\n\n"</string>
     <string name="ui_48020357dd273e65" formatted="false">"Microsoft의 승인을 기다리는 중…"</string>
     <string name="ui_48111b2c9ff4898e" formatted="false">"지역 협동조합: {0}"</string>
     <string name="ui_4875bd46f6938df1" formatted="false">"자이로스코프: {0}"</string>
@@ -250,7 +247,6 @@
     <string name="ui_504fb1a48efc40eb" formatted="false">"화면 모드: Android에서 보고되지 않음"</string>
     <string name="ui_5052c95dbb7a4d8d" formatted="false">"세션을 복원하는 중…"</string>
     <string name="ui_507a9a8be3d145a8" formatted="false">"예"</string>
-    <string name="ui_510c8504b7666c02" formatted="false">"화면: HDR10는 Android에서 발표되지 않았습니다."</string>
     <string name="ui_5120d6e6ce58a9f2" formatted="false">"오디오: 미디어/게임 • 요청된 스테레오 • 미디어 볼륨 {0} • 음소거: {1} • 초점: {2} • 초점 게인 {3}% • 재생 {4}"</string>
     <string name="ui_51807ae73e427a4e" formatted="false">"네트워크 연결 실패"</string>
     <string name="ui_519384df60862471" formatted="false">"WebRTC 버퍼 네트워크 최소"</string>
@@ -552,7 +548,6 @@
     <string name="ui_ac73aa9300406c83" formatted="false">"자동으로 열리지 않음"</string>
     <string name="ui_acf055bba88baa0f" formatted="false">"FSR 출력"</string>
     <string name="ui_ad308eca51baa9f5" formatted="false">"또 다른 경기가 시작됐다"</string>
-    <string name="ui_ad6cf30be5863ae2" formatted="false">"HDR10: 화면 및 스트림 확인"</string>
     <string name="ui_ad95a1eab4868093" formatted="false">"홈 화면 채널"</string>
     <string name="ui_ada597c825c967dc" formatted="false">"복구 시도: {0}\n\n"</string>
     <string name="ui_adc902bee601b133" formatted="false">"즐겨찾기를 기기에 저장할 수 없습니다."</string>
@@ -562,7 +557,6 @@
     <string name="ui_aef7cd5b2081351d" formatted="false">"저장"</string>
     <string name="ui_af6f5bcb22418bc6" formatted="false">"게임 검색"</string>
     <string name="ui_afb58c5ef14296d0" formatted="false">"물리적 컨트롤러 및 로컬 협동조합"</string>
-    <string name="ui_afbcc421a945e702" formatted="false">"실제 HDR10에는 10비트 스트리밍, BT.2020 컬러, PQ 전송 및 전체 체인 HDR 재생이 필요합니다. 현재 경로는 호환되는 TV에서도 이 조합을 제공하지 않습니다.\n\n"</string>
     <string name="ui_afd65886ed07d629" formatted="false">"다시 시도하세요"</string>
     <string name="ui_b019906f6858044e" formatted="false">"xCLOUD {0} • 초기 입력: {1} • {2}"</string>
     <string name="ui_b0944e467b311f8d" formatted="false">"{0}의 운명"</string>
@@ -729,7 +723,6 @@
     <string name="ui_e31fe0e7c18095f5" formatted="false">"이 계정에는 Xbox가 제공하는 지역만 있습니다. 선택하면 해당 지역의 세션이 요청됩니다. 핑이나 게임 대기열을 예측하지 않습니다. 저장된 지역이 더 이상 제공되지 않는 경우 앱은 기본 지역을 사용하고 진단을 통해 알려줍니다. 다음 게임에서 유효합니다."</string>
     <string name="ui_e35865317817e866" formatted="false">"WebRTC 연결"</string>
     <string name="ui_e3ac02bd2ccd6d6e" formatted="false">"수신됨: {0} | {1} | {2}\n"</string>
-    <string name="ui_e3c9951db767377e" formatted="false">"화면: Android에서는 HDR 지원이 보고되지 않습니다."</string>
     <string name="ui_e40b250bfbf97c8e" formatted="false">"비디오 복구 중: 다음 키프레임에서 디코더를 다시 시작하는 중…"</string>
     <string name="ui_e41e160eef41ad25" formatted="false">"FSR 1.0.2는 EASU 및 RCAS 선명화를 통해 비디오를 업스케일링합니다. 영상과 출력의 크기가 같은 경우에는 확대하지 않고 RCAS만 적용합니다. Auto에서 FSR 출력을 시작하고 50%에서 RCAS를 시작합니다. 명령의 선명도, 유동성 및 반응을 비교합니다. 1440p 및 4K에는 더 많은 GPU가 필요합니다. 진단은 확대를 기본 RCAS와 구별합니다. 네이티브 업스케일링이 활성화된 경우에도 FSR이 스케일링을 담당합니다. 이미지 조정에서 RCAS를 조정합니다. 호환성으로 인해 FSR이 꺼집니다. 다음 경기에 적용됩니다."</string>
     <string name="ui_e425c594c6c37587" formatted="false">"Xbox 예상 시간: 1분 미만."</string>
@@ -773,7 +766,6 @@
     <string name="ui_f0a5d0b85c1fe428" formatted="false">"프로필에 알리지 않음"</string>
     <string name="ui_f10cadbc47a09be6" formatted="false">"갤럭시 퍼플"</string>
     <string name="ui_f11e7df036a8fd99" formatted="false">"; 세션 중 주문: {0}"</string>
-    <string name="ui_f12b9d29b2cf0da6" formatted="false">"채도를 높이거나 TV를 HDR 모드로 강제 전환해도 SDR 스트림이 HDR10로 변환되지 않습니다. TV 자체의 이미지 컨트롤은 계속 사용할 수 있습니다."</string>
     <string name="ui_f1a05e988e609704" formatted="false">"TV에서 바로가기에 대한 애플리케이션 설치 프로그램을 제공하지 않았습니다."</string>
     <string name="ui_f1dd04ae0fde2ba0" formatted="false">"확대/축소 — 자르기로 채우기"</string>
     <string name="ui_f20f404de2b58f35" formatted="false">"이 기기에 Xbox 기록을 저장할 수 없습니다."</string>

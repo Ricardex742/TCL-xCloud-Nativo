@@ -13,6 +13,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "TCL-xCloud-Nativo"
+rootProject.name = "xCloudNative"
 include(":app")
 include(":shortcut")

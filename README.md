@@ -3,7 +3,6 @@
   <h1>xCLOUD</h1>
   <p><strong>Seus jogos. Na sua tela.</strong></p>
   <p>Cliente Android independente para Xbox Cloud Gaming, com transmissão nativa e interface para Android TV, Google TV e celulares.</p>
-  <p><a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml"><strong>APKs de desenvolvimento (Actions)</strong></a></p>
   <p><a href="#conta-e-biblioteca">Biblioteca</a> · <a href="#aparência-e-temas">Temas</a> · <a href="#idiomas-do-aplicativo">Idiomas</a> · <a href="#transmissão-e-fila">Transmissão</a> · <a href="#imagem-e-tela">Imagem</a> · <a href="#controles-e-periféricos">Controles</a> · <a href="#touch-nativo">Touch nativo</a> · <a href="#controles-de-toque">HUDs</a><br /><a href="#áudio-e-microfone">Áudio</a> · <a href="#rede-e-preferências">Rede</a> · <a href="#estatísticas-e-diagnósticos">Diagnósticos</a> · <a href="#tela-inicial-da-tv">Atalhos na TV</a> · <a href="#compatibilidade">Compatibilidade</a></p>
 </div>
 

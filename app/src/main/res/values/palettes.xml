@@ -1,0 +1,37 @@
+<resources>
+    <style name="PaletteGreen">
+        <item name="android:colorAccent">#54DE69</item>
+        <item name="android:colorControlActivated">#54DE69</item>
+        <item name="android:colorButtonNormal">#202A24</item>
+    </style>
+    <style name="PaletteBlue">
+        <item name="android:colorAccent">#54CAFF</item>
+        <item name="android:colorControlActivated">#54CAFF</item>
+        <item name="android:colorButtonNormal">#20272A</item>
+    </style>
+    <style name="PaletteRed">
+        <item name="android:colorAccent">#FF6973</item>
+        <item name="android:colorControlActivated">#FF6973</item>
+        <item name="android:colorButtonNormal">#2A2021</item>
+    </style>
+    <style name="PaletteGold">
+        <item name="android:colorAccent">#F2CD68</item>
+        <item name="android:colorControlActivated">#F2CD68</item>
+        <item name="android:colorButtonNormal">#2A2824</item>
+    </style>
+    <style name="PaletteOrange">
+        <item name="android:colorAccent">#FFA052</item>
+        <item name="android:colorControlActivated">#FFA052</item>
+        <item name="android:colorButtonNormal">#2A2928</item>
+    </style>
+    <style name="PalettePurple">
+        <item name="android:colorAccent">#C58AFF</item>
+        <item name="android:colorControlActivated">#C58AFF</item>
+        <item name="android:colorButtonNormal">#26202A</item>
+    </style>
+    <style name="PaletteSilver">
+        <item name="android:colorAccent">#D9E2EF</item>
+        <item name="android:colorControlActivated">#D9E2EF</item>
+        <item name="android:colorButtonNormal">#292A2A</item>
+    </style>
+</resources>

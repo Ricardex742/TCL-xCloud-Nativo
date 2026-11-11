@@ -27,9 +27,26 @@ render.experimental.xml
 # Keystore files
 *.jks
 *.keystore
+*.p12
+*.pfx
+.private-signing/
+__pycache__/
 
 # Google Services (e.g. APIs or Firebase)
 google-services.json
 
 # Android Profiling
 *.hprof
+
+# Private development reports and conversation notes
+/docs/*.md
+/docs/branding/*.md
+/docs/branding/*.txt
+/docs/private/
+/docs/internal/
+/.private-docs/
+/private/
+/contexto*.md
+/contexto*.txt
+/relatorio*.md
+/relatorio*.txt

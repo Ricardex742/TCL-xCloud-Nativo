@@ -1,0 +1,22 @@
+<resources>
+    <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowBackground">#121B15</item>
+        <item name="android:colorAccent">#54DE69</item>
+        <item name="android:colorControlActivated">#54DE69</item>
+        <item name="android:colorButtonNormal">#202A24</item>
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:statusBarColor">#121B15</item>
+        <item name="android:navigationBarColor">#121B15</item>
+    </style>
+    <style name="ConsoleDialog" parent="android:style/Theme.Material.Dialog.NoActionBar">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.72</item>
+        <item name="android:colorAccent">#54DE69</item>
+        <item name="android:colorControlActivated">#54DE69</item>
+        <item name="android:fontFamily">sans-serif-condensed</item>
+    </style>
+</resources>

@@ -4,7 +4,15 @@
     <!-- Permissões críticas com grafia exata em MAIÚSCULAS -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <queries>
+        <intent><action android:name="android.media.tv.action.REQUEST_CHANNEL_BROWSABLE" /></intent>
+        <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.HOME" /></intent>
+    </queries>
 
     <!--
       CORREÇÃO HÍBRIDA (Celular + TV):
@@ -20,19 +28,29 @@
     <uses-feature
         android:name="android.hardware.gamepad"
         android:required="false" />
+    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
     <application
         android:allowBackup="true"
-        android:label="xCloud TCL 4K"
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:banner="@drawable/brand_tv_banner"
         android:supportsRtl="true"
         android:hardwareAccelerated="true"
         android:largeHeap="false"
-        android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+        android:theme="@style/AppTheme">
+        <provider android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.shortcuts" android:exported="false" android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/shortcut_files" />
+        </provider>
 
         <activity
             android:name=".ui.MainActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize"
             android:exported="true"
+            android:launchMode="singleTask"
             android:screenOrientation="landscape">
             
             <!-- Ícone para Celular (LAUNCHER) e Banner para Google TV (LEANBACK_LAUNCHER) -->
@@ -40,6 +58,12 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="xcloud" android:host="play" />
             </intent-filter>
         </activity>
 

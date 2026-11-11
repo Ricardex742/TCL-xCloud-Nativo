@@ -818,4 +818,5 @@
     <string name="ui_ff070ada77b9fef3" formatted="false">"Helligkeit"</string>
     <string name="ui_ff20d756c5955aa6" formatted="false">"Limit dieses Versuchs: {0}. Zurück oder Abbrechen verlässt die Warteschlange."</string>
     <string name="ui_ffc85b563def9bc4" formatted="false">"Vibration testen / Unterstützung prüfen"</string>
+    <string name="ui_d60b3945c25ba135" formatted="false">"1440p fordert Video mit bis zu 2560×1440 über das Xbox-Profil für maximale Qualität an. Die Verfügbarkeit hängt von Abonnement, Spiel und Dienst ab. Dafür sind mehr Bandbreite und Decodierleistung nötig. Prüfe die tatsächlich empfangene Auflösung in der Diagnose."</string>
 </resources>

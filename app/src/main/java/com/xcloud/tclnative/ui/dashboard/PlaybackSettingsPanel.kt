@@ -156,7 +156,9 @@ class PlaybackSettingsPanel(
     fun chooseResolution(): ConsoleDialog {
         enter(SettingsPage.VIDEO)
         val current=store.read()
-        return choices(UiText.text("Resolução da transmissão"),UiText.text("H.264 leve e Compatibilidade usam 720p mesmo com outra escolha salva. 720p solicita menos banda e trabalho de decodificação. A resolução recebida depende do Xbox, do jogo e da conexão. Aplica-se à próxima partida."),
+        return choices(UiText.text("Resolução da transmissão"),UiText.join(
+            UiText.text("H.264 leve e Compatibilidade usam 720p mesmo com outra escolha salva. 720p solicita menos banda e trabalho de decodificação. A resolução recebida depende do Xbox, do jogo e da conexão. Aplica-se à próxima partida."),"\n\n",
+            UiText.text("1440p solicita vídeo em até 2560×1440 pelo perfil de qualidade máxima do Xbox. A disponibilidade depende da assinatura, do jogo e do serviço. Exige mais rede e decodificação; confira a resolução realmente recebida no diagnóstico.")),
             StreamResolution.entries.map { it.label to (it==current.resolution) }) { save(current.copy(resolution=StreamResolution.entries[it])) }
     }
     fun chooseUpscaling(): ConsoleDialog {

@@ -818,4 +818,5 @@
     <string name="ui_ff070ada77b9fef3" formatted="false">"Brillo"</string>
     <string name="ui_ff20d756c5955aa6" formatted="false">"Límite de este intento: {0}. Atrás o Cancelar sale de la cola."</string>
     <string name="ui_ffc85b563def9bc4" formatted="false">"Probar vibración/comprobar soporte"</string>
+    <string name="ui_d60b3945c25ba135" formatted="false">"1440p solicita vídeo de hasta 2560×1440 con el perfil de máxima calidad de Xbox. La disponibilidad depende de la suscripción, el juego y el servicio. Requiere más ancho de banda y capacidad de decodificación; comprueba la resolución recibida en el diagnóstico."</string>
 </resources>

@@ -64,6 +64,25 @@ class ProtocolTest {
         assertTrue(protocol.onHandshakeAck().isEmpty()); assertFalse(protocol.ready)
         assertTrue(protocol.onOpen("input").isNotEmpty()); assertTrue(protocol.ready)
     }
+    @Test fun selectedResolutionIsRequestedOnTheOfficialControlMessageAfterRegistrationOnlyOnce() {
+        val aliases=mapOf(StreamResolution.HD_720 to "720",StreamResolution.HD_1080 to "1080",
+            StreamResolution.HD_1080_HQ to "1080HQ",StreamResolution.QHD_1440 to "1440")
+        for((resolution,alias) in aliases) for(nativeTouch in listOf(false,true)) {
+            val protocol=ChannelHandshake(nativeTouch,resolution)
+            protocol.onOpen("message");protocol.onOpen("input")
+            assertTrue(protocol.onHandshakeAck().isEmpty())
+            val actions=protocol.onOpen("control")
+            val quality=actions.filterNot { it.binary }.filter {
+                JSONObject(String(it.bytes,Charsets.UTF_8)).optString("message")=="userRequestedResolutionUpdate"
+            }.single()
+            assertEquals("control",quality.channel)
+            val body=JSONObject(String(quality.bytes,Charsets.UTF_8))
+            assertEquals(2,body.length())
+            assertEquals(alias,body.getString("resolutionAlias"))
+            assertTrue(actions.indexOf(quality)>actions.indexOfFirst { it.binary })
+            assertTrue(protocol.onHandshakeAck().isEmpty());assertTrue(protocol.onOpen("control").isEmpty())
+        }
+    }
     @Test fun nativeTouchHandshakeRegistersTheLogicalTouchSlotBeforeEnablingPointers() {
         val protocol=ChannelHandshake(true).apply {
             displayDimensions=ClientDisplayDimensions.fromPixels(1280,720,1280,720,320f,320f)

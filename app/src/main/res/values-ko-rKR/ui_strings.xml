@@ -818,4 +818,5 @@
     <string name="ui_ff070ada77b9fef3" formatted="false">"밝기"</string>
     <string name="ui_ff20d756c5955aa6" formatted="false">"이 시도의 한계: {0}. 뒤로 또는 취소가 대기열을 떠납니다."</string>
     <string name="ui_ffc85b563def9bc4" formatted="false">"테스트 진동/체크 지원"</string>
+    <string name="ui_d60b3945c25ba135" formatted="false">"1440p는 Xbox 최고 화질 프로필로 최대 2560×1440 영상을 요청합니다. 이용 가능 여부는 구독, 게임 및 서비스에 따라 달라집니다. 더 많은 대역폭과 디코딩 성능이 필요합니다. 진단에서 실제 수신 해상도를 확인하세요."</string>
 </resources>

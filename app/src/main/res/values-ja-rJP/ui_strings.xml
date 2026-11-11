@@ -818,4 +818,5 @@
     <string name="ui_ff070ada77b9fef3" formatted="false">"明るさ"</string>
     <string name="ui_ff20d756c5955aa6" formatted="false">"この試行の制限: {0}。 [戻る] または [キャンセル] でキューから抜けます。"</string>
     <string name="ui_ffc85b563def9bc4" formatted="false">"テスト振動・チェックサポート"</string>
+    <string name="ui_d60b3945c25ba135" formatted="false">"1440pはXboxの最高画質プロファイルで最大2560×1440の映像を要求します。利用可否はサブスクリプション、ゲーム、サービスによって異なります。より多くの帯域幅とデコード性能が必要です。実際の受信解像度は診断で確認してください。"</string>
 </resources>

@@ -15,6 +15,18 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk=[28])
 class PlaybackSettingsTest {
+    @Test fun qhdPersistsWithoutEnablingFsrAndTheLightProfilesStillUse720p() {
+        val app=RuntimeEnvironment.getApplication();val store=PlaybackSettingsStore(app)
+        val selected=PlaybackSettings(resolution=StreamResolution.QHD_1440,fsr=FsrMode.OFF)
+        store.save(selected)
+        assertEquals(selected,PlaybackSettingsStore(app).read())
+        assertEquals(selected,selected.forSession())
+        assertEquals(StreamResolution.HD_720,selected.copy(videoCodec=VideoCodecMode.H264_BASELINE).forSession().resolution)
+        assertEquals(StreamResolution.HD_720,selected.copy(videoMode=VideoMode.COMPATIBILITY).forSession().resolution)
+        assertEquals(FsrMode.OFF,store.read().fsr)
+        assertEquals(FsrOutput.AUTO,store.read().fsrOutput)
+        assertEquals(StreamResolution.HD_1080_HQ,PlaybackSettings().resolution)
+    }
     @Test fun videoResolutionAndScalingSurviveReopeningAndLegacyVideoPreferenceIsKept() {
         val context=RuntimeEnvironment.getApplication()
         val prefs=context.getSharedPreferences("stream_preferences",Context.MODE_PRIVATE)

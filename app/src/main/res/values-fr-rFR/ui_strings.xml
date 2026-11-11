@@ -818,4 +818,5 @@
     <string name="ui_ff070ada77b9fef3" formatted="false">"Luminosité"</string>
     <string name="ui_ff20d756c5955aa6" formatted="false">"Limite de cette tentative : {0}. Retour ou Annuler quitte la file d\'attente."</string>
     <string name="ui_ffc85b563def9bc4" formatted="false">"Tester les vibrations / vérifier le support"</string>
+    <string name="ui_d60b3945c25ba135" formatted="false">"1440p demande une vidéo jusqu’à 2560×1440 avec le profil de qualité maximale Xbox. La disponibilité dépend de l’abonnement, du jeu et du service. Ce mode exige plus de débit et de puissance de décodage ; vérifiez la résolution reçue dans le diagnostic."</string>
 </resources>

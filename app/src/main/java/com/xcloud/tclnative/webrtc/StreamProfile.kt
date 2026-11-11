@@ -2,12 +2,13 @@ package com.xcloud.tclnative.webrtc
 
 import com.xcloud.tclnative.i18n.UiText
 
-/** Selectors verified in the xCloud web protocol: Android=720p, Windows=1080p, Tizen=1080p HQ. */
+/** Device profile plus the official control-channel resolution alias; the service chooses the received stream. */
 enum class StreamResolution(private val sourceLabel: String, val width: Int, val height: Int, val osName: String,
-                            val minKbps: Int, val maxKbps: Int) {
-    HD_720("720p — mais leve",1280,720,"android",5000,12000),
-    HD_1080("1080p",1920,1080,"windows",10000,20000),
-    HD_1080_HQ("1080p HQ",1920,1080,"tizen",20000,30000);
+                            val minKbps: Int, val maxKbps: Int,val resolutionAlias: String) {
+    HD_720("720p — mais leve",1280,720,"android",5000,12000,"720"),
+    HD_1080("1080p",1920,1080,"windows",10000,20000,"1080"),
+    HD_1080_HQ("1080p HQ",1920,1080,"tizen",20000,30000,"1080HQ"),
+    QHD_1440("1440p — 2560×1440",2560,1440,"tizen",20000,40000,"1440");
     val label: String get()=UiText.text(sourceLabel)
 }
 

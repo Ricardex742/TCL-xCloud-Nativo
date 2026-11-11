@@ -3,7 +3,7 @@
   <h1>xCLOUD</h1>
   <p><strong>Seus jogos. Na sua tela.</strong></p>
   <p>Cliente Android independente para Xbox Cloud Gaming, com transmissão nativa e interface para Android TV, Google TV e celulares.</p>
-  <p><a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/releases/latest"><strong>Baixar APK</strong></a></p>
+  <p><a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/actions/workflows/build-apk.yml"><strong>APKs de desenvolvimento (Actions)</strong></a></p>
   <p><a href="#conta-e-biblioteca">Biblioteca</a> · <a href="#aparência-e-temas">Temas</a> · <a href="#idiomas-do-aplicativo">Idiomas</a> · <a href="#transmissão-e-fila">Transmissão</a> · <a href="#imagem-e-tela">Imagem</a> · <a href="#controles-e-periféricos">Controles</a> · <a href="#touch-nativo">Touch nativo</a> · <a href="#controles-de-toque">HUDs</a><br /><a href="#áudio-e-microfone">Áudio</a> · <a href="#rede-e-preferências">Rede</a> · <a href="#estatísticas-e-diagnósticos">Diagnósticos</a> · <a href="#tela-inicial-da-tv">Atalhos na TV</a> · <a href="#compatibilidade">Compatibilidade</a></p>
 </div>
 
@@ -98,7 +98,8 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
 ## Transmissão e fila
 
 - Reprodução nativa por WebRTC/H.264, com preferência por decodificação de hardware.
-- Perfis solicitados de **720p, 1080p e 1080p HQ**.
+- Perfis solicitados de **720p, 1080p, 1080p HQ e 1440p (2560×1440)**.
+- Pedido de qualidade enviado ao Xbox pelo canal de controle. A resolução recebida depende da assinatura, do jogo e do serviço e pode ser menor que a escolhida.
 - Modos **Menor atraso**, **Adaptativo** e **Compatibilidade — TVs mais fracas**.
 - Opção **H.264 leve — Baseline (720p)**.
 - Fila com arte do jogo, estimativa do serviço, tempo aguardado e cancelamento.
@@ -111,7 +112,7 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
     <td width="50%"><img src="docs/screenshots/video-settings.png" alt="Vídeo e transmissão — Modo de vídeo, codec e resolução." /><br /><strong>Vídeo e transmissão</strong> — Modo de vídeo, codec e resolução.</td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/stream-resolution.png" alt="Resolução — Perfis 720p, 1080p e 1080p HQ." /><br /><strong>Resolução</strong> — Perfis 720p, 1080p e 1080p HQ.</td>
+    <td width="50%"><img src="docs/screenshots/stream-resolution.png" alt="Resolução — Perfis 720p, 1080p, 1080p HQ e 1440p." /><br /><strong>Resolução</strong> — Perfis 720p, 1080p, 1080p HQ e 1440p.</td>
     <td width="50%"><img src="docs/screenshots/video-modes.png" alt="Modo de vídeo — Menor atraso, adaptativo e compatibilidade." /><br /><strong>Modo de vídeo</strong> — Menor atraso, adaptativo e compatibilidade.</td>
   </tr>
   <tr>

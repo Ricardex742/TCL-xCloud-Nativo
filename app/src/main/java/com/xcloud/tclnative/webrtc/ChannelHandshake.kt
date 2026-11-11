@@ -6,7 +6,8 @@ import java.util.UUID
 data class ChannelMessage(val channel: String, val bytes: ByteArray, val binary: Boolean = false)
 
 /** Ordered protocol transitions; callbacks for the three channels can arrive in any order. */
-class ChannelHandshake(private val nativeTouch: Boolean = false) {
+class ChannelHandshake(private val nativeTouch: Boolean = false,
+                       private val resolution: StreamResolution = StreamResolution.HD_1080_HQ) {
     private val opened = mutableSetOf<String>()
     private var acknowledged = false
     private var started = false
@@ -38,13 +39,16 @@ class ChannelHandshake(private val nativeTouch: Boolean = false) {
             config("/streaming/characteristics/orientationchanged", JSONObject().put("orientation", 0)),
             config("/streaming/characteristics/touchinputenabledchanged", JSONObject().put("touchInputEnabled", nativeTouch)),
             config("/streaming/characteristics/clientdevicecapabilities", JSONObject())
-        ) + listOfNotNull(displayDimensions?.let(::dimensions))
+        ) + listOfNotNull(displayDimensions?.let(::dimensions)) + resolutionRequest(resolution)
     }
     private fun config(target: String, content: JSONObject) = encode("message", JSONObject()
         .put("type", "Message").put("target", target).put("id", UUID.randomUUID().toString()).put("cv", "")
         .put("content", content.toString()))
 
     companion object {
+        /** Xbox web SDK: ControlChannel.sendUserRequestedResolutionUpdate, after connecting input. */
+        fun resolutionRequest(resolution: StreamResolution) = encode("control",JSONObject()
+            .put("message","userRequestedResolutionUpdate").put("resolutionAlias",resolution.resolutionAlias))
         fun dimensions(display: ClientDisplayDimensions) = encode("message",JSONObject().put("type","Message")
             .put("target","/streaming/characteristics/dimensionschanged").put("id",UUID.randomUUID().toString()).put("cv","")
             .put("content",display.content().toString()))

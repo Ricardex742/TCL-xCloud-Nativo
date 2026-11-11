@@ -171,7 +171,7 @@ class SignalingTest {
     }
     @Test fun selectedResolutionReachesBothPlaySettingsAndDeviceHeadersAcrossSessions() = runBlocking {
         val client=signaling()
-        for (resolution in listOf(StreamResolution.HD_720,StreamResolution.HD_1080,StreamResolution.HD_1080_HQ)) {
+        for (resolution in StreamResolution.entries) {
             connectSent=false; provisioned=false
             assertTrue(client.startAndConnectWebRtcSession("real-id",peer,resolution=resolution) {}.isSuccess)
             val request=requests.last { it.path=="/v5/sessions/cloud/play" }

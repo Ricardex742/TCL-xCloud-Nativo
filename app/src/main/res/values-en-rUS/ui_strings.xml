@@ -818,4 +818,5 @@
     <string name="ui_ff070ada77b9fef3" formatted="false">"Brightness"</string>
     <string name="ui_ff20d756c5955aa6" formatted="false">"Limit of this attempt: {0}. Back or Cancel leaves the queue."</string>
     <string name="ui_ffc85b563def9bc4" formatted="false">"Test vibration / check support"</string>
+    <string name="ui_d60b3945c25ba135" formatted="false">"1440p requests video at up to 2560×1440 using Xbox’s maximum-quality profile. Availability depends on your subscription, the game, and the service. It needs more bandwidth and decoding power; check the actual received resolution in diagnostics."</string>
 </resources>

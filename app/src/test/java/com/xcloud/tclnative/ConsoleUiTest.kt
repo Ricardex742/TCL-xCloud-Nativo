@@ -117,7 +117,7 @@ class ConsoleUiTest {
         choose(reopened,"Resolução:")
         val resolution=ShadowDialog.getLatestDialog() as ConsoleDialog
         render(resolution,"green-resolution-choice")
-        assertEquals(3,all(resolution.body).filterIsInstance<TextView>().count { it.isClickable })
+        assertEquals(4,all(resolution.body).filterIsInstance<TextView>().count { it.isClickable })
         choose(resolution,"720p")
         assertEquals(StreamResolution.HD_720,store.read().resolution)
         (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
@@ -289,6 +289,29 @@ class ConsoleUiTest {
             all(again.body).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("1440p —") }.performClick()
             assertEquals(original.copy(fsrOutput=FsrOutput.QHD_1440),store.read())
             (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
+        } finally { controller.pause().stop().destroy() }
+    }
+    @Test fun qhdIsSelectableWithAControllerAndReopensWithoutEnablingLocalUpscalingFilters() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        val activity=controller.get().apply { setContentView(FrameLayout(this)) }
+        layout(activity.window.decorView,1280,720)
+        val store=PlaybackSettingsStore(activity)
+        val before=PlaybackSettings(fsr=FsrMode.OFF)
+        store.save(before)
+        val panel=PlaybackSettingsPanel(activity,store,{}, {}, {}, {})
+        try {
+            val dialog=panel.chooseResolution()
+            render(dialog,"resolution-qhd-options")
+            val qhd=all(dialog.body).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("1440p") }
+            assertTrue(qhd.requestFocus())
+            dialog.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_BUTTON_A))
+            assertEquals(before.copy(resolution=StreamResolution.QHD_1440),PlaybackSettingsStore(activity).read())
+            (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
+            val reopened=panel.chooseResolution()
+            val selected=all(reopened.body).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("1440p") }
+            assertTrue(selected.isSelected)
+            render(reopened,"resolution-qhd-selected")
+            reopened.dismiss()
         } finally { controller.pause().stop().destroy() }
     }
     @Test fun loginAndQrUseTheNewThemeAndTheRenderedQrStillScans() {

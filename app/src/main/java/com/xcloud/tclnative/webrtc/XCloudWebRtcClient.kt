@@ -39,7 +39,7 @@ class XCloudWebRtcClient(
     private val preferredProbeFailed=CompletableDeferred<Unit>()
     @Volatile private var probingPreferredFamily: Int?=null
     private val channelsReady = CompletableDeferred<Unit>()
-    private val handshake = ChannelHandshake(nativeTouch)
+    private val handshake = ChannelHandshake(nativeTouch,streamResolution)
     private val channels = java.util.concurrent.ConcurrentHashMap<String, DataChannel>()
     private val closed = AtomicBoolean(false)
     private val inputStarted = AtomicBoolean(false)

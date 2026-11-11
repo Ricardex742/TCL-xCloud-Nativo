@@ -5,7 +5,7 @@ import android.widget.LinearLayout
 import com.xcloud.tclnative.settings.*
 import com.xcloud.tclnative.webrtc.StreamResolution
 
-enum class SettingsPage { ROOT, VIDEO, IMAGE, NETWORK, CONTROLS, PHYSICAL, MOUSE, GYRO, RUMBLE, AUDIO, DIAGNOSTICS, ACCOUNT }
+enum class SettingsPage { ROOT, VIDEO, IMAGE, APPEARANCE, NETWORK, CONTROLS, PHYSICAL, MOUSE, GYRO, RUMBLE, AUDIO, DIAGNOSTICS, ACCOUNT }
 
 /** Explicit single-choice menus: opening a row does not change the selected value. */
 class PlaybackSettingsPanel(
@@ -24,7 +24,7 @@ class PlaybackSettingsPanel(
     private var currentPage=SettingsPage.ROOT
     private fun enter(page: SettingsPage) { currentPage=page;onPageEntered(page) }
     fun open(page: SettingsPage): ConsoleDialog = when(page) {
-        SettingsPage.ROOT -> show();SettingsPage.VIDEO -> showVideo();SettingsPage.IMAGE -> showImage()
+        SettingsPage.ROOT -> show();SettingsPage.VIDEO -> showVideo();SettingsPage.IMAGE -> showImage();SettingsPage.APPEARANCE -> showAppearance()
         SettingsPage.NETWORK -> showNetwork();SettingsPage.CONTROLS -> showControls();SettingsPage.PHYSICAL -> showPhysical()
         SettingsPage.MOUSE -> showMouse();SettingsPage.GYRO -> showGyro();SettingsPage.RUMBLE -> showRumble()
         SettingsPage.AUDIO -> showAudio();SettingsPage.DIAGNOSTICS -> showDiagnostics();SettingsPage.ACCOUNT -> showAccount()
@@ -38,6 +38,7 @@ class PlaybackSettingsPanel(
         return ConsoleDialogs.menu(context,"Configurações",listOf(
             ConsoleAction("Vídeo e transmissão") { showVideo() },
             ConsoleAction("Imagem e tela") { showImage() },
+            ConsoleAction("Aparência e temas") { showAppearance() },
             ConsoleAction("Rede e sessão") { showNetwork() },
             ConsoleAction("Controles e toque") { showControls() },
             ConsoleAction("Áudio e microfone") { showAudio() },
@@ -52,6 +53,34 @@ class PlaybackSettingsPanel(
             ConsoleAction("Codec: ${if(value.videoMode==VideoMode.COMPATIBILITY) "H.264 leve (Compatibilidade)" else value.videoCodec.label}") { chooseCodec() },
             ConsoleAction("Resolução: ${value.forSession().resolution.label}") { chooseResolution() }
         ))
+    }
+    fun showAppearance(): ConsoleDialog = category(SettingsPage.APPEARANCE,"Aparência e temas",listOf(
+        ConsoleAction("Tema do aplicativo: ${AppearanceSettingsStore(context).read().label}") { chooseTheme() }
+    ))
+    fun chooseTheme(): ConsoleDialog {
+        enter(SettingsPage.APPEARANCE)
+        val preferences=AppearanceSettingsStore(context)
+        val selected=preferences.read()
+        val host=context
+        return ConsoleDialog(context,"Tema do aplicativo").apply {
+            body.addView(text("Escolha as cores dos menus, do catálogo e das janelas. Verde é o padrão. A escolha fica salva neste aparelho, é aplicada na hora e não altera as cores do jogo.",20,color=DashboardTheme.muted),
+                LinearLayout.LayoutParams(-1,-2).apply { bottomMargin=px(16) })
+            UiTheme.entries.forEach { theme ->
+                val row=addMenuItem("${if(theme==selected) "✓" else "○"}  ■  ${theme.label}") {
+                    preferences.save(theme)
+                    val root=(host as? android.app.Activity)?.findViewById<android.view.View>(android.R.id.content)
+                    DashboardTheme.apply(host,theme,root)
+                    showAppearance()
+                }
+                row.text=android.text.SpannableString(row.text).apply {
+                    setSpan(android.text.style.ForegroundColorSpan(theme.accent),3,4,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
+                row.isSelected=theme==selected
+                row.contentDescription="${theme.label}${if(theme==selected) ", selecionado" else ""}"
+                if(theme==selected) focusFirst(row)
+            }
+            addAction("Voltar") { showAppearance() };setOnCancelListener { showAppearance() };show()
+        }
     }
     fun showImage(): ConsoleDialog {
         val value=store.read()

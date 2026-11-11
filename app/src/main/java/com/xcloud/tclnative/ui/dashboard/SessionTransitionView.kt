@@ -24,12 +24,12 @@ class SessionTransitionView(context: Context) : FrameLayout(context) {
     private val art=PosterLoader(context,scope)
     private val banner=FixedArtworkView(context).apply { scaleType=ImageView.ScaleType.CENTER_CROP }
     private val shade=View(context).apply {
-        background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-            intArrayOf(0x66121b15,0x33121b15,0xf5101b14.toInt()))
+        background=DashboardTheme.gradient(GradientDrawable.Orientation.TOP_BOTTOM,
+            arrayOf(UiColor.TRANSITION_SHADE_TOP,UiColor.TRANSITION_SHADE_MID,UiColor.TRANSITION_SHADE_END))
     }
     private val logo=ImageView(context).apply {
         scaleType=ImageView.ScaleType.FIT_CENTER; contentDescription="Logo xCLOUD"
-        background=GradientDrawable().apply { setColor(0xff08140d.toInt()); cornerRadius=26f }
+        background=DashboardTheme.shape(UiColor.LOGO_BACKGROUND,26f)
         clipToOutline=true
     }
     private val eyebrow=label(23,true).apply { text="xCLOUD"; setTextColor(DashboardTheme.accent) }

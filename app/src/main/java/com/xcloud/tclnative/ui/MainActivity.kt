@@ -159,6 +159,7 @@ open class MainActivity : Activity() {
     private var gameMenuDialog: Dialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        com.xcloud.tclnative.ui.dashboard.DashboardTheme.install(this)
         super.onCreate(savedInstanceState)
         volumeControlStream=android.media.AudioManager.STREAM_MUSIC
         pendingLaunch = PendingGameLaunch(savedInstanceState?.getString("pending_game"))

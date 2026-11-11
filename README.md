@@ -3,7 +3,7 @@
   <h1>xCLOUD</h1>
   <p><strong>Seus jogos. Na sua tela.</strong></p>
   <p>Cliente Android independente para Xbox Cloud Gaming, com transmissão nativa e interface para Android TV, Google TV e celulares.</p>
-  <p><a href="#conta-e-biblioteca">Biblioteca</a> · <a href="#transmissão-e-fila">Transmissão</a> · <a href="#imagem-e-tela">Imagem</a> · <a href="#controles-e-periféricos">Controles</a> · <a href="#touch-nativo">Touch nativo</a> · <a href="#controles-de-toque">HUDs</a><br /><a href="#áudio-e-microfone">Áudio</a> · <a href="#rede-e-preferências">Rede</a> · <a href="#estatísticas-e-diagnósticos">Diagnósticos</a> · <a href="#tela-inicial-da-tv">Atalhos na TV</a> · <a href="#compatibilidade">Compatibilidade</a></p>
+  <p><a href="#conta-e-biblioteca">Biblioteca</a> · <a href="#aparência-e-temas">Temas</a> · <a href="#transmissão-e-fila">Transmissão</a> · <a href="#imagem-e-tela">Imagem</a> · <a href="#controles-e-periféricos">Controles</a> · <a href="#touch-nativo">Touch nativo</a> · <a href="#controles-de-toque">HUDs</a><br /><a href="#áudio-e-microfone">Áudio</a> · <a href="#rede-e-preferências">Rede</a> · <a href="#estatísticas-e-diagnósticos">Diagnósticos</a> · <a href="#tela-inicial-da-tv">Atalhos na TV</a> · <a href="#compatibilidade">Compatibilidade</a></p>
 </div>
 
 ![Menu inicial do xCLOUD com a aba Voltar a jogar](docs/screenshots/home-return-to-play.jpg)
@@ -15,7 +15,7 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
 <table>
   <tr>
     <td width="50%"><img src="docs/screenshots/transition-startup.png" alt="Abertura — Restauração da sessão com a identidade do aplicativo." /><br /><strong>Abertura</strong> — Restauração da sessão com a identidade do aplicativo.</td>
-    <td width="50%"><img src="docs/screenshots/settings.png" alt="Configurações por categoria — Vídeo, imagem, rede, controles, áudio, diagnósticos e conta." /><br /><strong>Configurações por categoria</strong> — Vídeo, imagem, rede, controles, áudio, diagnósticos e conta.</td>
+    <td width="50%"><img src="docs/screenshots/settings.png" alt="Configurações por categoria — Vídeo, imagem, aparência, rede, controles, áudio, diagnósticos e conta." /><br /><strong>Configurações por categoria</strong> — Vídeo, imagem, aparência, rede, controles, áudio, diagnósticos e conta.</td>
   </tr>
 </table>
 
@@ -39,6 +39,29 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
   <tr>
     <td width="50%"><img src="docs/screenshots/catalog-all-games.jpg" alt="Biblioteca do xCLOUD com a aba Todos os jogos selecionada." /><br /><strong>Biblioteca</strong> — Todos os jogos, com capas, selos e categorias.</td>
     <td width="50%"><img src="docs/screenshots/search.png" alt="Pesquisa — Busca por nome usando o teclado." /><br /><strong>Pesquisa</strong> — Busca por nome usando o teclado.</td>
+  </tr>
+</table>
+
+## Aparência e temas
+
+- **Verde** como tema padrão, preservando a identidade original do app.
+- Seis temas opcionais: **Azul Cibernético**, **Vermelho Vulcânico**, **Dourado Prestígio**, **Laranja Industrial**, **Roxo Galáxia** e **Prata Platina**.
+- Seleção em **Configurações › Aparência e temas › Tema do aplicativo**, por controle ou toque.
+- Aplicação imediata e escolha salva no aparelho, inclusive ao reabrir o app.
+- Cores dos menus, catálogo, destaques e janelas; as artes e a imagem do jogo mantêm suas cores.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/theme-cyber-blue.png" alt="Tema Azul Cibernético, com fundo azul escuro e destaques ciano." /><br /><strong>Azul Cibernético</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-volcanic-red.png" alt="Tema Vermelho Vulcânico, com fundo vermelho escuro e destaques vermelhos." /><br /><strong>Vermelho Vulcânico</strong></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/theme-prestige-gold.png" alt="Tema Dourado Prestígio, com fundo escuro e destaques dourados." /><br /><strong>Dourado Prestígio</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-industrial-orange.png" alt="Tema Laranja Industrial, com fundo grafite e destaques laranja." /><br /><strong>Laranja Industrial</strong></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/theme-galaxy-purple.png" alt="Tema Roxo Galáxia, com fundo roxo escuro e destaques violeta." /><br /><strong>Roxo Galáxia</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-platinum-silver.png" alt="Tema Prata Platina, com fundo cinza escuro e destaques prateados." /><br /><strong>Prata Platina</strong></td>
   </tr>
 </table>
 

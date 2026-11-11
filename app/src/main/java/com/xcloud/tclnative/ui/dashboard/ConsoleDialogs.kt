@@ -26,6 +26,7 @@ data class ConsoleAction(val label: String, val action: () -> Unit)
 
 /** Shared native panels for search, account menus and messages. No platform alert buttons/rows. */
 class ConsoleDialog(context: Context, heading: String) : Dialog(context, R.style.ConsoleDialog) {
+    init { DashboardTheme.applyOverlay(this.context) }
     private val activity = context as? Activity
     private val screenWidth = activity?.window?.decorView?.width?.takeIf { it > 0 }
         ?: context.resources.displayMetrics.widthPixels
@@ -122,14 +123,12 @@ object ConsoleDialogs {
             setTextColor(Color.WHITE); setHintTextColor(DashboardTheme.muted)
             setTextSize(TypedValue.COMPLEX_UNIT_PX, 28*dialog.scale)
             setPadding(dialog.px(20), dialog.px(12), dialog.px(20), dialog.px(12))
-            highlightColor=0x6654de69
+            highlightColor=DashboardTheme.color(UiColor.EDIT_SELECTION)
             DashboardTheme.customFocus(this)
-            fun outline(color: Int) = GradientDrawable().apply {
-                setColor(0xff101a13.toInt()); cornerRadius=8*dialog.scale; setStroke(dialog.px(2),color)
-            }
+            fun outline(color: UiColor)=DashboardTheme.shape(UiColor.EDIT_FILL,8*dialog.scale,dialog.px(2),color)
             background=StateListDrawable().apply {
-                addState(intArrayOf(android.R.attr.state_focused), outline(DashboardTheme.accent))
-                addState(intArrayOf(), outline(DashboardTheme.border))
+                addState(intArrayOf(android.R.attr.state_focused), outline(UiColor.ACCENT))
+                addState(intArrayOf(), outline(UiColor.BORDER))
             }
             imeOptions=EditorInfo.IME_ACTION_SEARCH
             setOnEditorActionListener { _, action, _ ->

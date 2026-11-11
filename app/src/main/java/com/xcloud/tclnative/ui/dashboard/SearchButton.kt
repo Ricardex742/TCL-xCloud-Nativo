@@ -22,10 +22,10 @@ internal class SearchButton(context: Context,search: () -> Unit): View(context) 
         super.onDraw(canvas)
         val size=min(width,height).toFloat(); val cx=width/2f; val cy=height/2f
         val radius=size*.32f
-        paint.style=Paint.Style.FILL; paint.color=if(isPressed || isFocused) 0xff284c35.toInt() else 0xff203329.toInt()
+        paint.style=Paint.Style.FILL; paint.color=if(isPressed || isFocused) DashboardTheme.color(UiColor.SEARCH_ACTIVE) else DashboardTheme.color(UiColor.SEARCH_FILL)
         canvas.drawRoundRect(cx-radius,cy-radius,cx+radius,cy+radius,size*.12f,size*.12f,paint)
         paint.style=Paint.Style.STROKE; paint.strokeWidth=size*.025f
-        paint.color=if(isPressed || isFocused) DashboardTheme.accent else 0xff5c8768.toInt()
+        paint.color=if(isPressed || isFocused) DashboardTheme.accent else DashboardTheme.color(UiColor.SEARCH_BORDER)
         canvas.drawRoundRect(cx-radius,cy-radius,cx+radius,cy+radius,size*.12f,size*.12f,paint)
         paint.color=Color.WHITE; paint.strokeCap=Paint.Cap.ROUND; paint.strokeWidth=size*.036f
         canvas.drawCircle(cx-size*.04f,cy-size*.04f,size*.125f,paint)

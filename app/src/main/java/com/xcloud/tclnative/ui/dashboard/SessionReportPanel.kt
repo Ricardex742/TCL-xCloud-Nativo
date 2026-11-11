@@ -15,7 +15,7 @@ import com.xcloud.tclnative.diagnostics.*
 object SessionReportPanel {
     fun show(context: Context,report: SessionReport,onBack: (() -> Unit)?=null,disableAutomatic: (() -> Unit)?=null): ConsoleDialog {
         val dialog=ConsoleDialog(context,"Diagnóstico pós-partida")
-        val accent=when { report.score==null -> DashboardTheme.muted; report.score>=75 -> DashboardTheme.accent; report.score>=60 -> 0xffffcd66.toInt(); else -> 0xffff826d.toInt() }
+        val accent=when { report.score==null -> DashboardTheme.muted; report.score>=75 -> 0xff54de69.toInt(); report.score>=60 -> 0xffffcd66.toInt(); else -> 0xffff826d.toInt() }
         val hero=LinearLayout(context).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
         val gauge=object: View(context) {
             val paint=Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign=Paint.Align.CENTER; typeface=DashboardTheme.font(context) }

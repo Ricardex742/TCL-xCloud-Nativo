@@ -2,7 +2,7 @@ name: Compilar APK Android 10 e TV
 
 on:
   push:
-    branches: [ "ci/apk-android10-3cc2595", "perf/decoder-display-latency-0.31" ]
+    branches: [ "main", "ci/apk-android10-3cc2595", "perf/decoder-display-latency-0.31" ]
   workflow_dispatch:
 
 permissions:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/ci/apk-android10-3cc2595' || github.ref == 'refs/heads/perf/decoder-display-latency-0.31'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/ci/apk-android10-3cc2595' || github.ref == 'refs/heads/perf/decoder-display-latency-0.31'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:

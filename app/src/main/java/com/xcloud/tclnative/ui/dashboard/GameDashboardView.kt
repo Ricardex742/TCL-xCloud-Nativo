@@ -108,7 +108,7 @@ class GameDashboardView(
     }
     private val avatar = FixedArtworkView(context).apply {
         scaleType = ImageView.ScaleType.CENTER_CROP
-        background = rounded(0xff53655a.toInt(), 1000f); clipToOutline = true
+        background = DashboardTheme.shape(UiColor.AVATAR, 1000f); clipToOutline = true
     }
     private val avatarLetter = label(28f).apply { gravity = Gravity.CENTER; text = "X" }
     private val accountName = label(26f)
@@ -124,7 +124,7 @@ class GameDashboardView(
     private val navigation = FrameLayout(context).apply { clipChildren = false; clipToPadding = false }
     private val tabRow = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
-        background = rounded(0xff27352c.toInt(), 7f)
+        background = DashboardTheme.shape(UiColor.TAB_BAR, 7f)
         clipChildren = false; clipToPadding = false
     }
     private val lb = label(24f).apply { text = "LB"; gravity = Gravity.CENTER }
@@ -148,7 +148,7 @@ class GameDashboardView(
         descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
     }
     private val emptyState = label(25f, false).apply {
-        gravity = Gravity.CENTER; setTextColor(0xffcdd9d1.toInt()); visibility = View.GONE
+        gravity = Gravity.CENTER; setTextColor(DashboardTheme.color(UiColor.CATALOG_NOTICE)); visibility = View.GONE
         maxLines = 4
     }
     private val footer = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
@@ -159,7 +159,7 @@ class GameDashboardView(
     init {
         background = DashboardBackground()
         clipChildren = false; clipToPadding = false
-        headerIcon.background = rounded(0xff334139.toInt(), 8f); headerIcon.clipToOutline = true
+        headerIcon.background = DashboardTheme.shape(UiColor.HEADER_ICON, 8f); headerIcon.clipToOutline = true
         headerTitle.maxLines = 2; headerTitle.setLineSpacing(0f, .96f)
         addView(headerIcon); addView(headerTitle)
         addView(searchButton)
@@ -167,7 +167,7 @@ class GameDashboardView(
         profilePanel.addView(connected); profilePanel.addView(accountName); profilePanel.addView(gamertag)
         profilePanel.addView(subscription); profilePanel.addView(settingsButton)
         profilePanel.setOnFocusChangeListener { _, focused ->
-            profilePanel.background = if (focused) rounded(0x66325540, 9f) else null
+            profilePanel.background = if (focused) DashboardTheme.shape(UiColor.PROFILE_FOCUS, 9f) else null
         }
         addView(profilePanel)
         searchButton.nextFocusRightId=profilePanel.id
@@ -307,7 +307,7 @@ class GameDashboardView(
         accountName.text = profile.displayName.uppercase(Locale.getDefault())
         gamertag.text = profile.gamertag.uppercase(Locale.getDefault())
         subscription.text = profile.subscription?.let { if (it == "FREE") "FREE" else "GAME PASS $it" } ?: "ASSINATURA NÃO INFORMADA"
-        subscription.background = rounded(0xff256038.toInt(), 3f)
+        subscription.background = DashboardTheme.shape(UiColor.SUBSCRIPTION, 3f)
         avatarLetter.text = profile.displayName.take(1).uppercase(Locale.getDefault())
         connected.contentDescription = "Conta autenticada no Xbox Cloud"
         profilePanel.contentDescription = "${profile.displayName}, ${profile.gamertag}. Abrir configurações"
@@ -652,7 +652,7 @@ class GameDashboardView(
     private class CoverHolder(val card: GameCard) : RecyclerView.ViewHolder(card)
     private inner class GameCard(context: Context) : FrameLayout(context) {
         private val cover = FrameLayout(context).apply {
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(0xff3c5144.toInt(), 0xff141d17.toInt()))
+            background = DashboardTheme.gradient(GradientDrawable.Orientation.TL_BR, arrayOf(UiColor.COVER_TOP, UiColor.COVER_BOTTOM))
                 .apply { cornerRadius = 7*scale }
             clipToOutline = true
         }
@@ -661,7 +661,7 @@ class GameDashboardView(
         private val badges = GameBadgesView(context)
         private val favorite = label(22f).apply {
             text = "★"; gravity = Gravity.CENTER; setTextColor(DashboardTheme.yellow)
-            background = rounded(0xc0142018.toInt(), 6f)
+            background = DashboardTheme.shape(UiColor.FAVORITE_BACKGROUND, 6f)
         }
         var focused = false
             set(value) { field = value; invalidate() }

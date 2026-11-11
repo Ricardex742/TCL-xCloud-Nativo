@@ -1,0 +1,90 @@
+name: Publicar APK na Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Execução aprovada de Compilar APK Android 10 e TV
+        required: true
+        type: string
+      tag:
+        description: Tag da versão, por exemplo v0.31.17
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      BUILD_RUN: ${{ inputs.run_id }}
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verificar origem e resultado da compilação
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$BUILD_RUN" =~ ^[0-9]+$ ]]
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          gh api "repos/$GH_REPO/actions/runs/$BUILD_RUN" > "$RUNNER_TEMP/build-run.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          run = json.loads((Path(os.environ['RUNNER_TEMP']) / 'build-run.json').read_text())
+          assert run['conclusion'] == 'success' and run['status'] == 'completed'
+          assert run['head_repository']['full_name'] == os.environ['GH_REPO']
+          assert run['path'] == '.github/workflows/build-apk.yml'
+          assert run['head_branch'] == 'main'
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write('BUILD_SHA=' + run['head_sha'] + '\n')
+          PY
+          gh run download "$BUILD_RUN" --repo "$GH_REPO" --name TCL-xCloud-App-Debug-Android10 --dir "$RUNNER_TEMP/apk"
+      - name: Verificar APK e assinatura fixa
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'build-tools;34.0.0'
+          python3 scripts/verify_apk_signing.py "$RUNNER_TEMP/apk/app-debug.apk"
+          python3 - <<'PY'
+          import hashlib, json, os, shutil
+          from pathlib import Path
+          source = Path(os.environ['RUNNER_TEMP']) / 'apk'
+          apk = source / 'app-debug.apk'
+          metadata = json.loads((source / 'app-debug.apk.metadata.json').read_text())
+          version = os.environ['RELEASE_TAG'][1:]
+          assert metadata['versionName'].split('-')[0] == version
+          digest = hashlib.sha256(apk.read_bytes()).hexdigest()
+          assert digest == (source / 'app-debug.apk.sha256').read_text().split()[0]
+          assets = Path(os.environ['RUNNER_TEMP']) / 'release-assets'
+          assets.mkdir()
+          name = f'xCLOUD-{version}.apk'
+          shutil.copyfile(apk, assets / name)
+          (assets / 'SHA256SUMS.txt').write_text(f'{digest}  {name}\n')
+          (Path(os.environ['RUNNER_TEMP']) / 'release-body.md').write_text(
+              'Cliente independente de Xbox Cloud Gaming para Android, Android TV e Google TV.\n\n'
+              f'Requer Android 7.0 ou superior. Baixe o arquivo **{name}** anexado abaixo para instalar ou atualizar o aplicativo.\n')
+          PY
+      - name: Anexar APK e publicar Release
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --json targetCommitish --jq '.targetCommitish' > "$RUNNER_TEMP/release-target"; then
+            test "$(cat "$RUNNER_TEMP/release-target")" = "$BUILD_SHA"
+          else
+            gh release create "$RELEASE_TAG" --target "$BUILD_SHA" --title "xCLOUD ${RELEASE_TAG#v}" --notes-file "$RUNNER_TEMP/release-body.md" --draft
+          fi
+          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/release-assets/"* --clobber
+          gh release edit "$RELEASE_TAG" --draft=false --latest

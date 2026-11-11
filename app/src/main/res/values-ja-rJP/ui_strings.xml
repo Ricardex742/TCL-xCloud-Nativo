@@ -811,4 +811,48 @@
     <string name="ui_ff20d756c5955aa6" formatted="false">"この試行の制限: {0}。 [戻る] または [キャンセル] でキューから抜けます。"</string>
     <string name="ui_ffc85b563def9bc4" formatted="false">"テスト振動・チェックサポート"</string>
     <string name="ui_d60b3945c25ba135" formatted="false">"1440pはXboxの最高画質プロファイルで最大2560×1440の映像を要求します。利用可否はサブスクリプション、ゲーム、サービスによって異なります。より多くの帯域幅とデコード性能が必要です。実際の受信解像度は診断で確認してください。"</string>
+    <string name="ui_64f9fc8d1d9c0c1f" formatted="false">"リクエストされた画像処理: {0}"</string>
+    <string name="ui_f8186b7e3ccb65ca" formatted="false">"応用画像処理：{0}"</string>
+    <string name="ui_706a0bb6421fbdb0" formatted="false">"H.264 Main が優先 • Baseline がフォールバックとして利用可能"</string>
+    <string name="ui_7312a2a997891518" formatted="false">"デコーダは H.264 Main をアドバタイズしない • H.264 フォールバックを使用する"</string>
+    <string name="ui_66bfd6b54c02fb71" formatted="false">"フレームペーシング: {0}"</string>
+    <string name="ui_53a7786ecd3d9110" formatted="false">"アップスケーラー: {0}"</string>
+    <string name="ui_2fc10d86856e698a" formatted="false">"アップスケーラーの出力: {0}"</string>
+    <string name="ui_afc818a5b59cbae3" formatted="false">"画像処理"</string>
+    <string name="ui_bf8fb0ad74709273" formatted="false">"Main は実験的なものです。これは、ハードウェア デコーダがこのプロファイルを宣言し、選択された解像度 60 FPS をサポートする場合にのみ提供されます。 Baseline はネゴシエーション中も利用可能です。 Xbox は受信したプロファイルを選択します。診断を確認してください。"</string>
+    <string name="ui_0714f5039a12ca60" formatted="false">"フレームペーシング"</string>
+    <string name="ui_4d440994fa1026b6" formatted="false">"スムーズ ペーシングでは、待機時間が短いフレームがスケジュールされるため、コントローラーの遅延が増加する可能性があります。最新の保留中のフレームのみを保持し、フレームは生成しません。これはアダプティブ モードでのみ機能します。低遅延と互換性により、フレームがすぐに表示されます。次回のセッションに適用されます。"</string>
+    <string name="ui_01ff7b9877fd2590" formatted="false">"画像のアップスケーラー"</string>
+    <string name="ui_eb6463428c90e902" formatted="false">"FSR 1 は、EASU と 1 つのシャープニング ステージを使用します。 SGSR 1 は、アップスケーリングとシャープニングを 1 つのパスで組み合わせ、異なる結果をもたらします。自動出力と 50% シャープニングから始めます。ネイティブ サイズでは、処理によって画像は拡大されません。 1440p と 4K には、より多くの GPU パワーが必要です。保護により、セッション中の出力と効果が低下する可能性があります。互換性によりアップスケーラーが無効になります。"</string>
+    <string name="ui_6f1c74f0b6d32c86" formatted="false">"アップスケーラーの出力"</string>
+    <string name="ui_3c5b67278b62ff76" formatted="false">"出力解像度はローカルであり、受信したストリームは変更されません。自動ではスムーズな再生を優先し、TV を 1080p に制限します。 FSR または SGSR を有効にして使用します。オプションはアスペクト比を維持し、物理的なディスプレイ出力を尊重します。レンダリングが受信フレームに遅れる場合、保護により出力が削減されます。 1440p および 4K は 60 FPS を保証しません。"</string>
+    <string name="ui_c32d6a6c5f6c85a8" formatted="false">"アップスケーラーのシャープネス: {0}%"</string>
+    <string name="ui_89466b600f44d82a" formatted="false">"アップスケーラーのシャープネス"</string>
+    <string name="ui_0a35106015a464ce" formatted="false">"0% はシャープ化を無効にします。 50% は、GPU コストの半分を意味するわけではありません。画像処理でFSRシャープニング方法を選択します。 SGSRは独自のシャープニングを使用しています。アップスケーラーがアクティブでない場合は、標準シャープニングが使用されます。"</string>
+    <string name="ui_145ba142c0a28897" formatted="false">"オプションのフィルター。低い強度を使用して、元の画像と比較します。時間的ブレンドによりゴーストが発生する可能性があります。ニューラル ネットワークには、half-float レンダリングと 1080p までのビデオが必要です。診断では、サポートされていない構成が報告されます。互換性により処理が無効になります。"</string>
+    <string name="ui_a23f3531df367526" formatted="false">"元のイメージを復元する"</string>
+    <string name="ui_816142b270bd86ed" formatted="false">"ライトプリセット"</string>
+    <string name="ui_3dffb6b05ab299a0" formatted="false">"ナチュラルプリセット"</string>
+    <string name="ui_fa91b6e02863c5e4" formatted="false">"研ぎ方法：{0}"</string>
+    <string name="ui_502db55d154534d2" formatted="false">"研ぎ方"</string>
+    <string name="ui_0aa57beba9491190" formatted="false">"アダプティブ RCAS および USM は、ノイズやハローを制限しながら輝度をシャープにします。画像調整の強さを設定します。 FSR は最終段階でこの方法を使用します。 SGSRには独自のシャープニングが施されています。"</string>
+    <string name="ui_2b6c2095f463e2a5" formatted="false">"バンド除去: {0}%"</string>
+    <string name="ui_fe312903471d9474" formatted="false">"バンディング除去"</string>
+    <string name="ui_ff31493bef5098c7" formatted="false">"圧縮クリーンアップ: {0}%"</string>
+    <string name="ui_8782634f25aeb02e" formatted="false">"圧縮クリーンアップ"</string>
+    <string name="ui_d7b3f1bca2b06d8b" formatted="false">"クロマエッジ再構築: {0}%"</string>
+    <string name="ui_a10e201b2f1fbe77" formatted="false">"クロマエッジ再構築"</string>
+    <string name="ui_2f7e4149690c5b05" formatted="false">"アンチエイリアス: {0}%"</string>
+    <string name="ui_02665a1915f9bbb7" formatted="false">"時間的安定化: {0}%"</string>
+    <string name="ui_a9bcf2677eef18a5" formatted="false">"時間的安定化"</string>
+    <string name="ui_e2f43e0004820e9d" formatted="false">"神経再構築: {0}%"</string>
+    <string name="ui_eb23f8d6305497c0" formatted="false">"神経再構築"</string>
+    <string name="ui_40f6cd55c2c2622a" formatted="false">"パフォーマンス保護: {0}"</string>
+    <string name="ui_2035d973bf9e515e" formatted="false">"パフォーマンスの保護"</string>
+    <string name="ui_5bc89f56c8f6a2fb" formatted="false">"レンダリングが受信フレームに遅れる場合、時間的ブレンディング、出力解像度、アンチエイリアス、ニューラル再構成、フィルターが低下します。保存された設定は保持されます。削減はこのセッション中継続し、診断に表示されます。"</string>
+    <string name="ui_1b84e208cc1a58a8" formatted="false">"H.264 Main — 実験的"</string>
+    <string name="ui_3a2a300619a63143" formatted="false">"SGSR 1 — 実験的"</string>
+    <string name="ui_9b01d2edc42e9906" formatted="false">"アダプティブ RCAS — 輝度"</string>
+    <string name="ui_8107516a4c8bc932" formatted="false">"USM — 輝度"</string>
+    <string name="ui_bb3b1f11046a95a8" formatted="false">"スムーズ — 実験的"</string>
 </resources>

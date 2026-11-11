@@ -188,7 +188,7 @@ class ConsoleUiTest {
         assertEquals(1,disconnected)
         controller.pause().stop().destroy()
     }
-    @Test fun lightCodecRequiresAnExplicitChoiceAndExperimentalChoicesAreRemoved() {
+    @Test fun lightCodecRequiresAnExplicitChoiceAndHevcAndHighChoicesRemainUnavailable() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()
         val activity=controller.get().apply { setContentView(FrameLayout(this)) }
         layout(activity.window.decorView,1280,720)
@@ -264,7 +264,7 @@ class ConsoleUiTest {
             assertEquals(StreamResolution.HD_1080_HQ,store.read().resolution)
             (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
             val image=panel.showImageAdjustments();render(image,"amd-fsr-image-adjustments")
-            all(image.body).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("Nitidez FSR (RCAS)") }.performClick()
+            all(image.body).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("Nitidez do escalador") }.performClick()
             val strength=ShadowDialog.getLatestDialog() as ConsoleDialog
             all(strength.body).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("75%") }.performClick()
             assertEquals(75,store.read().fsrSharpness);assertEquals(0,store.read().sharpness)
@@ -285,7 +285,7 @@ class ConsoleUiTest {
             assertEquals(3,rows.size);assertEquals(original,store.read())
             rows.single { it.text.contains("4K —") }.performClick()
             assertEquals(original.copy(fsrOutput=FsrOutput.UHD_4K),store.read())
-            assertTrue(all((ShadowDialog.getLatestDialog() as ConsoleDialog).body).filterIsInstance<TextView>().any { it.text.contains("Saída do FSR: 4K") })
+            assertTrue(all((ShadowDialog.getLatestDialog() as ConsoleDialog).body).filterIsInstance<TextView>().any { it.text.contains("Saída do escalador: 4K") })
             (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
             val again=panel.chooseFsrOutput()
             all(again.body).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("1440p —") }.performClick()

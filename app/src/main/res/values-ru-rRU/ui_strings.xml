@@ -811,4 +811,48 @@
     <string name="ui_ff20d756c5955aa6" formatted="false">"Предел этой попытки: {0}. Команда «Назад» или «Отмена» покидает очередь."</string>
     <string name="ui_ffc85b563def9bc4" formatted="false">"Проверить вибрацию/проверить поддержку"</string>
     <string name="ui_d60b3945c25ba135" formatted="false">"1440p запрашивает видео до 2560×1440 с профилем максимального качества Xbox. Доступность зависит от подписки, игры и сервиса. Требуется больше пропускной способности и ресурсов декодирования. Проверяйте фактическое разрешение в диагностике."</string>
+    <string name="ui_64f9fc8d1d9c0c1f" formatted="false">"Запрошенная обработка изображения: {0}"</string>
+    <string name="ui_f8186b7e3ccb65ca" formatted="false">"Прикладная обработка изображений: {0}"</string>
+    <string name="ui_706a0bb6421fbdb0" formatted="false">"H.264 Предпочтителен Main • Baseline доступен в качестве резервного варианта"</string>
+    <string name="ui_7312a2a997891518" formatted="false">"Декодер не объявляет H.264 Main • с использованием резервного варианта H.264"</string>
+    <string name="ui_66bfd6b54c02fb71" formatted="false">"Темп кадра: {0}"</string>
+    <string name="ui_53a7786ecd3d9110" formatted="false">"Масштабирование: {0}"</string>
+    <string name="ui_2fc10d86856e698a" formatted="false">"Разрешение масштабирования: {0}"</string>
+    <string name="ui_afc818a5b59cbae3" formatted="false">"Обработка изображений"</string>
+    <string name="ui_bf8fb0ad74709273" formatted="false">"Main является экспериментальным. Он предлагается только в том случае, если аппаратный декодер декларирует этот профиль и поддерживает выбранное разрешение 60 FPS. Baseline остается доступным во время переговоров. Xbox выбирает полученный профиль; проверьте диагностику."</string>
+    <string name="ui_0714f5039a12ca60" formatted="false">"Шаг кадров"</string>
+    <string name="ui_4d440994fa1026b6" formatted="false">"При плавном темпе кадры планируются с коротким ожиданием и могут увеличить задержку контроллера. Он сохраняет только последний ожидающий кадр и не генерирует кадры. Работает только в адаптивном режиме. Низкая задержка и совместимость отображают кадры немедленно. Применяется к следующему сеансу."</string>
+    <string name="ui_01ff7b9877fd2590" formatted="false">"Масштабирование изображения"</string>
+    <string name="ui_eb6463428c90e902" formatted="false">"FSR 1 использует EASU и одну ступень повышения резкости. SGSR 1 сочетает в себе масштабирование и повышение резкости за один проход с разным результатом. Начните с автоматического вывода и резкости 50%. В исходном размере обработка не увеличивает изображение. 1440p и 4K требуют большей мощности GPU. Защита может снизить мощность и эффекты во время сеанса. Совместимость отключает апскейлеры."</string>
+    <string name="ui_6f1c74f0b6d32c86" formatted="false">"Разрешение масштабирования"</string>
+    <string name="ui_3c5b67278b62ff76" formatted="false">"Выходное разрешение является локальным и не меняет принимаемый поток. В режиме «Авто» приоритетом является плавное воспроизведение, а для телевизоров — значение 1080p. Включите FSR или SGSR, чтобы использовать его. Параметры сохраняют соотношение сторон и учитывают вывод физического дисплея. Защита снижает вывод, если рендеринг отстает от входящих кадров. 1440p и 4K не гарантируют 60 FPS."</string>
+    <string name="ui_c32d6a6c5f6c85a8" formatted="false">"Резкость масштабирования: {0}%"</string>
+    <string name="ui_89466b600f44d82a" formatted="false">"Резкость масштабирования"</string>
+    <string name="ui_0a35106015a464ce" formatted="false">"0% отключает повышение резкости; 50% не означают половину стоимости GPU. Выберите метод повышения резкости FSR в разделе «Обработка изображений». SGSR использует собственную заточку. Стандартное повышение резкости используется, когда ни один апскейлер не активен."</string>
+    <string name="ui_145ba142c0a28897" formatted="false">"Дополнительные фильтры. Используйте низкую интенсивность и сравните с исходным изображением. Временное смешение может привести к появлению ореолов. Нейросеть требует рендеринга half-float и видео до 1080p; Диагностика сообщает о неподдерживаемых конфигурациях. Совместимость отключает обработку."</string>
+    <string name="ui_a23f3531df367526" formatted="false">"Восстановить исходное изображение"</string>
+    <string name="ui_816142b270bd86ed" formatted="false">"Светлый пресет"</string>
+    <string name="ui_3dffb6b05ab299a0" formatted="false">"Естественный пресет"</string>
+    <string name="ui_fa91b6e02863c5e4" formatted="false">"Метод заточки: {0}"</string>
+    <string name="ui_502db55d154534d2" formatted="false">"Метод заточки"</string>
+    <string name="ui_0aa57beba9491190" formatted="false">"Адаптивные RCAS и USM повышают яркость, ограничивая шум и ореолы. Установите силу в настройках изображения. FSR использует этот метод на заключительном этапе; SGSR имеет собственную заточку."</string>
+    <string name="ui_2b6c2095f463e2a5" formatted="false">"Удаление бандажа: {0}%"</string>
+    <string name="ui_fe312903471d9474" formatted="false">"Дебандинг"</string>
+    <string name="ui_ff31493bef5098c7" formatted="false">"Очистка сжатия: {0}%"</string>
+    <string name="ui_8782634f25aeb02e" formatted="false">"Очистка сжатия"</string>
+    <string name="ui_d7b3f1bca2b06d8b" formatted="false">"Реконструкция края цветности: {0}%"</string>
+    <string name="ui_a10e201b2f1fbe77" formatted="false">"Реконструкция края цветности"</string>
+    <string name="ui_2f7e4149690c5b05" formatted="false">"Сглаживание: {0}%"</string>
+    <string name="ui_02665a1915f9bbb7" formatted="false">"Временная стабилизация: {0}%"</string>
+    <string name="ui_a9bcf2677eef18a5" formatted="false">"Временная стабилизация"</string>
+    <string name="ui_e2f43e0004820e9d" formatted="false">"Нейронная реконструкция: {0}%"</string>
+    <string name="ui_eb23f8d6305497c0" formatted="false">"Нейронная реконструкция"</string>
+    <string name="ui_40f6cd55c2c2622a" formatted="false">"Защита производительности: {0}"</string>
+    <string name="ui_2035d973bf9e515e" formatted="false">"Защита производительности"</string>
+    <string name="ui_5bc89f56c8f6a2fb" formatted="false">"Уменьшает временное смешивание, выходное разрешение, сглаживание, нейронную реконструкцию и фильтры, когда рендеринг отстает от входящих кадров. Сохраненные настройки сохраняются. Снижения действуют в течение этого сеанса и отображаются в диагностике."</string>
+    <string name="ui_1b84e208cc1a58a8" formatted="false">"H.264 Main — экспериментальный"</string>
+    <string name="ui_3a2a300619a63143" formatted="false">"SGSR 1 — экспериментальный"</string>
+    <string name="ui_9b01d2edc42e9906" formatted="false">"Адаптивный RCAS — яркость"</string>
+    <string name="ui_8107516a4c8bc932" formatted="false">"USM — яркость"</string>
+    <string name="ui_bb3b1f11046a95a8" formatted="false">"Гладкий — экспериментальный"</string>
 </resources>

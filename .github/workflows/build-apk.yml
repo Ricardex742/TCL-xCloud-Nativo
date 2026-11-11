@@ -96,8 +96,10 @@ jobs:
           sudo apt-get install -y --no-install-recommends libegl1 libegl-mesa0 libgl1-mesa-dri
           python3 scripts/verify_image_filter.py
           python3 scripts/verify_fsr1.py
+          python3 scripts/verify_image_treatment.py
           cat app/build/reports/dashboard/image-filter-validation.txt >> "$GITHUB_STEP_SUMMARY"
           cat app/build/reports/dashboard/fsr1-validation.txt >> "$GITHUB_STEP_SUMMARY"
+          cat app/build/reports/dashboard/image-treatment-validation.txt >> "$GITHUB_STEP_SUMMARY"
 
       - name: Salvar o APK gerado para download
         uses: actions/upload-artifact@v4

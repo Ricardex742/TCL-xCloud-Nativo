@@ -101,6 +101,8 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
 - Pedido de qualidade enviado ao Xbox pelo canal de controle. A resolução recebida depende da assinatura, do jogo e do serviço e pode ser menor que a escolhida.
 - Modos **Menor atraso**, **Adaptativo** e **Compatibilidade — TVs mais fracas**.
 - Opção **H.264 leve — Baseline (720p)**.
+- **H.264 Main experimental**, oferecido quando o decoder de hardware declara suporte ao perfil e à resolução solicitada a 60 FPS. Baseline permanece disponível na negociação; o diagnóstico informa o perfil realmente recebido.
+- **Fluidez da apresentação opcional** em Adaptativo, com fila de um quadro pendente e descarte de quadros substituídos. Pode acrescentar atraso; Menor atraso e Compatibilidade usam apresentação imediata.
 - Fila com arte do jogo, estimativa do serviço, tempo aguardado e cancelamento.
 - Recuperação de vídeo por solicitação de quadro-chave, decoder e superfície de exibição.
 - Menu da partida com ajustes e desconexão para retornar ao catálogo.
@@ -126,8 +128,15 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
 - Troca de proporção durante o jogo pelo menu da partida, com aplicação imediata.
 - Original preserva o quadro recebido; Esticar preenche a tela com deformação; Zoom preenche com corte, mantendo a proporção.
 - Ajustes de nitidez, saturação, brilho e contraste durante a partida.
-- **AMD FSR 1.0.2 experimental**, com ampliação EASU e nitidez RCAS; em resolução nativa, aplica somente RCAS.
+- **AMD FSR 1.0.2 experimental**, com ampliação EASU e nitidez RCAS, RCAS adaptativo ou USM por luminância; em resolução nativa, aplica somente o realce escolhido.
 - Saída do FSR em **Automático, 1440p ou 4K experimental**, com proteção para retorno à escala padrão.
+- **SGSR 1 experimental** como alternativa de ampliação e realce numa passagem.
+- Tratamento opcional com **RCAS adaptativo ou USM na luminância**, limite de halos e proteção contra ruído.
+- **Debanding com dithering**, limpeza seletiva de compressão, reconstrução de cor nas bordas e antialiasing ajustáveis.
+- **Estabilização temporal** com busca local de movimento, descarte de histórico em mudanças de geometria e rejeição de mudanças de cena.
+- **Reconstrução neural experimental** na luminância, com buffers half-float verificados e fonte de até 1080p; disponibilidade efetiva mostrada no diagnóstico.
+- Perfis **Leve**, **Natural** e restauração da imagem original em **Imagem e tela › Tratamento da imagem**.
+- Proteção progressiva reduz efeitos e saída quando os desenhos ficam abaixo da cadência recebida, preservando as preferências salvas e registrando os cortes da partida.
 - Preferência por uma taxa de atualização compatível com a apresentação do vídeo.
 
 <table>

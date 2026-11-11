@@ -811,4 +811,48 @@
     <string name="ui_ff20d756c5955aa6" formatted="false">"Limite desta tentativa: {0}. Voltar ou Cancelar sai da fila."</string>
     <string name="ui_ffc85b563def9bc4" formatted="false">"Testar vibração / verificar suporte"</string>
     <string name="ui_d60b3945c25ba135" formatted="false">"1440p solicita vídeo em até 2560×1440 pelo perfil de qualidade máxima do Xbox. A disponibilidade depende da assinatura, do jogo e do serviço. Exige mais rede e decodificação; confira a resolução realmente recebida no diagnóstico."</string>
+    <string name="ui_64f9fc8d1d9c0c1f" formatted="false">"Tratamento solicitado: {0}"</string>
+    <string name="ui_f8186b7e3ccb65ca" formatted="false">"Tratamento aplicado: {0}"</string>
+    <string name="ui_706a0bb6421fbdb0" formatted="false">"H.264 Main preferido • Baseline disponível como alternativa"</string>
+    <string name="ui_7312a2a997891518" formatted="false">"H.264 Main não anunciado pelo decoder • alternativa H.264"</string>
+    <string name="ui_66bfd6b54c02fb71" formatted="false">"Fluidez: {0}"</string>
+    <string name="ui_53a7786ecd3d9110" formatted="false">"Escalador: {0}"</string>
+    <string name="ui_2fc10d86856e698a" formatted="false">"Saída do escalador: {0}"</string>
+    <string name="ui_afc818a5b59cbae3" formatted="false">"Tratamento da imagem"</string>
+    <string name="ui_bf8fb0ad74709273" formatted="false">"Main é experimental: só é oferecido quando o decoder de hardware declara esse perfil e suporta a resolução a 60 FPS. Baseline continua disponível na negociação. O Xbox escolhe o perfil recebido; confirme o resultado no diagnóstico."</string>
+    <string name="ui_0714f5039a12ca60" formatted="false">"Fluidez da apresentação"</string>
+    <string name="ui_4d440994fa1026b6" formatted="false">"Suave agenda os quadros com uma pequena espera e pode aumentar o atraso do controle. Mantém apenas o quadro pendente mais recente; não gera novos quadros. Só atua em Adaptativo. Menor atraso e Compatibilidade mantêm a apresentação imediata. Vale na próxima partida."</string>
+    <string name="ui_01ff7b9877fd2590" formatted="false">"Escalador da imagem"</string>
+    <string name="ui_eb6463428c90e902" formatted="false">"FSR 1 usa EASU e uma etapa de nitidez. SGSR 1 combina ampliação e realce numa passagem, com resultado diferente. Comece em Automático e nitidez 50%. Em tamanho nativo, há somente tratamento, sem ampliação. 1440p e 4K exigem mais GPU. A proteção pode reduzir a saída e os efeitos durante a partida. Compatibilidade desativa os escaladores."</string>
+    <string name="ui_6f1c74f0b6d32c86" formatted="false">"Saída do escalador"</string>
+    <string name="ui_3c5b67278b62ff76" formatted="false">"A saída é local e não altera o stream recebido. Automático prioriza a fluidez e limita TVs a 1080p. FSR ou SGSR devem estar ligados. As escolhas preservam a proporção e respeitam a saída física. A proteção reduz a saída se os desenhos não acompanharem os quadros recebidos. 1440p e 4K não garantem 60 FPS."</string>
+    <string name="ui_c32d6a6c5f6c85a8" formatted="false">"Nitidez do escalador: {0}%"</string>
+    <string name="ui_89466b600f44d82a" formatted="false">"Nitidez do escalador"</string>
+    <string name="ui_0a35106015a464ce" formatted="false">"0% desativa o realce; 50% não significa metade do custo de GPU. O método de nitidez do FSR pode ser escolhido em Tratamento da imagem. SGSR usa seu próprio realce. A nitidez padrão é usada quando não há escalador ativo."</string>
+    <string name="ui_145ba142c0a28897" formatted="false">"Filtros opcionais. Use intensidades baixas e compare com a imagem original. Temporal pode deixar rastros. A rede neural exige renderização half-float e fonte de até 1080p; o diagnóstico informa quando não há suporte. Compatibilidade desativa o tratamento."</string>
+    <string name="ui_a23f3531df367526" formatted="false">"Restaurar imagem original"</string>
+    <string name="ui_816142b270bd86ed" formatted="false">"Perfil leve"</string>
+    <string name="ui_3dffb6b05ab299a0" formatted="false">"Perfil natural"</string>
+    <string name="ui_fa91b6e02863c5e4" formatted="false">"Método de nitidez: {0}"</string>
+    <string name="ui_502db55d154534d2" formatted="false">"Método de nitidez"</string>
+    <string name="ui_0aa57beba9491190" formatted="false">"RCAS adaptativo e USM atuam na luminância, com proteção contra ruído e halos. A intensidade fica em Ajustes da imagem. O FSR usa esse método na etapa final; SGSR tem seu próprio realce."</string>
+    <string name="ui_2b6c2095f463e2a5" formatted="false">"Degradês: {0}%"</string>
+    <string name="ui_fe312903471d9474" formatted="false">"Degradês"</string>
+    <string name="ui_ff31493bef5098c7" formatted="false">"Limpeza de compressão: {0}%"</string>
+    <string name="ui_8782634f25aeb02e" formatted="false">"Limpeza de compressão"</string>
+    <string name="ui_d7b3f1bca2b06d8b" formatted="false">"Cor nas bordas: {0}%"</string>
+    <string name="ui_a10e201b2f1fbe77" formatted="false">"Cor nas bordas"</string>
+    <string name="ui_2f7e4149690c5b05" formatted="false">"Antialiasing: {0}%"</string>
+    <string name="ui_02665a1915f9bbb7" formatted="false">"Estabilidade temporal: {0}%"</string>
+    <string name="ui_a9bcf2677eef18a5" formatted="false">"Estabilidade temporal"</string>
+    <string name="ui_e2f43e0004820e9d" formatted="false">"Reconstrução neural: {0}%"</string>
+    <string name="ui_eb23f8d6305497c0" formatted="false">"Reconstrução neural"</string>
+    <string name="ui_40f6cd55c2c2622a" formatted="false">"Proteção de desempenho: {0}"</string>
+    <string name="ui_2035d973bf9e515e" formatted="false">"Proteção de desempenho"</string>
+    <string name="ui_5bc89f56c8f6a2fb" formatted="false">"Reduz temporal, saída, antialiasing, neural e filtros quando a cadência desenhada fica abaixo da recebida. As escolhas salvas são preservadas. Os cortes valem nesta partida e aparecem no diagnóstico."</string>
+    <string name="ui_1b84e208cc1a58a8" formatted="false">"H.264 Main — experimental"</string>
+    <string name="ui_3a2a300619a63143" formatted="false">"SGSR 1 — experimental"</string>
+    <string name="ui_9b01d2edc42e9906" formatted="false">"RCAS adaptativo — luminância"</string>
+    <string name="ui_8107516a4c8bc932" formatted="false">"USM — luminância"</string>
+    <string name="ui_bb3b1f11046a95a8" formatted="false">"Suave — experimental"</string>
 </resources>

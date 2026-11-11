@@ -78,9 +78,13 @@ class FsrOutputSurfaceTest {
         assertEquals(FsrOutput.AUTO,PlaybackSettingsStore(context).read().fsrOutput)
         controller.pause().stop().destroy()
     }
-    @Test fun slowFsrProtectionRestoresTheRealWebRtcHolderTo1080WithoutChangingTheUiOrInputSpace() {
+    @Test @Config(qualifiers="w3840dp-h2160dp-land-mdpi")
+    fun slowFsrProtectionProgressivelyRestoresTheRealHolderWithoutChangingTheUiOrInputSpace() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()
+        Shadow.extract<org.robolectric.shadows.ShadowUIModeManager>(controller.get().getSystemService(android.content.Context.UI_MODE_SERVICE))
+            .setCurrentModeType(android.content.res.Configuration.UI_MODE_TYPE_TELEVISION)
         val owner=AiPqSurfaceRenderer(controller.get());owner.layout(0,0,1920,1080)
+        controller.get().setContentView(owner)
         owner.setFsr(true,50,FsrOutput.UHD_4K)
         val dimensions=owner.displayDimensions()
         val view=OutputSurfaceViewRenderer(controller.get())
@@ -90,15 +94,20 @@ class FsrOutputSurfaceTest {
         ReflectionHelpers.setField(owner,"renderer",view)
         ReflectionHelpers.setField(owner,"requestedBuffer",VideoViewport(3840,2160))
         view.setOutputBuffer(VideoViewport(3840,2160))
-        val draws=ReflectionHelpers.getField<AtomicLong>(owner,"fsrDraws")
-        repeat(7) { second ->
+        val draws=ReflectionHelpers.getField<AtomicLong>(owner,"allDraws")
+        val observedSizes=mutableListOf<VideoViewport?>()
+        repeat(21) { second ->
             draws.set((second+1L)*13)
             val now=android.os.SystemClock.elapsedRealtime()
-            owner.observeFsrPerformance(now,StreamMetrics(receivedVideoBytes=500000,packetLossPercent=0.0,intervalSeconds=1.0),true)
+            owner.observeFsrPerformance(now,StreamMetrics(receivedVideoBytes=500000,packetLossPercent=0.0,intervalSeconds=1.0,receivedFrames=60),true)
+            observedSizes+=Shadow.extract<RecordingSurfaceShadow>(view).lastSize
             ShadowSystemClock.advanceBy(Duration.ofSeconds(1))
         }
         assertEquals(VideoViewport(1920,1080),Shadow.extract<RecordingSurfaceShadow>(view).lastSize)
-        assertTrue(owner.diagnostics().contains("proteção de fluidez: 13.0 desenhos FSR/s"))
+        assertTrue(observedSizes.contains(VideoViewport(2560,1440)))
+        assertTrue(owner.diagnostics().contains("output 1440p (13.0 draws/s)"))
+        assertTrue(owner.diagnostics().contains("output native (13.0 draws/s)"))
+        assertTrue(owner.diagnostics().contains("scaling off (13.0 draws/s)"))
         assertTrue(owner.diagnostics().contains("buffer solicitado: escala padrão"))
         assertEquals(FsrOutput.UHD_4K,ReflectionHelpers.getField<FsrOutput>(owner,"fsrOutput"))
         assertEquals(dimensions,owner.displayDimensions());assertEquals(.25f to .5f,owner.touchCoordinates(480f,540f))
@@ -126,20 +135,20 @@ class FsrOutputSurfaceTest {
         val drawer=AspectVideoDrawer(false,{fsr},noOp).apply { fsrEnabled=true }
         drawer.drawRgb(1,FloatArray(16),1920,1080,0,0,1920,1080)
         ReflectionHelpers.setField(owner,"aspectDrawer",drawer)
-        val draws=ReflectionHelpers.getField<AtomicLong>(owner,"fsrDraws").apply { set(120) }
+        val draws=ReflectionHelpers.getField<AtomicLong>(owner,"allDraws").apply { set(120) }
         val metrics=StreamMetrics(receivedVideoBytes=500000,packetLossPercent=0.0,intervalSeconds=1.0)
         repeat(10) {
             owner.observeFsrPerformance(android.os.SystemClock.elapsedRealtime(),metrics,true)
             ShadowSystemClock.advanceBy(Duration.ofSeconds(1))
         }
-        assertFalse(owner.diagnostics().contains("proteção de fluidez"))
+        assertFalse(owner.diagnostics().contains("scaling off"))
         bypass=false
         repeat(7) {
             draws.addAndGet(13)
             owner.observeFsrPerformance(android.os.SystemClock.elapsedRealtime(),metrics,true)
             ShadowSystemClock.advanceBy(Duration.ofSeconds(1))
         }
-        assertTrue(owner.diagnostics().contains("proteção de fluidez: 13.0 desenhos FSR/s"))
+        assertTrue(owner.diagnostics().contains("scaling off (13.0 draws/s)"))
         owner.release();controller.pause().stop().destroy()
     }
     @Test fun changingFsrOutputKeepsTheActualVideoViewTouchSpaceAndClientMetadataInUiPixels() {
@@ -167,6 +176,7 @@ class RecordingSurfaceShadow: ShadowSurfaceView() {
         if(!::recordingHolder.isInitialized) recordingHolder=object: SurfaceHolder by super.getHolder() {
             override fun setFixedSize(w: Int,h: Int) { lastSize=VideoViewport(w,h) }
             override fun setSizeFromLayout() { lastSize=null }
+            override fun getSurfaceFrame()=android.graphics.Rect(0,0,lastSize?.width ?: 1920,lastSize?.height ?: 1080)
         }
         return recordingHolder
     }

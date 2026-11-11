@@ -21,6 +21,7 @@ public final class Fsr1Drawer implements FsrUpscaler {
     void rcasDirect(Input kind,int texture,float[] matrix,Fsr1Plan plan,int x,int y,float strength,float saturation);
     void discardDirect();
     default void colors(int brightness,int contrast) {}
+    default void finishing(int mode,boolean dither,int percent) {}
     void rcas(Fsr1Plan plan,int x,int y,float strength,float saturation);
     void end();
     void release();
@@ -32,6 +33,8 @@ public final class Fsr1Drawer implements FsrUpscaler {
   private boolean lastDirect,lastNative;
   private int[] caps;
   private volatile int sharpness=50,saturation=100,brightness=0,contrast=100;
+  private volatile int finishingMode;
+  private volatile boolean finishDither;
   private volatile Fsr1Plan plan;
   private volatile String status="aguardando vídeo";
   private volatile long frames,totalNs,maxNs;
@@ -44,6 +47,10 @@ public final class Fsr1Drawer implements FsrUpscaler {
   @Override public void setColorAdjustments(int brightness,int contrast) {
     this.brightness=Math.max(-50,Math.min(50,brightness));this.contrast=Math.max(50,Math.min(150,contrast));
   }
+  @Override public void setTreatmentFinishing(int mode,boolean dither) {
+    finishingMode=Math.max(0,Math.min(2,mode));finishDither=dither;
+  }
+  @Override public int lastPassCount() { Fsr1Plan current=plan;return current!=null && current.active()?current.passes():0; }
   @Override public boolean drawOes(int t,float[] m,int fw,int fh,int x,int y,int w,int h) {
     return draw(Input.OES,t,null,m,fw,fh,x,y,w,h);
   }
@@ -81,7 +88,8 @@ public final class Fsr1Drawer implements FsrUpscaler {
         if(!plan.active()) { status=plan.bypass;backend.release();return false; }
         render(kind,texture,textures,matrix,fw,fh,x,y);
       }
-      status=plan.nativeRcas?"ativo RCAS nativo (sem EASU)":"ativo EASU + RCAS (denoise)";
+      status=finishingMode==0?(plan.nativeRcas?"ativo RCAS nativo (sem EASU)":"ativo EASU + RCAS (denoise)"):
+          (plan.nativeRcas?"ativo "+finishingLabel()+" nativo (sem EASU)":"ativo EASU + "+finishingLabel());
       long elapsed=System.nanoTime()-start;
       totalNs+=elapsed;maxNs=Math.max(maxNs,elapsed);frames++;
       return true;
@@ -93,7 +101,7 @@ public final class Fsr1Drawer implements FsrUpscaler {
   }
   private void render(Input kind,int texture,int[] textures,float[] matrix,int fw,int fh,int x,int y) {
     Fsr1Plan p=plan;
-    backend.prepare(p);backend.colors(brightness,contrast);
+    backend.prepare(p);backend.colors(brightness,contrast);backend.finishing(finishingMode,finishDither,sharpness);
     float strength=Fsr1Plan.rcasStrength(sharpness),sat=saturation/100f;
     if(p.directInput) {
       if(p.nativeRcas) backend.rcasDirect(kind,texture,matrix,p,x,y,strength,sat);
@@ -120,9 +128,10 @@ public final class Fsr1Drawer implements FsrUpscaler {
         String.format(Locale.US," | texturas estimadas %.1f MiB",p.workingBytes/1048576.0):"";
     long count=frames;
     String timing=count==0?"":" | submissão CPU/GL média/pico "+String.format(Locale.US,"%.2f/%.2f ms",totalNs/1e6/count,maxNs/1e6)+" (não mede GPU/tela)";
-    return "AMD FSR 1.0.2: "+status+dimensions+" | RCAS "+sharpness+"%"+
+    return "AMD FSR 1.0.2: "+status+dimensions+" | "+finishingLabel()+" "+sharpness+"%"+
         (directRejected?" | caminho direto recusado; compatibilidade nesta sessão":"")+timing;
   }
+  private String finishingLabel() { return finishingMode==2?"USM luminância":finishingMode==1?"RCAS adaptativo":"RCAS"; }
   @Override public void release() { if(closed) return;closed=true;backend.release(); }
 
   private static final class Sources {
@@ -173,7 +182,7 @@ public final class Fsr1Drawer implements FsrUpscaler {
   private static final class Pass {
     final GlShader shader;
     final int position,texture,input,output,origin,strength,saturation,brightness,contrast;
-    final int sourceOrigin,sourceX,sourceY;
+    final int sourceOrigin,sourceX,sourceY,finishingMode,adaptiveAmount,dither;
     Pass(Sources source,boolean rcas) { this(source,rcas,null); }
     Pass(Sources source,boolean rcas,Input direct) {
       GlShader s=new GlShader(source.vertex,directShader(rcas?source.rcas:source.easu,direct));
@@ -182,6 +191,8 @@ public final class Fsr1Drawer implements FsrUpscaler {
         output=rcas?-1:s.getUniformLocation("output_size");origin=rcas?s.getUniformLocation("viewport_origin"):-1;
         strength=rcas?s.getUniformLocation("rcas_strength"):-1;saturation=rcas?s.getUniformLocation("saturation"):-1;
         brightness=rcas?s.getUniformLocation("brightness"):-1;contrast=rcas?s.getUniformLocation("contrast_adjust"):-1;
+        finishingMode=rcas?s.getUniformLocation("sharpening_mode"):-1;
+        adaptiveAmount=rcas?s.getUniformLocation("adaptive_amount"):-1;dither=rcas?s.getUniformLocation("finish_dither"):-1;
         sourceOrigin=direct==null?-1:s.getUniformLocation("source_origin");
         sourceX=direct==null?-1:s.getUniformLocation("source_step_x");sourceY=direct==null?-1:s.getUniformLocation("source_step_y");
         shader=s;
@@ -190,6 +201,10 @@ public final class Fsr1Drawer implements FsrUpscaler {
   }
   private static final class GlesBackend implements Backend {
     private float brightness,contrast;
+    private int finishingMode;private float adaptiveAmount;private boolean dither;
+    @Override public void finishing(int mode,boolean dither,int percent) {
+      finishingMode=mode;this.dither=dither;adaptiveAmount=percent/100f;
+    }
     @Override public void colors(int brightness,int contrast) { this.brightness=brightness/100f;this.contrast=contrast/100f-1f; }
     private static final FloatBuffer QUAD=GlUtil.createFloatBuffer(new float[]{-1,-1,1,-1,-1,1,1,1});
     private final Context context;
@@ -293,6 +308,8 @@ public final class Fsr1Drawer implements FsrUpscaler {
     private void setRcas(Pass pass,int x,int y,float strength,float saturation) {
       GLES20.glUniform2f(pass.origin,x,y);GLES20.glUniform1f(pass.strength,strength);GLES20.glUniform1f(pass.saturation,saturation);
       GLES20.glUniform1f(pass.brightness,brightness);GLES20.glUniform1f(pass.contrast,contrast);
+      GLES20.glUniform1i(pass.finishingMode,finishingMode);GLES20.glUniform1f(pass.adaptiveAmount,adaptiveAmount);
+      GLES20.glUniform1i(pass.dither,dither?1:0);
     }
     @Override public void discardDirect() {
       RuntimeException failure=null;

@@ -811,4 +811,48 @@
     <string name="ui_ff20d756c5955aa6" formatted="false">"Limit of this attempt: {0}. Back or Cancel leaves the queue."</string>
     <string name="ui_ffc85b563def9bc4" formatted="false">"Test vibration / check support"</string>
     <string name="ui_d60b3945c25ba135" formatted="false">"1440p requests video at up to 2560×1440 using Xbox’s maximum-quality profile. Availability depends on your subscription, the game, and the service. It needs more bandwidth and decoding power; check the actual received resolution in diagnostics."</string>
+    <string name="ui_64f9fc8d1d9c0c1f" formatted="false">"Requested image processing: {0}"</string>
+    <string name="ui_f8186b7e3ccb65ca" formatted="false">"Applied image processing: {0}"</string>
+    <string name="ui_706a0bb6421fbdb0" formatted="false">"H.264 Main preferred • Baseline available as fallback"</string>
+    <string name="ui_7312a2a997891518" formatted="false">"Decoder does not advertise H.264 Main • using H.264 fallback"</string>
+    <string name="ui_66bfd6b54c02fb71" formatted="false">"Frame pacing: {0}"</string>
+    <string name="ui_53a7786ecd3d9110" formatted="false">"Upscaler: {0}"</string>
+    <string name="ui_2fc10d86856e698a" formatted="false">"Upscaler output: {0}"</string>
+    <string name="ui_afc818a5b59cbae3" formatted="false">"Image processing"</string>
+    <string name="ui_bf8fb0ad74709273" formatted="false">"Main is experimental. It is offered only when the hardware decoder declares this profile and supports the chosen resolution at 60 FPS. Baseline remains available during negotiation. Xbox chooses the received profile; check the diagnostics."</string>
+    <string name="ui_0714f5039a12ca60" formatted="false">"Frame pacing"</string>
+    <string name="ui_4d440994fa1026b6" formatted="false">"Smooth pacing schedules frames with a short wait and may increase controller latency. It keeps only the latest pending frame and does not generate frames. It works only in Adaptive mode. Low latency and Compatibility present frames immediately. Applies to the next session."</string>
+    <string name="ui_01ff7b9877fd2590" formatted="false">"Image upscaler"</string>
+    <string name="ui_eb6463428c90e902" formatted="false">"FSR 1 uses EASU and one sharpening stage. SGSR 1 combines upscaling and sharpening in one pass, with a different result. Start with Auto output and 50% sharpening. At native size, processing does not enlarge the image. 1440p and 4K need more GPU power. Protection may reduce output and effects during the session. Compatibility disables upscalers."</string>
+    <string name="ui_6f1c74f0b6d32c86" formatted="false">"Upscaler output"</string>
+    <string name="ui_3c5b67278b62ff76" formatted="false">"Output resolution is local and does not change the received stream. Auto prioritizes smooth playback and limits TVs to 1080p. Enable FSR or SGSR to use it. Options preserve aspect ratio and respect the physical display output. Protection reduces output if rendering falls behind incoming frames. 1440p and 4K do not guarantee 60 FPS."</string>
+    <string name="ui_c32d6a6c5f6c85a8" formatted="false">"Upscaler sharpening: {0}%"</string>
+    <string name="ui_89466b600f44d82a" formatted="false">"Upscaler sharpening"</string>
+    <string name="ui_0a35106015a464ce" formatted="false">"0% disables sharpening; 50% does not mean half the GPU cost. Select the FSR sharpening method in Image processing. SGSR uses its own sharpening. Standard sharpening is used when no upscaler is active."</string>
+    <string name="ui_145ba142c0a28897" formatted="false">"Optional filters. Use low strengths and compare with the original image. Temporal blending may cause ghosting. The neural network requires half-float rendering and video up to 1080p; diagnostics report unsupported configurations. Compatibility disables processing."</string>
+    <string name="ui_a23f3531df367526" formatted="false">"Restore original image"</string>
+    <string name="ui_816142b270bd86ed" formatted="false">"Light preset"</string>
+    <string name="ui_3dffb6b05ab299a0" formatted="false">"Natural preset"</string>
+    <string name="ui_fa91b6e02863c5e4" formatted="false">"Sharpening method: {0}"</string>
+    <string name="ui_502db55d154534d2" formatted="false">"Sharpening method"</string>
+    <string name="ui_0aa57beba9491190" formatted="false">"Adaptive RCAS and USM sharpen luminance while limiting noise and halos. Set the strength in Image adjustments. FSR uses this method in its final stage; SGSR has its own sharpening."</string>
+    <string name="ui_2b6c2095f463e2a5" formatted="false">"Debanding: {0}%"</string>
+    <string name="ui_fe312903471d9474" formatted="false">"Debanding"</string>
+    <string name="ui_ff31493bef5098c7" formatted="false">"Compression cleanup: {0}%"</string>
+    <string name="ui_8782634f25aeb02e" formatted="false">"Compression cleanup"</string>
+    <string name="ui_d7b3f1bca2b06d8b" formatted="false">"Chroma edge reconstruction: {0}%"</string>
+    <string name="ui_a10e201b2f1fbe77" formatted="false">"Chroma edge reconstruction"</string>
+    <string name="ui_2f7e4149690c5b05" formatted="false">"Antialiasing: {0}%"</string>
+    <string name="ui_02665a1915f9bbb7" formatted="false">"Temporal stabilization: {0}%"</string>
+    <string name="ui_a9bcf2677eef18a5" formatted="false">"Temporal stabilization"</string>
+    <string name="ui_e2f43e0004820e9d" formatted="false">"Neural reconstruction: {0}%"</string>
+    <string name="ui_eb23f8d6305497c0" formatted="false">"Neural reconstruction"</string>
+    <string name="ui_40f6cd55c2c2622a" formatted="false">"Performance protection: {0}"</string>
+    <string name="ui_2035d973bf9e515e" formatted="false">"Performance protection"</string>
+    <string name="ui_5bc89f56c8f6a2fb" formatted="false">"Reduces temporal blending, output resolution, antialiasing, neural reconstruction and filters when rendering falls behind incoming frames. Saved preferences are preserved. Reductions last for this session and appear in diagnostics."</string>
+    <string name="ui_1b84e208cc1a58a8" formatted="false">"H.264 Main — experimental"</string>
+    <string name="ui_3a2a300619a63143" formatted="false">"SGSR 1 — experimental"</string>
+    <string name="ui_9b01d2edc42e9906" formatted="false">"Adaptive RCAS — luminance"</string>
+    <string name="ui_8107516a4c8bc932" formatted="false">"USM — luminance"</string>
+    <string name="ui_bb3b1f11046a95a8" formatted="false">"Smooth — experimental"</string>
 </resources>

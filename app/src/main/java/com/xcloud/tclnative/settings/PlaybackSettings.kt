@@ -11,10 +11,10 @@ enum class VideoMode(private val sourceLabel: String, val lowLatency: Boolean) {
     val label: String get()=UiText.text(sourceLabel)
 }
 enum class VideoCodecMode(private val sourceLabel: String) {
-    H264("H.264 — padrão"), H264_BASELINE("H.264 leve — Baseline (720p)");
+    H264("H.264 — padrão"), H264_BASELINE("H.264 leve — Baseline (720p)"), H264_MAIN("H.264 Main — experimental");
     val label: String get()=UiText.text(sourceLabel)
 }
-enum class FsrMode(private val sourceLabel: String) { OFF("Desativado"), FSR1("AMD FSR 1.0.2 — experimental") ;
+enum class FsrMode(private val sourceLabel: String) { OFF("Desativado"), FSR1("AMD FSR 1.0.2 — experimental"), SGSR1("SGSR 1 — experimental") ;
     val label: String get()=UiText.text(sourceLabel)
 }
 enum class FsrOutput(private val sourceLabel: String) {
@@ -59,10 +59,20 @@ data class PlaybackSettings(
     val gyroMode: GyroMode = GyroMode.OFF,val gyroSensitivity: Int = 100,
     val microphone: Boolean = false,val audioGain: Int = 100,val touchRumble: Boolean = false,
     val gyroNativeTouch: Boolean = false,
-    val fsrOutput: FsrOutput = FsrOutput.AUTO
+    val fsrOutput: FsrOutput = FsrOutput.AUTO,
+    val imageTreatment: ImageTreatmentSettings = ImageTreatmentSettings(),
+    val presentationPacing: PresentationPacing = PresentationPacing.OFF
 ) {
-    fun forSession(): PlaybackSettings = if(videoCodec==VideoCodecMode.H264_BASELINE || videoMode==VideoMode.COMPATIBILITY)
-        copy(resolution=StreamResolution.HD_720) else this
+    fun forSession(): PlaybackSettings {
+        val selected=if(videoCodec==VideoCodecMode.H264_BASELINE || videoMode==VideoMode.COMPATIBILITY)
+            copy(resolution=StreamResolution.HD_720) else this
+        return when(videoMode) {
+            VideoMode.COMPATIBILITY -> selected.copy(imageTreatment=ImageTreatmentSettings(),
+                presentationPacing=PresentationPacing.OFF,fsr=FsrMode.OFF)
+            VideoMode.LOW_LATENCY -> selected.copy(presentationPacing=PresentationPacing.OFF)
+            else -> selected
+        }
+    }
 }
 
 class PlaybackSettingsStore(context: Context) {
@@ -97,7 +107,13 @@ class PlaybackSettingsStore(context: Context) {
             GyroMode.entries.firstOrNull { it.name==prefs.getString("gyro_mode",null) } ?: GyroMode.OFF,
             prefs.getInt("gyro_sensitivity",100).coerceIn(25,300),prefs.getBoolean("microphone",false),
             prefs.getInt("audio_gain",100).coerceIn(0,300),prefs.getBoolean("touch_rumble",false),prefs.getBoolean("gyro_native_touch",false),
-            FsrOutput.entries.firstOrNull { it.name==prefs.getString("fsr_output",null) } ?: FsrOutput.AUTO)
+            FsrOutput.entries.firstOrNull { it.name==prefs.getString("fsr_output",null) } ?: FsrOutput.AUTO,
+            ImageTreatmentSettings(
+                ImageSharpening.entries.firstOrNull { it.name==prefs.getString("image_sharpening",null) } ?: ImageSharpening.LEGACY,
+                prefs.getInt("image_deband",0),prefs.getInt("image_cleanup",0),prefs.getInt("image_chroma",0),
+                prefs.getInt("image_antialias",0),prefs.getInt("image_temporal",0),prefs.getInt("image_neural",0),
+                prefs.getBoolean("image_auto_protect",true)).bounded(),
+            PresentationPacing.entries.firstOrNull { it.name==prefs.getString("presentation_pacing",null) } ?: PresentationPacing.OFF)
     }
     fun save(settings: PlaybackSettings) {
         prefs.edit().putString("video_mode",settings.videoMode.name).putBoolean("low_latency_video",settings.videoMode.lowLatency)
@@ -112,7 +128,16 @@ class PlaybackSettingsStore(context: Context) {
             .putInt("mouse_sensitivity",settings.mouseSensitivity.coerceIn(25,300)).putString("gyro_mode",settings.gyroMode.name)
             .putInt("gyro_sensitivity",settings.gyroSensitivity.coerceIn(25,300)).putBoolean("microphone",settings.microphone)
             .putInt("audio_gain",settings.audioGain.coerceIn(0,300)).putBoolean("touch_rumble",settings.touchRumble)
-            .putBoolean("gyro_native_touch",settings.gyroNativeTouch).putString("fsr_output",settings.fsrOutput.name).apply()
+            .putBoolean("gyro_native_touch",settings.gyroNativeTouch).putString("fsr_output",settings.fsrOutput.name)
+            .putString("image_sharpening",settings.imageTreatment.sharpening.name)
+            .putInt("image_deband",settings.imageTreatment.deband.coerceIn(0,100))
+            .putInt("image_cleanup",settings.imageTreatment.cleanup.coerceIn(0,100))
+            .putInt("image_chroma",settings.imageTreatment.chroma.coerceIn(0,100))
+            .putInt("image_antialias",settings.imageTreatment.antialias.coerceIn(0,100))
+            .putInt("image_temporal",settings.imageTreatment.temporal.coerceIn(0,50))
+            .putInt("image_neural",settings.imageTreatment.neural.coerceIn(0,100))
+            .putBoolean("image_auto_protect",settings.imageTreatment.autoProtect)
+            .putString("presentation_pacing",settings.presentationPacing.name).apply()
     }
 }
 

@@ -26,7 +26,9 @@ object CodecPreference {
         val h264=capabilities.filter { it.name.equals("H264",true) }
         if(h264.isEmpty()) throw IOException("VIDEO: o dispositivo não oferece decodificador H.264")
         val primary=if(baselineOnly) h264.filter { isBaseline(it.parameters) }
-            else h264.sortedBy { rank(it.parameters["profile-level-id"],lightweight) }
+            else if(requested==VideoCodecMode.H264_MAIN) h264.sortedBy {
+                when(it.parameters["profile-level-id"]?.take(2)?.lowercase()) { "4d" -> 0;"42" -> 1;else -> 2 }
+            } else h264.sortedBy { rank(it.parameters["profile-level-id"],lightweight) }
         if(primary.isEmpty()) throw IOException("VIDEO_CODEC: H.264 Baseline não anunciado pelo dispositivo; selecione H.264 padrão")
         val payloads=primary.map { it.preferredPayloadType.toString() }.toSet()
         val repair=capabilities.filter { it.name.equals("rtx",true) &&
@@ -34,6 +36,9 @@ object CodecPreference {
         val description=when {
             compatibility -> UiText.text("H.264 Baseline • Compatibilidade • 720p solicitado • orçamento do perfil/partida")
             baselineOnly -> UiText.text("H.264 Baseline • 720p solicitado • orçamento do perfil/partida")
+            requested==VideoCodecMode.H264_MAIN -> if(primary.any { it.parameters["profile-level-id"]?.startsWith("4d",true)==true })
+                UiText.text("H.264 Main preferido • Baseline disponível como alternativa")
+                else UiText.text("H.264 Main não anunciado pelo decoder • alternativa H.264")
             else -> UiText.text("H.264 padrão")
         }
         return Offer(primary+repair,baselineOnly,description)

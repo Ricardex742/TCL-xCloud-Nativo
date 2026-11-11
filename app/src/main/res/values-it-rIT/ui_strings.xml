@@ -811,4 +811,48 @@
     <string name="ui_ff20d756c5955aa6" formatted="false">"Limite di questo tentativo: {0}. Indietro o Annulla lasciano la coda."</string>
     <string name="ui_ffc85b563def9bc4" formatted="false">"Testare la vibrazione/controllare il supporto"</string>
     <string name="ui_d60b3945c25ba135" formatted="false">"1440p richiede video fino a 2560×1440 con il profilo di qualità massima Xbox. La disponibilità dipende dall’abbonamento, dal gioco e dal servizio. Richiede più banda e potenza di decodifica; controlla la risoluzione effettivamente ricevuta nella diagnostica."</string>
+    <string name="ui_64f9fc8d1d9c0c1f" formatted="false">"Elaborazione immagine richiesta: {0}"</string>
+    <string name="ui_f8186b7e3ccb65ca" formatted="false">"Elaborazione immagine applicata: {0}"</string>
+    <string name="ui_706a0bb6421fbdb0" formatted="false">"H.264 Main preferito • Baseline disponibile come fallback"</string>
+    <string name="ui_7312a2a997891518" formatted="false">"Il decoder non pubblicizza H.264 Main • utilizzando il fallback H.264"</string>
+    <string name="ui_66bfd6b54c02fb71" formatted="false">"Distribuzione fotogrammi: {0}"</string>
+    <string name="ui_53a7786ecd3d9110" formatted="false">"Upscaler: {0}"</string>
+    <string name="ui_2fc10d86856e698a" formatted="false">"Uscita dell’upscaler: {0}"</string>
+    <string name="ui_afc818a5b59cbae3" formatted="false">"Elaborazione delle immagini"</string>
+    <string name="ui_bf8fb0ad74709273" formatted="false">"Main è sperimentale. Viene offerto solo quando il decoder hardware dichiara questo profilo e supporta la risoluzione scelta a 60 FPS. Baseline rimane disponibile in fase di trattativa. Xbox sceglie il profilo ricevuto; controlla la diagnostica"</string>
+    <string name="ui_0714f5039a12ca60" formatted="false">"Ritmo del fotogramma"</string>
+    <string name="ui_4d440994fa1026b6" formatted="false">"La stimolazione fluida pianifica i frame con un\'attesa breve e può aumentare la latenza del controller. Mantiene solo l\'ultimo frame in sospeso e non genera frame. Funziona solo in modalità adattiva. Bassa latenza e compatibilità presentano immediatamente i frame. Si applica alla sessione successiva."</string>
+    <string name="ui_01ff7b9877fd2590" formatted="false">"Upscaler dell’immagine"</string>
+    <string name="ui_eb6463428c90e902" formatted="false">"FSR 1 utilizza EASU e una fase di affilatura. SGSR 1 combina upscaling e nitidezza in un unico passaggio, con un risultato diverso. Inizia con l\'output automatico e la nitidezza del 50%. A dimensione nativa, l\'elaborazione non ingrandisce l\'immagine. 1440p e 4K richiedono più potenza GPU. La protezione può ridurre la produzione e gli effetti durante la sessione. La compatibilità disabilita gli upscaler."</string>
+    <string name="ui_6f1c74f0b6d32c86" formatted="false">"Uscita dell’upscaler"</string>
+    <string name="ui_3c5b67278b62ff76" formatted="false">"La risoluzione dell\'output è locale e non modifica il flusso ricevuto. La modalità automatica dà priorità alla riproduzione fluida e limita i televisori a 1080p. Abilita FSR o SGSR per usarlo. Le opzioni preservano le proporzioni e rispettano l\'output del display fisico. La protezione riduce l\'output se il rendering resta indietro rispetto ai fotogrammi in arrivo. 1440p e 4K non garantiscono 60 FPS."</string>
+    <string name="ui_c32d6a6c5f6c85a8" formatted="false">"Nitidezza dell’upscaler: {0}%"</string>
+    <string name="ui_89466b600f44d82a" formatted="false">"Nitidezza dell’upscaler"</string>
+    <string name="ui_0a35106015a464ce" formatted="false">"Lo 0% disabilita la nitidezza; Il 50% non significa la metà del costo GPU. Selezionare il metodo di nitidezza FSR in Elaborazione immagine. SGSR utilizza la propria nitidezza. La nitidezza standard viene utilizzata quando non è attivo alcun upscaler."</string>
+    <string name="ui_145ba142c0a28897" formatted="false">"Filtri opzionali. Utilizzare intensità basse e confrontare con l\'immagine originale. La fusione temporale può causare immagini fantasma. La rete neurale richiede rendering half-float e video fino a 1080p; la diagnostica segnala configurazioni non supportate. La compatibilità disabilita l\'elaborazione."</string>
+    <string name="ui_a23f3531df367526" formatted="false">"Ripristina l\'immagine originale"</string>
+    <string name="ui_816142b270bd86ed" formatted="false">"Preimpostazione della luce"</string>
+    <string name="ui_3dffb6b05ab299a0" formatted="false">"Preimpostazione naturale"</string>
+    <string name="ui_fa91b6e02863c5e4" formatted="false">"Metodo di affilatura: {0}"</string>
+    <string name="ui_502db55d154534d2" formatted="false">"Metodo di affilatura"</string>
+    <string name="ui_0aa57beba9491190" formatted="false">"Gli RCAS e USM adattivi migliorano la luminanza limitando rumore e aloni. Imposta l\'intensità nelle regolazioni dell\'immagine. La FSR utilizza questo metodo nella sua fase finale; SGSR ha la propria nitidezza."</string>
+    <string name="ui_2b6c2095f463e2a5" formatted="false">"Debandatura: {0}%"</string>
+    <string name="ui_fe312903471d9474" formatted="false">"Debanding"</string>
+    <string name="ui_ff31493bef5098c7" formatted="false">"Pulizia della compressione: {0}%"</string>
+    <string name="ui_8782634f25aeb02e" formatted="false">"Pulizia della compressione"</string>
+    <string name="ui_d7b3f1bca2b06d8b" formatted="false">"Ricostruzione del bordo cromatico: {0}%"</string>
+    <string name="ui_a10e201b2f1fbe77" formatted="false">"Ricostruzione del bordo cromatico"</string>
+    <string name="ui_2f7e4149690c5b05" formatted="false">"Antialias: {0}%"</string>
+    <string name="ui_02665a1915f9bbb7" formatted="false">"Stabilizzazione temporale: {0}%"</string>
+    <string name="ui_a9bcf2677eef18a5" formatted="false">"Stabilizzazione temporale"</string>
+    <string name="ui_e2f43e0004820e9d" formatted="false">"Ricostruzione neurale: {0}%"</string>
+    <string name="ui_eb23f8d6305497c0" formatted="false">"Ricostruzione neurale"</string>
+    <string name="ui_40f6cd55c2c2622a" formatted="false">"Protezione delle prestazioni: {0}"</string>
+    <string name="ui_2035d973bf9e515e" formatted="false">"Protezione delle prestazioni"</string>
+    <string name="ui_5bc89f56c8f6a2fb" formatted="false">"Riduce la fusione temporale, la risoluzione di output, l\'antialiasing, la ricostruzione neurale e i filtri quando il rendering resta indietro rispetto ai fotogrammi in entrata. Le preferenze salvate vengono conservate. Le riduzioni durano per questa sessione e vengono visualizzate nella diagnostica."</string>
+    <string name="ui_1b84e208cc1a58a8" formatted="false">"H.264 Main — sperimentale"</string>
+    <string name="ui_3a2a300619a63143" formatted="false">"SGSR 1 - sperimentale"</string>
+    <string name="ui_9b01d2edc42e9906" formatted="false">"RCAS adattivo: luminanza"</string>
+    <string name="ui_8107516a4c8bc932" formatted="false">"USM — luminanza"</string>
+    <string name="ui_bb3b1f11046a95a8" formatted="false">"Liscio: sperimentale"</string>
 </resources>

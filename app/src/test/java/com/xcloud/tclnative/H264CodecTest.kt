@@ -34,6 +34,17 @@ class H264CodecTest {
             assertEquals(listOf(96,97),offer.codecs.map { it.preferredPayloadType })
         }
     }
+    @Test fun mainPreferenceUsesOnlyRealCapabilitiesAndKeepsBaselineAsTheFirstFallback() {
+        val main=codec("H264",104,"profile-level-id" to "4d002a","packetization-mode" to "1")
+        val offer=CodecPreference.select(all+main+codec("rtx",105,"apt" to "104"),VideoCodecMode.H264_MAIN,false,false)
+        assertEquals(listOf(104,96,98),offer.codecs.filter { it.name=="H264" }.map { it.preferredPayloadType })
+        assertEquals("4d002a",main.parameters["profile-level-id"])
+        assertEquals("42e01f",baseline.parameters["profile-level-id"])
+        assertTrue(offer.codecs.any { it.preferredPayloadType==105 })
+        val absent=CodecPreference.select(all,VideoCodecMode.H264_MAIN,false,false)
+        assertSame(baseline,absent.codecs.first())
+        assertFalse(absent.codecs.any { it.parameters["profile-level-id"]?.startsWith("4d")==true })
+    }
     @Test fun missingBaselineFailsExplicitlyRatherThanRelabelingHighOrInventingACapability() {
         for(capabilities in listOf(listOf(high,hevc),listOf(hevc),listOf(codec("H264",96,"profile-level-id" to "42broken")))) {
             try { CodecPreference.select(capabilities,VideoCodecMode.H264_BASELINE,true,false);fail("Baseline unavailable") }

@@ -8,6 +8,9 @@ import android.view.Gravity
 import android.widget.FrameLayout
 import com.xcloud.tclnative.settings.VideoAspect
 import com.xcloud.tclnative.settings.FsrOutput
+import com.xcloud.tclnative.settings.FsrMode
+import com.xcloud.tclnative.settings.ImageTreatmentSettings
+import com.xcloud.tclnative.settings.PresentationPacing
 import com.xcloud.tclnative.webrtc.ClientDisplayDimensions
 import org.webrtc.EglBase
 import org.webrtc.RendererCommon
@@ -47,11 +50,15 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     private var renderer: OutputSurfaceViewRenderer? = null
     private var aspectDrawer: AspectVideoDrawer? = null
     private var trackSink: VideoSink? = null
+    private var pacedSink: FramePacedVideoSink?=null
+    private var pacingMode=PresentationPacing.OFF
+    fun setPresentationPacing(mode: PresentationPacing) { pacingMode=mode }
     @Volatile private var generation = 0
     private val lastDeliveryMs = AtomicLong(Long.MIN_VALUE)
     private val presentedToken = AtomicLong()
     private val probePending = AtomicBoolean()
     private val fsrDraws=AtomicLong()
+    private val allDraws=AtomicLong()
     private val fsrPerformance=FsrPerformanceGuard()
     data class VideoHealth(val presentedToken: Long, val deliveredRecently: Boolean)
 
@@ -89,18 +96,42 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     private var brightness=0
     private var contrast=100
     private var fsrRequested=false
+    private var fsrMode=FsrMode.OFF
+    private var requestedTreatment=ImageTreatmentSettings()
+    private var treatmentBudget=TreatmentBudget(ImageTreatmentSettings(),FsrOutput.AUTO,false)
+    private var treatmentCuts=mutableListOf<String>()
+    private var treatmentFailure: String?=null
     private var fsrSharpness=50
     private var fsrOutput=FsrOutput.AUTO
     private var fsrFailure: String?=null
     private var requestedBuffer: VideoViewport?=null
     private var bufferVerification: Runnable?=null
-    private val fsrEnabled get()=fsrRequested && !compatibility && fsrFailure==null
+    private val fsrEnabled get()=fsrRequested && treatmentBudget.scaling && !compatibility && fsrFailure==null
     var compatibility = false
     fun setFsr(requested: Boolean,sharpness: Int,output: FsrOutput=FsrOutput.AUTO) {
+        setFsr(if(requested) FsrMode.FSR1 else FsrMode.OFF,sharpness,output)
+    }
+    fun setFsr(mode: FsrMode,sharpness: Int,output: FsrOutput=FsrOutput.AUTO) {
+        if(fsrMode==mode && fsrOutput==output && fsrRequested==(mode!=FsrMode.OFF)) { setFsrSharpness(sharpness);return }
         fsrPerformance.reset()
-        fsrFailure=null;fsrOutput=output;fsrRequested=requested;setFsrSharpness(sharpness)
-        aspectDrawer?.fsrEnabled=fsrEnabled
+        fsrMode=mode;fsrFailure=null;fsrOutput=output;fsrRequested=mode!=FsrMode.OFF;setFsrSharpness(sharpness)
+        resetTreatmentBudget()
         updateOutputBuffer()
+    }
+    fun setImageTreatment(value: ImageTreatmentSettings) {
+        if(requestedTreatment==value.bounded()) return
+        requestedTreatment=value.bounded();treatmentFailure=null;resetTreatmentBudget();updateOutputBuffer()
+    }
+    private fun resetTreatmentBudget() {
+        treatmentCuts.clear();treatmentBudget=TreatmentBudget(if(compatibility) ImageTreatmentSettings() else requestedTreatment,fsrOutput,fsrRequested)
+        fsrPerformance.reset();applyTreatmentBudget()
+    }
+    private fun applyTreatmentBudget() {
+        aspectDrawer?.let { drawer ->
+            drawer.treatment=if(compatibility || treatmentFailure!=null) ImageTreatmentSettings() else treatmentBudget.image
+            drawer.fsrEnabled=fsrEnabled && fsrMode==FsrMode.FSR1
+            drawer.sgsrEnabled=fsrEnabled && fsrMode==FsrMode.SGSR1
+        }
     }
     fun setFsrSharpness(sharpness: Int) { fsrSharpness=sharpness.coerceIn(0,100);aspectDrawer?.fsrSharpness=fsrSharpness }
     fun setImageAdjustments(sharpness: Int,saturation: Int,brightness: Int=0,contrast: Int=100) {
@@ -136,7 +167,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     /** A new renderer has a new first-frame event for every session, including retries. */
     fun prepareForSession(expectedWidth: Int = 1920, expectedHeight: Int = 1080) {
         check(!released)
-        fsrFailure=null
+        fsrFailure=null;treatmentFailure=null;resetTreatmentBudget()
         videoWidth = expectedWidth; videoHeight = expectedHeight
         lastDeliveryMs.set(Long.MIN_VALUE)
         presentedToken.set(0)
@@ -146,16 +177,23 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         detachTrack()
         cancelBufferVerification();requestedBuffer=null
         generation++
-        fsrDraws.set(0);fsrPerformance.reset()
+        fsrDraws.set(0);allDraws.set(0);fsrPerformance.reset()
         probePending.set(false)
         frameRateHintRequested = false
         renderer?.let { removeView(it); it.release() }
         val id = generation
         val drawer=AspectVideoDrawer(aspect.stretch,{ org.webrtc.Fsr1Drawer(context) },onFsrFailure={ reason ->
             post { if(!released && generation==id) fallbackFsr(reason) }
+        },treatmentFactory={ org.webrtc.ImageTreatmentPipeline(context) },onTreatmentFailure={ reason ->
+            post { if(!released && generation==id) {
+                treatmentFailure=reason;applyTreatmentBudget()
+                if(fsrMode==FsrMode.SGSR1) fallbackFsr(reason)
+            } }
         }).also {
             it.onFsrDraw={ if(!released && generation==id) fsrDraws.incrementAndGet();Unit }
-            it.sharpness=sharpness;it.saturation=saturation;it.brightness=brightness;it.contrast=contrast;it.fsrEnabled=fsrEnabled;it.fsrSharpness=fsrSharpness;aspectDrawer=it
+            it.onDraw={ if(!released && generation==id) allDraws.incrementAndGet();Unit }
+            it.sharpness=sharpness;it.saturation=saturation;it.brightness=brightness;it.contrast=contrast;it.fsrSharpness=fsrSharpness;aspectDrawer=it
+            applyTreatmentBudget()
         }
         renderer = object : OutputSurfaceViewRenderer(context) {
             override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
@@ -227,8 +265,11 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         val activity=context as? android.app.Activity
         val fullScreen=activity?.let { !it.isInMultiWindowMode && !it.isInPictureInPictureMode } ?: true
         val viewport=VideoScalingPolicy.viewport(width,height,videoWidth,videoHeight,aspect)
-        val target=if(fsrEnabled) FsrOutputPolicy.target(fsrOutput,width,height,viewport,
-            mode?.physicalWidth ?: 0,mode?.physicalHeight ?: 0,tv,fullScreen) else null
+        val target=if(fsrEnabled) FsrOutputPolicy.target(treatmentBudget.output,width,height,viewport,
+            mode?.physicalWidth ?: 0,mode?.physicalHeight ?: 0,tv,fullScreen)?.let { selected ->
+            val scale=(treatmentBudget.maxOutputHeight.toDouble()/minOf(selected.width,selected.height)).coerceAtMost(1.0)
+            VideoViewport((selected.width*scale).toInt().coerceAtLeast(1),(selected.height*scale).toInt().coerceAtLeast(1))
+        } else null
         if(target!=requestedBuffer) { cancelBufferVerification();fsrPerformance.reset() }
         requestedBuffer=target
         view.setOutputBuffer(target)
@@ -254,17 +295,22 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     private fun fallbackFsr(reason: String) {
         if(!fsrEnabled) return
         fsrFailure=reason
-        aspectDrawer?.fsrEnabled=false
+        applyTreatmentBudget()
         updateOutputBuffer()
     }
     /** UI thread; fed independently of HUD visibility by the existing once-per-second stats. */
     fun observeFsrPerformance(sampledAtMs: Long,metrics: StreamMetrics,foreground: Boolean) {
-        if(!fsrEnabled || aspectDrawer?.isFsrBypassed()==true) { fsrPerformance.reset();return }
+        if(!requestedTreatment.autoProtect || compatibility || (!fsrEnabled && !treatmentBudget.image.active) ||
+            (fsrMode==FsrMode.FSR1 && aspectDrawer?.isFsrBypassed()==true && !treatmentBudget.image.active)) { fsrPerformance.reset();return }
         val now=android.os.SystemClock.elapsedRealtime()
         val fresh=now>=sampledAtMs && now-sampledAtMs<=500
-        val slow=fsrPerformance.observe(now,fsrDraws.get(),metrics,foreground && fresh) ?: return
+        val slow=fsrPerformance.observe(now,allDraws.get(),metrics,foreground && fresh) ?: return
         val rate=String.format(java.util.Locale.US,"%.1f",slow.drawsPerSecond)
-        fallbackFsr(UiText.text("proteção de fluidez: {0} desenhos FSR/s por {1}s; escala padrão nesta partida",UiText.nested(rate),UiText.nested(slow.durationMs/1000)))
+        val cut=treatmentBudget.reduce(requestedBuffer?.let { minOf(it.width,it.height) } ?: minOf(width,height))
+        if(cut!=null) {
+            treatmentBudget=cut.effective;treatmentCuts.add("${cut.stage} ($rate draws/s)")
+            applyTreatmentBudget();updateOutputBuffer();fsrPerformance.reset()
+        } else fallbackFsr(UiText.text("proteção de fluidez: {0} desenhos FSR/s por {1}s; escala padrão nesta partida",UiText.nested(rate),UiText.nested(slow.durationMs/1000)))
     }
     fun attachVideoTrack(track: VideoTrack) {
         val id = generation
@@ -278,22 +324,32 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         val view = renderer ?: return
         val drawer = aspectDrawer
         val id = generation
-        val sink = VideoSink { frame ->
+        val delivery=VideoSink { frame ->
             if (generation == id && !released) {
-                lastDeliveryMs.set(android.os.SystemClock.elapsedRealtime())
                 drawer?.sourceAspect=frame.rotatedWidth.toFloat()/frame.rotatedHeight.coerceAtLeast(1)
                 drawer?.sourceWidth=frame.rotatedWidth; drawer?.sourceHeight=frame.rotatedHeight
                 view.onFrame(frame)
+            }
+        }
+        val paced=if(pacingMode==PresentationPacing.SMOOTH && !compatibility) FramePacedVideoSink(delivery,failed={ error ->
+            post { if(generation==id && !released) onRenderError?.invoke(error) }
+        }) else null
+        pacedSink=paced
+        val sink = VideoSink { frame ->
+            if(generation==id && !released) {
+                lastDeliveryMs.set(android.os.SystemClock.elapsedRealtime())
+                (paced ?: delivery).onFrame(frame)
             }
         }
         try {
             track.addSink(sink)
             trackSink = sink
             currentTrack = track
-        } catch (e: Exception) { onRenderError?.invoke(e) }
+        } catch (e: Exception) { paced?.close();pacedSink=null;onRenderError?.invoke(e) }
     }
     fun detachTrack() {
         trackSink?.let { sink -> currentTrack?.removeSink(sink) }
+        pacedSink?.close();pacedSink=null
         trackSink = null
         currentTrack = null
     }
@@ -303,13 +359,22 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         cancelBufferVerification();fsrPerformance.reset()
         detachTrack()
         renderer?.clearImage()
-        if(fsrRequested) {
+        if(fsrRequested || requestedTreatment.active) {
             renderer?.let { removeView(it);it.release() }
             renderer=null;aspectDrawer=null;requestedBuffer=null
         }
         fsrRequested=false
         onFirstFrameRendered = null
         onRenderError = null
+    }
+    private fun imageDiagnostics(): String {
+        val active=if(compatibility || treatmentFailure!=null) ImageTreatmentSettings() else treatmentBudget.image.copy(
+            neural=aspectDrawer?.effectiveNeural() ?: 0,temporal=aspectDrawer?.effectiveTemporal() ?: 0)
+        fun describe(value: ImageTreatmentSettings,applied: Boolean=false)="${if(applied && fsrEnabled && fsrMode==FsrMode.SGSR1) "SGSR1" else value.sharpening.name}; deband=${value.deband}%; cleanup=${value.cleanup}%; chroma=${value.chroma}%; AA=${value.antialias}%; temporal=${value.temporal}%; neural=${value.neural}%"
+        return UiText.join(UiText.text("Tratamento solicitado: {0}",UiText.nested(describe(requestedTreatment))),"\n",
+            UiText.text("Tratamento aplicado: {0}",UiText.nested(describe(active,true))),"\n",
+            "Cuts: ${treatmentCuts.joinToString()}${treatmentFailure?.let { "; $it" } ?: ""}\n",
+            aspectDrawer?.treatmentDiagnostics() ?: "Treatment: off","\n",pacedSink?.diagnostics() ?: "Pacing: immediate")
     }
     /** Android exposes surface/display geometry, but no public API reports TCL AiPQ activation. */
     fun diagnostics(): String {
@@ -322,7 +387,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         val expected=VideoScalingPolicy.viewport(width,height,videoWidth,videoHeight,aspect)
         val minimalSupport=if(android.os.Build.VERSION.SDK_INT>=30) runCatching { display?.isMinimalPostProcessingSupported }.getOrNull() else null
         val minimalLabel=when(minimalSupport) { true -> UiText.text("sim");false -> UiText.text("não");null -> "n/d" }
-        return UiText.join(UiText.text("Surface {0} → janela {1}x{2} | Saída Android: {3}\n",UiText.nested(size),UiText.nested(width),UiText.nested(height),UiText.nested(output)),UiText.text("Layout do vídeo: {0} | Área calculada: {1}x{2} | Quadro do renderer: {3}x{4}\n",UiText.nested(layout),UiText.nested(expected.width),UiText.nested(expected.height),UiText.nested(videoWidth),UiText.nested(videoHeight)),UiText.text("Escala da Surface: {0}; imagem ajustada à janela | Conteúdo {1} FPS sinalizado à Surface: {2} | Pós-processamento mínimo: {3}; suporte Android declarado: {4}\n",UiText.nested(if(fsrEnabled) UiText.text("renderer em resolução de saída para FSR") else if (nativeUpscaling) "HW solicitada" else "HW desativada"),UiText.nested(if(compatibility) 30 else 60),UiText.nested(if (frameRateHintRequested) UiText.text("sim") else UiText.text("não confirmado")),UiText.nested(if (minimalPostProcessingRequested) "solicitado" else UiText.text("padrão")),UiText.nested(minimalLabel)),UiText.text("Proporção: {0} | Nitidez padrão: {1}% | Saturação: {2}% | Brilho: {3}% | Contraste: {4}% | Apresentação: até {5} FPS | AiPQ: não verificável pelo app\n",UiText.nested(aspect.label),UiText.nested(sharpness),UiText.nested(saturation),UiText.nested(brightness),UiText.nested(contrast),UiText.nested(if(compatibility) 30 else 60)),(if(fsrRequested) UiText.text("Saída FSR solicitada: {0} | buffer solicitado: {1}\n",UiText.nested(fsrOutput.label),UiText.nested(requestedBuffer?.let { "${it.width}x${it.height}" } ?: UiText.text("escala padrão"))) else ""),(if(fsrEnabled) UiText.text("Cadência local FSR: {0} (não mede GPU nem FPS do jogo/tela)\n",UiText.nested(fsrPerformance.lastRate?.let { String.format(java.util.Locale.US,"%.1f desenhos/s",it) } ?: UiText.text("aguardando amostras"))) else ""),(if(fsrFailure!=null) UiText.text("AMD FSR 1.0.2: retorno à escala padrão — {0}",UiText.nested(fsrFailure)) else if(fsrRequested && compatibility) UiText.text("AMD FSR 1.0.2: inativo no modo Compatibilidade") else aspectDrawer?.fsrDiagnostics() ?: UiText.text("AMD FSR 1.0.2: desligado")))
+        return UiText.join(UiText.text("Surface {0} → janela {1}x{2} | Saída Android: {3}\n",UiText.nested(size),UiText.nested(width),UiText.nested(height),UiText.nested(output)),UiText.text("Layout do vídeo: {0} | Área calculada: {1}x{2} | Quadro do renderer: {3}x{4}\n",UiText.nested(layout),UiText.nested(expected.width),UiText.nested(expected.height),UiText.nested(videoWidth),UiText.nested(videoHeight)),UiText.text("Escala da Surface: {0}; imagem ajustada à janela | Conteúdo {1} FPS sinalizado à Surface: {2} | Pós-processamento mínimo: {3}; suporte Android declarado: {4}\n",UiText.nested(if(fsrEnabled) UiText.text("renderer em resolução de saída para FSR") else if (nativeUpscaling) "HW solicitada" else "HW desativada"),UiText.nested(if(compatibility) 30 else 60),UiText.nested(if (frameRateHintRequested) UiText.text("sim") else UiText.text("não confirmado")),UiText.nested(if (minimalPostProcessingRequested) "solicitado" else UiText.text("padrão")),UiText.nested(minimalLabel)),UiText.text("Proporção: {0} | Nitidez padrão: {1}% | Saturação: {2}% | Brilho: {3}% | Contraste: {4}% | Apresentação: até {5} FPS | AiPQ: não verificável pelo app\n",UiText.nested(aspect.label),UiText.nested(sharpness),UiText.nested(saturation),UiText.nested(brightness),UiText.nested(contrast),UiText.nested(if(compatibility) 30 else 60)),(if(fsrRequested) UiText.text("Saída FSR solicitada: {0} | buffer solicitado: {1}\n",UiText.nested(fsrOutput.label),UiText.nested(requestedBuffer?.let { "${it.width}x${it.height}" } ?: UiText.text("escala padrão"))) else ""),(if(fsrEnabled) UiText.text("Cadência local FSR: {0} (não mede GPU nem FPS do jogo/tela)\n",UiText.nested(fsrPerformance.lastRate?.let { String.format(java.util.Locale.US,"%.1f desenhos/s",it) } ?: UiText.text("aguardando amostras"))) else ""),(if(fsrFailure!=null) UiText.text("AMD FSR 1.0.2: retorno à escala padrão — {0}",UiText.nested(fsrFailure)) else if(fsrRequested && compatibility) UiText.text("AMD FSR 1.0.2: inativo no modo Compatibilidade") else aspectDrawer?.fsrDiagnostics() ?: UiText.text("AMD FSR 1.0.2: desligado"))) + "\n" + imageDiagnostics()
     }
 
     fun compactDiagnostics(): String {

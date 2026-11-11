@@ -769,7 +769,8 @@ open class MainActivity : Activity() {
             surfaceRenderer.aspect=settings.aspect
         }
         surfaceRenderer.setImageAdjustments(settings.sharpness,settings.saturation,settings.brightness,settings.contrast)
-        surfaceRenderer.setFsrSharpness(settings.fsrSharpness)
+        surfaceRenderer.setImageTreatment(settings.imageTreatment)
+        surfaceRenderer.setFsr(settings.fsr,settings.fsrSharpness,settings.fsrOutput)
         webrtcClient?.setOutputGain(settings.audioGain)
     }
     private fun showRumbleDiagnostics(back: () -> Unit) {
@@ -987,7 +988,9 @@ open class MainActivity : Activity() {
             rumble.enabled=settings.rumble
             rumble.touchRumble=settings.touchRumble
             surfaceRenderer.compatibility=compatible
-            surfaceRenderer.setFsr(settings.fsr==com.xcloud.tclnative.settings.FsrMode.FSR1,settings.fsrSharpness,settings.fsrOutput)
+            surfaceRenderer.setFsr(settings.fsr,settings.fsrSharpness,settings.fsrOutput)
+            surfaceRenderer.setImageTreatment(settings.imageTreatment)
+            surfaceRenderer.setPresentationPacing(settings.forSession().presentationPacing)
             surfaceRenderer.nativeUpscaling = settings.nativeUpscaling
             surfaceRenderer.aspect = settings.aspect
             surfaceRenderer.setImageAdjustments(settings.sharpness,settings.saturation,settings.brightness,settings.contrast)

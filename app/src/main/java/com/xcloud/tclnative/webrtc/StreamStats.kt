@@ -19,7 +19,8 @@ data class StreamMetrics(
     val receivedPackets: Long? = null, val totalReceivedVideoBytes: Long? = null, val videoStreamId: String? = null,
     val transportReceivedBytes: Long? = null, val transportSentBytes: Long? = null, val transportId: String? = null,
     val jitterBufferTargetMs: Double? = null, val jitterBufferMinimumMs: Double? = null,
-    val jitterBufferEmittedFrames: Long? = null
+    val jitterBufferEmittedFrames: Long? = null,
+    val receivedFrames: Long? = null
 ) {
     fun compactOverlay(input: InputMetrics): String {
         fun n(value: Double?, decimals: Int = 1) = value?.takeIf(Double::isFinite)
@@ -95,7 +96,8 @@ class StreamStatsCollector {
             intervalSeconds = seconds, receivedVideoBytes = delta("bytesReceived")?.toLong(), decodedFrames = decoded?.toLong(),
             receivedPackets=received?.toLong(),totalReceivedVideoBytes=video.number("bytesReceived")?.takeIf { it>=0 }?.toLong(),
             videoStreamId=video.id,transportReceivedBytes=transport?.number("bytesReceived")?.takeIf { it>=0 }?.toLong(),
-            transportSentBytes=transport?.number("bytesSent")?.takeIf { it>=0 }?.toLong(),transportId=transport?.id
+            transportSentBytes=transport?.number("bytesSent")?.takeIf { it>=0 }?.toLong(),transportId=transport?.id,
+            receivedFrames=delta("framesReceived")?.toLong()
         )
     }
 }

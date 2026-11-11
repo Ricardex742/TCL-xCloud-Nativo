@@ -201,7 +201,8 @@ class XCloudWebRtcClient(
             .setFieldTrials(VideoLatencyPolicy.fieldTrials(lowLatencyVideo))
             .setEnableInternalTracer(false).createInitializationOptions())
         decoderFactory=H264VideoDecoderFactory(eglBase.eglBaseContext,lowLatencyVideo,decoderRecovery,
-            { decoderLatency.set(it) },effectiveCodec==VideoCodecMode.H264_BASELINE)
+            { decoderLatency.set(it) },effectiveCodec==VideoCodecMode.H264_BASELINE,
+            effectiveCodec==VideoCodecMode.H264_MAIN,streamResolution.width,streamResolution.height)
         val audio=JavaAudioDeviceModule.builder(context.applicationContext)
             .setAudioAttributes(GameAudioSession.attributes()).setUseStereoOutput(true).setEnableVolumeLogger(false)
             .setPlaybackSamplesReadyCallback { samples ->

@@ -24,6 +24,10 @@ class FsrPerformanceGuard {
             loss==null || !loss.isFinite() || loss<0 || loss>1.0 ||
             interval==null || !interval.isFinite() || interval !in .5..2.5) { reset();return null }
         if(issued) return null
+        // Encoded reception stays the reference if GPU backpressure also stalls decoder output.
+        val received=metrics.receivedFrames?.let { it/interval } ?: metrics.decodedFrames?.let { it/interval } ?: metrics.fps
+        if(received!=null && (!received.isFinite() || received<10)) { reset();return null }
+        val threshold=received?.coerceAtMost(60.0)?.times(.90) ?: MIN_DRAWS_PER_SECOND.toDouble()
         val oldTime=previous
         val oldFrames=previousFrames
         previous=now;previousFrames=draws
@@ -33,7 +37,7 @@ class FsrPerformanceGuard {
         if(elapsed !in 500..2500 || count<0) { reset();return null }
         lastRate=count*1000.0/elapsed
         if(now-(started ?: now)<=WARMUP_MS) return null
-        if(lastRate!!>=MIN_DRAWS_PER_SECOND) { lowMs=0;lowFrames=0;lowSamples=0;return null }
+        if(lastRate!!>=threshold) { lowMs=0;lowFrames=0;lowSamples=0;return null }
         lowMs+=elapsed;lowFrames+=count;lowSamples++
         if(lowMs<LOW_WINDOW_MS || lowSamples<3) return null
         issued=true

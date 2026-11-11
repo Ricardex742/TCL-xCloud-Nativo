@@ -7,7 +7,7 @@ import android.widget.LinearLayout
 import com.xcloud.tclnative.settings.*
 import com.xcloud.tclnative.webrtc.StreamResolution
 
-enum class SettingsPage { ROOT, VIDEO, IMAGE, APPEARANCE, NETWORK, CONTROLS, PHYSICAL, MOUSE, GYRO, RUMBLE, AUDIO, DIAGNOSTICS, ACCOUNT }
+enum class SettingsPage { ROOT, VIDEO, IMAGE, APPEARANCE, NETWORK, CONTROLS, PHYSICAL, MOUSE, GYRO, RUMBLE, AUDIO, DIAGNOSTICS, ACCOUNT, TREATMENT }
 
 /** Explicit single-choice menus: opening a row does not change the selected value. */
 class PlaybackSettingsPanel(
@@ -30,6 +30,7 @@ class PlaybackSettingsPanel(
         SettingsPage.NETWORK -> showNetwork();SettingsPage.CONTROLS -> showControls();SettingsPage.PHYSICAL -> showPhysical()
         SettingsPage.MOUSE -> showMouse();SettingsPage.GYRO -> showGyro();SettingsPage.RUMBLE -> showRumble()
         SettingsPage.AUDIO -> showAudio();SettingsPage.DIAGNOSTICS -> showDiagnostics();SettingsPage.ACCOUNT -> showAccount()
+        SettingsPage.TREATMENT -> showTreatment()
     }
     private fun category(page: SettingsPage,title: String,rows: List<ConsoleAction>,parent: SettingsPage=SettingsPage.ROOT): ConsoleDialog {
         enter(page)
@@ -53,7 +54,8 @@ class PlaybackSettingsPanel(
         return category(SettingsPage.VIDEO,UiText.text("Vídeo e transmissão"),listOf(
             ConsoleAction(UiText.text("Modo de vídeo: {0}",UiText.nested(value.videoMode.label))) { chooseVideo() },
             ConsoleAction(UiText.text("Codec: {0}",UiText.nested(if(value.videoMode==VideoMode.COMPATIBILITY) UiText.text("H.264 leve (Compatibilidade)") else value.videoCodec.label))) { chooseCodec() },
-            ConsoleAction(UiText.text("Resolução: {0}",UiText.nested(value.forSession().resolution.label))) { chooseResolution() }
+            ConsoleAction(UiText.text("Resolução: {0}",UiText.nested(value.forSession().resolution.label))) { chooseResolution() },
+            ConsoleAction(UiText.text("Fluidez: {0}",UiText.nested(value.forSession().presentationPacing.label))) { choosePacing() }
         ))
     }
     fun showAppearance(): ConsoleDialog = category(SettingsPage.APPEARANCE,UiText.text("Aparência e temas"),listOf(
@@ -92,9 +94,10 @@ class PlaybackSettingsPanel(
         return category(SettingsPage.IMAGE,UiText.text("Imagem e tela"),listOf(
             ConsoleAction(UiText.text("Proporção: {0}",UiText.nested(value.aspect.label))) { chooseAspect() },
             ConsoleAction(UiText.text("Upscaling nativo: {0}",UiText.nested(if(value.nativeUpscaling) UiText.text("Ativado") else UiText.text("Desativado")))) { chooseUpscaling() },
-            ConsoleAction(UiText.text("AMD FSR: {0}",UiText.nested(if(value.videoMode==VideoMode.COMPATIBILITY) UiText.text("Desativado (Compatibilidade)") else value.fsr.label))) { chooseFsr() },
-            ConsoleAction(UiText.text("Saída do FSR: {0}",UiText.nested(value.fsrOutput.label))) { chooseFsrOutput() },
-            ConsoleAction(UiText.text("Ajustes da imagem — nitidez, saturação, brilho e contraste")) { showImageAdjustments() }
+            ConsoleAction(UiText.text("Escalador: {0}",UiText.nested(if(value.videoMode==VideoMode.COMPATIBILITY) UiText.text("Desativado (Compatibilidade)") else value.fsr.label))) { chooseFsr() },
+            ConsoleAction(UiText.text("Saída do escalador: {0}",UiText.nested(value.fsrOutput.label))) { chooseFsrOutput() },
+            ConsoleAction(UiText.text("Ajustes da imagem — nitidez, saturação, brilho e contraste")) { showImageAdjustments() },
+            ConsoleAction(UiText.text("Tratamento da imagem")) { showTreatment() }
         ))
     }
     fun showNetwork(): ConsoleDialog = category(SettingsPage.NETWORK,UiText.text("Rede e sessão"),listOf(
@@ -147,8 +150,17 @@ class PlaybackSettingsPanel(
     fun chooseCodec(): ConsoleDialog {
         enter(SettingsPage.VIDEO)
         val current=store.read()
-        return choices(UiText.text("Codec de vídeo"),UiText.text("Padrão mantém a negociação H.264 habitual. Leve oferece somente Baseline, solicita 720p e até 6 Mbps no Automático. O teto manual da partida pode substituir esse orçamento. É um perfil do H.264, sem garantia de ganho se o jogo já usava Baseline. A resolução e o bitrate recebidos dependem do serviço. Compatibilidade também usa Baseline. Aplica-se à próxima partida."),
-            VideoCodecMode.entries.map { it.label to (it==current.videoCodec) }) { save(current.copy(videoCodec=VideoCodecMode.entries[it]).forSession()) }
+        return choices(UiText.text("Codec de vídeo"),UiText.join(UiText.text("Padrão mantém a negociação H.264 habitual. Leve oferece somente Baseline, solicita 720p e até 6 Mbps no Automático. O teto manual da partida pode substituir esse orçamento. É um perfil do H.264, sem garantia de ganho se o jogo já usava Baseline. A resolução e o bitrate recebidos dependem do serviço. Compatibilidade também usa Baseline. Aplica-se à próxima partida."),"\n\n",
+            UiText.text("Main é experimental: só é oferecido quando o decoder de hardware declara esse perfil e suporta a resolução a 60 FPS. Baseline continua disponível na negociação. O Xbox escolhe o perfil recebido; confirme o resultado no diagnóstico.")),
+            VideoCodecMode.entries.map { it.label to (it==current.videoCodec) }) {
+            val selected=current.copy(videoCodec=VideoCodecMode.entries[it])
+            save(if(selected.videoCodec==VideoCodecMode.H264_BASELINE) selected.copy(resolution=StreamResolution.HD_720) else selected)
+        }
+    }
+    fun choosePacing(): ConsoleDialog {
+        enter(SettingsPage.VIDEO);val value=store.read()
+        return choices(UiText.text("Fluidez da apresentação"),UiText.text("Suave agenda os quadros com uma pequena espera e pode aumentar o atraso do controle. Mantém apenas o quadro pendente mais recente; não gera novos quadros. Só atua em Adaptativo. Menor atraso e Compatibilidade mantêm a apresentação imediata. Vale na próxima partida."),
+            PresentationPacing.entries.map { it.label to (it==value.presentationPacing) }) { save(value.copy(presentationPacing=PresentationPacing.entries[it])) }
     }
     fun chooseResolution(): ConsoleDialog {
         enter(SettingsPage.VIDEO)
@@ -169,13 +181,13 @@ class PlaybackSettingsPanel(
     fun chooseFsr(): ConsoleDialog {
         enter(SettingsPage.IMAGE)
         val current=store.read()
-        return choices(UiText.text("AMD FidelityFX Super Resolution"),UiText.text("FSR 1.0.2 amplia o vídeo com EASU e nitidez RCAS. Quando vídeo e saída têm o mesmo tamanho, aplica somente RCAS, sem ampliar. Comece com Saída do FSR em Automático e RCAS em 50%. Compare nitidez, fluidez e resposta dos comandos; 1440p e 4K exigem mais GPU. O diagnóstico distingue ampliação de RCAS nativo. O FSR assume a escala mesmo com Upscaling nativo ligado. Ajuste RCAS em Ajustes da imagem. Compatibilidade mantém FSR desligado. Aplica-se à próxima partida."),
+        return choices(UiText.text("Escalador da imagem"),UiText.text("FSR 1 usa EASU e uma etapa de nitidez. SGSR 1 combina ampliação e realce numa passagem, com resultado diferente. Comece em Automático e nitidez 50%. Em tamanho nativo, há somente tratamento, sem ampliação. 1440p e 4K exigem mais GPU. A proteção pode reduzir a saída e os efeitos durante a partida. Compatibilidade desativa os escaladores."),
             FsrMode.entries.map { it.label to (it==current.fsr) }) { save(current.copy(fsr=FsrMode.entries[it])) }
     }
     fun chooseFsrOutput(): ConsoleDialog {
         enter(SettingsPage.IMAGE)
         val current=store.read()
-        return choices(UiText.text("Saída do FSR"),UiText.text("Define a apresentação local, sem aumentar a resolução recebida nem o consumo de rede. Automático acompanha a janela, limitado a 1080p nas TVs, priorizando a fluidez. As escolhas são limitadas pela saída física disponível e preservam a proporção. 1440p e 4K têm custo maior de GPU; não garantem 60 FPS. Requer AMD FSR ativado; Compatibilidade mantém o filtro desligado. O app retorna à escala padrão se o filtro falhar ou se a cadência ficar muito baixa por vários segundos com vídeo chegando. Aplica-se à próxima partida."),
+        return choices(UiText.text("Saída do escalador"),UiText.text("A saída é local e não altera o stream recebido. Automático prioriza a fluidez e limita TVs a 1080p. FSR ou SGSR devem estar ligados. As escolhas preservam a proporção e respeitam a saída física. A proteção reduz a saída se os desenhos não acompanharem os quadros recebidos. 1440p e 4K não garantem 60 FPS."),
             FsrOutput.entries.map { it.label to (it==current.fsrOutput) }) { save(current.copy(fsrOutput=FsrOutput.entries[it])) }
     }
     fun chooseAspect(onBack: () -> Unit = { showImage() }): ConsoleDialog {
@@ -192,9 +204,9 @@ class PlaybackSettingsPanel(
         fun backToImage() { showImageAdjustments(onBack) }
         return ConsoleDialog(context,UiText.text("Ajustes da imagem")).apply {
             body.addView(text(UiText.text("Ajustes opcionais da imagem. Nitidez pode realçar ruído e exigir mais GPU. Durante uma partida, as mudanças são imediatas."),20,color=DashboardTheme.muted))
-            if(settings.fsr==FsrMode.FSR1) addMenuItem(UiText.text("Nitidez FSR (RCAS): {0}%",UiText.nested(settings.fsrSharpness))) {
+            if(settings.fsr!=FsrMode.OFF) addMenuItem(UiText.text("Nitidez do escalador: {0}%",UiText.nested(settings.fsrSharpness))) {
                 val levels=listOf(0,25,50,75,100)
-                choices(UiText.text("Nitidez FSR (RCAS)"),UiText.text("RCAS ajusta a intensidade da nitidez; 50% não significa metade do custo de GPU. Comece com 50%; 0% desliga a nitidez RCAS e mantém EASU quando houver ampliação. Sem ampliação e com RCAS em 0%, usa o filtro padrão. A nitidez padrão abaixo é usada quando o FSR não está ativo."),
+                choices(UiText.text("Nitidez do escalador"),UiText.text("0% desativa o realce; 50% não significa metade do custo de GPU. O método de nitidez do FSR pode ser escolhido em Tratamento da imagem. SGSR usa seu próprio realce. A nitidez padrão é usada quando não há escalador ativo."),
                     levels.map { "$it%" to (it==settings.fsrSharpness) },::backToImage) {
                     save(settings.copy(fsrSharpness=levels[it]),::backToImage)
                 }
@@ -225,6 +237,38 @@ class PlaybackSettingsPanel(
             }
             addAction(UiText.text("Voltar"),onBack); setOnCancelListener { onBack() }; show()
         }
+    }
+    fun showTreatment(): ConsoleDialog {
+        enter(SettingsPage.TREATMENT)
+        val value=store.read();val image=value.imageTreatment
+        fun level(title: String,current: Int,max: Int=100,change: (ImageTreatmentSettings,Int)->ImageTreatmentSettings) {
+            val levels=listOf(0,25,50,75,100).filter { it<=max }
+            choices(title,UiText.text("Filtros opcionais. Use intensidades baixas e compare com a imagem original. Temporal pode deixar rastros. A rede neural exige renderização half-float e fonte de até 1080p; o diagnóstico informa quando não há suporte. Compatibilidade desativa o tratamento."),
+                levels.map { "$it%" to (it==current) },{ showTreatment() }) { index ->
+                val now=store.read();save(now.copy(imageTreatment=change(now.imageTreatment,levels[index])))
+            }
+        }
+        return category(SettingsPage.TREATMENT,UiText.text("Tratamento da imagem"),listOf(
+            ConsoleAction(UiText.text("Restaurar imagem original")) { save(value.copy(imageTreatment=ImageTreatmentSettings(),fsr=FsrMode.OFF,sharpness=0,saturation=100,brightness=0,contrast=100)) },
+            ConsoleAction(UiText.text("Perfil leve")) { save(value.copy(imageTreatment=ImageTreatmentSettings(sharpening=ImageSharpening.USM_LUMA,chroma=25),sharpness=25)) },
+            ConsoleAction(UiText.text("Perfil natural")) { save(value.copy(imageTreatment=ImageTreatmentSettings(sharpening=ImageSharpening.RCAS_LUMA,deband=25,chroma=50),sharpness=25)) },
+            ConsoleAction(UiText.text("Método de nitidez: {0}",UiText.nested(image.sharpening.label))) {
+                choices(UiText.text("Método de nitidez"),UiText.text("RCAS adaptativo e USM atuam na luminância, com proteção contra ruído e halos. A intensidade fica em Ajustes da imagem. O FSR usa esse método na etapa final; SGSR tem seu próprio realce."),
+                    ImageSharpening.entries.map { it.label to (it==image.sharpening) },{ showTreatment() }) {
+                    save(value.copy(imageTreatment=image.copy(sharpening=ImageSharpening.entries[it])))
+                }
+            },
+            ConsoleAction(UiText.text("Degradês: {0}%",UiText.nested(image.deband))) { level(UiText.text("Degradês"),image.deband) { s,n -> s.copy(deband=n) } },
+            ConsoleAction(UiText.text("Limpeza de compressão: {0}%",UiText.nested(image.cleanup))) { level(UiText.text("Limpeza de compressão"),image.cleanup) { s,n -> s.copy(cleanup=n) } },
+            ConsoleAction(UiText.text("Cor nas bordas: {0}%",UiText.nested(image.chroma))) { level(UiText.text("Cor nas bordas"),image.chroma) { s,n -> s.copy(chroma=n) } },
+            ConsoleAction(UiText.text("Antialiasing: {0}%",UiText.nested(image.antialias))) { level("Antialiasing",image.antialias) { s,n -> s.copy(antialias=n) } },
+            ConsoleAction(UiText.text("Estabilidade temporal: {0}%",UiText.nested(image.temporal))) { level(UiText.text("Estabilidade temporal"),image.temporal,50) { s,n -> s.copy(temporal=n) } },
+            ConsoleAction(UiText.text("Reconstrução neural: {0}%",UiText.nested(image.neural))) { level(UiText.text("Reconstrução neural"),image.neural) { s,n -> s.copy(neural=n) } },
+            ConsoleAction(UiText.text("Proteção de desempenho: {0}",UiText.nested(if(image.autoProtect) UiText.text("Ativada") else UiText.text("Desativada")))) {
+                choices(UiText.text("Proteção de desempenho"),UiText.text("Reduz temporal, saída, antialiasing, neural e filtros quando a cadência desenhada fica abaixo da recebida. As escolhas salvas são preservadas. Os cortes valem nesta partida e aparecem no diagnóstico."),
+                    listOf(UiText.text("Ativada") to image.autoProtect,UiText.text("Desativada") to !image.autoProtect),{ showTreatment() }) { save(value.copy(imageTreatment=image.copy(autoProtect=it==0))) }
+            }
+        ),SettingsPage.IMAGE)
     }
     fun showControls(): ConsoleDialog = category(SettingsPage.CONTROLS,UiText.text("Controles e toque"),listOf(
         ConsoleAction(UiText.text("Controle físico e coop local")) { showPhysical() },

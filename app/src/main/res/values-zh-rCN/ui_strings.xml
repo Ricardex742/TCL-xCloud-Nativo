@@ -811,4 +811,48 @@
     <string name="ui_ff20d756c5955aa6" formatted="false">"本次尝试的极限：{0}。返回或取消离开队列。"</string>
     <string name="ui_ffc85b563def9bc4" formatted="false">"测试振动/检查支撑"</string>
     <string name="ui_d60b3945c25ba135" formatted="false">"1440p通过Xbox最高画质配置请求最高2560×1440的视频。是否可用取决于订阅、游戏和服务。此模式需要更多带宽和解码性能，请在诊断中查看实际接收的分辨率。"</string>
+    <string name="ui_64f9fc8d1d9c0c1f" formatted="false">"请求的图像处理：{0}"</string>
+    <string name="ui_f8186b7e3ccb65ca" formatted="false">"应用图像处理：{0}"</string>
+    <string name="ui_706a0bb6421fbdb0" formatted="false">"首选 H.264 Main • Baseline 可作为后备"</string>
+    <string name="ui_7312a2a997891518" formatted="false">"解码器不通告 H.264 Main • 使用 H.264 后备"</string>
+    <string name="ui_66bfd6b54c02fb71" formatted="false">"帧节奏：{0}"</string>
+    <string name="ui_53a7786ecd3d9110" formatted="false">"画面缩放器: {0}"</string>
+    <string name="ui_2fc10d86856e698a" formatted="false">"缩放器输出: {0}"</string>
+    <string name="ui_afc818a5b59cbae3" formatted="false">"图像处理"</string>
+    <string name="ui_bf8fb0ad74709273" formatted="false">"Main 是实验性的。仅当硬件解码器声明此配置文件并支持所选分辨率 60 FPS 时才提供它。 Baseline 在谈判期间仍然可用。 Xbox选择接收到的profile；检查诊断。"</string>
+    <string name="ui_0714f5039a12ca60" formatted="false">"帧节奏"</string>
+    <string name="ui_4d440994fa1026b6" formatted="false">"平滑的节奏调度帧需要短暂的等待，并且可能会增加控制器延迟。它仅保留最新的待处理帧，并且不生成帧。它仅在自适应模式下工作。低延迟和兼容性立即呈现帧。适用于下一届会议。"</string>
+    <string name="ui_01ff7b9877fd2590" formatted="false">"图像缩放器"</string>
+    <string name="ui_eb6463428c90e902" formatted="false">"FSR 1 使用 EASU 和一个锐化级。 SGSR 1 将放大和锐化一次性结合在一起，产生了不同的结果。从自动输出和 50% 锐化开始。在原始尺寸下，处理不会放大图像。 1440p 和 4K 需要更多的 GPU 功率。保护可能会减少会话期间的输出和效果。兼容性禁用升级程序。"</string>
+    <string name="ui_6f1c74f0b6d32c86" formatted="false">"缩放器输出"</string>
+    <string name="ui_3c5b67278b62ff76" formatted="false">"输出分辨率是本地的，不会改变接收到的流。自动优先考虑流畅播放，并将电视限制为 1080p。启用FSR或SGSR即可使用它。选项保留宽高比并尊重物理显示输出。如果渲染落后于传入帧，保护会减少输出。 1440p 和 4K 不保证 60 FPS。"</string>
+    <string name="ui_c32d6a6c5f6c85a8" formatted="false">"缩放器锐度: {0}%"</string>
+    <string name="ui_89466b600f44d82a" formatted="false">"缩放器锐度"</string>
+    <string name="ui_0a35106015a464ce" formatted="false">"0% 禁用锐化； 50%并不意味着GPU成本的一半。在图像处理中选择FSR锐化方法。 SGSR使用自己的锐化。当没有活动的升级器时，使用标准锐化。"</string>
+    <string name="ui_145ba142c0a28897" formatted="false">"可选过滤器。使用低强度并与原始图像进行比较。时间混合可能会导致重影。神经网络需要half-float渲染，视频最多1080p；诊断报告不支持的配置。兼容性禁用处理。"</string>
+    <string name="ui_a23f3531df367526" formatted="false">"恢复原始图像"</string>
+    <string name="ui_816142b270bd86ed" formatted="false">"灯光预设"</string>
+    <string name="ui_3dffb6b05ab299a0" formatted="false">"自然预设"</string>
+    <string name="ui_fa91b6e02863c5e4" formatted="false">"锐化方式：{0}"</string>
+    <string name="ui_502db55d154534d2" formatted="false">"锐化方法"</string>
+    <string name="ui_0aa57beba9491190" formatted="false">"自适应 RCAS 和 USM 锐化亮度，同时限制噪音和光晕。在图像调整中设置强度。 FSR在最后阶段使用了这种方法； SGSR有自己的锐化。"</string>
+    <string name="ui_2b6c2095f463e2a5" formatted="false">"解带：{0}%"</string>
+    <string name="ui_fe312903471d9474" formatted="false">"解带"</string>
+    <string name="ui_ff31493bef5098c7" formatted="false">"压缩清理：{0}%"</string>
+    <string name="ui_8782634f25aeb02e" formatted="false">"压缩清理"</string>
+    <string name="ui_d7b3f1bca2b06d8b" formatted="false">"色度边缘重建：{0}%"</string>
+    <string name="ui_a10e201b2f1fbe77" formatted="false">"色度边缘重建"</string>
+    <string name="ui_2f7e4149690c5b05" formatted="false">"抗锯齿：{0}%"</string>
+    <string name="ui_02665a1915f9bbb7" formatted="false">"时间稳定性：{0}%"</string>
+    <string name="ui_a9bcf2677eef18a5" formatted="false">"时间稳定"</string>
+    <string name="ui_e2f43e0004820e9d" formatted="false">"神经重建：{0}%"</string>
+    <string name="ui_eb23f8d6305497c0" formatted="false">"神经重建"</string>
+    <string name="ui_40f6cd55c2c2622a" formatted="false">"性能保护：{0}"</string>
+    <string name="ui_2035d973bf9e515e" formatted="false">"性能保障"</string>
+    <string name="ui_5bc89f56c8f6a2fb" formatted="false">"当渲染落后于传入帧时，减少时间混合、输出分辨率、抗锯齿、神经重建和滤波器。已保存的首选项将被保留。减少持续此会话并出现在诊断中。"</string>
+    <string name="ui_1b84e208cc1a58a8" formatted="false">"H.264 Main — 实验性"</string>
+    <string name="ui_3a2a300619a63143" formatted="false">"SGSR 1 — 实验性"</string>
+    <string name="ui_9b01d2edc42e9906" formatted="false">"自适应 RCAS — 亮度"</string>
+    <string name="ui_8107516a4c8bc932" formatted="false">"USM — 亮度"</string>
+    <string name="ui_bb3b1f11046a95a8" formatted="false">"平滑——实验性的"</string>
 </resources>

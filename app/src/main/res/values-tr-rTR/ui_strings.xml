@@ -811,4 +811,48 @@
     <string name="ui_ff20d756c5955aa6" formatted="false">"Bu denemenin sınırı: {0}. Geri veya İptal kuyruktan çıkar."</string>
     <string name="ui_ffc85b563def9bc4" formatted="false">"Titreşimi test edin / desteği kontrol edin"</string>
     <string name="ui_d60b3945c25ba135" formatted="false">"1440p, Xbox’ın en yüksek kalite profiliyle 2560×1440 çözünürlüğe kadar video ister. Kullanılabilirlik aboneliğe, oyuna ve hizmete bağlıdır. Daha fazla bant genişliği ve kod çözme gücü gerektirir. Gerçekte alınan çözünürlüğü tanılamadan kontrol edin."</string>
+    <string name="ui_64f9fc8d1d9c0c1f" formatted="false">"İstenen görüntü işleme: {0}"</string>
+    <string name="ui_f8186b7e3ccb65ca" formatted="false">"Uygulamalı görüntü işleme: {0}"</string>
+    <string name="ui_706a0bb6421fbdb0" formatted="false">"H.264 Main tercih edilir • Baseline yedek olarak mevcuttur"</string>
+    <string name="ui_7312a2a997891518" formatted="false">"Kod çözücü, H.264 geri dönüşünü kullanarak H.264 Main\'yi tanıtmaz •"</string>
+    <string name="ui_66bfd6b54c02fb71" formatted="false">"Çerçeve ilerleme hızı: {0}"</string>
+    <string name="ui_53a7786ecd3d9110" formatted="false">"Ölçekleyici: {0}"</string>
+    <string name="ui_2fc10d86856e698a" formatted="false">"Ölçekleyici çıkışı: {0}"</string>
+    <string name="ui_afc818a5b59cbae3" formatted="false">"Görüntü işleme"</string>
+    <string name="ui_bf8fb0ad74709273" formatted="false">"Main deneyseldir. Yalnızca donanım kod çözücü bu profili bildirdiğinde ve 60 FPS\'de seçilen çözünürlüğü desteklediğinde sunulur. Baseline pazarlık sırasında kullanılabilir durumda kalır. Xbox alınan profili seçer; tanılamayı kontrol edin."</string>
+    <string name="ui_0714f5039a12ca60" formatted="false">"Çerçeve ilerleme hızı"</string>
+    <string name="ui_4d440994fa1026b6" formatted="false">"Düzgün ilerleme hızı, kareleri kısa bir bekleme süresiyle planlar ve denetleyici gecikmesini artırabilir. Yalnızca en son bekleyen çerçeveyi tutar ve çerçeve oluşturmaz. Yalnızca Uyarlamalı modda çalışır. Düşük gecikme süresi ve Uyumluluk, kareleri anında sunar. Bir sonraki oturum için geçerlidir."</string>
+    <string name="ui_01ff7b9877fd2590" formatted="false">"Görüntü ölçekleyici"</string>
+    <string name="ui_eb6463428c90e902" formatted="false">"FSR 1, EASU ve bir bileme aşaması kullanır. SGSR 1, yükseltme ve keskinleştirmeyi tek geçişte birleştirerek farklı bir sonuç sağlar. Otomatik çıktı ve %50 keskinleştirmeyle başlayın. Yerel boyutta işleme görüntüyü büyütmez. 1440p ve 4K daha fazla GPU gücüne ihtiyaç duyar. Koruma, oturum sırasında çıktıyı ve etkileri azaltabilir. Uyumluluk, ölçek yükselticileri devre dışı bırakır."</string>
+    <string name="ui_6f1c74f0b6d32c86" formatted="false">"Ölçekleyici çıkışı"</string>
+    <string name="ui_3c5b67278b62ff76" formatted="false">"Çıkış çözünürlüğü yereldir ve alınan akışı değiştirmez. Otomatik, sorunsuz oynatmaya öncelik verir ve TV\'leri 1080p ile sınırlandırır. Kullanmak için FSR veya SGSR\'yi etkinleştirin. Seçenekler en boy oranını korur ve fiziksel ekran çıkışına saygı gösterir. Koruma, işlemenin gelen karelerin gerisinde kalması durumunda çıktıyı azaltır. 1440p ve 4K, 60 FPS\'yi garanti etmez."</string>
+    <string name="ui_c32d6a6c5f6c85a8" formatted="false">"Ölçekleyici keskinliği: {0}%"</string>
+    <string name="ui_89466b600f44d82a" formatted="false">"Ölçekleyici keskinliği"</string>
+    <string name="ui_0a35106015a464ce" formatted="false">"%0 keskinleştirmeyi devre dışı bırakır; %50, GPU maliyetinin yarısı anlamına gelmez. Görüntü işlemede FSR keskinleştirme yöntemini seçin. SGSR kendi keskinleştirmesini kullanır. Hiçbir yükseltici etkin olmadığında standart keskinleştirme kullanılır."</string>
+    <string name="ui_145ba142c0a28897" formatted="false">"İsteğe bağlı filtreler. Düşük güçler kullanın ve orijinal görüntüyle karşılaştırın. Geçici karıştırma gölgelenmeye neden olabilir. Sinir ağı, half-float oluşturma ve 1080p\'ye kadar video gerektirir; tanılama desteklenmeyen yapılandırmaları bildirir. Uyumluluk işlemeyi devre dışı bırakır."</string>
+    <string name="ui_a23f3531df367526" formatted="false">"Orijinal görüntüyü geri yükle"</string>
+    <string name="ui_816142b270bd86ed" formatted="false">"Işık ön ayarı"</string>
+    <string name="ui_3dffb6b05ab299a0" formatted="false">"Doğal ön ayar"</string>
+    <string name="ui_fa91b6e02863c5e4" formatted="false">"Bileme yöntemi: {0}"</string>
+    <string name="ui_502db55d154534d2" formatted="false">"Bileme yöntemi"</string>
+    <string name="ui_0aa57beba9491190" formatted="false">"Uyarlanabilir RCAS ve USM, gürültüyü ve haleleri sınırlandırırken parlaklığı artırır. Görüntü ayarlamalarında gücü ayarlayın. FSR bu yöntemi son aşamasında kullanır; SGSR\'nin kendi bileme özelliği vardır."</string>
+    <string name="ui_2b6c2095f463e2a5" formatted="false">"Bant çıkarma: {0}%"</string>
+    <string name="ui_fe312903471d9474" formatted="false">"Banttan çıkarma"</string>
+    <string name="ui_ff31493bef5098c7" formatted="false">"Sıkıştırma temizleme: {0}%"</string>
+    <string name="ui_8782634f25aeb02e" formatted="false">"Sıkıştırma temizleme"</string>
+    <string name="ui_d7b3f1bca2b06d8b" formatted="false">"Kroma kenarı yeniden yapılandırması: {0}%"</string>
+    <string name="ui_a10e201b2f1fbe77" formatted="false">"Chroma kenar rekonstrüksiyonu"</string>
+    <string name="ui_2f7e4149690c5b05" formatted="false">"Kenar yumuşatma: {0}%"</string>
+    <string name="ui_02665a1915f9bbb7" formatted="false">"Geçici stabilizasyon: {0}%"</string>
+    <string name="ui_a9bcf2677eef18a5" formatted="false">"Geçici stabilizasyon"</string>
+    <string name="ui_e2f43e0004820e9d" formatted="false">"Sinirsel yeniden yapılanma: {0}%"</string>
+    <string name="ui_eb23f8d6305497c0" formatted="false">"Sinir rekonstrüksiyonu"</string>
+    <string name="ui_40f6cd55c2c2622a" formatted="false">"Performans koruması: {0}"</string>
+    <string name="ui_2035d973bf9e515e" formatted="false">"Performans koruması"</string>
+    <string name="ui_5bc89f56c8f6a2fb" formatted="false">"İşleme gelen karelerin gerisinde kaldığında zamansal harmanlamayı, çıktı çözünürlüğünü, kenar yumuşatmayı, sinirsel yeniden yapılandırmayı ve filtreleri azaltır. Kaydedilen tercihler korunur. İndirimler bu oturum için geçerlidir ve teşhiste görünür."</string>
+    <string name="ui_1b84e208cc1a58a8" formatted="false">"H.264 Main — deneysel"</string>
+    <string name="ui_3a2a300619a63143" formatted="false">"SGSR 1 — deneysel"</string>
+    <string name="ui_9b01d2edc42e9906" formatted="false">"Uyarlanabilir RCAS — parlaklık"</string>
+    <string name="ui_8107516a4c8bc932" formatted="false">"USM — parlaklık"</string>
+    <string name="ui_bb3b1f11046a95a8" formatted="false">"Pürüzsüz — deneysel"</string>
 </resources>

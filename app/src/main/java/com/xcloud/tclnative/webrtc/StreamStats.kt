@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.webrtc
 
+import com.xcloud.tclnative.i18n.UiText
+
 import java.util.Locale
 
 /** A small, testable view of RTCStats. No IP addresses, credentials or SDP enter the overlay. */
@@ -23,26 +25,15 @@ data class StreamMetrics(
         fun n(value: Double?, decimals: Int = 1) = value?.takeIf(Double::isFinite)
             ?.let { String.format(Locale.US, "%.${decimals}f", it) } ?: "n/d"
         val resolution = if (width != null && height != null) "${width}x$height" else "n/d"
-        return "$resolution | ${n(fps, 0)} FPS | ${codec ?: "n/d"} | RX ${n(bitrateMbps)} Mbps\n" +
-            "RTT ${n(rttMs)} ms | Jitter ${n(jitterMs)} ms | Buffer ${n(jitterBufferMs)} ms | Decode ${n(decodeMs, 2)} ms\n" +
-            "Perda ${n(packetLossPercent, 2)}% (${lostPackets ?: "n/d"} pct) | Quadros desc. ${droppedFrames ?: "n/d"} | Input ${n(input.maxSchedulerDelayMs)} ms / ${input.bufferedBytes} B\n" +
-            "DZ app: câmera/LT/RT 0% | LT ${n(input.sentState.leftTrigger * 100.0)}% RT ${n(input.sentState.rightTrigger * 100.0)}% | Menu+View: Partida\n"
+        return UiText.join("$resolution | ${n(fps, 0)} FPS | ${codec ?: "n/d"} | RX ${n(bitrateMbps)} Mbps\n","RTT ${n(rttMs)} ms | Jitter ${n(jitterMs)} ms | Buffer ${n(jitterBufferMs)} ms | Decode ${n(decodeMs, 2)} ms\n","${UiText.text("Perda")} ${n(packetLossPercent, 2)}% (${lostPackets ?: "n/d"} pct) | ${UiText.text("Quadros desc.")} ${droppedFrames ?: "n/d"} | Input ${n(input.maxSchedulerDelayMs)} ms / ${input.bufferedBytes} B\n",UiText.text("DZ app: câmera/LT/RT 0% | LT {0}% RT {1}% | Menu+View: Partida\n",UiText.nested(n(input.sentState.leftTrigger * 100.0)),UiText.nested(n(input.sentState.rightTrigger * 100.0))))
     }
 
     fun overlay(input: InputMetrics, renderer: String, profile: StreamResolution = StreamResolution.HD_1080_HQ, compatibility: Boolean = false): String {
         fun number(value: Double?, decimals: Int = 1): String = value?.takeIf(Double::isFinite)
             ?.let { String.format(Locale.US, "%.${decimals}f", it) } ?: "n/d"
         val resolution = if (width != null && height != null) "${width}x$height" else "n/d"
-        val efficiency = when (powerEfficient) { true -> "eficiente: sim"; false -> "eficiente: não"; null -> "HW/SW: n/d" }
-        return "$resolution | ${number(fps, 0)} FPS | ${codec ?: "codec n/d"} | RX ${number(bitrateMbps)} Mbps\n" +
-            "Ping (RTT ICE): ${number(rttMs)} ms | Jitter RTP: ${number(jitterMs)} ms | Buffer: ${number(jitterBufferMs)} ms\n" +
-            "Buffer WebRTC: observado ${number(jitterBufferMs)} ms | alvo ${number(jitterBufferTargetMs)} ms | mínimo de rede ${number(jitterBufferMinimumMs)} ms\n" +
-            "Perda: ${number(packetLossPercent, 2)}% (${lostPackets ?: "n/d"} pacotes/${number(intervalSeconds)}s; total ${totalLostPackets ?: "n/d"})\n" +
-            "Quadros descartados WebRTC: ${droppedFrames ?: "n/d"}/intervalo; total ${totalDroppedFrames ?: "n/d"}\n" +
-            "Decode: ${number(decodeMs, 2)} ms/quadro | ${decoder ?: "decoder n/d"} | $efficiency\n" +
-            "Controle: fila ${input.bufferedBytes} B | atraso local máx. ${number(input.maxSchedulerDelayMs, 2)} ms | coalescidos ${input.coalescedEdges} | espera canal ${input.backpressureSkips}\n" +
-            "Câmera X/Y: ${number(input.sentState.rightX.toDouble(), 4)}/${number(input.sentState.rightY.toDouble(), 4)} | LT/RT: ${number(input.sentState.leftTrigger * 100.0, 1)}%/${number(input.sentState.rightTrigger * 100.0, 1)}% | DZ app: 0% | Input até 250 Hz\n" +
-            "Pedido: ${profile.label}, ${if(compatibility) "1–6" else "${profile.minKbps/1000}–${profile.maxKbps/1000}"} Mbps (VBR recebido pode variar) | Menu+View: Partida; INFO/F10: estatísticas\n$renderer"
+        val efficiency = when (powerEfficient) { true -> UiText.text("eficiente: sim"); false -> UiText.text("eficiente: não"); null -> "HW/SW: n/d" }
+        return UiText.join("$resolution | ${number(fps, 0)} FPS | ${codec ?: "codec n/d"} | RX ${number(bitrateMbps)} Mbps\n","Ping (RTT ICE): ${number(rttMs)} ms | Jitter RTP: ${number(jitterMs)} ms | Buffer: ${number(jitterBufferMs)} ms\n",UiText.text("Buffer WebRTC: observado {0} ms | alvo {1} ms | mínimo de rede {2} ms\n",UiText.nested(number(jitterBufferMs)),UiText.nested(number(jitterBufferTargetMs)),UiText.nested(number(jitterBufferMinimumMs))),"${UiText.text("Perda")}: ${number(packetLossPercent, 2)}% (${lostPackets ?: "n/d"} ${UiText.text("pacotes")}/${number(intervalSeconds)}s; ${UiText.text("total")} ${totalLostPackets ?: "n/d"})\n","${UiText.text("Quadros descartados WebRTC")}: ${droppedFrames ?: "n/d"}/${UiText.text("intervalo")}; ${UiText.text("total")} ${totalDroppedFrames ?: "n/d"}\n","Decode: ${number(decodeMs, 2)} ${UiText.text("ms/quadro")} | ${decoder ?: "decoder n/d"} | $efficiency\n",UiText.text("Controle: fila {0} B | atraso local máx. {1} ms | coalescidos {2} | espera canal {3}\n",UiText.nested(input.bufferedBytes),UiText.nested(number(input.maxSchedulerDelayMs, 2)),UiText.nested(input.coalescedEdges),UiText.nested(input.backpressureSkips)),UiText.text("Câmera X/Y: {0}/{1} | LT/RT: {2}%/{3}% | DZ app: 0% | Input até 250 Hz\n",UiText.nested(number(input.sentState.rightX.toDouble(), 4)),UiText.nested(number(input.sentState.rightY.toDouble(), 4)),UiText.nested(number(input.sentState.leftTrigger * 100.0, 1)),UiText.nested(number(input.sentState.rightTrigger * 100.0, 1))),UiText.text("Pedido: {0}, {1} Mbps (VBR recebido pode variar) | Menu+View: Partida; INFO/F10: estatísticas\n{2}",UiText.nested(profile.label),UiText.nested(if(compatibility) "1–6" else "${profile.minKbps/1000}–${profile.maxKbps/1000}"),UiText.nested(renderer)))
     }
 }
 

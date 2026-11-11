@@ -1,0 +1,821 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_00337a440affe8d9" formatted="false">"Renderer in Ausgabeauflösung für FSR"</string>
+    <string name="ui_01097ccc24bdd54c" formatted="false">"Reihenfolge: {0}, {1} Mbps (VBR empfangen kann variieren) | Menu+View: Abflug; INFO/F10: Statistiken\n{2}"</string>
+    <string name="ui_013a1e5debec7510" formatted="false">"Handyvibration"</string>
+    <string name="ui_013b6b53ec11bea0" formatted="false">"MIT QR-CODE ANMELDEN"</string>
+    <string name="ui_0160c60d129ba3c9" formatted="false">"Fußball-Controller-Schema"</string>
+    <string name="ui_019da395008ae750" formatted="false">"Mikrofon nicht verfügbar."</string>
+    <string name="ui_01d41b7846b0b45f" formatted="false">"Nach links spiegeln Y: {0}"</string>
+    <string name="ui_0267884953a02355" formatted="false">"Hohe Verluste oder Jitter. Vergleichen Sie Ethernet und Wi-Fi in der Nähe des Routers. Auch der Service kann variieren."</string>
+    <string name="ui_02c7b48c968b844b" formatted="false">"Timeout überschritten"</string>
+    <string name="ui_02d6ff6939c73b58" formatted="false">"Fügen Sie Spiele mit Y hinzu, bevor Sie Verknüpfungen erstellen."</string>
+    <string name="ui_031a5e835b1f6d36" formatted="false">"Unbekanntes Netzwerk"</string>
+    <string name="ui_031bde0f50ba5d49" formatted="false">"Launcher-Verknüpfung anfordern: {0}"</string>
+    <string name="ui_03561d241830a0e8" formatted="false">"Der Fernseher hat den Favoritensender nicht erstellt."</string>
+    <string name="ui_043344ab2cab974f" formatted="false">"Sitzung trennen und zum Katalog zurückkehren"</string>
+    <string name="ui_044419e9c7dfdf4f" formatted="false">"Videodecoder"</string>
+    <string name="ui_0471fc9b94d1d4e1" formatted="false">"Bildschirm: HDR10 von Android angekündigt."</string>
+    <string name="ui_0482ab2f5e9555df" formatted="false">"effizient: ja"</string>
+    <string name="ui_04fed7bc7eba27be" formatted="false">"Native Touch Xbox: {0}"</string>
+    <string name="ui_0576a13b7f8da156" formatted="false">"Vibration des Controllers und des Mobiltelefons"</string>
+    <string name="ui_05c167f258910d47" formatted="false">"Beobachtete Verwerfungen: {0} • Kein Fortschritt: {1} ({2}-Folgen)\n"</string>
+    <string name="ui_05d410b61f115e54" formatted="false">"Melden Sie sich erneut an"</string>
+    <string name="ui_05f55ecde2095706" formatted="false">"Über USB für diesen Controller verfügbar, während die App geöffnet ist. Bestätigen Sie, ob Vibrationen aufgetreten sind."</string>
+    <string name="ui_063e3bb2ff5e1126" formatted="false">"In dieser Liste sind keine Game Pass-Titel verfügbar."</string>
+    <string name="ui_072486acb1c2c3bc" formatted="false">"KATALOG WIRD GELADEN…"</string>
+    <string name="ui_078c3c1c21cac018" formatted="false">"warten auf Proben"</string>
+    <string name="ui_07adc85579777aed" formatted="false">"unaufgefordert"</string>
+    <string name="ui_07c30329e1fbb86e" formatted="false">"Kompensation der toten Zone der Kamera"</string>
+    <string name="ui_085a7aac0ee4c17f" formatted="false">"Geschätzter Index. Die dekodierten FPS stammen nicht aus dem Spiel oder dem Bildschirm. Netzwerk und Pausen spiegeln verfügbare Samples wider; Link Wi-Fi misst keine Internetgeschwindigkeit."</string>
+    <string name="ui_087049dba46795c1" formatted="false">"Steuerelemente › Maus und Tastatur"</string>
+    <string name="ui_088f4da0fb6e92f6" formatted="false">"Löst den entsprechenden Controller aus, wenn Android oder der USB-Test dies unterstützt. Gültig im nächsten Spiel."</string>
+    <string name="ui_08fcc1f5b2d705ea" formatted="false">"Ziel beim Schießen: {0}"</string>
+    <string name="ui_0964df415f982798" formatted="false">"Auflösung n/a"</string>
+    <string name="ui_0a6ed0003ccbb5c5" formatted="false">"Vibration des Controllers"</string>
+    <string name="ui_0a8a145f0c4c786b" formatted="false">"HDR10: Bildschirm und Übertragung"</string>
+    <string name="ui_0aadc3c5e893f94b" formatted="false">"Linke Totzone: {0}%"</string>
+    <string name="ui_0af64325f77fe6bf" formatted="false">"Wählen Sie das gleiche Schema wie im Spiel. Übernehmen stellt die Aktionen und Gesten der Fußballtasten wieder her und behält dabei benutzerdefinierte Positionen und Größen bei."</string>
+    <string name="ui_0b23a612555311a0" formatted="false">"RTT erhöht. Vergleichen Sie Verbindung und Serviceregion. RTT misst nicht die vollständige Befehl-zu-Image-Latenz."</string>
+    <string name="ui_0b2d680c438ef00a" formatted="false">"Analoges Drag-to-Run: {0}"</string>
+    <string name="ui_0b515c2eb55d0039" formatted="false">"In dieser Version des Berichts nicht erfasst."</string>
+    <string name="ui_0b6181c8fae6c214" formatted="false">"{0}-Banner"</string>
+    <string name="ui_0bf12e52f3bc5819" formatted="false">"Vor dem Timeout wurde kein Videobild angezeigt"</string>
+    <string name="ui_0c4d21bd3043de42" formatted="false">"Codec: {0}"</string>
+    <string name="ui_0c589d4d177557b9" formatted="false">"Native Touch-Warteschlange: D/U/M-Eingabe {0}/{1}/{2}; "</string>
+    <string name="ui_0c62bc59af11fcee" formatted="false">"↑ Oben"</string>
+    <string name="ui_0cb22b8f1ab03a08" formatted="false">"Totzonenkompensation: {0}%"</string>
+    <string name="ui_0cef94b399905087" formatted="false">"Das Spiel wird gezeigt, sobald das Video fertig ist."</string>
+    <string name="ui_0d1222c8a7720ee4" formatted="false">"Aktuelle Ergänzungen werden geladen…"</string>
+    <string name="ui_0d220536c41d6fdb" formatted="false">"100 % Volumenerhalt. Darüber hinaus erhöht und verringert die App die Verstärkung schrittweise, wenn sie Spitzen im Audio erkennt. Transienten können immer noch verzerren. Beginnen Sie bei 125 %. Android-Fokus und -Lautstärke bleiben aktiv."</string>
+    <string name="ui_0d79621a7c3b95be" formatted="false">"Verworfene Bilder"</string>
+    <string name="ui_0d7a3d320a0fb006" formatted="false">"H.264 – Standard"</string>
+    <string name="ui_0d8c42edc4b4608f" formatted="false">"Linke Empfindlichkeit: {0}%"</string>
+    <string name="ui_0d995dfdd2eeea56" formatted="false">"Finten"</string>
+    <string name="ui_0d9a4b66ad7d5845" formatted="false">"Darstellung und Designs"</string>
+    <string name="ui_0e01764ea4f7fbb1" formatted="false">"Fehler in der lokalen Darstellung"</string>
+    <string name="ui_0ea9a4d339b48e4f" formatted="false">"Startdiagnose"</string>
+    <string name="ui_0f2bd88ef0acbda9" formatted="false">"Zum Schließen"</string>
+    <string name="ui_1003f34d94801539" formatted="false">"Hilfe"</string>
+    <string name="ui_106574feeec20607" formatted="false">"Anfang: {0}"</string>
+    <string name="ui_10866a9df5f8be5b" formatted="false">"{0} {1}"</string>
+    <string name="ui_10a9f4a598e80ee7" formatted="false">"Interagieren"</string>
+    <string name="ui_10c71725a6c0bcad" formatted="false">"Mikrofon: Aufnahme gestartet"</string>
+    <string name="ui_11239872d178729a" formatted="false">"gesamt"</string>
+    <string name="ui_11715c548ed9a603" formatted="false">"DZ-App: Kamera/LT/RT 0 % | LT {0}% RT {1}% | Menu+View: Abflug\n"</string>
+    <string name="ui_11eae6d197406791" formatted="false">"Wählen Sie die Menüsprache. Die Änderung erfolgt sofort und wird auf diesem Gerät gespeichert. Die Sprache der Spiele wird separat in den Sitzungsoptionen eingestellt."</string>
+    <string name="ui_124cfe273495ea3d" formatted="false">"\n\nDer Android-Dongle und der Treiber müssen Vibration bieten. Wenn Sie den Controller-Modus auf XInput ändern, kann sich die Unterstützung ändern. Die App ändert die Firmware nicht."</string>
+    <string name="ui_126169d397f54a6a" formatted="false">"Markieren Sie die Tasten, die gleichzeitig gedrückt werden müssen. Übernehmen bestätigt die Kombination im Editor."</string>
+    <string name="ui_12ce320925daa43d" formatted="false">"WEITERSPIELEN"</string>
+    <string name="ui_13607cf86dd0cd21" formatted="false">"ICE-Verbindung fehlgeschlagen"</string>
+    <string name="ui_139cc249cd8ab25d" formatted="false">"Generieren Sie Ihren Login-Code…"</string>
+    <string name="ui_13a72daec9032012" formatted="false">"Während Sie LB gedrückt halten"</string>
+    <string name="ui_14835c83f4a3a62d" formatted="false">"Bei 0 % bleibt das Originalbild erhalten. Wird neben vorhandenen Filtern angewendet, einschließlich des FSR."</string>
+    <string name="ui_148b35103d77bd4f" formatted="false">"Anteil: {0} | Standardschärfe: {1}% | Sättigung: {2}% | Helligkeit: {3}% | Kontrast: {4}% | Präsentation: bis {5} FPS | AiPQ: nicht durch die App überprüfbar\n"</string>
+    <string name="ui_1538cbf237776afb" formatted="false">"Fehler bei der sicheren Verbindung"</string>
+    <string name="ui_155487355b5495ca" formatted="false">"Bilder"</string>
+    <string name="ui_1576aa44257d3798" formatted="false">"Empfang des Videos"</string>
+    <string name="ui_15cf9ee6a4ebeb02" formatted="false">"Oberfläche hat {0}x{1} nicht bestätigt; Beibehaltung des Standardmaßstabs"</string>
+    <string name="ui_15da365df4e752ab" formatted="false">"Die Diagnose konnte auf diesem Gerät nicht gespeichert werden."</string>
+    <string name="ui_164ee63a2378f434" formatted="false">"Mikrofon: stumm; Senden pausiert"</string>
+    <string name="ui_166a16e88276e61b" formatted="false">", Favorit"</string>
+    <string name="ui_1692e0b849066c08" formatted="false">"Wählen Sie das Spiel aus, um seine Verfügbarkeit zu prüfen, bevor Sie es zu Ihren Favoriten hinzufügen."</string>
+    <string name="ui_181c5dfa3b30b3fa" formatted="false">" (Anfrage {0})"</string>
+    <string name="ui_182c8cbab96988ee" formatted="false">"Gesten"</string>
+    <string name="ui_185e5156066b1d9a" formatted="false">"Ein anderes Netzwerk"</string>
+    <string name="ui_18d1dc03989bfdb3" formatted="false">"Region: {0}"</string>
+    <string name="ui_18f6e83c63ccb23a" formatted="false">"VORBEREITEN SIE IHR SPIEL"</string>
+    <string name="ui_19ad4d1d326b4959" formatted="false">"{0} • {1}\nVon Android ausgesetzte Vibration: {2}"</string>
+    <string name="ui_19d3d24112a7096d" formatted="false">"Das HUD kann auf diesem Gerät nicht gespeichert werden."</string>
+    <string name="ui_1a757df92a3d1ed5" formatted="false">"Richtige Sensibilität"</string>
+    <string name="ui_1a83cde6a9686660" formatted="false">"AMD FSR 1.0.2: angefordert; warte auf Video"</string>
+    <string name="ui_1a869f846de955ac" formatted="false">"Logo xCLOUD"</string>
+    <string name="ui_1adb254c868d66b5" formatted="false">"Aktiviert – wird geöffnet, wenn das Spiel beendet wird"</string>
+    <string name="ui_1b0fd79f3f688e61" formatted="false">"Sie können mit B oder Zurück abbrechen."</string>
+    <string name="ui_1b9635cedf51d570" formatted="false">"Zugriff per Handy"</string>
+    <string name="ui_1bb648eca3d0a17c" formatted="false">"Oberfläche {0} → Fenster {1}x{2} | Android-Ausgabe: {3}\n"</string>
+    <string name="ui_1bd516ba76b6bec4" formatted="false">"Lupfer"</string>
+    <string name="ui_1bed6eca2f3d2df4" formatted="false">"Für „{0}“ wurden keine Treffer gefunden.\nX, um erneut zu suchen."</string>
+    <string name="ui_1bfd08329378ce3b" formatted="false">"Verwenden Sie Ihr Mobiltelefon, um Ihr Konto zu verbinden."</string>
+    <string name="ui_1c042c6d4fcb67de" formatted="false">"für HUD deaktiviert"</string>
+    <string name="ui_1ceb820c525c1311" formatted="false">"Testen Sie über Android"</string>
+    <string name="ui_1d28145c262b0863" formatted="false">"Fähigkeit"</string>
+    <string name="ui_1d44ee5f40b2bcfd" formatted="false">"Helligkeit: {0}%"</string>
+    <string name="ui_1df117eddd08bb89" formatted="false">"Analoges Rennen"</string>
+    <string name="ui_1e62d8b4bb80e1b9" formatted="false">"Wählen Sie die Farben der Menüs, des Katalogs und der Fenster. Grün ist die Standardeinstellung. Die Auswahl wird auf diesem Gerät gespeichert, sofort angewendet und verändert die Farben des Spiels nicht."</string>
+    <string name="ui_1eb6d17388ac788c" formatted="false">"Kein USB-Gerät von Android aufgelistet."</string>
+    <string name="ui_1eed183bf1eb2f09" formatted="false">"Zurückspulen"</string>
+    <string name="ui_1f6b3d376df4294d" formatted="false">"Im Fernsehen verwendet das Spiel einen physischen Controller. Auf Mobilgeräten priorisiert Automatic die native Berührung in kompatiblen Spielen und das HUD in anderen. Exklusiv – der virtuelle Controller erzwingt das HUD. Gültig im nächsten Spiel."</string>
+    <string name="ui_20e6627eb0692212" formatted="false">"{0} SPIELE"</string>
+    <string name="ui_20e935e179853823" formatted="false">"Das SDK hat kein H.264-Angebot generiert, das mit dem ausgewählten Profil kompatibel ist"</string>
+    <string name="ui_212b6b7b0d29c4c6" formatted="false">"Opazität"</string>
+    <string name="ui_215b6bd084220c04" formatted="false">"Eine geringere Verzögerung reduziert die Puffer. Adaptiv ermöglicht mehr Spielraum für das Netzwerk. Die Kompatibilität wählt 720p, fordert bis zu 6 Mbps in Auto an, priorisiert H.264 Baseline und zeigt bis zu 30 Bilder/s an. Die Dekodierung hängt immer noch vom empfangenen Stream ab. Gilt für das nächste Spiel."</string>
+    <string name="ui_226a50accaaf49b4" formatted="false">"Widerstandsempfindlichkeit: {0}%"</string>
+    <string name="ui_232234ff7189cc5e" formatted="false">"Latenz RTT"</string>
+    <string name="ui_23591ccac3b43411" formatted="false">"Die offizielle Galerie hat keine Spiele in dieser Region zurückgegeben."</string>
+    <string name="ui_23c4aad78636750d" formatted="false">"{0}%{1}"</string>
+    <string name="ui_23eb724140170539" formatted="false">"Audioverstärkung: {0}%"</string>
+    <string name="ui_2450040316f27ba1" formatted="false">"Anleitung zu Gesten und Modi"</string>
+    <string name="ui_2472c6d12770574a" formatted="false">"Grund für die Schließung: {0}\n"</string>
+    <string name="ui_24a9373e8e720a68" formatted="false">"Maximale Bitrate"</string>
+    <string name="ui_252f2ee920a16419" formatted="false">"aktiv"</string>
+    <string name="ui_25397a53f2ee9d3e" formatted="false">"Xbox-Controller"</string>
+    <string name="ui_25c27316580b7dec" formatted="false">"Ungültiges Produkt in der offiziellen Galerie; den Katalog aktualisieren."</string>
+    <string name="ui_262193abdb9a8260" formatted="false">"Passt die Drag-Reaktion im HUD an. Die maximale Drehgeschwindigkeit hängt auch von der im Spiel eingestellten Controller-Empfindlichkeit ab."</string>
+    <string name="ui_262393acfaff6b4f" formatted="false">"März −"</string>
+    <string name="ui_267edaa6bd49c2dc" formatted="false">"Katalog wird geladen…"</string>
+    <string name="ui_26a8b63dd399e5fe" formatted="false">"Game Pass-Spiele können nicht bestätigt werden.\nAktualisieren Sie den Katalog in den Einstellungen."</string>
+    <string name="ui_26f6986d29484edb" formatted="false">"Bildratenschutz: {0} FSR-Zeichnungen/s durch {1}s; Standardmaßstab in diesem Match"</string>
+    <string name="ui_2793dbcc6f49bf3a" formatted="false">"Das Mikrofon ist in dieser Sitzung deaktiviert. Aktivieren Sie Audio und Mikrofon vor Ihrem nächsten Spiel."</string>
+    <string name="ui_2847ddf190a84744" formatted="false">"Gültig im nächsten Spiel."</string>
+    <string name="ui_2848955efd7478c1" formatted="false">"EINSTELLUNGEN"</string>
+    <string name="ui_28890e6bdaf9cc28" formatted="false">"Deine Spiele. Auf Ihrem Bildschirm."</string>
+    <string name="ui_294c831135f04db1" formatted="false">"startet außerhalb des Videos {0}; ignorierte Kontakte {1}; menu {2}; "</string>
+    <string name="ui_29aea3a73269d78a" formatted="false">"VERBINDUNG"</string>
+    <string name="ui_2a791bdb998c27a1" formatted="false">"Schätzung vor {0} aktualisiert. Die Zeit kann variieren."</string>
+    <string name="ui_2ad646b0e7e0e12a" formatted="false">"Passt den emulierten rechten Analogstick an. Nutzen Sie im nativen Modus die eigene Empfindlichkeit des Spiels. Gültig im nächsten Spiel."</string>
+    <string name="ui_2af1d168c2064da9" formatted="false">"deaktiviert"</string>
+    <string name="ui_2b17def9c2e690c9" formatted="false">"Bearbeiten Sie Position, Größe und Aktionen"</string>
+    <string name="ui_2c42f42f33a12558" formatted="false">"Mikrofon aktivieren"</string>
+    <string name="ui_2c6d80c5ed08e17f" formatted="false">"Natives Upscaling"</string>
+    <string name="ui_2c6da1d4dddf6065" formatted="false">"Netzwerkpräferenz"</string>
+    <string name="ui_2ca6c3d2dbe986f6" formatted="false">"Nur virtueller Controller"</string>
+    <string name="ui_2cdf67ff75149d68" formatted="false">"Rennen – Standard"</string>
+    <string name="ui_2d023dea2a9d9379" formatted="false">"Ausgehen"</string>
+    <string name="ui_2d5bc5113ae0ddb9" formatted="false">"Angeforderte Verstärkung: {0}% • Angewandt: {1}% • Adaptive Spitzenreduzierung: {2}"</string>
+    <string name="ui_2d95ceb7882c2a50" formatted="false">"Angeforderter Codec: {0} | {1}\n"</string>
+    <string name="ui_2df03869741616c7" formatted="false">"AMD FSR: {0}"</string>
+    <string name="ui_2e4aaf05df1cbfb3" formatted="false">"Extra"</string>
+    <string name="ui_2e4e5aceedd4d2e7" formatted="false">"Warten"</string>
+    <string name="ui_2eab6a8f46701077" formatted="false">"Ausweichen"</string>
+    <string name="ui_2ec23126760fc5ad" formatted="false">"Platinsilber"</string>
+    <string name="ui_2f3069552c48aa40" formatted="false">"Fehler vom Decoder gemeldet"</string>
+    <string name="ui_2f3aedca700af8d5" formatted="false">"Mikrofon: Aufnahme von Android abgelehnt; stumm"</string>
+    <string name="ui_2f59ff1c404d1a1c" formatted="false">"in dieser Version des Berichts nicht erfasst"</string>
+    <string name="ui_2fab0c9bbaa45978" formatted="false">"Aktion: {0}"</string>
+    <string name="ui_3018c814b3eade1f" formatted="false">"März +"</string>
+    <string name="ui_30608d134be11507" formatted="false">"Layout: {0}"</string>
+    <string name="ui_30feb8278a45f552" formatted="false">"{0}: Durchschnitt {1} | min. {2} | Spitze {3} {4}\n"</string>
+    <string name="ui_3119ed950dc7cb32" formatted="false">"Beim Eingangskanal kam es zu einer Überlastung. Vergleichen Sie die Verbindungsstabilität."</string>
+    <string name="ui_312d7635e19fc07c" formatted="false">"xCLOUD Diagnose"</string>
+    <string name="ui_313097aa9a44ecf7" formatted="false">"Videolayout: {0} | Berechnete Fläche: {1}x{2} | Renderer-Frame: {3}x{4}\n"</string>
+    <string name="ui_3248572c5b6c1107" formatted="false">"Granate"</string>
+    <string name="ui_3332b8820c058240" formatted="false">"\n{0}\n{1} • angekündigter ChatStream: {2} • gesendetes Audio: {3} B"</string>
+    <string name="ui_334d13453041f240" formatted="false">"Sitzung fehlgeschlagen"</string>
+    <string name="ui_334d1bd8efe38a97" formatted="false">"NEUEN CODE ERSTELLEN"</string>
+    <string name="ui_33569f077d268758" formatted="false">"Übertragungsfehler"</string>
+    <string name="ui_33aa74c990133347" formatted="false">"AMD FidelityFX Super Resolution"</string>
+    <string name="ui_34189d7d4bc30aea" formatted="false">"Vulkanrot"</string>
+    <string name="ui_349a1e5b5ad05003" formatted="false">"Sitzungsstatus Xbox"</string>
+    <string name="ui_35ba73e089626c8e" formatted="false">"Das Muster behält den üblichen H.264-Handel bei. Light bietet nur Baseline an, fordert 720p und bis zu 6 Mbps auf Auto. Die manuelle Startobergrenze kann dieses Budget ersetzen. Es handelt sich um ein H.264-Profil, es gibt keine Gewinngarantie, wenn das Spiel bereits Baseline verwendet. Die empfangene Auflösung und Bitrate hängen vom Dienst ab. Kompatibilität verwendet auch Baseline. Gilt für das nächste Spiel."</string>
+    <string name="ui_35bb70353b8e6473" formatted="false">"Finesse-Schuss"</string>
+    <string name="ui_36164ad19a82b356" formatted="false">"Aktuelle Ergänzungen sind derzeit nicht verfügbar.\nDie Spiele verbleiben auf der Registerkarte „Alle Spiele“."</string>
+    <string name="ui_368b2b2e7200770e" formatted="false">"Automatisch • {0}"</string>
+    <string name="ui_377054dce167ab0e" formatted="false">"Automatisch – Gerät und Spiel erkennen"</string>
+    <string name="ui_3836b5a9a3deca64" formatted="false">"Maus und Tastatur"</string>
+    <string name="ui_38e8ff046e8a4a9e" formatted="false">"Fehler HTTP-Antwort"</string>
+    <string name="ui_390eb77b9e11d082" formatted="false">"Unbekannte Quelle"</string>
+    <string name="ui_3957f59f76b9013c" formatted="false">"Controller-Kalibrierung und Neuzuordnung"</string>
+    <string name="ui_395adc62ab03e0a6" formatted="false">"EMPFANG DES BILDES"</string>
+    <string name="ui_3980046624a3f6c8" formatted="false">"Geschätzter Index: {0}/100 • {1}\n\n"</string>
+    <string name="ui_39aa7e5f1a46a860" formatted="false">"Mikrofon"</string>
+    <string name="ui_39d5684bfea642b6" formatted="false">"Der Fernseher hat die Spielverknüpfung nicht erstellt."</string>
+    <string name="ui_39dcf1cbeb5adbd0" formatted="false">"Kopieren"</string>
+    <string name="ui_3a67eba55d6fcdfb" formatted="false">"→ Richtig"</string>
+    <string name="ui_3a74acd87ad821ba" formatted="false">"EA SPORTS FC – Verteidigung"</string>
+    <string name="ui_3b0428dedf9ea854" formatted="false">"Verlust"</string>
+    <string name="ui_3b23327d8d0c923d" formatted="false">"Dekodierung"</string>
+    <string name="ui_3b4f4c207983e247" formatted="false">"Die Originalfarben bleiben zu 100 % erhalten. Höhere Werte intensivieren die Farben; Bei 0 % bleibt das Bild grau."</string>
+    <string name="ui_3b5baabe54b4045f" formatted="false">"Automatische Verwaltung des Videoprofilbudgets. Eine manuelle Obergrenze ist auflösungsunabhängig. Größere Werte erfordern eine stärkere Vernetzung und können die Stabilität verschlechtern. Der Xbox entscheidet über die empfangene Bitrate. Gültig im nächsten Spiel."</string>
+    <string name="ui_3bba665be043adac" formatted="false">"Verfügbar – Stummschaltung starten"</string>
+    <string name="ui_3bbc8e45b2068390" formatted="false">"Authentifizierung erforderlich. Geben Sie den QR-Code erneut ein."</string>
+    <string name="ui_3c2811461be5b829" formatted="false">"Die Verknüpfungsvorlage enthält kein gültiges Symbol und Banner."</string>
+    <string name="ui_3c68ac114e871ac8" formatted="false">"Y nach rechts umkehren: {0}"</string>
+    <string name="ui_3c9ca841b5ad5e6f" formatted="false">"Controller und Touch-Steuerung"</string>
+    <string name="ui_3cd7a4601d9fbb2c" formatted="false">"Der Dienst hat chatStream in dieser Sitzung nicht angekündigt. Die Erfassung bleibt ausgeschaltet."</string>
+    <string name="ui_3ce2d0b17b1880b0" formatted="false">"Kein Controller angeschlossen. Stecken Sie den Dongle ein und drücken Sie einen Knopf."</string>
+    <string name="ui_3ce4d5fe1a4367a1" formatted="false">"Bildanpassungen"</string>
+    <string name="ui_3dbcda5ffe525dad" formatted="false">"xCLOUD [Android {0} | SoC: {1}] | Warten auf Sitzung"</string>
+    <string name="ui_3e43c37eb67f0ff7" formatted="false">"Standardmaßstab"</string>
+    <string name="ui_3f16c644774c196c" formatted="false">"Exzellent"</string>
+    <string name="ui_3f799bff91ffca8b" formatted="false">"Vibration: {0}-Befehle mit zugehörigem Ziel seit Öffnen der App; {1} über Android; {2} wird an USB weitergeleitet.\n"</string>
+    <string name="ui_3f95bcdb951e0e6a" formatted="false">"Richtungsabhängig →"</string>
+    <string name="ui_3fa41ffd6881476b" formatted="false">"Audioverstärkung"</string>
+    <string name="ui_40f3e2c9fdf5bf3e" formatted="false">"Teildaten"</string>
+    <string name="ui_414e7c6771bfb5c7" formatted="false">"App-Thema: {0}"</string>
+    <string name="ui_41bfa23fb3fe9d31" formatted="false">"FAVORITEN"</string>
+    <string name="ui_4242ea82be64774d" formatted="false">"Rechte tote Zone"</string>
+    <string name="ui_42992c7d3ad53072" formatted="false">"Nicht genügend Stichproben zur Berechnung des vollständigen Index. Nicht gemessene Felder werden als „n/a“ angezeigt."</string>
+    <string name="ui_42fe4324d5ee6872" formatted="false">"Verworfene WebRTC-Bilder"</string>
+    <string name="ui_43192ec0eecec6e4" formatted="false">"Emulierte Mausempfindlichkeit"</string>
+    <string name="ui_431d2cdd95977d50" formatted="false">"Übertragungsauflösung"</string>
+    <string name="ui_447aaf10738f1398" formatted="false">"Die Verknüpfung wurde erstellt, der Fernseher erteilte jedoch keine Installationserlaubnis."</string>
+    <string name="ui_44b3f5569624ba66" formatted="false">"Umdrehen"</string>
+    <string name="ui_44d1cde7bab89024" formatted="false">"Flip ←"</string>
+    <string name="ui_4533ad51a1eb993c" formatted="false">"Kalibrierung und Neuzuordnung durch Controller"</string>
+    <string name="ui_45a2fb181b2175b2" formatted="false">"Aktiviert"</string>
+    <string name="ui_462a08f2206f636c" formatted="false">"aktualisiert {0}; defekte Kontakte entsorgt {1}; letzter Controller: {2}\n{3}"</string>
+    <string name="ui_4637c7608d05cd03" formatted="false">"Dieses Spiel ist im Katalog dieses Kontos nicht verfügbar. Aktualisieren Sie den Katalog in den Einstellungen."</string>
+    <string name="ui_46dedd48c84d8e41" formatted="false">"Verbindung hergestellt. Warten auf den ersten Frame des Spiels."</string>
+    <string name="ui_47035f5bf6e7df11" formatted="false">"Sofortiger Versand ist in dieser API nicht verfügbar"</string>
+    <string name="ui_472b7cb5c787f296" formatted="false">"Fußballschema: {0}"</string>
+    <string name="ui_4750ad41b3122b74" formatted="false">"xCloud-Fehler"</string>
+    <string name="ui_478c39f86a8161d1" formatted="false">"Spielverknüpfung"</string>
+    <string name="ui_47a18fda47bdd27f" formatted="false">"AMD FSR 1.0.2: aus"</string>
+    <string name="ui_47cf330e4355aac3" formatted="false">"Übertragung dieser Engine: 8-Bit H.264, in SDR. Die Videooberfläche verwendet 8-Bit-RGB.\n\n"</string>
+    <string name="ui_48020357dd273e65" formatted="false">"Warten auf Ihre Genehmigung bei Microsoft…"</string>
+    <string name="ui_48111b2c9ff4898e" formatted="false">"Lokale Genossenschaft: {0}"</string>
+    <string name="ui_4875bd46f6938df1" formatted="false">"Gyroskop: {0}"</string>
+    <string name="ui_48a6f1b5c95c945d" formatted="false">"Xbox Sitzungswartung"</string>
+    <string name="ui_490f22e0cafe2260" formatted="false">"H.264 Baseline • 720p angefordert • Profil/Match-Zitat"</string>
+    <string name="ui_497403cfde5a4210" formatted="false">"Schärfe: {0}%"</string>
+    <string name="ui_49e7b21dec4f31de" formatted="false">"Die Verknüpfung konnte auf diesem Gerät nicht erstellt werden."</string>
+    <string name="ui_4a52c47f66c99ec4" formatted="false">"1440p – 2560×1440"</string>
+    <string name="ui_4a9889dafc31b83f" formatted="false">"Adaptiv"</string>
+    <string name="ui_4aa85902acc25d50" formatted="false">"Es gibt immer noch keine Übereinstimmung mit dem anzuzeigenden Video."</string>
+    <string name="ui_4ad9c2f74dbab613" formatted="false">"Auslöser"</string>
+    <string name="ui_4adbcf7454d6a1fe" formatted="false">"Lokale Genossenschaft"</string>
+    <string name="ui_4b05c960591853ee" formatted="false">"nicht erhalten"</string>
+    <string name="ui_4b1ac785b8de8c36" formatted="false">"RCAS passt die Schärfeintensität an; 50 % bedeuten nicht die Hälfte der Kosten von GPU. Beginnen Sie mit 50 %; 0 % schaltet die RCAS-Schärfe aus und behält EASU beim Zoomen bei. Ohne Vergrößerung und mit RCAS bei 0 % verwenden Sie den Standardfilter. Die untenstehende Standardschärfung wird verwendet, wenn FSR nicht aktiv ist."</string>
+    <string name="ui_4bfae14f85787073" formatted="false">"Angefordertes Videoprofil: {0}×{1} • {2}\nGewünschte Region: {3} | Gewünschte Sprache: {4}"</string>
+    <string name="ui_4c36ee9f3bc47001" formatted="false">"Torwart"</string>
+    <string name="ui_4c77ddc5bf055290" formatted="false">"Sprache / Language"</string>
+    <string name="ui_4c9cf78b2618b0b7" formatted="false">"Gyroskop: aus"</string>
+    <string name="ui_4d04522711e96d11" formatted="false">"Kombinierte Gesten und Befehle"</string>
+    <string name="ui_4d9fc216d26f7fa6" formatted="false">"Netzwerk: {0}\n"</string>
+    <string name="ui_4db70b3589ba6f62" formatted="false">"Der Steuerkanal wurde geschlossen"</string>
+    <string name="ui_4ec7a4faa45c612e" formatted="false">"Verknüpfung erstellen"</string>
+    <string name="ui_4f3090753c8d2fdb" formatted="false">"Lass uns spielen"</string>
+    <string name="ui_4f58650d467e195f" formatted="false">"{0}-SPIELE • GAME PASS wird aktualisiert…"</string>
+    <string name="ui_504fb1a48efc40eb" formatted="false">"Bildschirmmodus: Wird von Android nicht gemeldet"</string>
+    <string name="ui_5052c95dbb7a4d8d" formatted="false">"Ihre Sitzung wird wiederhergestellt…"</string>
+    <string name="ui_507a9a8be3d145a8" formatted="false">"Ja"</string>
+    <string name="ui_510c8504b7666c02" formatted="false">"Bildschirm: HDR10 von Android nicht angekündigt."</string>
+    <string name="ui_5120d6e6ce58a9f2" formatted="false">"Audio: Medien/Spiel • Angefordertes Stereo • Medienlautstärke {0} • Stummschaltung: {1} • Fokus: {2} • Fokusverstärkung {3}% • Wiedergabe {4}"</string>
+    <string name="ui_51807ae73e427a4e" formatted="false">"Netzwerkverbindungsfehler"</string>
+    <string name="ui_519384df60862471" formatted="false">"WebRTC Puffernetzwerk-Minimum"</string>
+    <string name="ui_519db67915a19f2b" formatted="false">"Spielverfügbarkeit in der Xbox Cloud prüfen…"</string>
+    <string name="ui_51ceb32461a802b0" formatted="false">"LL-Codec: Warten auf Video"</string>
+    <string name="ui_523a44f3354defec" formatted="false">"Die Prognose kann sich ändern. Wiederholungslimit: {0}."</string>
+    <string name="ui_52db9735e5787eb4" formatted="false">"Schließen Sie einen Controller an und drücken Sie eine Taste, damit Android ihn identifiziert."</string>
+    <string name="ui_5320b4ddb576ee67" formatted="false">"als aktiv markiert"</string>
+    <string name="ui_54046e97b2af0d03" formatted="false">"AMD FSR 1.0.2: Rückkehr zum Standardmaßstab – {0}"</string>
+    <string name="ui_5407798aed2c5f8e" formatted="false">"Eingabe Xbox: Controller/HUD"</string>
+    <string name="ui_5462b1a62e38d020" formatted="false">"Verknüpfung installieren"</string>
+    <string name="ui_547895e7e49f46e2" formatted="false">"Xbox hat noch keine Warteschätzung abgegeben."</string>
+    <string name="ui_5495e90894e99c50" formatted="false">"Sitzungswartung: {0}-Bestätigungen; {1}-Fehler; "</string>
+    <string name="ui_564483fdaa0be6c5" formatted="false">"Das Netzwerk ist möglicherweise nicht verfügbar oder wird noch initialisiert. Überprüfen Sie die Verbindung und versuchen Sie es erneut.\n{0}"</string>
+    <string name="ui_5667ddc7bc6e6282" formatted="false">"Controller-Profile"</string>
+    <string name="ui_567d3c6715a99815" formatted="false">"Es wurde ein Video ohne Bildfortschritt empfangen. Vergleichen Sie Decoder, Auflösung, Filter und Paketverluste."</string>
+    <string name="ui_56991385beba9fac" formatted="false">"Native Hochskalierung: {0}"</string>
+    <string name="ui_5724963f98d0fef6" formatted="false">"Spielen Sie mit Berührung"</string>
+    <string name="ui_572b75effcf75068" formatted="false">"Anforderungsbildschirmmodus: {0} | aktuelle physische: {1} | Der App gemeldete Rate: {2}Hz\n"</string>
+    <string name="ui_577f2fb9fa976da6" formatted="false">"Aktiviert kombiniert Zielen und Schießen mit den beiden Schusstasten. Deaktiviert sorgt dafür, dass das Schießen vom Zielen getrennt bleibt. Übernehmen stellt die Aktionen dieser Schaltflächen wieder her und behält ihre Positionen bei."</string>
+    <string name="ui_57ae557d5235ddcc" formatted="false">"Fehler beim Senden von Steuerelementen/Konfiguration"</string>
+    <string name="ui_58580f4aca95c13c" formatted="false">"Der Launcher hat die Anfrage nicht angenommen."</string>
+    <string name="ui_586c88220c070b1a" formatted="false">"Mikrofon: Aktivierung des Encoders verweigert; stumm"</string>
+    <string name="ui_58ae522829aae08e" formatted="false">"Original behält das empfangene Format bei und verwendet die größte Größe, die in das Fenster passt. Ein 16:9-Video hinterlässt möglicherweise Seitenleisten auf Ihrem Mobiltelefon. Einige Spiele mit nativem Touch bieten ein breiteres Video. Durch das Dehnen werden Füllungen ohne Zuschneiden ausgefüllt, das Bild wird jedoch verzerrt. Zoom füllt ohne Verformung aus und beschneidet die Kanten. Auch feste Proportionen können sich verformen. Verwenden Sie ↑/↓ oder wischen Sie, um alle Optionen anzuzeigen. Die Änderung erfolgt sofort während des Spiels und wird für zukünftige Spiele gespeichert."</string>
+    <string name="ui_58b3b5116d5572a2" formatted="false">"Bitrate, Region und Sprache pro Spiel"</string>
+    <string name="ui_58b938545dce3978" formatted="false">"Umdrehen →"</string>
+    <string name="ui_58cb5d0c620f3ad0" formatted="false">"Größe der Steuerelemente"</string>
+    <string name="ui_595dcec8fc90991d" formatted="false">"Eingabe Xbox: native Maus/Tastatur, ausgehandelte Version {0}"</string>
+    <string name="ui_596730c4eb46c6f1" formatted="false">"Ihre letzten Xbox Cloud Gaming-Spiele werden hier angezeigt."</string>
+    <string name="ui_596903e9ec975722" formatted="false">"Der Code ist abgelaufen. Generieren Sie einen neuen Code, um fortzufahren."</string>
+    <string name="ui_59dc926760d04aea" formatted="false">"Zurück"</string>
+    <string name="ui_5a15decff9c895af" formatted="false">"Die Verbindung kann derzeit nicht wiederhergestellt werden. Ihr gespeichertes Login bleibt erhalten."</string>
+    <string name="ui_5ac0d2258a8ba03f" formatted="false">"Automatisch hält IPv4/IPv6 verfügbar und prüft Routen während der Abfahrt. WebRTC berücksichtigt Konnektivität, Empfang und RTT und verwaltet Backup-Alternativen. Die IPv4/IPv6-Einstellungen geben bis zu 750 anfängliche ms an die ausgewählte Familie und bewahren die anderen. Die Route hängt auch vom Server ab; Es gibt keine Garantie für den niedrigsten Ping. Gültig im nächsten Spiel."</string>
+    <string name="ui_5ae68007466819b0" formatted="false">"16:9 – Standard"</string>
+    <string name="ui_5af3de070991f5ab" formatted="false">"Schaltflächen neu zuordnen"</string>
+    <string name="ui_5ba350d83209ffab" formatted="false">"Finden Sie ein Spiel anhand des Namens."</string>
+    <string name="ui_5baaabe3ca0e3e5b" formatted="false">"Anfrage an Launcher gesendet. Bestätigen Sie auf dem Startbildschirm."</string>
+    <string name="ui_5c0d9d1247ade676" formatted="false">"Native Touch: {0}; Eingaberaum: {1}; virtueller Steckplatz 0: {2}"</string>
+    <string name="ui_5c2de6412ff6a812" formatted="false">"Controller: Warteschlange {0} B | maximale lokale Verzögerung {1} ms | zusammengewachsen {2} | Wartekanal {3}\n"</string>
+    <string name="ui_5c5df1e844450eee" formatted="false">"Spiele werden von Game Pass geladen…"</string>
+    <string name="ui_5c87f1038115e48d" formatted="false">"Laden von Informationen aus der offiziellen Liste. Bestätigt nicht den Besitz; erfordert digitale Einkaufs- und Servicebedingungen."</string>
+    <string name="ui_5cf2eabe2f7ead4e" formatted="false">"Schnelle Antwort"</string>
+    <string name="ui_5cfd306d0c680720" formatted="false">"Industrieorange"</string>
+    <string name="ui_5d3015b63d8af4f4" formatted="false">"Tisch"</string>
+    <string name="ui_5d6bd99ad57d78a7" formatted="false">"Route ICE: Auswahl noch nicht durch WebRTC informiert"</string>
+    <string name="ui_5da6b119769c1053" formatted="false">"Pass"</string>
+    <string name="ui_5e192548c7bcc788" formatted="false">"Der Verlauf von Xbox kann nicht überprüft werden.\nBitte aktualisieren Sie den Katalog in den Einstellungen, um es erneut zu versuchen."</string>
+    <string name="ui_5e704f128723d932" formatted="false">"Offizielle Xbox Cloud Gaming Gallery • Beinhaltet kostenlose Optionen; Der Zugriff hängt von den Konto- und Servicebedingungen ab."</string>
+    <string name="ui_5e9122e22aeea829" formatted="false">"Native Maus und Tastatur – unterstützte Spiele"</string>
+    <string name="ui_5ebd45db6acabfbc" formatted="false">"Der Kanal war auf dem Startbildschirm nicht sichtbar. Verwenden Sie die Verknüpfung „Installieren“ auf dem Fernseher: Das Spiel wird in Anwendungen angezeigt, auch auf Google TV."</string>
+    <string name="ui_5f2f459cff03b9b5" formatted="false">"Automatisch – IPv4/IPv6 während des Spiels"</string>
+    <string name="ui_5f55edf900896012" formatted="false">"Suchen"</string>
+    <string name="ui_5fc03d596bcf540c" formatted="false">" - deaktiviert"</string>
+    <string name="ui_5fc7e20f01a4a3ed" formatted="false">"Aktiviert"</string>
+    <string name="ui_60193beabdba3ac4" formatted="false">"Alternative – X-Kick"</string>
+    <string name="ui_6021b0f36cb336f1" formatted="false">"Benutzen Sie in diesem Spiel den virtuellen Controller"</string>
+    <string name="ui_6035eadf7ad73a21" formatted="false">"Hocken/rutschen"</string>
+    <string name="ui_60533ba9536c7060" formatted="false">"kein aktives Video"</string>
+    <string name="ui_60956010e192ec09" formatted="false">"Dieses Spiel warb nicht für native Maus und Tastatur. Verwenden Sie eine Emulation oder einen Controller."</string>
+    <string name="ui_60d41a2db12a0294" formatted="false">"Angeforderte FSR-Ausgabe: {0} | Angeforderter Puffer: {1}\n"</string>
+    <string name="ui_6127593882e201a2" formatted="false">"Schema {0}; "</string>
+    <string name="ui_61435946c25099f8" formatted="false">"Lokale Trittfrequenz FSR: {0} (misst nicht Spiel/Bildschirm GPU oder FPS)\n"</string>
+    <string name="ui_61cc7d07af524282" formatted="false">"Grätsche"</string>
+    <string name="ui_61e168bce1c2a966" formatted="false">"ABDECKUNGEN NICHT VERFÜGBAR. START → KATALOG AKTUALISIEREN."</string>
+    <string name="ui_62b866eb9e9df7d4" formatted="false">"Gyroskop: sensorloses Gerät"</string>
+    <string name="ui_62e41bce3d084026" formatted="false">"Testen Sie USB/XInput — {0}"</string>
+    <string name="ui_633366eb5029868a" formatted="false">"Bewerbung geschlossen"</string>
+    <string name="ui_63a8d72dce1a6d39" formatted="false">"Taktisch"</string>
+    <string name="ui_63e2bbaf1c924391" formatted="false">"Weitermachen"</string>
+    <string name="ui_651cd3eade26bd7c" formatted="false">"Kontrast: {0}%"</string>
+    <string name="ui_65f4d02ea718ba50" formatted="false">"Das Bild kam nach 30 Sekunden nicht zurück. Durch die Wiederherstellung des Videos bleibt das Spiel offen. Die Rückkehr zum Katalog beendet die Sitzung."</string>
+    <string name="ui_6624c0d31888ecac" formatted="false">"Bewegen"</string>
+    <string name="ui_66a2c683ac7c3e27" formatted="false">"TEILWEISE"</string>
+    <string name="ui_66d33467591ba3dc" formatted="false">"Vorbereiten Ihres Katalogs."</string>
+    <string name="ui_66d46ce399af3308" formatted="false">"Es wird eine kleine Anwendung installiert, die dieses Spiel auf dem xCLOUD öffnet. Suchen Sie dann in den Anwendungen nach dem Spiel. Fügen Sie es auf Google TV vom Startbildschirm aus zur Zeile mit Ihren Lieblings-Apps hinzu."</string>
+    <string name="ui_67343c55f838d078" formatted="false">"VERTEIDIGUNG"</string>
+    <string name="ui_676b6063ae4c96d9" formatted="false">"{0}  {1}"</string>
+    <string name="ui_67b550f6dfc6e20d" formatted="false">"Die offizielle Liste der kompatiblen gekauften Spiele wird geladen…"</string>
+    <string name="ui_6856b67e9e111e7d" formatted="false">"Über {0}"</string>
+    <string name="ui_68a0db34478f420a" formatted="false">"ANGRIFF"</string>
+    <string name="ui_68a0ecfad3311a2b" formatted="false">"Emulierte Mausempfindlichkeit: {0}%"</string>
+    <string name="ui_68a1a961130ed783" formatted="false">"Sitzungsstandardwerte"</string>
+    <string name="ui_68d82a5111f30acc" formatted="false">"Video wird wiederhergestellt: Anzeigeoberfläche wird neu erstellt…"</string>
+    <string name="ui_6914f8a347d4a25c" formatted="false">"Anschließen von Audio, Video und Controller an den Xbox."</string>
+    <string name="ui_693c263b104df9e9" formatted="false">"Tasten kombinieren"</string>
+    <string name="ui_6960e07fabc8e3a9" formatted="false">"Verbindung nicht möglich: {0}"</string>
+    <string name="ui_69d920c63dd1a626" formatted="false">"Video-Codec"</string>
+    <string name="ui_6a38ddba7b1ce307" formatted="false">"Mikrofon: Verhandlung nicht abgeschlossen; stumm"</string>
+    <string name="ui_6a58eca53330b508" formatted="false">"A WÄHLEN B ZURÜCK"</string>
+    <string name="ui_6a6f834e8503b318" formatted="false">"\n\nBeispielwerte verfügbar. FPS vom Decoder ist nicht FPS vom Spiel oder vom Bildschirm. Beobachteter Puffer, WebRTC-Ziel und Netzwerkminimum sind unterschiedliche Messungen; Die Playout-Anfrage garantiert nicht den beobachteten Wert. Die Dekodierung umfasst die Codec-Pipeline, nicht nur die Verarbeitung. Fügen Sie diese Messungen nicht hinzu, um den Input-zu-Photon abzuschätzen. WebRTC-Zähler umfassen möglicherweise nicht den gesamten Verbindungsverkehr. Der Index ist eine lokale Schätzung, kein Geschwindigkeitstest. Pausen werden vom Watchdog beobachtet, nicht durch die Erfassung jedes Frames."</string>
+    <string name="ui_6aa4511fc00e6c8a" formatted="false">"Einstellungen › {0}"</string>
+    <string name="ui_6b3a73ce76d187ae" formatted="false">"Diagnose nach dem Spiel: {0}"</string>
+    <string name="ui_6bb02cbf4e61a203" formatted="false">"{0} SPIELE • VERLAUF AKTUALISIEREN…"</string>
+    <string name="ui_6bf330c92a591795" formatted="false">"Druck"</string>
+    <string name="ui_6c5cc18b8f198ece" formatted="false">"Verlust"</string>
+    <string name="ui_6c6adaaff42d504c" formatted="false">"Controller-Layout"</string>
+    <string name="ui_6ccce0bc37d3c34e" formatted="false">"Format nicht verfügbar; auf 100 % begrenzt"</string>
+    <string name="ui_6d69c920b76df7b0" formatted="false">"Schuss"</string>
+    <string name="ui_6e1c002bff40ba7b" formatted="false">"Oberflächenskala: {0}; Bild an das Fenster angepasst | {1} FPS Inhalt an die Oberfläche gemeldet: {2} | Minimale Nachbearbeitung: {3}; Erklärte Android-Unterstützung: {4}\n"</string>
+    <string name="ui_6e3a7123b1149629" formatted="false">"Gut"</string>
+    <string name="ui_6e61d9ceb42e584a" formatted="false">"Spiel"</string>
+    <string name="ui_6e82ce7109479e3d" formatted="false">"Handbremse"</string>
+    <string name="ui_6e91752edf51a9a4" formatted="false">"Fertig"</string>
+    <string name="ui_6eeaf16b99c69f98" formatted="false">"Details kopieren"</string>
+    <string name="ui_6f0f039d818b877c" formatted="false">"Dehnen – den Bildschirm ausfüllen"</string>
+    <string name="ui_6f95371be31c293e" formatted="false">"Zweikampf"</string>
+    <string name="ui_6f9ead072155818b" formatted="false">"Zielen"</string>
+    <string name="ui_6fa65c8b1d86be1a" formatted="false">"Powerschuss"</string>
+    <string name="ui_6fc11b786d442bc3" formatted="false">"Benutzen/neu laden"</string>
+    <string name="ui_708da79e6a0a6a1a" formatted="false">"Warten Sie, bis die Steuerelemente verbunden sind, um das HUD zu aktivieren."</string>
+    <string name="ui_7091e08252b19a9f" formatted="false">"Route ICE: Warten auf Statistiken"</string>
+    <string name="ui_70b2bc30a20bd443" formatted="false">"Die Sitzung endete mit einem Misserfolg. Der Index fasst die beobachteten Stichproben zusammen und schließt eine Unterbrechung am Ende des Spiels nicht aus."</string>
+    <string name="ui_715e6e852db4669e" formatted="false">"Steuerelemente › Physischer Controller"</string>
+    <string name="ui_7228b14b7339d276" formatted="false">"Standard H.264"</string>
+    <string name="ui_725773cdf3a0c425" formatted="false">"Grün — Standard"</string>
+    <string name="ui_728ce9e009f430f8" formatted="false">"Videopräsentation"</string>
+    <string name="ui_729a44abc3854402" formatted="false">" • Servicecode: {0}"</string>
+    <string name="ui_729ddc2d6a14b63c" formatted="false">"Verstrichene Zeit"</string>
+    <string name="ui_72c062443055110e" formatted="false">"SUCHE: {0}  •  {1} SPIELE"</string>
+    <string name="ui_730c8f35817cbf13" formatted="false">"Übereinstimmung • Menu + View"</string>
+    <string name="ui_7347fdd20909d059" formatted="false">"Stellen Sie diesen Controller wieder her"</string>
+    <string name="ui_73ec6d749ebb1765" formatted="false">"Bitrate, Region und Sprache dieses Spiels"</string>
+    <string name="ui_74397518ecd59cbc" formatted="false">"SDP-Angebot erstellt: {0} | POST bestätigt: {1}\n"</string>
+    <string name="ui_743ece07f975ba41" formatted="false">"Linke Sensibilität"</string>
+    <string name="ui_7441c03b2f6c21aa" formatted="false">"Die Verknüpfungssignatur konnte nicht validiert werden. Versuchen Sie es erneut."</string>
+    <string name="ui_7490e4a94af107e2" formatted="false">" • Controller: {0}"</string>
+    <string name="ui_74c70bb3042fd0b1" formatted="false">"Geringe Latenz"</string>
+    <string name="ui_757c830e53da57d8" formatted="false">"Bibliothek und Konto"</string>
+    <string name="ui_75c4bfe48d33e19e" formatted="false">"Beratung…"</string>
+    <string name="ui_7632ae27575e3ad6" formatted="false">"\n\nDer Test akzeptiert nur Xbox 360/XInput (ff/5d/01). HID, Xbox One und andere Protokolle erfordern eine eigene Implementierung. Eine akzeptierte Übertragung beweist nicht, dass der Motor vibrierte."</string>
+    <string name="ui_768de1111f0f42af" formatted="false">"Aktualisieren Sie Ihr Login mit dem QR-Code, um die Spiele zu verbinden."</string>
+    <string name="ui_76900e0682cc8062" formatted="false">"Deaktiviert – nur schießen"</string>
+    <string name="ui_76b0fb6ad18939ac" formatted="false">"Einstellungen"</string>
+    <string name="ui_76b720722ff9a19b" formatted="false">"Videobitrate"</string>
+    <string name="ui_76daee1631fea659" formatted="false">"NEIN"</string>
+    <string name="ui_76e1824b75a3c908" formatted="false">"keiner"</string>
+    <string name="ui_7826af008248bda6" formatted="false">"EIGENE SPIELE STREAMEN"</string>
+    <string name="ui_78adbf905929c0f6" formatted="false">"Ihre Favoriten"</string>
+    <string name="ui_791477787eca5791" formatted="false">"Verbinden Sie Ihr Microsoft-Konto, um auf Ihre Spiele zuzugreifen."</string>
+    <string name="ui_79651e7e684870d0" formatted="false">"verfügbar"</string>
+    <string name="ui_7a240c47b9aaafed" formatted="false">"Gyro-Empfindlichkeit"</string>
+    <string name="ui_7a96e3cbb12396ce" formatted="false">"Dekodierungszeit im Bereich von {0} ms bis {1} FPS. Die Pipeline kann Frames überlappen; Dies allein beweist noch keine Überlastung. Vergleichen Sie 720p und auf dem Gerät deaktivierte Filter."</string>
+    <string name="ui_7afdaf11d46f293f" formatted="false">"Bildseitenverhältnis"</string>
+    <string name="ui_7b4d92374d3bf359" formatted="false">"IHRE BIBLIOTHEK"</string>
+    <string name="ui_7b6509a9aa6c2d74" formatted="false">"Rechte Empfindlichkeit: {0}%"</string>
+    <string name="ui_7bb50f81a7f81db7" formatted="false">"Auflösung: {0}"</string>
+    <string name="ui_7bd998451d35ad13" formatted="false">"Aktives natives Video [{0}]"</string>
+    <string name="ui_7be697d4a90b3424" formatted="false">"Fußball – Standard"</string>
+    <string name="ui_7bf56c45ea80b5eb" formatted="false">"Xbox hat bestätigt, dass die Sitzung für {0}s in die Warteschlange gestellt wurde."</string>
+    <string name="ui_7cfb945aa92e9e4f" formatted="false">"Kontrast"</string>
+    <string name="ui_7d1c4b172d9e5abe" formatted="false">"Die Anmeldung konnte nicht abgeschlossen werden. {0}"</string>
+    <string name="ui_7d7155a2737ecabe" formatted="false">"LADEN VON INFORMATIONEN UND ABDECKUNGEN: {0}/{1}"</string>
+    <string name="ui_7ddd23f8251df791" formatted="false">"{0}-Symbol"</string>
+    <string name="ui_7df581cb7d119a56" formatted="false">"Video und Streaming"</string>
+    <string name="ui_7e0b3df0e4a57a89" formatted="false">"Verbundenes Konto"</string>
+    <string name="ui_7f3a4c49553afc6e" formatted="false">"Sitzungsverhandlung"</string>
+    <string name="ui_7f5fa50224d18ac3" formatted="false">"Reproduktion: {0}"</string>
+    <string name="ui_7f76d1772534348e" formatted="false">"Angriffs-HUD anzeigen"</string>
+    <string name="ui_7faa3bcd054b0e23" formatted="false">"Die Sitzung wurde geschlossen."</string>
+    <string name="ui_7fb22bed7386678e" formatted="false">"Bremse"</string>
+    <string name="ui_7fc1783485bda2bf" formatted="false">"Favoriten-Verknüpfungen"</string>
+    <string name="ui_801b999df4383400" formatted="false">"Android-Joystick-Ereignis → App: Durchschnitt {0} | min. {1} | Spitze {2} ms"</string>
+    <string name="ui_805bfea64db39921" formatted="false">"Puffer WebRTC: beobachtet {0} ms | Ziel {1} ms | Mindestnetzwerk {2} ms\n"</string>
+    <string name="ui_81bccda7a718cabd" formatted="false">"Gewünschte Sprache: {0}"</string>
+    <string name="ui_81ccdb1302afecc4" formatted="false">"Wenden Sie {0} an"</string>
+    <string name="ui_81d7338f4f5df49f" formatted="false">"Passen Sie {0} an"</string>
+    <string name="ui_8222c7e9b2afed67" formatted="false">"; letzter Fehler {0}"</string>
+    <string name="ui_8227e3d90b56a55a" formatted="false">"Mikrofon: stumm"</string>
+    <string name="ui_82fd204362ad266a" formatted="false">"ES IST IN DER WARTESCHLANGE"</string>
+    <string name="ui_8391da809dd9ca6b" formatted="false">"{0}{1}"</string>
+    <string name="ui_8396f8dc3a730105" formatted="false">"WÄHLEN"</string>
+    <string name="ui_83b1836da0c78588" formatted="false">"Deaktiviert"</string>
+    <string name="ui_83b7a65bfb29335c" formatted="false">"Offizieller Microsoft-Login-QR-Code"</string>
+    <string name="ui_83ca0cd5f7dba936" formatted="false">"Das Bild passt sich in beiden Modi unter Berücksichtigung des gewählten Seitenverhältnisses dem Fenster an. Aktivierte Eingabeaufforderungen für die Surface-Android-Skalierung; off verwendet die Renderer-Skalierung. Wenn FSR aktiv ist, verwendet es den Renderer mit der Ausgabeauflösung. Die TV-Verarbeitung wird am Fernseher selbst angepasst. Gilt für das nächste Spiel."</string>
+    <string name="ui_844c52cfd57f0757" formatted="false">"Prognose vor {0} konsultiert"</string>
+    <string name="ui_84f22e1a625e7c17" formatted="false">"{0} zu Favoriten hinzugefügt"</string>
+    <string name="ui_858ac8f652d62519" formatted="false">"Die Schätzung kann sich ändern; Es handelt sich nicht um eine garantierte Zeit."</string>
+    <string name="ui_85e9d6584577736e" formatted="false">"Der Dienst hat in einem Format außerhalb des ausgewählten H.264-Profils geantwortet"</string>
+    <string name="ui_8666d79d9ebc7140" formatted="false">"Kompatibilität – Fernseher mit geringerer Leistung"</string>
+    <string name="ui_86c4d56695aa213e" formatted="false">"Sitzungsdiagnose ({0})"</string>
+    <string name="ui_86fbfb699dd0e310" formatted="false">"DEINE SITZUNG"</string>
+    <string name="ui_879cfabd793d0157" formatted="false">"FSR-Ausgabe: {0}"</string>
+    <string name="ui_87c3860190710a08" formatted="false">"{0} PRODUKTE • TEILDATEN"</string>
+    <string name="ui_881e8bd48dc88da0" formatted="false">"Empfindlichkeit {0}%; Totzone {1}%; "</string>
+    <string name="ui_886e0210ef167b68" formatted="false">"AMD FSR 1.0.2 – experimentell"</string>
+    <string name="ui_8892d243f5537424" formatted="false">"Der ursprüngliche Kontrast bleibt zu 100 % erhalten. Extreme Werte können helle oder dunkle Details verdecken."</string>
+    <string name="ui_892188af00d5e76a" formatted="false">"Die Prognose kann sich ändern; Es ist keine Zeitgarantie."</string>
+    <string name="ui_893b96a29b56340e" formatted="false">"Verfügbar auf Game Pass"</string>
+    <string name="ui_8a88e3a86b08b2ec" formatted="false">"Bild und Anzeige"</string>
+    <string name="ui_8b5d3029ee3db112" formatted="false">"Konto wechseln"</string>
+    <string name="ui_8b8695ec9db0bfce" formatted="false">"Bildanpassungen – Schärfe, Sättigung, Helligkeit und Kontrast"</string>
+    <string name="ui_8bc4692e3412c04d" formatted="false">"Immer während des Spiels"</string>
+    <string name="ui_8c1c85b9a6670ba8" formatted="false">"sofortiger Versand angefordert (kein Warten auf Schnittstelle vsync)"</string>
+    <string name="ui_8d0f0a4a48121b78" formatted="false">"Steilpass"</string>
+    <string name="ui_8daf0c9652bbce83" formatted="false">"FPS dekodiert"</string>
+    <string name="ui_8dcf516ab73b515d" formatted="false">"ZURÜCKGEHEN"</string>
+    <string name="ui_8e6585681b74fcb7" formatted="false">"Ziehen Sie den Bewegungsstab nach oben in Laufrichtung über die Kante des Stabes hinaus. Beim Sichern wird der Ausführungsbefehl freigegeben; Wenn Sie Ihren Finger loslassen, wird die Bewegung ebenfalls zurückgesetzt. Spieloptionen definieren das Rennverhalten. Die Schaltfläche „Ausführen“ funktioniert auch per Berührung."</string>
+    <string name="ui_8ea1b4a47e8ff6fa" formatted="false">"4K – 3840×2160 (experimentell)"</string>
+    <string name="ui_8ea541b087ec2c75" formatted="false">"Fehler ohne technische Klassifizierung"</string>
+    <string name="ui_8f593701d1d0bb29" formatted="false">"Eingabe: {0} wartet | {1} konsolidierte Übergänge\n"</string>
+    <string name="ui_90b7766e2c2b1cb8" formatted="false">"Das Spiel verlassen…"</string>
+    <string name="ui_911946e859f7e597" formatted="false">"Pakete"</string>
+    <string name="ui_913d38b99bed0a3c" formatted="false">"unbestätigt"</string>
+    <string name="ui_91659ea32014744d" formatted="false">"ANSCHLUSS DES GETRIEBS"</string>
+    <string name="ui_91a83117cbba2fb1" formatted="false">"Speichert die letzte lokale Zusammenfassung. Spielstatistiken bleiben verborgen, bis Sie sie aktivieren."</string>
+    <string name="ui_91d709d706494887" formatted="false">"Kein Bildfortschritt: {0} in {1} beobachtete Episode(n)\n"</string>
+    <string name="ui_927e3af3d6f75587" formatted="false">"Warteschlange bestätigt {0}"</string>
+    <string name="ui_92b8e926c2168679" formatted="false">"Ziehen Sie die Kameraempfindlichkeit"</string>
+    <string name="ui_92bba5c8f9add126" formatted="false">"Während Sie LT gedrückt halten"</string>
+    <string name="ui_9313455e45aa2243" formatted="false">"Ja"</string>
+    <string name="ui_93534e3e8a8dccfd" formatted="false">"Menüs"</string>
+    <string name="ui_936fa7aae91087f9" formatted="false">"{0} SPIELE • OFFIZIELLE LISTE"</string>
+    <string name="ui_94670b84224ce29d" formatted="false">"Verbinden Sie Ihr Konto mit Xbox…"</string>
+    <string name="ui_952551ccad9942ba" formatted="false">"Zurück zum Katalog…"</string>
+    <string name="ui_95ceb3e6dbc1704c" formatted="false">"Spielen Sie in der Cloud mit xCLOUD"</string>
+    <string name="ui_95daf899e2a35b7d" formatted="false">"Sie haben bereits gewartet: {0}."</string>
+    <string name="ui_960127b1f234801c" formatted="false">"Offizielle Galerie ohne Header."</string>
+    <string name="ui_962e526f2fb4c866" formatted="false">"beim Schießen zielen {0}; "</string>
+    <string name="ui_964847849afda69b" formatted="false">"{0} [{1}] → {2}"</string>
+    <string name="ui_96966750f35e19c9" formatted="false">"Vorherige Kategorie, LB"</string>
+    <string name="ui_96a6b9f2b8c3d779" formatted="false">"Netzwerk und Sitzung"</string>
+    <string name="ui_96ec241ac11e3242" formatted="false">"Controller mit Maus und Tastatur emulieren"</string>
+    <string name="ui_975f261b38408189" formatted="false">"Fußball – Verteidigung"</string>
+    <string name="ui_97a9221076144318" formatted="false">"Die verfügbaren Indikatoren stellten in dieser Sammlung keinen wichtigen Alarm dar."</string>
+    <string name="ui_97ff8f05d7df6240" formatted="false">"Keine eindeutige Zuordnung zum Android-Controller; Startvibration nicht verfügbar."</string>
+    <string name="ui_9808395daf5344df" formatted="false">"Das System hat den Favoritenkanal xCLOUD autorisiert. Die Anzeige hängt vom Startbildschirm des Fernsehers ab. Um eine Direktzugriffs-App zu erstellen, verwenden Sie „TV-Verknüpfung installieren“."</string>
+    <string name="ui_988a7912b3147f0c" formatted="false">"Wir konnten diese Ausgabe keinem spielbaren Titel aus dem authentifizierten Katalog zuordnen. Dies ist kein Beweis dafür, dass Sie keinen Zugriff auf Ihr Konto/Ihre Region haben. Aktualisieren Sie den Katalog und versuchen Sie es erneut. Produkt: {0}."</string>
+    <string name="ui_98f15e53a1bd096c" formatted="false">"Standard für alle Spiele"</string>
+    <string name="ui_9934abcab76d65f1" formatted="false">" – Original"</string>
+    <string name="ui_9ae35f5f91ad2ad9" formatted="false">"Verfügbar – startet die Stummschaltung"</string>
+    <string name="ui_9b293fc455603d84" formatted="false">"Das SDK lehnte RTP-Präferenzen ab"</string>
+    <string name="ui_9b7c788c87298b87" formatted="false">"Maximale Bitrate: {0}"</string>
+    <string name="ui_9b850f6c640c8388" formatted="false">"Der Dienst antwortete ohne aktives Video"</string>
+    <string name="ui_9bc947e58b62b2fe" formatted="false">"NEIN"</string>
+    <string name="ui_9bd4d1e04ad51df3" formatted="false">"Pause"</string>
+    <string name="ui_9c01bae80b35415f" formatted="false">"Ihre Sitzung muss erneuert werden. Geben Sie den QR-Code ein, um fortzufahren."</string>
+    <string name="ui_9c8bc8bbd1e7fa45" formatted="false">"Empfangen WebRTC: {0} • Gesendet: {1}\n"</string>
+    <string name="ui_9d37f98efd33b2f9" formatted="false">"OFFIZIELLE LISTE NICHT VERFÜGBAR"</string>
+    <string name="ui_9d952199b3f90d45" formatted="false">"Pass stark"</string>
+    <string name="ui_9dfcfd53b29994a4" formatted="false">"QR-Code kann nicht generiert werden. {0}"</string>
+    <string name="ui_9e29d8ee79027a75" formatted="false">"Systemstandard (#0)"</string>
+    <string name="ui_9e98acc9f05ebb19" formatted="false">"xCLOUD • Diagnose nach dem Spiel\n{0}\n{1}\n{2}\n"</string>
+    <string name="ui_9ea0e18723f59099" formatted="false">"Verknüpfung installieren: {0}"</string>
+    <string name="ui_9ee25e963d051150" formatted="false">"Optionaler Test: Halten Sie Ihre Finger im nativen Touch-Modus und senden Sie das Ziel über den rechten Analogstick. Bei einigen Spielen kann die Eingabeschnittstelle umgeschaltet werden. Wenn der Modus „Aus“ ist, wird bei der Aktivierung dieses Tests „Immer“ ausgewählt. Für LT/LB ist ein physischer Controller mit nativem Touch erforderlich. Gültig im nächsten Spiel."</string>
+    <string name="ui_9f3ebbde555a2c21" formatted="false">"Suche löschen"</string>
+    <string name="ui_9f944b0487751781" formatted="false">"Schützen"</string>
+    <string name="ui_9fe40625cfedb8a2" formatted="false">"App-Sprache: {0}"</string>
+    <string name="ui_9ff2d5081992d239" formatted="false">"ICE-Standort: wartet auf Abholung"</string>
+    <string name="ui_a037abd19f1ff1bb" formatted="false">"Maus und Tastatur einfangen/freigeben – F8"</string>
+    <string name="ui_a111ca34ef6b91c0" formatted="false">"{0} | Bestellen: {1} | Gewünschte Präsentation: {2} FPS\n"</string>
+    <string name="ui_a132cc573276e191" formatted="false">"Katalog aktualisieren"</string>
+    <string name="ui_a14359b05d91e1ac" formatted="false">"FSR-Schärfe (RCAS): {0}%"</string>
+    <string name="ui_a190afc4b4adb7f6" formatted="false">"Enthalten"</string>
+    <string name="ui_a1bdb563a765ac41" formatted="false">"Kopierte Diagnose."</string>
+    <string name="ui_a1f9822e5355c082" formatted="false">"Route ICE: {0} → {1} | RTT {2} | Beobachtete Änderungen: {3} | validierte alternative Paare: {4}"</string>
+    <string name="ui_a25e282550325946" formatted="false">"{0}  ■  {1}"</string>
+    <string name="ui_a2785a754a255bed" formatted="false">"Standard"</string>
+    <string name="ui_a285fed899aeb882" formatted="false">"Geste • {0}"</string>
+    <string name="ui_a2a5acaabb8c378d" formatted="false">"Linke tote Zone"</string>
+    <string name="ui_a2e5f957fe19031f" formatted="false">"SDP-Antwort: {0} | angewendet: {1}"</string>
+    <string name="ui_a320e31d01bb4da5" formatted="false">"Schätzung Xbox: ungefähr {0}."</string>
+    <string name="ui_a38dc37dc8fe7b15" formatted="false">"720p – leichter"</string>
+    <string name="ui_a3d84c955a3fb0b3" formatted="false">"Optionale Bildanpassungen. Die Schärfe kann Rauschen hervorheben und erfordert mehr GPU. Während eines Spiels erfolgen Änderungen sofort."</string>
+    <string name="ui_a3e0d2415190a8a6" formatted="false">"Fluch"</string>
+    <string name="ui_a41900826715a772" formatted="false">"Wiederherstellungen {0}; aufeinanderfolgende Ausfälle {1}"</string>
+    <string name="ui_a451f1f2dfc6d41d" formatted="false">"{0}: HTTP {1}"</string>
+    <string name="ui_a4a455282b33666a" formatted="false">"Keine Geste"</string>
+    <string name="ui_a4f285fa2d5ec93e" formatted="false">"keiner informiert"</string>
+    <string name="ui_a5575a1a9fa7978f" formatted="false">"Wechseln"</string>
+    <string name="ui_a57846c4bb3360ff" formatted="false">"Waffe wechseln"</string>
+    <string name="ui_a5d4e1d783941562" formatted="false">"Videomodus"</string>
+    <string name="ui_a5fe1cbebea0c09c" formatted="false">"Video-RTP: {0} | Vom Kanal akzeptierte Eingabe: {1}\n"</string>
+    <string name="ui_a6304667a4694dfc" formatted="false">"B ABBRECHEN"</string>
+    <string name="ui_a64fd7ed84b6520a" formatted="false">"Bedienelemente › Vibration"</string>
+    <string name="ui_a6b403097a36fa25" formatted="false">"Kamera X/Y: {0}/{1} | LT/RT: {2}%/{3}% | DZ-App: 0% | Eingabe bis zu 250 Hz\n"</string>
+    <string name="ui_a6c5801ccc839510" formatted="false">"Ihr Xbox Cloud-Katalog mit nativem Streaming und Controller-Navigation."</string>
+    <string name="ui_a6cc9f20bfd7382d" formatted="false">"LOGIN-SEITE ÖFFNEN"</string>
+    <string name="ui_a71919f039859a7b" formatted="false">"Konto genehmigt. Finalisierung Ihrer Verbindung…"</string>
+    <string name="ui_a73b0eb5c2120771" formatted="false">"Videomodus: {0}"</string>
+    <string name="ui_a750bbb9a02f1dde" formatted="false">"Oberfläche {0}x{1} → Android-Ausgabe "</string>
+    <string name="ui_a779e12ba7fd20f0" formatted="false">"\n{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10} | Maus/Tastatur: {11} | Aktiver MKB-Eingang: {12} | Android-Aufnahme: {13}"</string>
+    <string name="ui_a88536f370073a7d" formatted="false">"Beschleunigen"</string>
+    <string name="ui_a8877b8210604258" formatted="false">"Vom Benutzer beendet"</string>
+    <string name="ui_a8c2ac325cfa919b" formatted="false">"Warten auf eine freie Stelle"</string>
+    <string name="ui_a8eec455db88ba33" formatted="false">"Verbindung nicht abgeschlossen"</string>
+    <string name="ui_a8f09d77366f1fa0" formatted="false">"Hier erscheinen Ihre Favoriten.\nWählen Sie ein Spiel aus und drücken Sie Y, um es zu Ihren Favoriten zu machen."</string>
+    <string name="ui_a9178552fda4292a" formatted="false">"FAVORIT"</string>
+    <string name="ui_a959007d05d3e862" formatted="false">"Das Android auf diesem Gerät konnte das Verknüpfungspaket nicht lesen. Die Verknüpfung wurde nicht an das Installationsprogramm gesendet."</string>
+    <string name="ui_a9d4711b82648956" formatted="false">"Video wiederherstellen"</string>
+    <string name="ui_aa01028ec629a161" formatted="false">"warten auf Fähigkeiten"</string>
+    <string name="ui_aaa8b17189f8e9c5" formatted="false">"Aktiviert – zielen und schießen"</string>
+    <string name="ui_ab82b7fdb8e46107" formatted="false">"Diagnose"</string>
+    <string name="ui_abf15538afefb4b8" formatted="false">"\nErhalten WebRTC: {0} | Gesendet WebRTC: {1}\n"</string>
+    <string name="ui_abf5c1bbfeb0ebd7" formatted="false">"Die Befehle verwenden die Standard-Controllerzuordnung Xbox. Sie können jede Aktion im Editor und in den Spieleinstellungen anpassen."</string>
+    <string name="ui_ac0405b91f35077a" formatted="false">"{0} SPIELE • GESPEICHERTER VERLAUF • UPDATE NICHT VERFÜGBAR"</string>
+    <string name="ui_ac1653e071f8f7e8" formatted="false">"Flanken"</string>
+    <string name="ui_ac1cd1430435899b" formatted="false">"Anwendung beenden?"</string>
+    <string name="ui_ac1f216ed980fbc8" formatted="false">"effizient: nein"</string>
+    <string name="ui_ac73aa9300406c83" formatted="false">"Nicht automatisch öffnen"</string>
+    <string name="ui_acf055bba88baa0f" formatted="false">"FSR-Ausgabe"</string>
+    <string name="ui_ad308eca51baa9f5" formatted="false">"Ein weiteres Match begann"</string>
+    <string name="ui_ad6cf30be5863ae2" formatted="false">"HDR10: Bildschirm und Stream prüfen"</string>
+    <string name="ui_ad95a1eab4868093" formatted="false">"Kanal auf dem Startbildschirm"</string>
+    <string name="ui_ada597c825c967dc" formatted="false">"Versuchte Wiederherstellungen: {0}\n\n"</string>
+    <string name="ui_adc902bee601b133" formatted="false">"Favoriten konnten nicht auf dem Gerät gespeichert werden."</string>
+    <string name="ui_ae271b987acb95d6" formatted="false">"Ihr Spiel wird geöffnet, sobald Xbox eine Sitzung freigibt."</string>
+    <string name="ui_aea7344883349a13" formatted="false">"Fügen Sie Spiele mit Y zu Ihren Favoriten hinzu, um Ihre Verknüpfungen zu erstellen."</string>
+    <string name="ui_aecdbc5fd56d8e66" formatted="false">"Leicht H.264 (Kompatibilität)"</string>
+    <string name="ui_aef7cd5b2081351d" formatted="false">"Speichern"</string>
+    <string name="ui_af6f5bcb22418bc6" formatted="false">"Suchspiele"</string>
+    <string name="ui_afb58c5ef14296d0" formatted="false">"Physischer Kontrolleur und örtlicher Genossenschaftsbetrieb"</string>
+    <string name="ui_afbcc421a945e702" formatted="false">"Echter HDR10 benötigt 10-Bit-Streaming, BT.2020-Farbe, PQ-Übertragung und Full-Chain-HDR-Wiedergabe. Der aktuelle Weg bietet diese Kombination nicht, selbst auf einem kompatiblen Fernseher.\n\n"</string>
+    <string name="ui_afd65886ed07d629" formatted="false">"VERSUCHEN SIE ES ERNEUT"</string>
+    <string name="ui_b019906f6858044e" formatted="false">"xCLOUD {0} • Ersteingabe: {1} • {2}"</string>
+    <string name="ui_b0944e467b311f8d" formatted="false">"Das Schicksal von {0}"</string>
+    <string name="ui_b0b4626cc5d27e57" formatted="false">"← Links"</string>
+    <string name="ui_b0b961d4ec123362" formatted="false">"Fordern Sie Ihren Lieblingskanal vom Startbildschirm aus an"</string>
+    <string name="ui_b0d7170b7a348938" formatted="false">"Optionales Mikrofon"</string>
+    <string name="ui_b0f8a4c6147a77ca" formatted="false">"Aufmerksamkeit"</string>
+    <string name="ui_b0fb3c524b9a6398" formatted="false">"WebRTC Pufferziel"</string>
+    <string name="ui_b184ba49fad5bdda" formatted="false">"\nAutomatisch: Kontinuierliche Konnektivitätsprüfungen/RTT; Auswahl durch WebRTC und Server. Alternativen hängen vom verfügbaren Netzwerk ab."</string>
+    <string name="ui_b195ba9ba106c658" formatted="false">"Verbindung ICE wurde geschlossen"</string>
+    <string name="ui_b1a57cb0ce19ab77" formatted="false">"Gyroskop mit nativem Touch Xbox"</string>
+    <string name="ui_b1b3b2be00607986" formatted="false">"Mikrofon in kommenden Spielen: {0}"</string>
+    <string name="ui_b1b83340a2e6e991" formatted="false">"Mobilfunknetz"</string>
+    <string name="ui_b20277600256b5af" formatted="false">"Statistik: Warten auf Proben WebRTC..."</string>
+    <string name="ui_b257b4fde1d7e0c6" formatted="false">"Einige Informationen nicht verfügbar. Die Auflistung bestätigt nicht den Besitz; erfordert digitale Einkaufs- und Servicebedingungen."</string>
+    <string name="ui_b29603a502aa8d8c" formatted="false">"{0} aus den Favoriten entfernt"</string>
+    <string name="ui_b2a876364adeafae" formatted="false">"Vollständige offizielle Liste • Einige Informationen/Umschläge nicht verfügbar; Aktualisieren Sie den Katalog in den Einstellungen."</string>
+    <string name="ui_b2d1202a54152282" formatted="false">"Verteidigungs-HUD anzeigen"</string>
+    <string name="ui_b3d71cae0cc33739" formatted="false">"Unbefugte Installation"</string>
+    <string name="ui_b455784ab5307277" formatted="false">"Regulär"</string>
+    <string name="ui_b4fd5598411dcca4" formatted="false">"Microsoft-Abonnement verwalten"</string>
+    <string name="ui_b525c8f63004a345" formatted="false">"Verhandlungsmikrofon…"</string>
+    <string name="ui_b5758662f5d045a7" formatted="false">"Deaktivieren Sie den USB-Test"</string>
+    <string name="ui_b669fb4b755c8302" formatted="false">"Tippen Sie im Fußball auf ANGRIFF/VERTEIDIGUNG, um die Befehle zu wechseln. Der Austausch erfolgt manuell. Beim Kick: nach unten ziehen für die Platzierung, nach oben für Cavadinha und zur Seite für den Superkick. Mark kombiniert RT + A.\n\nIm Editor können Sie mit Aktion Schaltflächen kombinieren. Gesten konfigurieren jede Ziehrichtung. Die Befehle folgen dem Layout Ihres Spiels.\n\nHalten Sie in CoD „Zielen“ oder „Schießen“ gedrückt und ziehen Sie, um die Kamera zu bewegen. Das Zielen beim Schießen ist optional. Wenn Sie den Analogstick nach oben in Richtung „Run“ ziehen, wird das Laufen aktiviert, wenn diese Option aktiviert ist.\n\nErhöhen Sie bei Schießspielen die HUD-Empfindlichkeit und passen Sie die Totzonenkompensation an. Die maximale Drehgeschwindigkeit hängt auch von der im Spiel eingestellten Controller-Empfindlichkeit ab."</string>
+    <string name="ui_b6c65960870c1c5e" formatted="false">"\nTechnischer Code: {0}"</string>
+    <string name="ui_b772dc025eba9d11" formatted="false">"Rechte Totzone: {0}%"</string>
+    <string name="ui_b788c7c5fda4ab79" formatted="false">"Cyberblau"</string>
+    <string name="ui_b803f24d52edd7bc" formatted="false">"Automatisch"</string>
+    <string name="ui_b82619b14335e532" formatted="false">"Die Galerie gab eine unerkannte Paginierung zurück; Die Liste wurde nicht als vollständig bestätigt."</string>
+    <string name="ui_b83158eab62b99d9" formatted="false">" — Code {0}"</string>
+    <string name="ui_b8c2ee925a3aab1f" formatted="false">"{0} • {1} • {2}"</string>
+    <string name="ui_b8c99375c71e298a" formatted="false">"Prognose kann nicht aktualisiert werden; Die Stellenberatung läuft weiter."</string>
+    <string name="ui_b9e10688be012d8b" formatted="false">"Versuchen Sie es erneut"</string>
+    <string name="ui_ba5e5d364d10aa1b" formatted="false">"Xbox bucht und bereitet Ihre Sitzung vor."</string>
+    <string name="ui_bab27e2c850b00b2" formatted="false">"DURCHSCHNITT/SPITZE • {0}-Proben • {1} beobachtet • ↑/↓ oder wischen für Details"</string>
+    <string name="ui_bb9dbb406dcbd524" formatted="false">"Abbrechen"</string>
+    <string name="ui_bbb6bca5ca31729a" formatted="false">"XBOX VORHERSAGE"</string>
+    <string name="ui_bbc01c73fe29c18f" formatted="false">"Drag Racing {0}; "</string>
+    <string name="ui_bbe0ec8ca31b468c" formatted="false">"Vibration: {0}"</string>
+    <string name="ui_bcbb4e0f88f1dd5e" formatted="false">"Standardversand"</string>
+    <string name="ui_bce05db4b83249e2" formatted="false">"ms/Bild"</string>
+    <string name="ui_bd10a9bd1958e9f0" formatted="false">"Warten auf Metadaten"</string>
+    <string name="ui_bd59e1e564ce5c46" formatted="false">"Vibration"</string>
+    <string name="ui_bd5b62d71cdd98d3" formatted="false">"Richtungsanzeige ↓"</string>
+    <string name="ui_bdb73aa9fd97600d" formatted="false">"Mikrofon: stumm; Encoder verweigerte Pause"</string>
+    <string name="ui_be0c7ddbc14398f4" formatted="false">"Verwendet Touch-Player-Rumble, wenn kein physischer Controller zugeordnet ist. Erfordert aktivierte Vibration und einen Vibrator am Mobiltelefon. Gültig im nächsten Spiel."</string>
+    <string name="ui_be4651d6aa4e8b87" formatted="false">"Zurück zum Katalog"</string>
+    <string name="ui_bfabaebcc64e9c48" formatted="false">"IPv4 / IPv6: {0}"</string>
+    <string name="ui_bfc167f5ded3ac78" formatted="false">"Legt die lokale Darstellung fest, ohne die empfangene Auflösung oder den Netzwerkverbrauch zu erhöhen. Automatisch folgt dem Fenster, ist auf Fernsehgeräten auf 1080p begrenzt und legt Wert auf Flüssigkeit. Die Auswahlmöglichkeiten sind durch die verfügbare physische Ausgabe und die Beibehaltung des Seitenverhältnisses begrenzt. 1440p und 4K kosten mehr als GPU; keine Garantie 60 FPS. Erfordert die Aktivierung von AMD FSR; Die Kompatibilität hält den Filter fern. Die App kehrt zur Standardskalierung zurück, wenn der Filter fehlschlägt oder die Trittfrequenz beim eingehenden Video mehrere Sekunden lang zu langsam ist. Gilt für die nächste Übereinstimmung."</string>
+    <string name="ui_bfcd75a03efeb613" formatted="false">"Gyroskop: Test mit deaktivierter nativer Touchfunktion"</string>
+    <string name="ui_c06b55029589f9aa" formatted="false">"Licht H.264 — Baseline (720p)"</string>
+    <string name="ui_c0e06d1a547e1e02" formatted="false">"Das Spiel konnte nicht überprüft werden. Bitte versuchen Sie es erneut oder aktualisieren Sie den Katalog. Für gekaufte Spiele sind die digitale Lizenz und die Nutzungsbedingungen von Xbox erforderlich."</string>
+    <string name="ui_c0eb1a54b2adee0d" formatted="false">"Klassisch – B-Kick"</string>
+    <string name="ui_c14311ffdf175c3f" formatted="false">" • {0} Ereignisse • Historie max. {1}"</string>
+    <string name="ui_c149ec2f90b933d5" formatted="false">"SUCHEN"</string>
+    <string name="ui_c1601679448149f0" formatted="false">"Schuss – Standard"</string>
+    <string name="ui_c165b9199b45bcd6" formatted="false">"HUD und Steuerung dieses Spiels"</string>
+    <string name="ui_c18707da3aeeac79" formatted="false">"Ziel {0} ms | minimales Netzwerk {1} ms | "</string>
+    <string name="ui_c24ad4a9b806d36f" formatted="false">"Nächste Kategorie, RB"</string>
+    <string name="ui_c294e7b002393a8d" formatted="false">"FSR-Schärfe (RCAS)"</string>
+    <string name="ui_c362ba09dc7291e1" formatted="false">"Entfernen Sie diese Geste"</string>
+    <string name="ui_c4361eb26a5f858e" formatted="false">"Optimiert für Xbox Serie X|S"</string>
+    <string name="ui_c43891cea5d2cf81" formatted="false">"{0} {1} | Android {2} | {3}\n{4}\n{5}\n{6}\n{7}"</string>
+    <string name="ui_c48c51103740a734" formatted="false">"Bild nicht aktualisiert"</string>
+    <string name="ui_c4b7abb559efc0c2" formatted="false">"Tippen Sie auf Android → App: Durchschnittsalter/Höhepunkt {0}; nach unten/oben/bewegen/abbrechen {1}/{2}/{3}/{4}; "</string>
+    <string name="ui_c4bc021431f3c0b9" formatted="false">"Initialisierung: {0}"</string>
+    <string name="ui_c587065de995e6a6" formatted="false">"Bildschirmmodus: n/a"</string>
+    <string name="ui_c592501facbaea8c" formatted="false">"Sättigung: {0}%"</string>
+    <string name="ui_c68b7df08912cf8f" formatted="false">"Veraltete Prognose. Die Suche nach einer freien Stelle geht weiter."</string>
+    <string name="ui_c6903698265c4ac7" formatted="false">"Aus – physischer Controller"</string>
+    <string name="ui_c709991bfe8aced1" formatted="false">"EINIGE ABDECKUNGEN NICHT VERFÜGBAR. UPDATE IN DEN EINSTELLUNGEN."</string>
+    <string name="ui_c7396b1f339d9a49" formatted="false">"Optionen: {0}"</string>
+    <string name="ui_c73b5744c4698b8a" formatted="false">"Warten auf Videobeispiele."</string>
+    <string name="ui_c7d422473615e69d" formatted="false">"Video-RTP: {0} • Eingang: {1}\n"</string>
+    <string name="ui_c90dd4a7f4f16d4e" formatted="false">"Es war nicht möglich, die offizielle Liste einzusehen.\nAktualisieren Sie den Katalog in den Einstellungen."</string>
+    <string name="ui_c917e2441a33ab85" formatted="false">"Automatisch – Standardkontoregion"</string>
+    <string name="ui_c985cb075b6ff172" formatted="false">"Gerät nicht angegeben"</string>
+    <string name="ui_ca5962d0f8fb5020" formatted="false">"Beratung Xbox; Die letzte Bestätigung in der Warteschlange dort ist {0}."</string>
+    <string name="ui_cb201cc243f2d150" formatted="false">"Der Server konnte nicht gefunden werden"</string>
+    <string name="ui_cb2559452c9c352f" formatted="false">"{0} • {1} verbunden"</string>
+    <string name="ui_cb9b4a0d6fde640c" formatted="false">"Deckkraft: {0}%"</string>
+    <string name="ui_cc5eb4d7dd2d1e2e" formatted="false">"App-Sprache"</string>
+    <string name="ui_ccb39a83e3b26d2a" formatted="false">"Scannen Sie den QR-Code mit Ihrem Mobiltelefon oder rufen Sie die Microsoft-Anmeldeseite auf."</string>
+    <string name="ui_ccc5ddf0e986b6dc" formatted="false">"Lightweight H.264 und Kompatibilität verwenden 720p, auch wenn eine andere Auswahl gespeichert ist. 720p erfordert weniger Bandbreite und Dekodierungsaufwand. Die empfangene Auflösung hängt vom Xbox, dem Spiel und der Verbindung ab. Gilt für das nächste Spiel."</string>
+    <string name="ui_ccec6af8dfc9a3c9" formatted="false">"Emuliert den rechten Analogstick am Controller/HUD. Aktivieren Sie den Test auch in der Kategorie „Gyroskop“, um dem nativen Touch von Xbox zu entsprechen. LT/LB im nativen Touch basieren auf einem physischen Controller. Gültig im nächsten Spiel."</string>
+    <string name="ui_cdbfce5b72ebff87" formatted="false">"Trigger-Totzone: {0}%"</string>
+    <string name="ui_ce04190840b5df23" formatted="false">"Überprüfen Sie Ihren Xbox Cloud-Verlauf…"</string>
+    <string name="ui_ce49e4a3777bd79d" formatted="false">"Ihr Login und Ihre Favoriten werden weiterhin auf diesem Gerät gespeichert."</string>
+    <string name="ui_ce841257afc795fe" formatted="false">"{0}, {1}. Einstellungen öffnen"</string>
+    <string name="ui_cee3aa77fe99ae5a" formatted="false">"anderes Videoformat"</string>
+    <string name="ui_cfec65af653e127f" formatted="false">"Stellen Sie das HUD dieses Spiels wieder her"</string>
+    <string name="ui_d00d630e6c32f971" formatted="false">" • Experimenteller nativer Touch"</string>
+    <string name="ui_d0bb4a4037d8fd3d" formatted="false">"Vorbereitung des Shortcut-Spiels…"</string>
+    <string name="ui_d109c6d44ff057b7" formatted="false">"{0} {1} • Android {2}"</string>
+    <string name="ui_d1225458fd479a1f" formatted="false">"Deaktiviert – Renderer-Skalierung"</string>
+    <string name="ui_d13e17270be9aa6a" formatted="false">"Richtungsanzeige ←"</string>
+    <string name="ui_d220d05a7861ed7d" formatted="false">"Installationsprogramm nicht verfügbar"</string>
+    <string name="ui_d23162e04eddf351" formatted="false">"Zielen Sie beim Schießen"</string>
+    <string name="ui_d294972e7616ce46" formatted="false">"Statistiken ein-/ausblenden"</string>
+    <string name="ui_d2ad993f02c491da" formatted="false">"Springen"</string>
+    <string name="ui_d2ce0bc9f7f8998b" formatted="false">"HUD ausblenden"</string>
+    <string name="ui_d2f671e0a6015903" formatted="false">"Karte"</string>
+    <string name="ui_d368683d0c7e0d26" formatted="false">"Audio und Video"</string>
+    <string name="ui_d373287e7248cfe5" formatted="false">"warte auf Kanal"</string>
+    <string name="ui_d3b2d6009b1e4b0a" formatted="false">"Kommunikationsfehler"</string>
+    <string name="ui_d42dfb2ef63549c6" formatted="false">"Weniger als 1 min"</string>
+    <string name="ui_d45fee8a599e40cc" formatted="false">"Handyvibration bei Berührung: {0}"</string>
+    <string name="ui_d4665a4a146e28e6" formatted="false">"Scannen Sie den QR-Code oder greifen Sie zu\n{0} und geben Sie den Code ein:"</string>
+    <string name="ui_d48c492ec604a5a0" formatted="false">"Schätzung Xbox: derzeit nicht verfügbar."</string>
+    <string name="ui_d49877fbdb35a493" formatted="false">"HUD BEARBEITEN • ZIEHEN SIE DIE TASTEN"</string>
+    <string name="ui_d4a0ecff23664366" formatted="false">"GRUND FÜR DIE SCHLIESSUNG\n"</string>
+    <string name="ui_d5f9cf0229d64cd8" formatted="false">"Native Xbox-Touch-Steuerung — experimentell"</string>
+    <string name="ui_d5fc8994d873c100" formatted="false">"Android hat auf diesem Gerät kein Gyroskop gemeldet."</string>
+    <string name="ui_d61df2985b00e754" formatted="false">"AMD FSR 1.0.2: im Kompatibilitätsmodus inaktiv"</string>
+    <string name="ui_d67d7a22a9d85ee1" formatted="false">"Gyroskop"</string>
+    <string name="ui_d699b3523f2e4530" formatted="false">"Steuert Größe: {0}%"</string>
+    <string name="ui_d6a06884ced98edc" formatted="false">"Standardcodec"</string>
+    <string name="ui_d6c2efe70cd031d9" formatted="false">"Gewünschte Präsentation: {0} FPS • Decoder: {1}"</string>
+    <string name="ui_d6df5d0593b1d522" formatted="false">"Die Sitzung beginnt immer stumm. Bei dieser Option konsultiert die App den Chat-Support; Aktivieren Sie die Aufzeichnung des Spiels auf menu, nachdem Sie Android die Erlaubnis erteilt haben. Wechseln Sie zu Hintergrundstummschaltungen. Einige Server bieten möglicherweise keinen Chat an."</string>
+    <string name="ui_d7ab4b0aca3b07cf" formatted="false">"Der beobachtete Puffer überschreitet zwei Intervalle der angeforderten Präsentation. Es kann selbst bei RTT und niedrigen Dekodierungen zum Gefühl der Verzögerung beitragen. Vergleichen Sie „Kürzeste Verzögerung“ und „Adaptiv“. Bei dem geforderten Ziel handelt es sich nicht um eine garantierte Obergrenze."</string>
+    <string name="ui_d7cbd013a2f6068b" formatted="false">"Video ohne neue Frames. Bildaktualisierung wird angefordert…"</string>
+    <string name="ui_d8742a3decdd0df5" formatted="false">"Netzwerkanfrage"</string>
+    <string name="ui_d87bd8469bfe6376" formatted="false">"Audio und Mikrofon"</string>
+    <string name="ui_d8cdcbc7ebdaae0d" formatted="false">"Verwenden Sie Sitzungsstandardwerte"</string>
+    <string name="ui_d8fb58e618d83fe1" formatted="false">"Verfügbarkeit nicht bestätigt"</string>
+    <string name="ui_d908762c8d942e27" formatted="false">"Zum Ansehen ziehen"</string>
+    <string name="ui_d98c49960e02dbf0" formatted="false">"Paketverlust"</string>
+    <string name="ui_d98f313ee5a346c8" formatted="false">"Verknüpfung auf dem Fernseher installieren: {0}"</string>
+    <string name="ui_d99aa29897d612dc" formatted="false">"Authentifiziertes Konto in der Xbox Cloud"</string>
+    <string name="ui_d9e854b45b44b286" formatted="false">"Keine Daten: {0} | Mit Daten: {1}\n"</string>
+    <string name="ui_da3388b19048bd0d" formatted="false">"DEINE SPIELE.\nAUF DEINEM BILDSCHIRM."</string>
+    <string name="ui_daa6b913c3a993f5" formatted="false">"Deaktiviert (Kompatibilität)"</string>
+    <string name="ui_dae2928050707d95" formatted="false">"WARTESCHLANGE"</string>
+    <string name="ui_dafb61aca12d33e0" formatted="false">"Kamera"</string>
+    <string name="ui_db3e58808ddb39bc" formatted="false">"Bewegungsziel"</string>
+    <string name="ui_db48ebd18aae5755" formatted="false">"Details kopiert!"</string>
+    <string name="ui_db6368593c24380d" formatted="false">"Offizielle Liste kompatibler Spiele; erfordert digitale Einkaufs- und Servicebedingungen. Bestätigt nicht den Besitz des Kontos."</string>
+    <string name="ui_dcd82253fc1b9333" formatted="false">"begonnen"</string>
+    <string name="ui_dcde76e0abae913f" formatted="false">"Empfindlichkeit: {0}%"</string>
+    <string name="ui_dd1177426b964f31" formatted="false">"{0}: Anfrage fehlgeschlagen ({1})"</string>
+    <string name="ui_dd191c539b7bdee4" formatted="false">"Markieren"</string>
+    <string name="ui_dd1f60df310c6ac7" formatted="false">"Analoge Kurve"</string>
+    <string name="ui_dd8a9255bf7ad0db" formatted="false">"Sitzungssprache"</string>
+    <string name="ui_ddc53964b5fe0059" formatted="false">"Feuern"</string>
+    <string name="ui_ddf7ac150ff295a9" formatted="false">"Fast fertig"</string>
+    <string name="ui_de10ccc1614b9a4a" formatted="false">"Intervall"</string>
+    <string name="ui_de26c2fcfd1fdd63" formatted="false">"Schärfe"</string>
+    <string name="ui_df1f3af61e81fd98" formatted="false">"Aktiviert – Oberflächenskalierung"</string>
+    <string name="ui_df41bc6b69dd0a4d" formatted="false">"\nMaximal angeforderte Bitrate: "</string>
+    <string name="ui_df79a066dff74946" formatted="false">"Deaktiviert – siehe Einstellungen"</string>
+    <string name="ui_df87f243111ed2d4" formatted="false">"Warten"</string>
+    <string name="ui_dfa86dac52babb92" formatted="false">"Sperre aufheben und zum Katalog zurückkehren"</string>
+    <string name="ui_e07fe1fc111ea9e6" formatted="false">" | touch: {0}, {1}, {2} Ereignisse gesendet"</string>
+    <string name="ui_e0f02d042121b2a0" formatted="false">"Der Fernseher hat den Lieblingssender nicht autorisiert. Verwenden Sie „TV-Verknüpfung installieren“, um individuelle Spieleinträge zu erstellen."</string>
+    <string name="ui_e0fdcc38d021c280" formatted="false">"Aktiviert – bis zu 4 Spieler"</string>
+    <string name="ui_e14441aaa6331504" formatted="false">"Letzte Diagnose"</string>
+    <string name="ui_e1623a9ceaca4129" formatted="false">"Verbundene Zeit: {0} | Beobachtet: {1} | {2}-Beispiele\n"</string>
+    <string name="ui_e16a49eedde76282" formatted="false">"{0}-PRODUKTE • AKTUALISIERUNG"</string>
+    <string name="ui_e18cbc44b23c7f78" formatted="false">"Sättigung"</string>
+    <string name="ui_e21b8dd97e1d4d63" formatted="false">"Diese Option ist unabhängig von der Sprache der Menüs der App. Die Sprache wird von Xbox angefordert; Einige Spiele verwenden ihre eigenen Einstellungen oder ignorieren diese möglicherweise. Gültig im nächsten Spiel."</string>
+    <string name="ui_e2c1eb3e21262571" formatted="false">"Beobachteter Videopuffer"</string>
+    <string name="ui_e2cc58057bac44ca" formatted="false">"Spiellink nicht bestätigt"</string>
+    <string name="ui_e2cf4129d958d3cc" formatted="false">"Anteil: {0}"</string>
+    <string name="ui_e31fe0e7c18095f5" formatted="false">"Nur von Xbox für dieses Konto angebotene Regionen. Durch Auswählen wird die Sitzung in dieser Region angefordert. sagt weder Ping noch Spielwarteschlange voraus. Sollte eine gespeicherte Region nicht mehr angeboten werden, verwendet die App die Standardregion und informiert Sie in der Diagnose. Gültig im nächsten Spiel."</string>
+    <string name="ui_e35865317817e866" formatted="false">"WebRTC-Verbindung"</string>
+    <string name="ui_e3ac02bd2ccd6d6e" formatted="false">"Empfangen: {0} | {1} | {2}\n"</string>
+    <string name="ui_e3c9951db767377e" formatted="false">"Bildschirm: HDR-Unterstützung wird von Android nicht gemeldet."</string>
+    <string name="ui_e40b250bfbf97c8e" formatted="false">"Video wird wiederhergestellt: Decoder beim nächsten Keyframe neu starten…"</string>
+    <string name="ui_e41e160eef41ad25" formatted="false">"FSR 1.0.2 skaliert Videos mit EASU- und RCAS-Schärfung hoch. Wenn Video und Ausgabe dieselbe Größe haben, wenden Sie nur RCAS ohne Vergrößerung an. Beginnen Sie mit der FSR-Ausgabe auf Auto und RCAS auf 50 %. Vergleichen Sie Schärfe, Flüssigkeit und Reaktion von Befehlen. 1440p und 4K erfordern mehr GPU. Die Diagnose unterscheidet zwischen Vergrößerung und nativem RCAS. FSR übernimmt die Skalierung auch bei aktivierter nativer Hochskalierung. Passen Sie RCAS in den Bildanpassungen an. Die Kompatibilität hält FSR fern. Gilt für das nächste Spiel."</string>
+    <string name="ui_e425c594c6c37587" formatted="false">"Schätzung Xbox: weniger als 1 Minute."</string>
+    <string name="ui_e470e20093b5665d" formatted="false">"Dieses Spiel: {0}"</string>
+    <string name="ui_e478889056bb4cfc" formatted="false">"Original – Seitenverhältnis beibehalten"</string>
+    <string name="ui_e48e3afad74a7664" formatted="false">"LT und RT tauschen: {0}"</string>
+    <string name="ui_e528576451072d03" formatted="false">"VORBEREITUNG"</string>
+    <string name="ui_e6acff5f42562f1a" formatted="false">"Codec n/a"</string>
+    <string name="ui_e7933921372c4fd7" formatted="false">"Verknüpfung nicht verfügbar"</string>
+    <string name="ui_e834630bef0ef550" formatted="false">"Zeitüberschreitung beim Warten auf Antwort von Xbox"</string>
+    <string name="ui_e84bcd0234e07712" formatted="false">"Vernetzter Transport. Warten auf das erste Videobild..."</string>
+    <string name="ui_e914de1e4fae95a7" formatted="false">"ALLE SPIELE"</string>
+    <string name="ui_e9e53c0c5177e18c" formatted="false">"Automatisch – gespeicherte Region wird dem Konto nicht angeboten"</string>
+    <string name="ui_ea0fd82513d807df" formatted="false">"Tastengesten"</string>
+    <string name="ui_ea6a1717f5c88030" formatted="false">"\n\nDer Eingabeplaner misst nur den sendenden Thread. Das Android-Ereignisalter wird in Aktivität für Joystick und View für Touch gemessen; Beinhaltet nicht alle Bluetooth/USB-Pfade, physische Berührungserkennung, Spielreaktion oder Bildschirm. Ein niedriger Ping und eine niedrige Dekodierung deuten nicht auf eine niedrige Gesamtbefehlslatenz hin."</string>
+    <string name="ui_ea882cac2bd2ad5f" formatted="false">"H.264 Baseline • Kompatibilität • 720p erforderlich • Profil/Match-Zitat"</string>
+    <string name="ui_eacaad041ff7e933" formatted="false">"Das Video ist noch nicht zurückgekommen. Die Sitzung Xbox bleibt geöffnet."</string>
+    <string name="ui_eb145ebce21c228a" formatted="false">"Es gab Pausen ohne Videoempfang. Untersuchen Sie das Netzwerk und die Kontinuität der Bereitstellung durch den Dienst."</string>
+    <string name="ui_eb1bcf0482eeba71" formatted="false">"aktiviert"</string>
+    <string name="ui_eb88b483ea19114e" formatted="false">"App-Design"</string>
+    <string name="ui_ebee0532a3cc3057" formatted="false">"Bevorzugen Sie IPv6 – experimentell, mit IPv4 verfügbar"</string>
+    <string name="ui_ec090a775820f486" formatted="false">"Angriff"</string>
+    <string name="ui_ec0fcae16cb08806" formatted="false">", ausgewählt"</string>
+    <string name="ui_ec3103a5a55b8611" formatted="false">"Steuerung › Gyroskop"</string>
+    <string name="ui_ec7c4c3f379a1d51" formatted="false">"Modus: {0}"</string>
+    <string name="ui_ecbc02a1d1b01fe4" formatted="false">"#{0} unangekündigt"</string>
+    <string name="ui_eccf310fa9817174" formatted="false">"Kurve: {0}"</string>
+    <string name="ui_ece0fd9e5729873e" formatted="false">"↓ Bass"</string>
+    <string name="ui_ed57b826da4ae9b2" formatted="false">"Aktiviert – experimentell"</string>
+    <string name="ui_eda02893d340c1be" formatted="false">"Wiederherstellen"</string>
+    <string name="ui_eda74028f3497040" formatted="false">"Konto verbunden. Ihr Katalog wird geladen…"</string>
+    <string name="ui_edbc01e14a74f6c4" formatted="false">"Erlauben Sie xCLOUD in Ihren TV-Einstellungen, Spielverknüpfungen zu installieren."</string>
+    <string name="ui_ee8e00814924a050" formatted="false">"Antrag auf sofortigen Versand abgelehnt"</string>
+    <string name="ui_eebb383ece16304a" formatted="false">"konsolidierte Bewegungen {0}; {1}-Resynchronisierungen"</string>
+    <string name="ui_eef444f5f2ad5527" formatted="false">"In dieser Kategorie sind keine Spiele verfügbar."</string>
+    <string name="ui_ef63798c42e5cbfc" formatted="false">"Neuzuordnung – Menu + View reserviert"</string>
+    <string name="ui_ef9e7f887a4e6b63" formatted="false">"Code läuft in {0} Min. {1} Sek. ab."</string>
+    <string name="ui_efb486aeecda2759" formatted="false">"Lieblingskanal"</string>
+    <string name="ui_f0396835eb883e35" formatted="false">"Spielname"</string>
+    <string name="ui_f08e468a1f1c0e01" formatted="false">"Netzwerk-Jitter"</string>
+    <string name="ui_f0a5d0b85c1fe428" formatted="false">"Profil nicht informiert"</string>
+    <string name="ui_f10cadbc47a09be6" formatted="false">"Galaxie-Violett"</string>
+    <string name="ui_f11e7df036a8fd99" formatted="false">"; Bestellung während der Sitzung: {0}"</string>
+    <string name="ui_f12b9d29b2cf0da6" formatted="false">"Durch Erhöhen der Sättigung oder Erzwingen des Fernsehers in den HDR-Modus wird der SDR-Stream nicht in HDR10 umgewandelt. Die eigenen Bildsteuerungen des Fernsehers sind weiterhin verfügbar."</string>
+    <string name="ui_f1a05e988e609704" formatted="false">"Der Fernseher stellte kein Anwendungsinstallationsprogramm für die Verknüpfung bereit."</string>
+    <string name="ui_f1dd04ae0fde2ba0" formatted="false">"Zoom – mit Zuschnitt füllen"</string>
+    <string name="ui_f20f404de2b58f35" formatted="false">"Der Xbox-Verlauf kann auf diesem Gerät nicht gespeichert werden."</string>
+    <string name="ui_f2b3bbccd1e3770c" formatted="false">"Dein Spiel"</string>
+    <string name="ui_f30b36266e720ad6" formatted="false">"ZUM SPIELEN ANMELDEN"</string>
+    <string name="ui_f43e7dd113b16494" formatted="false">"Bei 0 % bleibt das Originalbild erhalten. Beginnen Sie mit 25 % und vergleichen Sie die Renderzeit."</string>
+    <string name="ui_f47dfde9cb6fd44e" formatted="false">"Deaktiviert"</string>
+    <string name="ui_f486a903433f0619" formatted="false">"Bevorzugen Sie IPv4 – mit IPv6 verfügbar"</string>
+    <string name="ui_f4a68a16351cdffc" formatted="false">"Vollständige offizielle Liste • Informationen und Cover werden geladen…"</string>
+    <string name="ui_f51e982360461a76" formatted="false">"Gyroskop: Registrierung von Android abgelehnt"</string>
+    <string name="ui_f538ea4afa396b9b" formatted="false">"Installation zulassen"</string>
+    <string name="ui_f58a67a713c98dd0" formatted="false">"Sprinten"</string>
+    <string name="ui_f6088eea2bd70977" formatted="false">"Prestige-Gold"</string>
+    <string name="ui_f650f7200a36b5c1" formatted="false">"Kanal aus Favoriten entfernen"</string>
+    <string name="ui_f680dda7acf9b89f" formatted="false">"Diagnose nach dem Spiel"</string>
+    <string name="ui_f692b4b7e0efc7a4" formatted="false">"Hoher Steilpass"</string>
+    <string name="ui_f6cb3b238d304c1b" formatted="false">"NEU HINZUGEFÜGT"</string>
+    <string name="ui_f71b322dba0c5203" formatted="false">"Bereiten Sie Ihr Spiel vor…"</string>
+    <string name="ui_f71e2412211daacb" formatted="false">"Kupplung"</string>
+    <string name="ui_f78f25086a60b340" formatted="false">"Eingabeplaner"</string>
+    <string name="ui_f797fce773730594" formatted="false">"Codes STUN: {0}"</string>
+    <string name="ui_f7a82599a68b1b1e" formatted="false">"Sofortiger Versand per Geste: Bestellungen {0}, abgelehnt {1}"</string>
+    <string name="ui_f7d070ebd521bf46" formatted="false">"Serverregion"</string>
+    <string name="ui_f7dc6cc4bf3cbdc7" formatted="false">"Aktion – Standard"</string>
+    <string name="ui_f902df3c35163c5b" formatted="false">"{0} → {1}"</string>
+    <string name="ui_f972f402af4185e2" formatted="false">"Mit Berührung spielen: {0}"</string>
+    <string name="ui_f9a320a7e570459b" formatted="false">"Richtungsweise ↑"</string>
+    <string name="ui_f9c01b65b5e225b2" formatted="false">"Mehr Präzision in der Mitte"</string>
+    <string name="ui_fa6c9c8af2f428a1" formatted="false">"Emulation: WASD-Bewegung, Mausziel, Linksklick RT, Rechtsklick LT; Leertaste A, Strg B, R/E X, Q Y, Umschalttaste L3, Tabulatortaste View und Esc Menu. Native liefert Tasten und Maus nur in Spielen aus, die Unterstützung anbieten. F7 öffnet das menu der App; F8 erfasst/freigibt Einträge. Für die relative Erfassung ist Android 8+ erforderlich. Gültig im nächsten Spiel."</string>
+    <string name="ui_faca76428c612f9e" formatted="false">"Sitzungswartung ersetzt"</string>
+    <string name="ui_fb2175902de0d504" formatted="false">"Steuert den Kanal"</string>
+    <string name="ui_fb40f5b8acf0a571" formatted="false">"Android-Joystick-Ereignis → App: n/a (keine physischen Ereignisse beobachtet)"</string>
+    <string name="ui_fb62fe2ae6b2ae6c" formatted="false">"{0}: {1}"</string>
+    <string name="ui_fbebbef769b8bbb3" formatted="false">"Match-Optionen"</string>
+    <string name="ui_fbfcb9e12dfff345" formatted="false">"Besonders"</string>
+    <string name="ui_fc0c258288401c6f" formatted="false">"Nahkampf"</string>
+    <string name="ui_fd2df4c6a25bfd6a" formatted="false">"VERBINDEN SIE IHR KONTO"</string>
+    <string name="ui_fd38bd8c6c9c36e1" formatted="false">"nicht gewährt"</string>
+    <string name="ui_fd9bac4a8e546c3e" formatted="false">"Berühren Sie HUD und passen Sie menu an"</string>
+    <string name="ui_fe5d26cbe1bc1576" formatted="false">"UNTERSCHRIFT NICHT INFORMIERT"</string>
+    <string name="ui_feff8b5f716c79a1" formatted="false">"Jeder Controller besetzt einen Spieler. Touch-/Tastatur-Reservespieler 1. Spiel und Sitzung müssen den lokalen Mehrspielermodus unterstützen. Gültig im nächsten Spiel."</string>
+    <string name="ui_ff070ada77b9fef3" formatted="false">"Helligkeit"</string>
+    <string name="ui_ff20d756c5955aa6" formatted="false">"Limit dieses Versuchs: {0}. Zurück oder Abbrechen verlässt die Warteschlange."</string>
+    <string name="ui_ffc85b563def9bc4" formatted="false">"Vibration testen / Unterstützung prüfen"</string>
+</resources>

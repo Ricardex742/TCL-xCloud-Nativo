@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.touch
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import com.xcloud.tclnative.catalog.GameLibrary
 import org.json.JSONObject
@@ -65,6 +67,6 @@ class GameHudStore(private val context: Context) {
             .put("scale",settings.scale).put("sensitivity",settings.sensitivity).put("controls",controls)
             .put("lookDeadzone",settings.lookDeadzone).put("footballScheme",settings.footballScheme.name)
             .put("aimAndFire",settings.aimAndFire).put("sprintGesture",settings.sprintGesture)
-        if(!prefs(id).edit().putString("layout",data.toString()).commit()) throw java.io.IOException("Não foi possível salvar o HUD neste aparelho.")
+        if(!prefs(id).edit().putString("layout",data.toString()).commit()) throw java.io.IOException(UiText.text("Não foi possível salvar o HUD neste aparelho."))
     }
 }

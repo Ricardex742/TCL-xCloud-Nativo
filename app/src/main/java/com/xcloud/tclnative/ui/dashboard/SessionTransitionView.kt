@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.ui.dashboard
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.BitmapFactory
@@ -28,7 +30,7 @@ class SessionTransitionView(context: Context) : FrameLayout(context) {
             arrayOf(UiColor.TRANSITION_SHADE_TOP,UiColor.TRANSITION_SHADE_MID,UiColor.TRANSITION_SHADE_END))
     }
     private val logo=ImageView(context).apply {
-        scaleType=ImageView.ScaleType.FIT_CENTER; contentDescription="Logo xCLOUD"
+        scaleType=ImageView.ScaleType.FIT_CENTER; contentDescription=UiText.text("Logo xCLOUD")
         background=DashboardTheme.shape(UiColor.LOGO_BACKGROUND,26f)
         clipToOutline=true
     }
@@ -40,7 +42,7 @@ class SessionTransitionView(context: Context) : FrameLayout(context) {
     private val detail=label(20,false).apply { maxLines=2; setTextColor(DashboardTheme.muted) }
     private val progress=ProgressBar(context,null,android.R.attr.progressBarStyleHorizontal).apply {
         isIndeterminate=true; indeterminateTintList=ColorStateList.valueOf(DashboardTheme.accent)
-        contentDescription="Aguarde"
+        contentDescription=UiText.text("Aguarde")
     }
     private var logoJob: Job?=null
     private var url: String?=null
@@ -57,17 +59,17 @@ class SessionTransitionView(context: Context) : FrameLayout(context) {
         DashboardTheme.customFocus(this)
         visibility=GONE
     }
-    private fun label(size: Int,heavy: Boolean)=TextView(context).apply {
+    private fun label(size: Int,heavy: Boolean)=com.xcloud.tclnative.i18n.LocalizedTextView(context).apply {
         typeface=DashboardTheme.font(context,heavy); includeFontPadding=false
         setTextColor(Color.WHITE); setTextSize(TypedValue.COMPLEX_UNIT_PX,size.toFloat())
     }
     fun showStartup(value: GameTitle?,message: String) {
-        exiting=false; show(value,message,"Seus jogos. Na sua tela.")
+        exiting=false; show(value,message,UiText.text("Seus jogos. Na sua tela."))
     }
     fun showExit(value: GameTitle?,wasPlaying: Boolean=true) {
         exiting=true
-        show(value,if(wasPlaying) "Saindo do jogo…" else "Voltando ao catálogo…",
-            "Preparando seu catálogo.")
+        show(value,if(wasPlaying) UiText.text("Saindo do jogo…") else UiText.text("Voltando ao catálogo…"),
+            UiText.text("Preparando seu catálogo."))
     }
     private fun show(value: GameTitle?,message: String,description: String) {
         visibility=VISIBLE; detail.text=description; setGame(value); updateStatus(message)
@@ -89,7 +91,7 @@ class SessionTransitionView(context: Context) : FrameLayout(context) {
     fun setGame(value: GameTitle?) {
         val changed=(game==null)!=(value==null)
         game=value; title.text=value?.name ?: "xCLOUD"
-        banner.contentDescription=value?.let { "Banner de ${it.name}" }
+        banner.contentDescription=value?.let { UiText.text("Banner de {0}",UiText.nested(it.name)) }
         val next=value?.let { it.heroUrl ?: it.tileUrl ?: it.posterUrl }
         if(next!=url) { url=next; art.load(banner,next,1280,720) { updateBrandVisibility() } }
         updateBrandVisibility()

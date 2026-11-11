@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.signaling
 
+import com.xcloud.tclnative.i18n.UiText
+
 import org.json.JSONObject
 import kotlin.math.ceil
 
@@ -28,20 +30,19 @@ data class QueueStatus(
         val stateAge = ((nowMs - confirmedAtMs).coerceAtLeast(0) / 1000)
         val estimateAge = estimateAtMs?.let { ((nowMs - it).coerceAtLeast(0) / 1000) }
         val prediction = when {
-            estimate == null -> "Estimativa do Xbox: indisponível no momento."
-            estimate.seconds < 60 -> "Estimativa do Xbox: menos de 1 minuto."
-            else -> "Estimativa do Xbox: cerca de ${duration(estimate.seconds)}."
+            estimate == null -> UiText.text("Estimativa do Xbox: indisponível no momento.")
+            estimate.seconds < 60 -> UiText.text("Estimativa do Xbox: menos de 1 minuto.")
+            else -> UiText.text("Estimativa do Xbox: cerca de {0}.",UiText.nested(duration(estimate.seconds)))
         }
         return buildString {
             appendLine(prediction)
-            appendLine("Você já aguardou: ${duration(elapsed)}.")
-            if (stateAge >= 10) appendLine("Consultando o Xbox; última confirmação da fila há ${duration(stateAge)}.")
-            else appendLine("Xbox confirmou que a sessão está na fila há ${stateAge}s.")
-            if (estimateAge != null) appendLine("Previsão consultada há ${duration(estimateAge)}" +
-                if (estimateAge > 90 || estimateFailed) " (desatualizada)." else ".")
-            if (estimateFailed) appendLine("Não foi possível atualizar a previsão; a consulta da vaga continua.")
-            appendLine("A previsão pode mudar; não é garantia de horário.")
-            append("Limite desta tentativa: ${duration(limitMs / 1000)}. Voltar ou Cancelar sai da fila.")
+            appendLine(UiText.text("Você já aguardou: {0}.",UiText.nested(duration(elapsed))))
+            if (stateAge >= 10) appendLine(UiText.text("Consultando o Xbox; última confirmação da fila há {0}.",UiText.nested(duration(stateAge))))
+            else appendLine(UiText.text("Xbox confirmou que a sessão está na fila há {0}s.",UiText.nested(stateAge)))
+            if (estimateAge != null) appendLine(UiText.join(UiText.text("Previsão consultada há {0}",UiText.nested(duration(estimateAge))),if (estimateAge > 90 || estimateFailed) " (desatualizada)." else "."))
+            if (estimateFailed) appendLine(UiText.text("Não foi possível atualizar a previsão; a consulta da vaga continua."))
+            appendLine(UiText.text("A previsão pode mudar; não é garantia de horário."))
+            append(UiText.text("Limite desta tentativa: {0}. Voltar ou Cancelar sai da fila.",UiText.nested(duration(limitMs / 1000))))
         }
     }
 

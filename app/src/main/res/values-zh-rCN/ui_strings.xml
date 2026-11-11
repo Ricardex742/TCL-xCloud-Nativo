@@ -1,0 +1,821 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_00337a440affe8d9" formatted="false">"FSR 输出分辨率的渲染器"</string>
+    <string name="ui_01097ccc24bdd54c" formatted="false">"订单：{0}、{1} Mbps（收到的 VBR 可能有所不同）| Menu+View：出发； INFO/F10：统计\n{2}"</string>
+    <string name="ui_013a1e5debec7510" formatted="false">"手机震动"</string>
+    <string name="ui_013b6b53ec11bea0" formatted="false">"扫描二维码登录"</string>
+    <string name="ui_0160c60d129ba3c9" formatted="false">"足球控制器方案"</string>
+    <string name="ui_019da395008ae750" formatted="false">"麦克风不可用。"</string>
+    <string name="ui_01d41b7846b0b45f" formatted="false">"向左翻转Y：{0}"</string>
+    <string name="ui_0267884953a02355" formatted="false">"高损耗或抖动。在路由器附近比较Ethernet和Wi-Fi；服务也可能有所不同。"</string>
+    <string name="ui_02c7b48c968b844b" formatted="false">"超过超时时间"</string>
+    <string name="ui_02d6ff6939c73b58" formatted="false">"在创建快捷方式之前使用 Y 添加游戏。"</string>
+    <string name="ui_031a5e835b1f6d36" formatted="false">"未知网络"</string>
+    <string name="ui_031bde0f50ba5d49" formatted="false">"请求启动器快捷方式：{0}"</string>
+    <string name="ui_03561d241830a0e8" formatted="false">"电视没有创建收藏夹频道。"</string>
+    <string name="ui_043344ab2cab974f" formatted="false">"断开会话并返回目录"</string>
+    <string name="ui_044419e9c7dfdf4f" formatted="false">"视频解码器"</string>
+    <string name="ui_0471fc9b94d1d4e1" formatted="false">"屏幕：Android发布的HDR10。"</string>
+    <string name="ui_0482ab2f5e9555df" formatted="false">"高效：是"</string>
+    <string name="ui_04fed7bc7eba27be" formatted="false">"原生触摸Xbox：{0}"</string>
+    <string name="ui_0576a13b7f8da156" formatted="false">"控制器和手机振动"</string>
+    <string name="ui_05c167f258910d47" formatted="false">"观察到的丢弃：{0} • 无进展：{1}（{2} 剧集）\n"</string>
+    <string name="ui_05d410b61f115e54" formatted="false">"重新登录"</string>
+    <string name="ui_05f55ecde2095706" formatted="false">"当应用程序打开时，通过 USB 可用于该控制器。确认是否有震动。"</string>
+    <string name="ui_063e3bb2ff5e1126" formatted="false">"此列表中没有可用的 Game Pass 标题。"</string>
+    <string name="ui_072486acb1c2c3bc" formatted="false">"正在加载目录..."</string>
+    <string name="ui_078c3c1c21cac018" formatted="false">"等待样品"</string>
+    <string name="ui_07adc85579777aed" formatted="false">"不请自来的"</string>
+    <string name="ui_07c30329e1fbb86e" formatted="false">"相机死区补偿"</string>
+    <string name="ui_085a7aac0ee4c17f" formatted="false">"估计指数。解码的 FPS 不是来自游戏或屏幕的 FPS。网络和暂停反映了可用的样本；链接 Wi-Fi 不测量互联网速度。"</string>
+    <string name="ui_087049dba46795c1" formatted="false">"控件 › 鼠标和键盘"</string>
+    <string name="ui_088f4da0fb6e92f6" formatted="false">"当Android或USB测试支持时，触发相应的控制器。下一场比赛有效。"</string>
+    <string name="ui_08fcc1f5b2d705ea" formatted="false">"射击时瞄准：{0}"</string>
+    <string name="ui_0964df415f982798" formatted="false">"分辨率 不适用"</string>
+    <string name="ui_0a6ed0003ccbb5c5" formatted="false">"控制器振动"</string>
+    <string name="ui_0a8a145f0c4c786b" formatted="false">"HDR10：屏幕和传输"</string>
+    <string name="ui_0aadc3c5e893f94b" formatted="false">"左死区：{0}%"</string>
+    <string name="ui_0af64325f77fe6bf" formatted="false">"选择游戏中使用的相同方案。应用恢复足球按钮动作和手势，同时保持自定义位置和大小。"</string>
+    <string name="ui_0b23a612555311a0" formatted="false">"RTT 升高。比较连接和服务区域。 RTT 不测量完整的命令到图像延迟。"</string>
+    <string name="ui_0b2d680c438ef00a" formatted="false">"模拟拖动运行：{0}"</string>
+    <string name="ui_0b515c2eb55d0039" formatted="false">"本版本报告中未记录。"</string>
+    <string name="ui_0b6181c8fae6c214" formatted="false">"{0} 横幅"</string>
+    <string name="ui_0bf12e52f3bc5819" formatted="false">"超时前没有视频帧呈现"</string>
+    <string name="ui_0c4d21bd3043de42" formatted="false">"编解码器：{0}"</string>
+    <string name="ui_0c589d4d177557b9" formatted="false">"原生触摸队列：D/U/M输入{0}/{1}/{2}； "</string>
+    <string name="ui_0c62bc59af11fcee" formatted="false">"↑ 顶部"</string>
+    <string name="ui_0cb22b8f1ab03a08" formatted="false">"死区补偿：{0}%"</string>
+    <string name="ui_0cef94b399905087" formatted="false">"视频准备好后将立即播放比赛。"</string>
+    <string name="ui_0d1222c8a7720ee4" formatted="false">"正在加载最近添加的内容..."</string>
+    <string name="ui_0d220536c41d6fdb" formatted="false">"100% 保留体积。除此之外，当应用程序检测到音频峰值时，它会逐渐增加和减少增益。瞬变仍然会扭曲。从 125% 开始。 Android 焦点和音量保持活动状态。"</string>
+    <string name="ui_0d79621a7c3b95be" formatted="false">"丢帧"</string>
+    <string name="ui_0d7a3d320a0fb006" formatted="false">"H.264 — 默认"</string>
+    <string name="ui_0d8c42edc4b4608f" formatted="false">"左灵敏度：{0}%"</string>
+    <string name="ui_0d995dfdd2eeea56" formatted="false">"佯攻"</string>
+    <string name="ui_0d9a4b66ad7d5845" formatted="false">"外观与主题"</string>
+    <string name="ui_0e01764ea4f7fbb1" formatted="false">"本地演示错误"</string>
+    <string name="ui_0ea9a4d339b48e4f" formatted="false">"启动诊断"</string>
+    <string name="ui_0f2bd88ef0acbda9" formatted="false">"关闭"</string>
+    <string name="ui_1003f34d94801539" formatted="false">"援助"</string>
+    <string name="ui_106574feeec20607" formatted="false">"开始： {0}"</string>
+    <string name="ui_10866a9df5f8be5b" formatted="false">"{0} {1}"</string>
+    <string name="ui_10a9f4a598e80ee7" formatted="false">"相互影响"</string>
+    <string name="ui_10c71725a6c0bcad" formatted="false">"麦克风：采集开始"</string>
+    <string name="ui_11239872d178729a" formatted="false">"总计"</string>
+    <string name="ui_11715c548ed9a603" formatted="false">"DZ 应用：相机/LT/RT 0% | LT {0}% RT {1}% | Menu+View：出发\n"</string>
+    <string name="ui_11eae6d197406791" formatted="false">"选择菜单语言。更改会立即生效并保存在此设备上。游戏的语言在会话选项中单独设置。"</string>
+    <string name="ui_124cfe273495ea3d" formatted="false">"\n\nAndroid 适配器和驱动程序需要提供振动。将控制器模式更改为XInput可以更改支持；该应用程序不会更改固件。"</string>
+    <string name="ui_126169d397f54a6a" formatted="false">"标记必须一起按下的按钮。应用确认编辑器中的组合。"</string>
+    <string name="ui_12ce320925daa43d" formatted="false">"继续游玩"</string>
+    <string name="ui_13607cf86dd0cd21" formatted="false">"ICE 连接失败"</string>
+    <string name="ui_139cc249cd8ab25d" formatted="false">"正在生成您的登录代码..."</string>
+    <string name="ui_13a72daec9032012" formatted="false">"持有LB时"</string>
+    <string name="ui_14835c83f4a3a62d" formatted="false">"0% 保留原始图像。与现有过滤器（包括 FSR）一起应用。"</string>
+    <string name="ui_148b35103d77bd4f" formatted="false">"比例：{0} |标准清晰度：{1}%|饱和度：{2}% |亮度：{3}%|对比度：{4}%|介绍：高达 {5} FPS | AiPQ：应用程序无法验证\n"</string>
+    <string name="ui_1538cbf237776afb" formatted="false">"安全连接失败"</string>
+    <string name="ui_155487355b5495ca" formatted="false">"帧"</string>
+    <string name="ui_1576aa44257d3798" formatted="false">"接收视频"</string>
+    <string name="ui_15cf9ee6a4ebeb02" formatted="false">"表面尚未确认{0}x{1}；维持标准规模"</string>
+    <string name="ui_15da365df4e752ab" formatted="false">"诊断无法保存在此设备上。"</string>
+    <string name="ui_164ee63a2378f434" formatted="false">"麦克风：静音；发送已暂停"</string>
+    <string name="ui_166a16e88276e61b" formatted="false">"， 最喜欢的"</string>
+    <string name="ui_1692e0b849066c08" formatted="false">"在收藏之前选择游戏以检查其可用性。"</string>
+    <string name="ui_181c5dfa3b30b3fa" formatted="false">" （请求{0}）"</string>
+    <string name="ui_182c8cbab96988ee" formatted="false">"手势"</string>
+    <string name="ui_185e5156066b1d9a" formatted="false">"另一个网络"</string>
+    <string name="ui_18d1dc03989bfdb3" formatted="false">"区域：{0}"</string>
+    <string name="ui_18f6e83c63ccb23a" formatted="false">"准备你的游戏"</string>
+    <string name="ui_19ad4d1d326b4959" formatted="false">"{0} • {1}\nAndroid 暴露的振动：{2}"</string>
+    <string name="ui_19d3d24112a7096d" formatted="false">"无法在此设备上保存 HUD。"</string>
+    <string name="ui_1a757df92a3d1ed5" formatted="false">"正确的灵敏度"</string>
+    <string name="ui_1a83cde6a9686660" formatted="false">"AMD FSR 1.0.2：要求；等待视频"</string>
+    <string name="ui_1a869f846de955ac" formatted="false">"标志xCLOUD"</string>
+    <string name="ui_1adb254c868d66b5" formatted="false">"已启用-退出游戏时打开"</string>
+    <string name="ui_1b0fd79f3f688e61" formatted="false">"您可以按 B 或 Back 取消。"</string>
+    <string name="ui_1b9635cedf51d570" formatted="false">"通过手机访问"</string>
+    <string name="ui_1bb648eca3d0a17c" formatted="false">"表面 {0} → 窗口 {1}x{2} | Android 输出：{3}\n"</string>
+    <string name="ui_1bd516ba76b6bec4" formatted="false">"挑射"</string>
+    <string name="ui_1bed6eca2f3d2df4" formatted="false">"未找到“{0}”的匹配项。\nX 再次搜索。"</string>
+    <string name="ui_1bfd08329378ce3b" formatted="false">"使用您的手机连接您的帐户。"</string>
+    <string name="ui_1c042c6d4fcb67de" formatted="false">"禁用 HUD"</string>
+    <string name="ui_1ceb820c525c1311" formatted="false">"通过安卓测试"</string>
+    <string name="ui_1d28145c262b0863" formatted="false">"能力"</string>
+    <string name="ui_1d44ee5f40b2bcfd" formatted="false">"亮度：{0}%"</string>
+    <string name="ui_1df117eddd08bb89" formatted="false">"模拟竞赛"</string>
+    <string name="ui_1e62d8b4bb80e1b9" formatted="false">"选择菜单、目录和窗口的颜色。绿色是默认值。该选择将保存在此设备上，立即应用，并且不会更改游戏的颜色。"</string>
+    <string name="ui_1eb6d17388ac788c" formatted="false">"Android 未枚举 USB 设备。"</string>
+    <string name="ui_1eed183bf1eb2f09" formatted="false">"倒带"</string>
+    <string name="ui_1f6b3d376df4294d" formatted="false">"在电视上，游戏使用物理控制器。在移动设备上，Automatic 优先考虑兼容游戏中的本机触摸和其他游戏中的 HUD。独家 — 虚拟控制器强制 HUD。下一场比赛有效。"</string>
+    <string name="ui_20e6627eb0692212" formatted="false">"{0}游戏"</string>
+    <string name="ui_20e935e179853823" formatted="false">"SDK 未生成与所选配置文件兼容的 H.264 产品"</string>
+    <string name="ui_212b6b7b0d29c4c6" formatted="false">"不透明度"</string>
+    <string name="ui_215b6bd084220c04" formatted="false">"较低的延迟会减少缓冲区。自适应为网络提供了更多余量。兼容性选择 720p，在自动模式下请求最多 6 Mbps，优先考虑 H.264 Baseline，并显示高达 30 帧/秒。解码仍然取决于接收到的流。适用于下一场比赛。"</string>
+    <string name="ui_226a50accaaf49b4" formatted="false">"拖动灵敏度：{0}%"</string>
+    <string name="ui_232234ff7189cc5e" formatted="false">"延迟 RTT"</string>
+    <string name="ui_23591ccac3b43411" formatted="false">"官方图库没有返回该地区的游戏。"</string>
+    <string name="ui_23c4aad78636750d" formatted="false">"{0}%{1}"</string>
+    <string name="ui_23eb724140170539" formatted="false">"音频增益：{0}%"</string>
+    <string name="ui_2450040316f27ba1" formatted="false">"手势和模式指南"</string>
+    <string name="ui_2472c6d12770574a" formatted="false">"关闭原因：{0}\n"</string>
+    <string name="ui_24a9373e8e720a68" formatted="false">"最大比特率"</string>
+    <string name="ui_252f2ee920a16419" formatted="false">"积极的"</string>
+    <string name="ui_25397a53f2ee9d3e" formatted="false">"Xbox控制器"</string>
+    <string name="ui_25c27316580b7dec" formatted="false">"官方图库中的产品无效；更新目录。"</string>
+    <string name="ui_262193abdb9a8260" formatted="false">"调整 HUD 中的阻力响应。最大转动速度还取决于游戏中设置的控制器灵敏度。"</string>
+    <string name="ui_262393acfaff6b4f" formatted="false">"三月 -"</string>
+    <string name="ui_267edaa6bd49c2dc" formatted="false">"正在加载目录..."</string>
+    <string name="ui_26a8b63dd399e5fe" formatted="false">"无法确认 Game Pass 游戏。\n更新设置中的目录。"</string>
+    <string name="ui_26f6986d29484edb" formatted="false">"帧率保护：{0} FSR 由 {1} 绘制/秒；本场比赛的标准尺度"</string>
+    <string name="ui_2793dbcc6f49bf3a" formatted="false">"麦克风在此会话中被禁用。在下一场比赛之前激活音频和麦克风。"</string>
+    <string name="ui_2847ddf190a84744" formatted="false">"下一场比赛有效。"</string>
+    <string name="ui_2848955efd7478c1" formatted="false">"设置"</string>
+    <string name="ui_28890e6bdaf9cc28" formatted="false">"你的游戏。在你的屏幕上。"</string>
+    <string name="ui_294c831135f04db1" formatted="false">"在视频 {0} 之外开始；忽略联系人 {1}； menu {2}; "</string>
+    <string name="ui_29aea3a73269d78a" formatted="false">"联系"</string>
+    <string name="ui_2a791bdb998c27a1" formatted="false">"估计{0}之前更新过。时间可能会有所不同。"</string>
+    <string name="ui_2ad646b0e7e0e12a" formatted="false">"调整模拟的右模拟摇杆。在本机模式下，使用游戏本身的灵敏度。下一场比赛有效。"</string>
+    <string name="ui_2af1d168c2064da9" formatted="false">"残疾人"</string>
+    <string name="ui_2b17def9c2e690c9" formatted="false">"编辑位置、大小和动作"</string>
+    <string name="ui_2c42f42f33a12558" formatted="false">"激活麦克风"</string>
+    <string name="ui_2c6d80c5ed08e17f" formatted="false">"原生升级"</string>
+    <string name="ui_2c6da1d4dddf6065" formatted="false">"网络偏好"</string>
+    <string name="ui_2ca6c3d2dbe986f6" formatted="false">"仅虚拟控制器"</string>
+    <string name="ui_2cdf67ff75149d68" formatted="false">"竞赛 — 标准"</string>
+    <string name="ui_2d023dea2a9d9379" formatted="false">"出去"</string>
+    <string name="ui_2d5bc5113ae0ddb9" formatted="false">"请求增益：{0}% • 应用：{1}% • 自适应峰值降低：{2}"</string>
+    <string name="ui_2d95ceb7882c2a50" formatted="false">"请求的编解码器：{0} | {1}\n"</string>
+    <string name="ui_2df03869741616c7" formatted="false">"AMD FSR: {0}"</string>
+    <string name="ui_2e4aaf05df1cbfb3" formatted="false">"额外的"</string>
+    <string name="ui_2e4e5aceedd4d2e7" formatted="false">"等待"</string>
+    <string name="ui_2eab6a8f46701077" formatted="false">"躲闪"</string>
+    <string name="ui_2ec23126760fc5ad" formatted="false">"铂金银"</string>
+    <string name="ui_2f3069552c48aa40" formatted="false">"解码器报告错误"</string>
+    <string name="ui_2f3aedca700af8d5" formatted="false">"麦克风：Android拒绝捕获；沉默的"</string>
+    <string name="ui_2f59ff1c404d1a1c" formatted="false">"本版本报告中未记录"</string>
+    <string name="ui_2fab0c9bbaa45978" formatted="false">"动作：{0}"</string>
+    <string name="ui_3018c814b3eade1f" formatted="false">"三月+"</string>
+    <string name="ui_30608d134be11507" formatted="false">"布局：{0}"</string>
+    <string name="ui_30feb8278a45f552" formatted="false">"{0}：平均 {1} |分钟。 {2} |峰值 {3} {4}\n"</string>
+    <string name="ui_3119ed950dc7cb32" formatted="false">"输入通道出现拥塞等待。比较连接稳定性。"</string>
+    <string name="ui_312d7635e19fc07c" formatted="false">"xCLOUD 诊断"</string>
+    <string name="ui_313097aa9a44ecf7" formatted="false">"视频布局：{0} |计算面积：{1}x{2} |渲染器帧：{3}x{4}\n"</string>
+    <string name="ui_3248572c5b6c1107" formatted="false">"手榴弹"</string>
+    <string name="ui_3332b8820c058240" formatted="false">"\n{0}\n{1} • 宣布聊天流：{2} • 发送音频：{3} B"</string>
+    <string name="ui_334d13453041f240" formatted="false">"会话失败"</string>
+    <string name="ui_334d1bd8efe38a97" formatted="false">"重新生成验证码"</string>
+    <string name="ui_33569f077d268758" formatted="false">"传输故障"</string>
+    <string name="ui_33aa74c990133347" formatted="false">"AMD FidelityFX Super Resolution"</string>
+    <string name="ui_34189d7d4bc30aea" formatted="false">"火山红"</string>
+    <string name="ui_349a1e5b5ad05003" formatted="false">"会话状态 Xbox"</string>
+    <string name="ui_35ba73e089626c8e" formatted="false">"形态维持通常的 H.264 交易。 Light 仅提供 Baseline，在 Auto 上请求 720p 和最多 6 个 Mbps。手动启动上限可以替代此预算。这是一个 H.264 配置文件，如果游戏已经使用了 Baseline，则不能保证获胜。接收到的分辨率和比特率取决于服务。兼容也使用Baseline。适用于下一场比赛。"</string>
+    <string name="ui_35bb70353b8e6473" formatted="false">"搓射"</string>
+    <string name="ui_36164ad19a82b356" formatted="false">"最近添加的内容当前不可用。\n游戏保留在“所有游戏”选项卡中。"</string>
+    <string name="ui_368b2b2e7200770e" formatted="false">"自动 • {0}"</string>
+    <string name="ui_377054dce167ab0e" formatted="false">"自动 — 检测设备和游戏"</string>
+    <string name="ui_3836b5a9a3deca64" formatted="false">"鼠标和键盘"</string>
+    <string name="ui_38e8ff046e8a4a9e" formatted="false">"错误 HTTP 响应"</string>
+    <string name="ui_390eb77b9e11d082" formatted="false">"来源不明"</string>
+    <string name="ui_3957f59f76b9013c" formatted="false">"控制器校准和重新映射"</string>
+    <string name="ui_395adc62ab03e0a6" formatted="false">"接收图像"</string>
+    <string name="ui_3980046624a3f6c8" formatted="false">"预计指数：{0}/100 • {1}\n\n"</string>
+    <string name="ui_39aa7e5f1a46a860" formatted="false">"麦克风"</string>
+    <string name="ui_39d5684bfea642b6" formatted="false">"电视没有创建游戏快捷方式。"</string>
+    <string name="ui_39dcf1cbeb5adbd0" formatted="false">"复制"</string>
+    <string name="ui_3a67eba55d6fcdfb" formatted="false">"→ 右"</string>
+    <string name="ui_3a74acd87ad821ba" formatted="false">"EA SPORTS FC — 防守"</string>
+    <string name="ui_3b0428dedf9ea854" formatted="false">"丢包"</string>
+    <string name="ui_3b23327d8d0c923d" formatted="false">"解码"</string>
+    <string name="ui_3b4f4c207983e247" formatted="false">"100%保持原来的颜色。较高的值会增强颜色； 0% 使图像呈灰色。"</string>
+    <string name="ui_3b5baabe54b4045f" formatted="false">"自动维护视频配置文件预算。手动上限与分辨率无关。较大的值需要更多的网络，并且可能会恶化稳定性。 Xbox 决定接收比特率。下一场比赛有效。"</string>
+    <string name="ui_3bba665be043adac" formatted="false">"可用 — 开始静音"</string>
+    <string name="ui_3bbc8e45b2068390" formatted="false">"需要身份验证。使用二维码再次输入。"</string>
+    <string name="ui_3c2811461be5b829" formatted="false">"快捷方式模板不包含有效的图标和横幅。"</string>
+    <string name="ui_3c68ac114e871ac8" formatted="false">"Y 向右反转：{0}"</string>
+    <string name="ui_3c9ca841b5ad5e6f" formatted="false">"手柄与触控"</string>
+    <string name="ui_3cd7a4601d9fbb2c" formatted="false">"该服务未在此会话中宣布 chatStream。捕捉保持关闭状态。"</string>
+    <string name="ui_3ce2d0b17b1880b0" formatted="false">"未连接控制器。插入加密狗并按下按钮。"</string>
+    <string name="ui_3ce4d5fe1a4367a1" formatted="false">"图像调整"</string>
+    <string name="ui_3dbcda5ffe525dad" formatted="false">"xCLOUD [安卓 {0} | SoC: {1}] | Waiting for session"</string>
+    <string name="ui_3e43c37eb67f0ff7" formatted="false">"标准规模"</string>
+    <string name="ui_3f16c644774c196c" formatted="false">"出色的"</string>
+    <string name="ui_3f799bff91ffca8b" formatted="false">"振动：打开应用程序后，带有相关目的地的 {0} 命令； {1} 通过 Android； {2} 转发至 USB。\n"</string>
+    <string name="ui_3f95bcdb951e0e6a" formatted="false">"定向 →"</string>
+    <string name="ui_3fa41ffd6881476b" formatted="false">"音频增益"</string>
+    <string name="ui_40f3e2c9fdf5bf3e" formatted="false">"部分数据"</string>
+    <string name="ui_414e7c6771bfb5c7" formatted="false">"应用主题：{0}"</string>
+    <string name="ui_41bfa23fb3fe9d31" formatted="false">"收藏"</string>
+    <string name="ui_4242ea82be64774d" formatted="false">"右侧死区"</string>
+    <string name="ui_42992c7d3ad53072" formatted="false">"样本不足，无法计算完整指数。未测量的字段显示为 n/a。"</string>
+    <string name="ui_42fe4324d5ee6872" formatted="false">"WebRTC丢帧"</string>
+    <string name="ui_43192ec0eecec6e4" formatted="false">"模拟鼠标灵敏度"</string>
+    <string name="ui_431d2cdd95977d50" formatted="false">"传输分辨率"</string>
+    <string name="ui_447aaf10738f1398" formatted="false">"快捷方式已创建，但电视未授予安装权限。"</string>
+    <string name="ui_44b3f5569624ba66" formatted="false">"转动"</string>
+    <string name="ui_44d1cde7bab89024" formatted="false">"翻转←"</string>
+    <string name="ui_4533ad51a1eb993c" formatted="false">"通过控制器进行校准和重新映射"</string>
+    <string name="ui_45a2fb181b2175b2" formatted="false">"活性"</string>
+    <string name="ui_462a08f2206f636c" formatted="false">"更新{0}；断线触点报废 {1}；最后一个控制器：{2}\n{3}"</string>
+    <string name="ui_4637c7608d05cd03" formatted="false">"该帐户的目录中没有该游戏。更新设置中的目录。"</string>
+    <string name="ui_46dedd48c84d8e41" formatted="false">"连接已建立。等待游戏第一帧。"</string>
+    <string name="ui_47035f5bf6e7df11" formatted="false">"此 API 不支持立即发货"</string>
+    <string name="ui_472b7cb5c787f296" formatted="false">"足球方案：{0}"</string>
+    <string name="ui_4750ad41b3122b74" formatted="false">"xCloud 错误"</string>
+    <string name="ui_478c39f86a8161d1" formatted="false">"游戏快捷键"</string>
+    <string name="ui_47a18fda47bdd27f" formatted="false">"AMD FSR 1.0.2：关闭"</string>
+    <string name="ui_47cf330e4355aac3" formatted="false">"该引擎的传输：8位H.264，在SDR。视频表面使用8位RGB。\n\n"</string>
+    <string name="ui_48020357dd273e65" formatted="false">"正在等待您在 Microsoft 的批准..."</string>
+    <string name="ui_48111b2c9ff4898e" formatted="false">"本地合作社：{0}"</string>
+    <string name="ui_4875bd46f6938df1" formatted="false">"陀螺仪：{0}"</string>
+    <string name="ui_48a6f1b5c95c945d" formatted="false">"Xbox 会话维护"</string>
+    <string name="ui_490f22e0cafe2260" formatted="false">"H.264 Baseline • 请求 720p • 个人资料/比赛报价"</string>
+    <string name="ui_497403cfde5a4210" formatted="false">"清晰度：{0}%"</string>
+    <string name="ui_49e7b21dec4f31de" formatted="false">"无法在此设备上创建快捷方式。"</string>
+    <string name="ui_4a52c47f66c99ec4" formatted="false">"1440p — 2560×1440"</string>
+    <string name="ui_4a9889dafc31b83f" formatted="false">"自适应"</string>
+    <string name="ui_4aa85902acc25d50" formatted="false">"仍然没有匹配的视频可供显示。"</string>
+    <string name="ui_4ad9c2f74dbab613" formatted="false">"触发器"</string>
+    <string name="ui_4adbcf7454d6a1fe" formatted="false">"当地合作社"</string>
+    <string name="ui_4b05c960591853ee" formatted="false">"未获得"</string>
+    <string name="ui_4b1ac785b8de8c36" formatted="false">"RCAS 调节锐度强度； 50%并不意味着GPU成本的一半。从50%开始； 0% 关闭 RCAS 锐度并在缩放时保持 EASU。在不放大且 RCAS 为 0% 的情况下，使用标准滤光片。当 FSR 未激活时，使用下面的默认锐化。"</string>
+    <string name="ui_4bfae14f85787073" formatted="false">"请求的视频配置文件：{0}×{1} • {2}\n请求区域：{3} |请求的语言：{4}"</string>
+    <string name="ui_4c36ee9f3bc47001" formatted="false">"守门员"</string>
+    <string name="ui_4c77ddc5bf055290" formatted="false">"语言 / Language"</string>
+    <string name="ui_4c9cf78b2618b0b7" formatted="false">"陀螺仪：关闭"</string>
+    <string name="ui_4d04522711e96d11" formatted="false">"组合手势和命令"</string>
+    <string name="ui_4d9fc216d26f7fa6" formatted="false">"网络：{0}\n"</string>
+    <string name="ui_4db70b3589ba6f62" formatted="false">"控制通道已关闭"</string>
+    <string name="ui_4ec7a4faa45c612e" formatted="false">"创建快捷方式"</string>
+    <string name="ui_4f3090753c8d2fdb" formatted="false">"让我们玩"</string>
+    <string name="ui_4f58650d467e195f" formatted="false">"{0} 游戏 • 正在更新 GAME PASS…"</string>
+    <string name="ui_504fb1a48efc40eb" formatted="false">"屏幕模式：Android未报告"</string>
+    <string name="ui_5052c95dbb7a4d8d" formatted="false">"正在恢复您的会话..."</string>
+    <string name="ui_507a9a8be3d145a8" formatted="false">"是的"</string>
+    <string name="ui_510c8504b7666c02" formatted="false">"屏幕：HDR10 Android 未发布。"</string>
+    <string name="ui_5120d6e6ce58a9f2" formatted="false">"音频：媒体/游戏 • 请求的立体声 • 媒体音量 {0} • 静音：{1} • 焦点：{2} • 焦点增益 {3}% • 播放 {4}"</string>
+    <string name="ui_51807ae73e427a4e" formatted="false">"网络连接失败"</string>
+    <string name="ui_519384df60862471" formatted="false">"WebRTC 缓冲网络最小值"</string>
+    <string name="ui_519db67915a19f2b" formatted="false">"检查 Xbox 云上的游戏可用性..."</string>
+    <string name="ui_51ceb32461a802b0" formatted="false">"LL 编解码器：等待视频"</string>
+    <string name="ui_523a44f3354defec" formatted="false">"预测可能会改变。重试限制：{0}。"</string>
+    <string name="ui_52db9735e5787eb4" formatted="false">"连接控制器并按下 Android 按钮以识别它。"</string>
+    <string name="ui_5320b4ddb576ee67" formatted="false">"标记为活动"</string>
+    <string name="ui_54046e97b2af0d03" formatted="false">"AMD FSR 1.0.2：返回标准比例 — {0}"</string>
+    <string name="ui_5407798aed2c5f8e" formatted="false">"输入 Xbox：控制器/HUD"</string>
+    <string name="ui_5462b1a62e38d020" formatted="false">"安装快捷方式"</string>
+    <string name="ui_547895e7e49f46e2" formatted="false">"Xbox 尚未提供等待估计。"</string>
+    <string name="ui_5495e90894e99c50" formatted="false">"会话维护：{0} 确认； {1}故障； "</string>
+    <string name="ui_564483fdaa0be6c5" formatted="false">"网络可能不可用或仍在初始化。检查连接并重试。\n{0}"</string>
+    <string name="ui_5667ddc7bc6e6282" formatted="false">"控制器配置文件"</string>
+    <string name="ui_567d3c6715a99815" formatted="false">"收到视频但没有图像进展。比较解码器、分辨率、过滤器和数据包丢失。"</string>
+    <string name="ui_56991385beba9fac" formatted="false">"原生升级：{0}"</string>
+    <string name="ui_5724963f98d0fef6" formatted="false">"触摸游戏"</string>
+    <string name="ui_572b75effcf75068" formatted="false">"请求屏幕模式：{0} |当前物理：{1} |报告给应用程序的速率：{2}Hz\n"</string>
+    <string name="ui_577f2fb9fa976da6" formatted="false">"启用将两个射击按钮上的瞄准和射击结合起来。禁用使射击与瞄准分开。应用恢复这些按钮的操作并保持其位置。"</string>
+    <string name="ui_57ae557d5235ddcc" formatted="false">"发送控制/配置失败"</string>
+    <string name="ui_58580f4aca95c13c" formatted="false">"启动器未接受该请求。"</string>
+    <string name="ui_586c88220c070b1a" formatted="false">"麦克风：编码器拒绝激活；沉默的"</string>
+    <string name="ui_58ae522829aae08e" formatted="false">"Original 保留接收到的格式并使用适合窗口的最大尺寸。 16:9 的视频可能会在您的手机上留下侧边栏；一些具有原生触感的游戏提供更宽的视频。拉伸填充无需裁剪，但会扭曲图像。缩放填充而不变形，裁剪边缘。固定比例也会变形。使用 ↑/↓ 或滑动查看所有选项。更改在比赛期间立即生效，并保存以供将来的比赛使用。"</string>
+    <string name="ui_58b3b5116d5572a2" formatted="false">"每个游戏的比特率、区域和语言"</string>
+    <string name="ui_58b938545dce3978" formatted="false">"翻转 →"</string>
+    <string name="ui_58cb5d0c620f3ad0" formatted="false">"控件大小"</string>
+    <string name="ui_595dcec8fc90991d" formatted="false">"输入Xbox：原生鼠标/键盘，协商版本{0}"</string>
+    <string name="ui_596730c4eb46c6f1" formatted="false">"您最近的 Xbox 云游戏游戏将出现在这里。"</string>
+    <string name="ui_596903e9ec975722" formatted="false">"The code has expired.生成新代码以继续。"</string>
+    <string name="ui_59dc926760d04aea" formatted="false">"返回"</string>
+    <string name="ui_5a15decff9c895af" formatted="false">"现在无法恢复连接。您保存的登录信息已被保留。"</string>
+    <string name="ui_5ac0d2258a8ba03f" formatted="false">"自动保持 IPv4/IPv6 可用并在出发时检查路线。 WebRTC 考虑连接、接收和 RTT、维护备份替代方案。 IPv4/IPv6 偏好为所选家族提供最多 750 个初始 ms，并保留其他家族。路由也取决于服务器；无法保证最低 ping 值。下一场比赛有效。"</string>
+    <string name="ui_5ae68007466819b0" formatted="false">"16:9 — 标准"</string>
+    <string name="ui_5af3de070991f5ab" formatted="false">"重新映射按钮"</string>
+    <string name="ui_5ba350d83209ffab" formatted="false">"按名称查找游戏。"</string>
+    <string name="ui_5baaabe3ca0e3e5b" formatted="false">"请求发送到启动器。在主屏幕上确认。"</string>
+    <string name="ui_5c0d9d1247ade676" formatted="false">"原生触摸：{0}；输入空间：{1}；虚拟插槽0：{2}"</string>
+    <string name="ui_5c2de6412ff6a812" formatted="false">"控制器：队列 {0} B |最大本地延迟 {1} ms |合并 {2} |等待通道 {3}\n"</string>
+    <string name="ui_5c5df1e844450eee" formatted="false">"正在从 Game Pass 加载游戏..."</string>
+    <string name="ui_5c87f1038115e48d" formatted="false">"从官方列表加载信息。不确认所有权；需要数字购买和服务条件。"</string>
+    <string name="ui_5cf2eabe2f7ead4e" formatted="false">"快速响应"</string>
+    <string name="ui_5cfd306d0c680720" formatted="false">"工业橙"</string>
+    <string name="ui_5d3015b63d8af4f4" formatted="false">"桌子"</string>
+    <string name="ui_5d6bd99ad57d78a7" formatted="false">"路线 ICE：WebRTC 尚未通知选择"</string>
+    <string name="ui_5da6b119769c1053" formatted="false">"传球"</string>
+    <string name="ui_5e192548c7bcc788" formatted="false">"无法查看Xbox的历史记录。\n请更新设置中的目录以重试。"</string>
+    <string name="ui_5e704f128723d932" formatted="false">"Xbox 官方云游戏图库 • 包含免费选项；访问权限取决于帐户和服务条件。"</string>
+    <string name="ui_5e9122e22aeea829" formatted="false">"原生鼠标和键盘 - 支持的游戏"</string>
+    <string name="ui_5ebd45db6acabfbc" formatted="false">"该频道在主屏幕上不可见。在电视上使用安装快捷方式：游戏将出现在应用程序中，包括 Google TV 上。"</string>
+    <string name="ui_5f2f459cff03b9b5" formatted="false">"自动 — 比赛期间 IPv4/IPv6"</string>
+    <string name="ui_5f55edf900896012" formatted="false">"搜索"</string>
+    <string name="ui_5fc03d596bcf540c" formatted="false">" — 禁用"</string>
+    <string name="ui_5fc7e20f01a4a3ed" formatted="false">"活性"</string>
+    <string name="ui_60193beabdba3ac4" formatted="false">"替代方案 — X 踢"</string>
+    <string name="ui_6021b0f36cb336f1" formatted="false">"本场比赛使用虚拟控制器"</string>
+    <string name="ui_6035eadf7ad73a21" formatted="false">"蹲伏/滑行"</string>
+    <string name="ui_60533ba9536c7060" formatted="false">"没有活动视频"</string>
+    <string name="ui_60956010e192ec09" formatted="false">"该游戏没有宣传原生鼠标和键盘。使用仿真器或控制器。"</string>
+    <string name="ui_60d41a2db12a0294" formatted="false">"请求的 FSR 输出：{0} |请求的缓冲区：{1}\n"</string>
+    <string name="ui_6127593882e201a2" formatted="false">"模式 {0}； "</string>
+    <string name="ui_61435946c25099f8" formatted="false">"本地节奏 FSR：{0}（不测量游戏/屏幕 GPU 或 FPS）\n"</string>
+    <string name="ui_61cc7d07af524282" formatted="false">"滑铲"</string>
+    <string name="ui_61e168bce1c2a966" formatted="false">"封面不可用。开始 → 更新目录。"</string>
+    <string name="ui_62b866eb9e9df7d4" formatted="false">"陀螺仪：无传感器设备"</string>
+    <string name="ui_62e41bce3d084026" formatted="false">"测试 USB/XInput — {0}"</string>
+    <string name="ui_633366eb5029868a" formatted="false">"申请已关闭"</string>
+    <string name="ui_63a8d72dce1a6d39" formatted="false">"战术上的"</string>
+    <string name="ui_63e2bbaf1c924391" formatted="false">"继续"</string>
+    <string name="ui_651cd3eade26bd7c" formatted="false">"对比度：{0}%"</string>
+    <string name="ui_65f4d02ea718ba50" formatted="false">"30 秒后图像没有返回。恢复视频可以让比赛继续进行。返回目录结束会话。"</string>
+    <string name="ui_6624c0d31888ecac" formatted="false">"移动"</string>
+    <string name="ui_66a2c683ac7c3e27" formatted="false">"部分的"</string>
+    <string name="ui_66d33467591ba3dc" formatted="false">"准备您的目录。"</string>
+    <string name="ui_66d46ce399af3308" formatted="false">"将安装一个小应用程序，用于在 xCLOUD 上打开此游戏。然后，在“应用程序”中查找该游戏。在 Google TV 上，从主屏幕将其添加到您最喜欢的应用行。"</string>
+    <string name="ui_67343c55f838d078" formatted="false">"防御"</string>
+    <string name="ui_676b6063ae4c96d9" formatted="false">"{0}  {1}"</string>
+    <string name="ui_67b550f6dfc6e20d" formatted="false">"正在加载兼容购买游戏的官方列表..."</string>
+    <string name="ui_6856b67e9e111e7d" formatted="false">"关于{0}"</string>
+    <string name="ui_68a0db34478f420a" formatted="false">"攻击"</string>
+    <string name="ui_68a0ecfad3311a2b" formatted="false">"模拟鼠标灵敏度：{0}%"</string>
+    <string name="ui_68a1a961130ed783" formatted="false">"会话默认值"</string>
+    <string name="ui_68d82a5111f30acc" formatted="false">"恢复视频：重新创建显示表面......"</string>
+    <string name="ui_6914f8a347d4a25c" formatted="false">"将音频、视频和控制器连接到 Xbox。"</string>
+    <string name="ui_693c263b104df9e9" formatted="false">"组合按钮"</string>
+    <string name="ui_6960e07fabc8e3a9" formatted="false">"无法连接：{0}"</string>
+    <string name="ui_69d920c63dd1a626" formatted="false">"视频编解码器"</string>
+    <string name="ui_6a38ddba7b1ce307" formatted="false">"麦克风：协商未完成；沉默的"</string>
+    <string name="ui_6a58eca53330b508" formatted="false">"A  选择       B  返回"</string>
+    <string name="ui_6a6f834e8503b318" formatted="false">"\n\n可用样本值。解码器中的 FPS 不是游戏或屏幕中的 FPS。观察到的缓冲区、WebRTC 目标和网络最小值是不同的测量结果；播放请求不保证观察到的值。解码包括编解码器管道，而不仅仅是处理。不要添加这些测量来估计光子输入。 WebRTC 计数器可能不包括所有连接流量。该指数是本地估计，而不是速度测试。暂停是由看门狗观察的，而不是通过捕获每一帧来观察的。"</string>
+    <string name="ui_6aa4511fc00e6c8a" formatted="false">"设置 › {0}"</string>
+    <string name="ui_6b3a73ce76d187ae" formatted="false">"赛后诊断：{0}"</string>
+    <string name="ui_6bb02cbf4e61a203" formatted="false">"{0} 游戏 • 更新历史记录…"</string>
+    <string name="ui_6bf330c92a591795" formatted="false">"压力"</string>
+    <string name="ui_6c5cc18b8f198ece" formatted="false">"丢包"</string>
+    <string name="ui_6c6adaaff42d504c" formatted="false">"控制器布局"</string>
+    <string name="ui_6ccce0bc37d3c34e" formatted="false">"格式不可用；限制为 100%"</string>
+    <string name="ui_6d69c920b76df7b0" formatted="false">"射门"</string>
+    <string name="ui_6e1c002bff40ba7b" formatted="false">"表面尺寸：{0}；图像调整到窗口| {1} FPS 标记到表面的内容：{2} |最少后处理：{3}；声明的 Android 支持：{4}\n"</string>
+    <string name="ui_6e3a7123b1149629" formatted="false">"好的"</string>
+    <string name="ui_6e61d9ceb42e584a" formatted="false">"游戏"</string>
+    <string name="ui_6e82ce7109479e3d" formatted="false">"手刹"</string>
+    <string name="ui_6e91752edf51a9a4" formatted="false">"完成"</string>
+    <string name="ui_6eeaf16b99c69f98" formatted="false">"复制详细信息"</string>
+    <string name="ui_6f0f039d818b877c" formatted="false">"拉伸——填满屏幕"</string>
+    <string name="ui_6f95371be31c293e" formatted="false">"抢断"</string>
+    <string name="ui_6f9ead072155818b" formatted="false">"瞄准"</string>
+    <string name="ui_6fa65c8b1d86be1a" formatted="false">"大力射门"</string>
+    <string name="ui_6fc11b786d442bc3" formatted="false">"使用/重新加载"</string>
+    <string name="ui_708da79e6a0a6a1a" formatted="false">"等待控件连接以激活 HUD。"</string>
+    <string name="ui_7091e08252b19a9f" formatted="false">"路线ICE：等待统计"</string>
+    <string name="ui_70b2bc30a20bd443" formatted="false">"会议以失败告终。该指数总结了观察到的样本，并且不排除比赛结束时的中断。"</string>
+    <string name="ui_715e6e852db4669e" formatted="false">"控制 › 物理控制器"</string>
+    <string name="ui_7228b14b7339d276" formatted="false">"标准H.264"</string>
+    <string name="ui_725773cdf3a0c425" formatted="false">"绿色 — 默认"</string>
+    <string name="ui_728ce9e009f430f8" formatted="false">"视频演示"</string>
+    <string name="ui_729a44abc3854402" formatted="false">" • 服务代码：{0}"</string>
+    <string name="ui_729ddc2d6a14b63c" formatted="false">"经过时间"</string>
+    <string name="ui_72c062443055110e" formatted="false">"搜索：{0}  •  {1}款游戏"</string>
+    <string name="ui_730c8f35817cbf13" formatted="false">"匹配 • Menu + View"</string>
+    <string name="ui_7347fdd20909d059" formatted="false">"恢复该控制器"</string>
+    <string name="ui_73ec6d749ebb1765" formatted="false">"该游戏的比特率、地区和语言"</string>
+    <string name="ui_74397518ecd59cbc" formatted="false">"SDP 报价已准备：{0} |帖子已确认：{1}\n"</string>
+    <string name="ui_743ece07f975ba41" formatted="false">"左灵敏度"</string>
+    <string name="ui_7441c03b2f6c21aa" formatted="false">"无法验证快捷方式签名。尝试再次创建它。"</string>
+    <string name="ui_7490e4a94af107e2" formatted="false">" • 控制器：{0}"</string>
+    <string name="ui_74c70bb3042fd0b1" formatted="false">"低延迟"</string>
+    <string name="ui_757c830e53da57d8" formatted="false">"游戏库与账户"</string>
+    <string name="ui_75c4bfe48d33e19e" formatted="false">"咨询…"</string>
+    <string name="ui_7632ae27575e3ad6" formatted="false">"\n\n该测试仅接受 Xbox 360/XInput (ff/5d/01)。 HID、Xbox 之一和其他协议需要自己的实现。接受的传输并不能证明发动机振动。"</string>
+    <string name="ui_768de1111f0f42af" formatted="false">"使用二维码更新您的登录信息以连接游戏。"</string>
+    <string name="ui_76900e0682cc8062" formatted="false">"禁用 — 仅拍摄"</string>
+    <string name="ui_76b0fb6ad18939ac" formatted="false">"设置"</string>
+    <string name="ui_76b720722ff9a19b" formatted="false">"视频比特率"</string>
+    <string name="ui_76daee1631fea659" formatted="false">"不"</string>
+    <string name="ui_76e1824b75a3c908" formatted="false">"没有任何"</string>
+    <string name="ui_7826af008248bda6" formatted="false">"串流自有游戏"</string>
+    <string name="ui_78adbf905929c0f6" formatted="false">"你的最爱"</string>
+    <string name="ui_791477787eca5791" formatted="false">"连接您的 Microsoft 帐户以访问您的游戏。"</string>
+    <string name="ui_79651e7e684870d0" formatted="false">"可用的"</string>
+    <string name="ui_7a240c47b9aaafed" formatted="false">"陀螺仪灵敏度"</string>
+    <string name="ui_7a96e3cbb12396ce" formatted="false">"解码时间范围为{0}、ms至{1}、FPS。管道可以与框架重叠；仅此一点并不能证明过载。比较 720p 和设备上禁用的过滤器。"</string>
+    <string name="ui_7afdaf11d46f293f" formatted="false">"图像长宽比"</string>
+    <string name="ui_7b4d92374d3bf359" formatted="false">"您的图书馆"</string>
+    <string name="ui_7b6509a9aa6c2d74" formatted="false">"右灵敏度：{0}%"</string>
+    <string name="ui_7bb50f81a7f81db7" formatted="false">"分辨率：{0}"</string>
+    <string name="ui_7bd998451d35ad13" formatted="false">"活动原生视频 [{0}]"</string>
+    <string name="ui_7be697d4a90b3424" formatted="false">"足球——标准"</string>
+    <string name="ui_7bf56c45ea80b5eb" formatted="false">"Xbox 确认会话已排队等待 {0}。"</string>
+    <string name="ui_7cfb945aa92e9e4f" formatted="false">"对比"</string>
+    <string name="ui_7d1c4b172d9e5abe" formatted="false">"无法完成登录。 {0}"</string>
+    <string name="ui_7d7155a2737ecabe" formatted="false">"装载信息和封面：{0}/{1}"</string>
+    <string name="ui_7ddd23f8251df791" formatted="false">"{0} 图标"</string>
+    <string name="ui_7df581cb7d119a56" formatted="false">"视频与串流"</string>
+    <string name="ui_7e0b3df0e4a57a89" formatted="false">"关联账户"</string>
+    <string name="ui_7f3a4c49553afc6e" formatted="false">"会话协商"</string>
+    <string name="ui_7f5fa50224d18ac3" formatted="false">"复制品：{0}"</string>
+    <string name="ui_7f76d1772534348e" formatted="false">"显示攻击HUD"</string>
+    <string name="ui_7faa3bcd054b0e23" formatted="false">"会议闭幕。"</string>
+    <string name="ui_7fb22bed7386678e" formatted="false">"制动"</string>
+    <string name="ui_7fc1783485bda2bf" formatted="false">"收藏夹快捷方式"</string>
+    <string name="ui_801b999df4383400" formatted="false">"Android 摇杆事件 → 应用程序：平均 {0} |分钟。 {1} |峰值 {2} ms"</string>
+    <string name="ui_805bfea64db39921" formatted="false">"缓冲区 WebRTC：观察到 {0} ms |目标 {1} ms |最小网络 {2} ms\n"</string>
+    <string name="ui_81bccda7a718cabd" formatted="false">"请求的语言：{0}"</string>
+    <string name="ui_81ccdb1302afecc4" formatted="false">"适用{0}"</string>
+    <string name="ui_81d7338f4f5df49f" formatted="false">"调整{0}"</string>
+    <string name="ui_8222c7e9b2afed67" formatted="false">";最后错误 {0}"</string>
+    <string name="ui_8227e3d90b56a55a" formatted="false">"麦克风：静音"</string>
+    <string name="ui_82fd204362ad266a" formatted="false">"队列中有"</string>
+    <string name="ui_8391da809dd9ca6b" formatted="false">"{0}{1}"</string>
+    <string name="ui_8396f8dc3a730105" formatted="false">"选择"</string>
+    <string name="ui_83b1836da0c78588" formatted="false">"残疾人"</string>
+    <string name="ui_83b7a65bfb29335c" formatted="false">"微软官方登录二维码"</string>
+    <string name="ui_83ca0cd5f7dba936" formatted="false">"在两种模式下，图像都会根据所选的宽高比进行调整以适应窗口。启用 Surface Android 缩放提示； off 使用渲染器比例。当 FSR 处于活动状态时，它会以输出分辨率使用渲染器。电视处理是在电视本身上进行调整的。适用于下一场比赛。"</string>
+    <string name="ui_844c52cfd57f0757" formatted="false">"预测咨询过 {0} 前"</string>
+    <string name="ui_84f22e1a625e7c17" formatted="false">"{0} 已添加至收藏夹"</string>
+    <string name="ui_858ac8f652d62519" formatted="false">"估计值可能会改变；这不是一个保证的时间。"</string>
+    <string name="ui_85e9d6584577736e" formatted="false">"该服务以所选 H.264 配置文件之外的格式进行响应"</string>
+    <string name="ui_8666d79d9ebc7140" formatted="false">"兼容性 — 低功率电视"</string>
+    <string name="ui_86c4d56695aa213e" formatted="false">"会话诊断 ({0})"</string>
+    <string name="ui_86fbfb699dd0e310" formatted="false">"您的会议"</string>
+    <string name="ui_879cfabd793d0157" formatted="false">"FSR 输出：{0}"</string>
+    <string name="ui_87c3860190710a08" formatted="false">"{0} 产品 • 部分数据"</string>
+    <string name="ui_881e8bd48dc88da0" formatted="false">"灵敏度{0}%；死区{1}%； "</string>
+    <string name="ui_886e0210ef167b68" formatted="false">"AMD FSR 1.0.2 — 实验性"</string>
+    <string name="ui_8892d243f5537424" formatted="false">"100% 保留原始对比度。极值可以隐藏亮或暗的细节。"</string>
+    <string name="ui_892188af00d5e76a" formatted="false">"预测可能会改变；它不是时间的保证。"</string>
+    <string name="ui_893b96a29b56340e" formatted="false">"适用于 Game Pass"</string>
+    <string name="ui_8a88e3a86b08b2ec" formatted="false">"画质与屏幕"</string>
+    <string name="ui_8b5d3029ee3db112" formatted="false">"切换账户"</string>
+    <string name="ui_8b8695ec9db0bfce" formatted="false">"图像调整——清晰度、饱和度、亮度和对比度"</string>
+    <string name="ui_8bc4692e3412c04d" formatted="false">"总是在比赛期间"</string>
+    <string name="ui_8c1c85b9a6670ba8" formatted="false">"请求立即调度（无需等待接口垂直同步）"</string>
+    <string name="ui_8d0f0a4a48121b78" formatted="false">"直塞"</string>
+    <string name="ui_8daf0c9652bbce83" formatted="false">"FPS 解码"</string>
+    <string name="ui_8dcf516ab73b515d" formatted="false">"返回"</string>
+    <string name="ui_8e6585681b74fcb7" formatted="false">"沿“奔跑”方向向上拖动移动杆，使其超出移动杆的边缘。备份释放运行命令；松开手指也会重置运动。游戏选项定义了比赛行为。 “运行”按钮也可通过触摸操作。"</string>
+    <string name="ui_8ea1b4a47e8ff6fa" formatted="false">"4K — 3840×2160（实验）"</string>
+    <string name="ui_8ea541b087ec2c75" formatted="false">"没有技术分类的错误"</string>
+    <string name="ui_8f593701d1d0bb29" formatted="false">"输入：{0} 等待 | {1} 合并转换\n"</string>
+    <string name="ui_90b7766e2c2b1cb8" formatted="false">"离开游戏……"</string>
+    <string name="ui_911946e859f7e597" formatted="false">"数据包"</string>
+    <string name="ui_913d38b99bed0a3c" formatted="false">"未证实"</string>
+    <string name="ui_91659ea32014744d" formatted="false">"连接传输装置"</string>
+    <string name="ui_91a83117cbba2fb1" formatted="false">"保存最后的本地摘要。比赛统计数据将保持隐藏状态，直到您激活它们为止。"</string>
+    <string name="ui_91d709d706494887" formatted="false">"无图像进展：{1} 观察到的事件中的 {0}\n"</string>
+    <string name="ui_927e3af3d6f75587" formatted="false">"队列已确认 {0}"</string>
+    <string name="ui_92b8e926c2168679" formatted="false">"拖动相机灵敏度"</string>
+    <string name="ui_92bba5c8f9add126" formatted="false">"持有LT时"</string>
+    <string name="ui_9313455e45aa2243" formatted="false">"是的"</string>
+    <string name="ui_93534e3e8a8dccfd" formatted="false">"菜单"</string>
+    <string name="ui_936fa7aae91087f9" formatted="false">"{0} 游戏 • 官方列表"</string>
+    <string name="ui_94670b84224ce29d" formatted="false">"正在将您的帐户连接到 Xbox..."</string>
+    <string name="ui_952551ccad9942ba" formatted="false">"返回目录..."</string>
+    <string name="ui_95ceb3e6dbc1704c" formatted="false">"与 xCLOUD 一起在云端畅玩"</string>
+    <string name="ui_95daf899e2a35b7d" formatted="false">"您已经等待了：{0}。"</string>
+    <string name="ui_960127b1f234801c" formatted="false">"没有标题的官方图库。"</string>
+    <string name="ui_962e526f2fb4c866" formatted="false">"射击{0}时瞄准； "</string>
+    <string name="ui_964847849afda69b" formatted="false">"{0} [{1}] → {2}"</string>
+    <string name="ui_96966750f35e19c9" formatted="false">"上一类别，LB"</string>
+    <string name="ui_96a6b9f2b8c3d779" formatted="false">"网络与会话"</string>
+    <string name="ui_96ec241ac11e3242" formatted="false">"使用鼠标和键盘模拟控制器"</string>
+    <string name="ui_975f261b38408189" formatted="false">"足球——防守"</string>
+    <string name="ui_97a9221076144318" formatted="false">"可用指标在此集合中并未提出重要警报。"</string>
+    <string name="ui_97ff8f05d7df6240" formatted="false">"与 Android 控制器没有唯一的关联；启动振动不可用。"</string>
+    <string name="ui_9808395daf5344df" formatted="false">"系统授权收藏频道xCLOUD。其显示取决于电视的主屏幕。要创建直接访问应用程序，请使用安装电视快捷方式。"</string>
+    <string name="ui_988a7912b3147f0c" formatted="false">"我们无法将此版本与经过验证的目录中的可播放游戏关联起来。这并不能确认您无法访问您的帐户/区域。更新目录并重试。产品：{0}。"</string>
+    <string name="ui_98f15e53a1bd096c" formatted="false">"所有比赛的标准"</string>
+    <string name="ui_9934abcab76d65f1" formatted="false">" - 原来的"</string>
+    <string name="ui_9ae35f5f91ad2ad9" formatted="false">"可用 — 开始静音"</string>
+    <string name="ui_9b293fc455603d84" formatted="false">"SDK 拒绝 RTP 首选项"</string>
+    <string name="ui_9b7c788c87298b87" formatted="false">"最大码率：{0}"</string>
+    <string name="ui_9b850f6c640c8388" formatted="false">"该服务在没有活动视频的情况下做出了响应"</string>
+    <string name="ui_9bc947e58b62b2fe" formatted="false">"不"</string>
+    <string name="ui_9bd4d1e04ad51df3" formatted="false">"暂停"</string>
+    <string name="ui_9c01bae80b35415f" formatted="false">"您的会话需要更新。通过二维码输入以继续。"</string>
+    <string name="ui_9c8bc8bbd1e7fa45" formatted="false">"已接收 WebRTC：{0} • 已发送：{1}\n"</string>
+    <string name="ui_9d37f98efd33b2f9" formatted="false">"官方名单不可用"</string>
+    <string name="ui_9d952199b3f90d45" formatted="false">"传强"</string>
+    <string name="ui_9dfcfd53b29994a4" formatted="false">"无法生成二维码。 {0}"</string>
+    <string name="ui_9e29d8ee79027a75" formatted="false">"系统默认值（#0）"</string>
+    <string name="ui_9e98acc9f05ebb19" formatted="false">"xCLOUD • 赛后诊断\n{0}\n{1}\n{2}\n"</string>
+    <string name="ui_9ea0e18723f59099" formatted="false">"安装快捷方式：{0}"</string>
+    <string name="ui_9ee25e963d051150" formatted="false">"可选测试：保持手指的自然触感，并通过右侧的模拟摇杆发送瞄准信号。有些游戏可以切换输入界面。如果模式为“关闭”，则启用此测试会选择“始终”。 LT/LB 需要原生触摸的物理控制器。下一场比赛有效。"</string>
+    <string name="ui_9f3ebbde555a2c21" formatted="false">"清除搜索"</string>
+    <string name="ui_9f944b0487751781" formatted="false">"保护"</string>
+    <string name="ui_9fe40625cfedb8a2" formatted="false">"应用语言：{0}"</string>
+    <string name="ui_9ff2d5081992d239" formatted="false">"ICE 位置：等待接载"</string>
+    <string name="ui_a037abd19f1ff1bb" formatted="false">"捕获/释放鼠标和键盘 — F8"</string>
+    <string name="ui_a111ca34ef6b91c0" formatted="false">"{0} |订单：{1} |请求演示：{2} FPS\n"</string>
+    <string name="ui_a132cc573276e191" formatted="false">"更新目录"</string>
+    <string name="ui_a14359b05d91e1ac" formatted="false">"FSR清晰度（RCAS）：{0}%"</string>
+    <string name="ui_a190afc4b4adb7f6" formatted="false">"包含"</string>
+    <string name="ui_a1bdb563a765ac41" formatted="false">"复制诊断。"</string>
+    <string name="ui_a1f9822e5355c082" formatted="false">"路线ICE：{0} → {1} | RTT {2} |观察到的变化：{3} |已验证的替代对：{4}"</string>
+    <string name="ui_a25e282550325946" formatted="false">"{0}  ■  {1}"</string>
+    <string name="ui_a2785a754a255bed" formatted="false">"标准"</string>
+    <string name="ui_a285fed899aeb882" formatted="false">"手势 • {0}"</string>
+    <string name="ui_a2a5acaabb8c378d" formatted="false">"左侧死区"</string>
+    <string name="ui_a2e5f957fe19031f" formatted="false">"SDP 响应：{0} |适用：{1}"</string>
+    <string name="ui_a320e31d01bb4da5" formatted="false">"Xbox 估计：大约{0}。"</string>
+    <string name="ui_a38dc37dc8fe7b15" formatted="false">"720p — 更轻"</string>
+    <string name="ui_a3d84c955a3fb0b3" formatted="false">"可选的图像调整。清晰度可能会突出噪点，需要更多 GPU。在比赛期间，变化是立竿见影的。"</string>
+    <string name="ui_a3e0d2415190a8a6" formatted="false">"拼写"</string>
+    <string name="ui_a41900826715a772" formatted="false">"回收率 {0}；连续失败 {1}"</string>
+    <string name="ui_a451f1f2dfc6d41d" formatted="false">"{0}：HTTP {1}"</string>
+    <string name="ui_a4a455282b33666a" formatted="false">"没有手势"</string>
+    <string name="ui_a4f285fa2d5ec93e" formatted="false">"无人知晓"</string>
+    <string name="ui_a5575a1a9fa7978f" formatted="false">"切换"</string>
+    <string name="ui_a57846c4bb3360ff" formatted="false">"更换武器"</string>
+    <string name="ui_a5d4e1d783941562" formatted="false">"视频模式"</string>
+    <string name="ui_a5fe1cbebea0c09c" formatted="false">"视频 RTP：{0} |通道接受的输入：{1}\n"</string>
+    <string name="ui_a6304667a4694dfc" formatted="false">"B 取消"</string>
+    <string name="ui_a64fd7ed84b6520a" formatted="false">"控制 › 振动"</string>
+    <string name="ui_a6b403097a36fa25" formatted="false">"相机 X/Y：{0}/{1} | LT/RT: {2}%/{3}% | DZ 应用：0% |输入最多250个Hz\n"</string>
+    <string name="ui_a6c5801ccc839510" formatted="false">"您的 Xbox 云目录，具有本机流媒体和控制器导航。"</string>
+    <string name="ui_a6cc9f20bfd7382d" formatted="false">"打开登录页面"</string>
+    <string name="ui_a71919f039859a7b" formatted="false">"Account approved.正在完成您的连接..."</string>
+    <string name="ui_a73b0eb5c2120771" formatted="false">"视频模式：{0}"</string>
+    <string name="ui_a750bbb9a02f1dde" formatted="false">"Surface {0}x{1} → Android 输出 "</string>
+    <string name="ui_a779e12ba7fd20f0" formatted="false">"\n{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10} |鼠标/键盘：{11} |主动 MKB 输入：{12} |安卓捕捉：{13}"</string>
+    <string name="ui_a88536f370073a7d" formatted="false">"加快"</string>
+    <string name="ui_a8877b8210604258" formatted="false">"被用户终止"</string>
+    <string name="ui_a8c2ac325cfa919b" formatted="false">"等待职位空缺"</string>
+    <string name="ui_a8eec455db88ba33" formatted="false">"连接未完成"</string>
+    <string name="ui_a8f09d77366f1fa0" formatted="false">"您最喜欢的出现在这里。\n选择一个游戏并按 Y 收藏它。"</string>
+    <string name="ui_a9178552fda4292a" formatted="false">"收藏"</string>
+    <string name="ui_a959007d05d3e862" formatted="false">"该设备上的Android无法读取快捷方式包。快捷方式未发送到安装程序。"</string>
+    <string name="ui_a9d4711b82648956" formatted="false">"恢复视频"</string>
+    <string name="ui_aa01028ec629a161" formatted="false">"等待能力"</string>
+    <string name="ui_aaa8b17189f8e9c5" formatted="false">"已启用 — 瞄准并射击"</string>
+    <string name="ui_ab82b7fdb8e46107" formatted="false">"诊断"</string>
+    <string name="ui_abf15538afefb4b8" formatted="false">"\n收到WebRTC：{0} |发送 WebRTC：{1}\n"</string>
+    <string name="ui_abf5c1bbfeb0ebd7" formatted="false">"这些命令使用标准 Xbox 控制器映射。您可以在编辑器和游戏设置中调整每个动作。"</string>
+    <string name="ui_ac0405b91f35077a" formatted="false">"{0} 游戏 • 已保存历史记录 • 无法更新"</string>
+    <string name="ui_ac1653e071f8f7e8" formatted="false">"传中"</string>
+    <string name="ui_ac1cd1430435899b" formatted="false">"退出应用程序？"</string>
+    <string name="ui_ac1f216ed980fbc8" formatted="false">"高效：无"</string>
+    <string name="ui_ac73aa9300406c83" formatted="false">"不自动打开"</string>
+    <string name="ui_acf055bba88baa0f" formatted="false">"FSR输出"</string>
+    <string name="ui_ad308eca51baa9f5" formatted="false">"又一场比赛开始了"</string>
+    <string name="ui_ad6cf30be5863ae2" formatted="false">"HDR10：检查屏幕和流"</string>
+    <string name="ui_ad95a1eab4868093" formatted="false">"主屏幕频道"</string>
+    <string name="ui_ada597c825c967dc" formatted="false">"尝试恢复：{0}\n\n"</string>
+    <string name="ui_adc902bee601b133" formatted="false">"无法将收藏夹保存到设备上。"</string>
+    <string name="ui_ae271b987acb95d6" formatted="false">"一旦 Xbox 发布会话，您的游戏就会打开。"</string>
+    <string name="ui_aea7344883349a13" formatted="false">"使用 Y 将游戏添加到收藏夹以创建快捷方式。"</string>
+    <string name="ui_aecdbc5fd56d8e66" formatted="false">"轻量级H.264（兼容性）"</string>
+    <string name="ui_aef7cd5b2081351d" formatted="false">"保存"</string>
+    <string name="ui_af6f5bcb22418bc6" formatted="false">"搜索游戏"</string>
+    <string name="ui_afb58c5ef14296d0" formatted="false">"物理控制器和本地coop"</string>
+    <string name="ui_afbcc421a945e702" formatted="false">"真正的HDR10需要10位流、BT.2020色彩、PQ传输和全链HDR播放。当前的路径不提供这种组合，即使在兼容的电视上也是如此。\n\n"</string>
+    <string name="ui_afd65886ed07d629" formatted="false">"再试一次"</string>
+    <string name="ui_b019906f6858044e" formatted="false">"xCLOUD {0} • 初始输入：{1} • {2}"</string>
+    <string name="ui_b0944e467b311f8d" formatted="false">"{0}的命运"</string>
+    <string name="ui_b0b4626cc5d27e57" formatted="false">"← 左"</string>
+    <string name="ui_b0b961d4ec123362" formatted="false">"从主屏幕请求喜爱的频道"</string>
+    <string name="ui_b0d7170b7a348938" formatted="false">"可选麦克风"</string>
+    <string name="ui_b0f8a4c6147a77ca" formatted="false">"注意力"</string>
+    <string name="ui_b0fb3c524b9a6398" formatted="false">"WebRTC 缓冲区目标"</string>
+    <string name="ui_b184ba49fad5bdda" formatted="false">"\n自动：连续连接检查/RTT；由WebRTC和服务器选择。替代方案取决于可用的网络。"</string>
+    <string name="ui_b195ba9ba106c658" formatted="false">"连接 ICE 已关闭"</string>
+    <string name="ui_b1a57cb0ce19ab77" formatted="false">"原生触控陀螺仪 Xbox"</string>
+    <string name="ui_b1b3b2be00607986" formatted="false">"即将进行的比赛中的麦克风：{0}"</string>
+    <string name="ui_b1b83340a2e6e991" formatted="false">"移动网络"</string>
+    <string name="ui_b20277600256b5af" formatted="false">"统计：等待样品WebRTC..."</string>
+    <string name="ui_b257b4fde1d7e0c6" formatted="false">"部分信息不可用。列表并未确认所有权；需要数字购买和服务条件。"</string>
+    <string name="ui_b29603a502aa8d8c" formatted="false">"{0} 从收藏夹中删除"</string>
+    <string name="ui_b2a876364adeafae" formatted="false">"完整的官方列表 • 某些信息/封面不可用；更新设置中的目录。"</string>
+    <string name="ui_b2d1202a54152282" formatted="false">"显示防御HUD"</string>
+    <string name="ui_b3d71cae0cc33739" formatted="false">"未经授权的安装"</string>
+    <string name="ui_b455784ab5307277" formatted="false">"常规的"</string>
+    <string name="ui_b4fd5598411dcca4" formatted="false">"管理微软订阅"</string>
+    <string name="ui_b525c8f63004a345" formatted="false">"谈判麦克风..."</string>
+    <string name="ui_b5758662f5d045a7" formatted="false">"禁用 USB 测试"</string>
+    <string name="ui_b669fb4b755c8302" formatted="false">"在足球比赛中，点击进攻/防守即可切换命令。交换是手动的。在踢球中：向下拖动用于放置，向上拖动用于卡瓦迪尼亚，向两侧拖动用于超级踢球。标记组合了 RT + A。\n\n在编辑器中，Action 允许您组合按钮；手势配置每个拖动方向。这些命令遵循游戏的布局。\n\n在 CoD 中，按住并拖动“瞄准”或“射击”以移动相机。射击时瞄准是可选的。当此选项打开时，将模拟摇杆向上拖向“运行”即可激活运行。\n\n在射击游戏中，提高HUD灵敏度并调整死区补偿。最大转动速度还取决于游戏中设置的控制器灵敏度。"</string>
+    <string name="ui_b6c65960870c1c5e" formatted="false">"\n技术代码：{0}"</string>
+    <string name="ui_b772dc025eba9d11" formatted="false">"右死区：{0}%"</string>
+    <string name="ui_b788c7c5fda4ab79" formatted="false">"赛博蓝"</string>
+    <string name="ui_b803f24d52edd7bc" formatted="false">"自动的"</string>
+    <string name="ui_b82619b14335e532" formatted="false">"画廊返回无法识别的分页；该清单尚未确认完整。"</string>
+    <string name="ui_b83158eab62b99d9" formatted="false">" — 代码 {0}"</string>
+    <string name="ui_b8c2ee925a3aab1f" formatted="false">"{0} • {1} • {2}"</string>
+    <string name="ui_b8c99375c71e298a" formatted="false">"无法更新预测；空缺咨询仍在继续。"</string>
+    <string name="ui_b9e10688be012d8b" formatted="false">"再试一次"</string>
+    <string name="ui_ba5e5d364d10aa1b" formatted="false">"Xbox 正在预订并准备您的会议。"</string>
+    <string name="ui_bab27e2c850b00b2" formatted="false">"平均值/峰值 • {0} 样本 • 观察到 {1} • ↑/↓ 或滑动查看详细信息"</string>
+    <string name="ui_bb9dbb406dcbd524" formatted="false">"取消"</string>
+    <string name="ui_bbb6bca5ca31729a" formatted="false">"XBOX 预测"</string>
+    <string name="ui_bbc01c73fe29c18f" formatted="false">"飙车{0}； "</string>
+    <string name="ui_bbe0ec8ca31b468c" formatted="false">"振动：{0}"</string>
+    <string name="ui_bcbb4e0f88f1dd5e" formatted="false">"标准调度"</string>
+    <string name="ui_bce05db4b83249e2" formatted="false">"ms/帧"</string>
+    <string name="ui_bd10a9bd1958e9f0" formatted="false">"等待元数据"</string>
+    <string name="ui_bd59e1e564ce5c46" formatted="false">"振动"</string>
+    <string name="ui_bd5b62d71cdd98d3" formatted="false">"定向↓"</string>
+    <string name="ui_bdb73aa9fd97600d" formatted="false">"麦克风：静音；编码器拒绝暂停"</string>
+    <string name="ui_be0c7ddbc14398f4" formatted="false">"当没有关联的物理控制器时，使用触摸播放器隆隆声。需要激活振动并在手机上安装振动器。下一场比赛有效。"</string>
+    <string name="ui_be4651d6aa4e8b87" formatted="false">"返回目录"</string>
+    <string name="ui_bfabaebcc64e9c48" formatted="false">"IPv4 / IPv6: {0}"</string>
+    <string name="ui_bfc167f5ded3ac78" formatted="false">"设置本地呈现，而不增加接收分辨率或网络消耗。自动跟随窗口，电视上限制为 1080p，优先考虑流畅性。选择受到可用物理输出的限制并保留宽高比。 1440p和4K的成本比GPU要高；不保证60 FPS。需要激活AMD FSR；兼容性使过滤器保持关闭状态。如果过滤器失败或视频进入时节奏太慢几秒钟，应用程序将返回默认缩放。适用于下一场比赛。"</string>
+    <string name="ui_bfcd75a03efeb613" formatted="false">"陀螺仪：禁用本机触摸的测试"</string>
+    <string name="ui_c06b55029589f9aa" formatted="false">"光 H.264 — Baseline (720p)"</string>
+    <string name="ui_c0e06d1a547e1e02" formatted="false">"无法验证游戏。请重试或更新目录。购买的游戏需要 Xbox 数字许可证和服务条款。"</string>
+    <string name="ui_c0eb1a54b2adee0d" formatted="false">"经典 — B 踢"</string>
+    <string name="ui_c14311ffdf175c3f" formatted="false">" • {0} 事件 • 历史最大值。 {1}"</string>
+    <string name="ui_c149ec2f90b933d5" formatted="false">"搜索"</string>
+    <string name="ui_c1601679448149f0" formatted="false">"射击——标准"</string>
+    <string name="ui_c165b9199b45bcd6" formatted="false">"该游戏的HUD和控制"</string>
+    <string name="ui_c18707da3aeeac79" formatted="false">"目标 {0} ms |最小网络 {1} ms | "</string>
+    <string name="ui_c24ad4a9b806d36f" formatted="false">"下一类别，RB"</string>
+    <string name="ui_c294e7b002393a8d" formatted="false">"FSR 清晰度 (RCAS)"</string>
+    <string name="ui_c362ba09dc7291e1" formatted="false">"删除这个手势"</string>
+    <string name="ui_c4361eb26a5f858e" formatted="false">"针对 Xbox 系列 X|S 进行了优化"</string>
+    <string name="ui_c43891cea5d2cf81" formatted="false">"{0} {1} | Android {2} | {3}\n{4}\n{5}\n{6}\n{7}"</string>
+    <string name="ui_c48c51103740a734" formatted="false">"图片未更新"</string>
+    <string name="ui_c4b7abb559efc0c2" formatted="false">"点击 Android → 应用程序：平均年龄/峰值 {0}；下/上/移动/取消 {1}/{2}/{3}/{4}； "</string>
+    <string name="ui_c4bc021431f3c0b9" formatted="false">"初始化：{0}"</string>
+    <string name="ui_c587065de995e6a6" formatted="false">"屏幕模式：不适用"</string>
+    <string name="ui_c592501facbaea8c" formatted="false">"饱和度：{0}%"</string>
+    <string name="ui_c68b7df08912cf8f" formatted="false">"过时的预测。寻找空缺职位的工作仍在继续。"</string>
+    <string name="ui_c6903698265c4ac7" formatted="false">"关闭 — 物理控制器"</string>
+    <string name="ui_c709991bfe8aced1" formatted="false">"有些封面不可用。设置更新。"</string>
+    <string name="ui_c7396b1f339d9a49" formatted="false">"选项：{0}"</string>
+    <string name="ui_c73b5744c4698b8a" formatted="false">"等待视频样本。"</string>
+    <string name="ui_c7d422473615e69d" formatted="false">"视频 RTP：{0} • 输入：{1}\n"</string>
+    <string name="ui_c90dd4a7f4f16d4e" formatted="false">"无法查阅官方名单。\n更新设置中的目录。"</string>
+    <string name="ui_c917e2441a33ab85" formatted="false">"自动 — 默认帐户区域"</string>
+    <string name="ui_c985cb075b6ff172" formatted="false">"未指定设备"</string>
+    <string name="ui_ca5962d0f8fb5020" formatted="false">"咨询Xbox；队列中的最后确认是 {0}。"</string>
+    <string name="ui_cb201cc243f2d150" formatted="false">"找不到服务器"</string>
+    <string name="ui_cb2559452c9c352f" formatted="false">"{0} • {1} 已连接"</string>
+    <string name="ui_cb9b4a0d6fde640c" formatted="false">"不透明度：{0}%"</string>
+    <string name="ui_cc5eb4d7dd2d1e2e" formatted="false">"应用语言"</string>
+    <string name="ui_ccb39a83e3b26d2a" formatted="false">"使用手机扫描二维码或访问微软登录页面。"</string>
+    <string name="ui_ccc5ddf0e986b6dc" formatted="false">"轻量级 H.264 和兼容性使用 720p，即使保存了另一个选择。 720p 需要更少的带宽和解码工作。收到的分辨率取决于 Xbox、游戏和连接。适用于下一场比赛。"</string>
+    <string name="ui_ccec6af8dfc9a3c9" formatted="false">"模拟控制器/HUD 上的右侧模拟摇杆。为了匹配Xbox原生触摸，还需要启用陀螺仪类别中的测试。 LT/LB 原生触摸依赖于物理控制器。下一场比赛有效。"</string>
+    <string name="ui_cdbfce5b72ebff87" formatted="false">"触发死区：{0}%"</string>
+    <string name="ui_ce04190840b5df23" formatted="false">"正在检查您的 Xbox 云历史记录..."</string>
+    <string name="ui_ce49e4a3777bd79d" formatted="false">"您的登录信息和收藏夹将继续保存在此设备上。"</string>
+    <string name="ui_ce841257afc795fe" formatted="false">"{0}、{1}。打开设置"</string>
+    <string name="ui_cee3aa77fe99ae5a" formatted="false">"其他视频格式"</string>
+    <string name="ui_cfec65af653e127f" formatted="false">"恢复这个游戏的HUD"</string>
+    <string name="ui_d00d630e6c32f971" formatted="false">" • 实验性的原生触控"</string>
+    <string name="ui_d0bb4a4037d8fd3d" formatted="false">"准备快捷方式游戏..."</string>
+    <string name="ui_d109c6d44ff057b7" formatted="false">"{0} {1} • Android {2}"</string>
+    <string name="ui_d1225458fd479a1f" formatted="false">"禁用 — 渲染器比例"</string>
+    <string name="ui_d13e17270be9aa6a" formatted="false">"定向←"</string>
+    <string name="ui_d220d05a7861ed7d" formatted="false">"安装程序不可用"</string>
+    <string name="ui_d23162e04eddf351" formatted="false">"射击时瞄准"</string>
+    <string name="ui_d294972e7616ce46" formatted="false">"显示/隐藏统计数据"</string>
+    <string name="ui_d2ad993f02c491da" formatted="false">"跳跃"</string>
+    <string name="ui_d2ce0bc9f7f8998b" formatted="false">"隐藏平视显示器"</string>
+    <string name="ui_d2f671e0a6015903" formatted="false">"地图"</string>
+    <string name="ui_d368683d0c7e0d26" formatted="false">"音频和视频"</string>
+    <string name="ui_d373287e7248cfe5" formatted="false">"等待频道"</string>
+    <string name="ui_d3b2d6009b1e4b0a" formatted="false">"通讯故障"</string>
+    <string name="ui_d42dfb2ef63549c6" formatted="false">"小于 1 min"</string>
+    <string name="ui_d45fee8a599e40cc" formatted="false">"手机触摸振动：{0}"</string>
+    <string name="ui_d4665a4a146e28e6" formatted="false">"扫描二维码或访问\n{0}并输入代码："</string>
+    <string name="ui_d48c492ec604a5a0" formatted="false">"Xbox 估计：目前不可用。"</string>
+    <string name="ui_d49877fbdb35a493" formatted="false">"编辑 HUD • 拖动按钮"</string>
+    <string name="ui_d4a0ecff23664366" formatted="false">"关闭原因\n"</string>
+    <string name="ui_d5f9cf0229d64cd8" formatted="false">"Xbox原生触控 — 实验性"</string>
+    <string name="ui_d5fc8994d873c100" formatted="false">"Android 未报告此设备上有陀螺仪。"</string>
+    <string name="ui_d61df2985b00e754" formatted="false">"AMD FSR 1.0.2：在兼容模式下无效"</string>
+    <string name="ui_d67d7a22a9d85ee1" formatted="false">"陀螺仪"</string>
+    <string name="ui_d699b3523f2e4530" formatted="false">"控制尺寸：{0}%"</string>
+    <string name="ui_d6a06884ced98edc" formatted="false">"默认编解码器"</string>
+    <string name="ui_d6c2efe70cd031d9" formatted="false">"请求的演示文稿：{0} FPS • 解码器：{1}"</string>
+    <string name="ui_d6df5d0593b1d522" formatted="false">"会话始终以静音开始。使用此选项，应用程序会咨询聊天支持；授予 Android 权限后，激活对 menu 比赛的捕捉。进入后台静音。有些服务器可能不提供聊天功能。"</string>
+    <string name="ui_d7ab4b0aca3b07cf" formatted="false">"观察到的缓冲区超过了所请求的演示的两个间隔。即使使用 RTT 和低解码，它也会产生延迟感。比较最短延迟和自适应；所要求的目标不是保证的上限。"</string>
+    <string name="ui_d7cbd013a2f6068b" formatted="false">"没有新帧的视频。请求图像更新..."</string>
+    <string name="ui_d8742a3decdd0df5" formatted="false">"网络请求"</string>
+    <string name="ui_d87bd8469bfe6376" formatted="false">"音频与麦克风"</string>
+    <string name="ui_d8cdcbc7ebdaae0d" formatted="false">"使用会话默认值"</string>
+    <string name="ui_d8fb58e618d83fe1" formatted="false">"可用性尚未确认"</string>
+    <string name="ui_d908762c8d942e27" formatted="false">"拖动查看"</string>
+    <string name="ui_d98c49960e02dbf0" formatted="false">"丢包"</string>
+    <string name="ui_d98f313ee5a346c8" formatted="false">"在电视上安装快捷方式：{0}"</string>
+    <string name="ui_d99aa29897d612dc" formatted="false">"Xbox 云上经过身份验证的帐户"</string>
+    <string name="ui_d9e854b45b44b286" formatted="false">"没有数据：{0} |有数据：{1}\n"</string>
+    <string name="ui_da3388b19048bd0d" formatted="false">"你的游戏。\n你的屏幕。"</string>
+    <string name="ui_daa6b913c3a993f5" formatted="false">"已禁用（兼容性）"</string>
+    <string name="ui_dae2928050707d95" formatted="false">"队列"</string>
+    <string name="ui_dafb61aca12d33e0" formatted="false">"相机"</string>
+    <string name="ui_db3e58808ddb39bc" formatted="false">"运动定位"</string>
+    <string name="ui_db48ebd18aae5755" formatted="false">"详情已复制！"</string>
+    <string name="ui_db6368593c24380d" formatted="false">"官方兼容游戏列表；需要数字购买和服务条件。不确认帐户的所有权。"</string>
+    <string name="ui_dcd82253fc1b9333" formatted="false">"开始了"</string>
+    <string name="ui_dcde76e0abae913f" formatted="false">"灵敏度：{0}%"</string>
+    <string name="ui_dd1177426b964f31" formatted="false">"{0}：请求失败（{1}）"</string>
+    <string name="ui_dd191c539b7bdee4" formatted="false">"标记"</string>
+    <string name="ui_dd1f60df310c6ac7" formatted="false">"模拟曲线"</string>
+    <string name="ui_dd8a9255bf7ad0db" formatted="false">"会话语言"</string>
+    <string name="ui_ddc53964b5fe0059" formatted="false">"开火"</string>
+    <string name="ui_ddf7ac150ff295a9" formatted="false">"快准备好了"</string>
+    <string name="ui_de10ccc1614b9a4a" formatted="false">"采样间隔"</string>
+    <string name="ui_de26c2fcfd1fdd63" formatted="false">"锐度"</string>
+    <string name="ui_df1f3af61e81fd98" formatted="false">"启用 - 表面缩放"</string>
+    <string name="ui_df41bc6b69dd0a4d" formatted="false">"\n最大请求比特率： "</string>
+    <string name="ui_df79a066dff74946" formatted="false">"已禁用 - 请参阅设置"</string>
+    <string name="ui_df87f243111ed2d4" formatted="false">"等待"</string>
+    <string name="ui_dfa86dac52babb92" formatted="false">"取消保留并返回目录"</string>
+    <string name="ui_e07fe1fc111ea9e6" formatted="false">" | touch：发送 {0}、{1}、{2} 事件"</string>
+    <string name="ui_e0f02d042121b2a0" formatted="false">"电视未授权收藏频道。使用安装电视快捷方式创建单独的游戏条目。"</string>
+    <string name="ui_e0fdcc38d021c280" formatted="false">"已启用 — 最多 4 名玩家"</string>
+    <string name="ui_e14441aaa6331504" formatted="false">"最后诊断"</string>
+    <string name="ui_e1623a9ceaca4129" formatted="false">"连接时间：{0} |观察到：{1} | {2} 样品\n"</string>
+    <string name="ui_e16a49eedde76282" formatted="false">"{0} 产品 • 更新中"</string>
+    <string name="ui_e18cbc44b23c7f78" formatted="false">"饱和"</string>
+    <string name="ui_e21b8dd97e1d4d63" formatted="false">"此选项与应用程序菜单的语言无关。语言由 Xbox 请求；有些游戏使用自己的设置或可能会忽略它。下一场比赛有效。"</string>
+    <string name="ui_e2c1eb3e21262571" formatted="false">"观察视频缓冲区"</string>
+    <string name="ui_e2cc58057bac44ca" formatted="false">"游戏链接未确认"</string>
+    <string name="ui_e2cf4129d958d3cc" formatted="false">"比例：{0}"</string>
+    <string name="ui_e31fe0e7c18095f5" formatted="false">"仅 Xbox 向此帐户提供的区域。选择请求该区域的会话；不预测 ping 或游戏队列。如果不再提供已保存的区域，应用程序将使用默认区域并在诊断中通知您。下一场比赛有效。"</string>
+    <string name="ui_e35865317817e866" formatted="false">"WebRTC 连接"</string>
+    <string name="ui_e3ac02bd2ccd6d6e" formatted="false">"收到：{0} | {1} | {2}\n"</string>
+    <string name="ui_e3c9951db767377e" formatted="false">"屏幕：Android 未报告 HDR 支持。"</string>
+    <string name="ui_e40b250bfbf97c8e" formatted="false">"恢复视频：在下一个关键帧上重新启动解码器..."</string>
+    <string name="ui_e41e160eef41ad25" formatted="false">"FSR 1.0.2 通过 EASU 和 RCAS 锐化来升级视频。当视频和输出大小相同时，仅应用RCAS，不放大。开始时 FSR 输出为自动，RCAS 为 50%。比较命令的清晰度、流畅度和反应； 1440p 和 4K 需要更多 GPU。诊断区分增大与天然 RCAS。即使本机升级打开，FSR 也会接管缩放。在图像调整中调整RCAS。兼容性使 FSR 保持关闭状态。适用于下一场比赛。"</string>
+    <string name="ui_e425c594c6c37587" formatted="false">"Xbox估计：不到1分钟。"</string>
+    <string name="ui_e470e20093b5665d" formatted="false">"本场比赛：{0}"</string>
+    <string name="ui_e478889056bb4cfc" formatted="false">"原始 — 保留纵横比"</string>
+    <string name="ui_e48e3afad74a7664" formatted="false">"交换 LT 和 RT：{0}"</string>
+    <string name="ui_e528576451072d03" formatted="false">"准备"</string>
+    <string name="ui_e6acff5f42562f1a" formatted="false">"编解码器 不适用"</string>
+    <string name="ui_e7933921372c4fd7" formatted="false">"快捷方式不可用"</string>
+    <string name="ui_e834630bef0ef550" formatted="false">"等待 Xbox 响应超时"</string>
+    <string name="ui_e84bcd0234e07712" formatted="false">"互联交通。等待第一个视频帧..."</string>
+    <string name="ui_e914de1e4fae95a7" formatted="false">"全部游戏"</string>
+    <string name="ui_e9e53c0c5177e18c" formatted="false">"自动 — 保存的区域不提供给帐户"</string>
+    <string name="ui_ea0fd82513d807df" formatted="false">"按钮手势"</string>
+    <string name="ui_ea6a1717f5c88030" formatted="false">"\n\n输入调度程序仅测量发送线程。 Android 事件年龄在操纵杆的 Activity 和触摸的 View 中测量；不包括所有Bluetooth/USB路径、物理触摸检测、游戏响应或屏幕。低 ping 和解码并不表明总命令延迟低。"</string>
+    <string name="ui_ea882cac2bd2ad5f" formatted="false">"H.264 Baseline • 兼容性 • 要求 720p • 个人资料/匹配报价"</string>
+    <string name="ui_eacaad041ff7e933" formatted="false">"视频还没回来。会话 Xbox 保持开放。"</string>
+    <string name="ui_eb145ebce21c228a" formatted="false">"没有接收到视频，出现了停顿。调查网络和服务交付的连续性。"</string>
+    <string name="ui_eb1bcf0482eeba71" formatted="false">"活性"</string>
+    <string name="ui_eb88b483ea19114e" formatted="false">"应用主题"</string>
+    <string name="ui_ebee0532a3cc3057" formatted="false">"首选 IPv6 — 实验性的，IPv4 可用"</string>
+    <string name="ui_ec090a775820f486" formatted="false">"攻击"</string>
+    <string name="ui_ec0fcae16cb08806" formatted="false">", 选定的"</string>
+    <string name="ui_ec3103a5a55b8611" formatted="false">"控件 › 陀螺仪"</string>
+    <string name="ui_ec7c4c3f379a1d51" formatted="false">"型号：{0}"</string>
+    <string name="ui_ecbc02a1d1b01fe4" formatted="false">"#{0} 未公布"</string>
+    <string name="ui_eccf310fa9817174" formatted="false">"曲线：{0}"</string>
+    <string name="ui_ece0fd9e5729873e" formatted="false">"↓ 低音"</string>
+    <string name="ui_ed57b826da4ae9b2" formatted="false">"已启用 — 实验性"</string>
+    <string name="ui_eda02893d340c1be" formatted="false">"恢复"</string>
+    <string name="ui_eda74028f3497040" formatted="false">"帐户已连接。正在加载您的目录..."</string>
+    <string name="ui_edbc01e14a74f6c4" formatted="false">"在电视设置中，允许 xCLOUD 安装游戏快捷方式。"</string>
+    <string name="ui_ee8e00814924a050" formatted="false">"立即发货请求被拒绝"</string>
+    <string name="ui_eebb383ece16304a" formatted="false">"综合走势{0}； {1} 重新同步"</string>
+    <string name="ui_eef444f5f2ad5527" formatted="false">"此类别中没有可用的游戏。"</string>
+    <string name="ui_ef63798c42e5cbfc" formatted="false">"重新映射 — Menu + View 保留"</string>
+    <string name="ui_ef9e7f887a4e6b63" formatted="false">"验证码剩余有效时间：{0}分{1}秒。"</string>
+    <string name="ui_efb486aeecda2759" formatted="false">"收藏频道"</string>
+    <string name="ui_f0396835eb883e35" formatted="false">"游戏名称"</string>
+    <string name="ui_f08e468a1f1c0e01" formatted="false">"网络抖动"</string>
+    <string name="ui_f0a5d0b85c1fe428" formatted="false">"个人资料未获通知"</string>
+    <string name="ui_f10cadbc47a09be6" formatted="false">"星河紫"</string>
+    <string name="ui_f11e7df036a8fd99" formatted="false">";会议期间订单：{0}"</string>
+    <string name="ui_f12b9d29b2cf0da6" formatted="false">"增加饱和度或强制电视进入 HDR 模式不会将 SDR 流转换为 HDR10。电视本身的图像控制仍然可用。"</string>
+    <string name="ui_f1a05e988e609704" formatted="false">"电视没有提供快捷方式的应用程序安装程序。"</string>
+    <string name="ui_f1dd04ae0fde2ba0" formatted="false">"缩放 — 填充裁剪"</string>
+    <string name="ui_f20f404de2b58f35" formatted="false">"无法在此设备上保存 Xbox 历史记录。"</string>
+    <string name="ui_f2b3bbccd1e3770c" formatted="false">"你的游戏"</string>
+    <string name="ui_f30b36266e720ad6" formatted="false">"登录以开始游戏"</string>
+    <string name="ui_f43e7dd113b16494" formatted="false">"0% 保留原始图像。从 25% 开始并比较渲染时间。"</string>
+    <string name="ui_f47dfde9cb6fd44e" formatted="false">"残疾人"</string>
+    <string name="ui_f486a903433f0619" formatted="false">"首选 IPv4 — IPv6 可用"</string>
+    <string name="ui_f4a68a16351cdffc" formatted="false">"完整的官方列表 • 加载信息和封面..."</string>
+    <string name="ui_f51e982360461a76" formatted="false">"陀螺仪：Android 拒绝注册"</string>
+    <string name="ui_f538ea4afa396b9b" formatted="false">"允许安装"</string>
+    <string name="ui_f58a67a713c98dd0" formatted="false">"冲刺"</string>
+    <string name="ui_f6088eea2bd70977" formatted="false">"尊享金"</string>
+    <string name="ui_f650f7200a36b5c1" formatted="false">"从收藏夹中删除频道"</string>
+    <string name="ui_f680dda7acf9b89f" formatted="false">"游戏后诊断"</string>
+    <string name="ui_f692b4b7e0efc7a4" formatted="false">"过顶直塞"</string>
+    <string name="ui_f6cb3b238d304c1b" formatted="false">"最近加入"</string>
+    <string name="ui_f71b322dba0c5203" formatted="false">"准备你的游戏..."</string>
+    <string name="ui_f71e2412211daacb" formatted="false">"离合器"</string>
+    <string name="ui_f78f25086a60b340" formatted="false">"输入调度器"</string>
+    <string name="ui_f797fce773730594" formatted="false">"代码 STUN: {0}"</string>
+    <string name="ui_f7a82599a68b1b1e" formatted="false">"手势立即发货：订单{0}，拒绝{1}"</string>
+    <string name="ui_f7d070ebd521bf46" formatted="false">"服务器区域"</string>
+    <string name="ui_f7dc6cc4bf3cbdc7" formatted="false">"操作 — 默认"</string>
+    <string name="ui_f902df3c35163c5b" formatted="false">"{0} → {1}"</string>
+    <string name="ui_f972f402af4185e2" formatted="false">"触摸玩：{0}"</string>
+    <string name="ui_f9a320a7e570459b" formatted="false">"方向↑"</string>
+    <string name="ui_f9c01b65b5e225b2" formatted="false">"中心精度更高"</string>
+    <string name="ui_fa6c9c8af2f428a1" formatted="false">"模拟：WASD移动，鼠标瞄准，左键RT，右键LT；空格键 A、Ctrl B、R/E X、Q Y、Shift L3、Tab View 和 Esc Menu。 Native 仅在宣传支持的游戏中提供按键和鼠标。 F7打开应用程序的menu； F8 捕获/释放条目。相对捕获需要 Android 8+。下一场比赛有效。"</string>
+    <string name="ui_faca76428c612f9e" formatted="false">"更换会话维护"</string>
+    <string name="ui_fb2175902de0d504" formatted="false">"控制通道"</string>
+    <string name="ui_fb40f5b8acf0a571" formatted="false">"Android 操纵杆事件 → 应用程序：n/a（未观察到物理事件）"</string>
+    <string name="ui_fb62fe2ae6b2ae6c" formatted="false">"{0}: {1}"</string>
+    <string name="ui_fbebbef769b8bbb3" formatted="false">"匹配选项"</string>
+    <string name="ui_fbfcb9e12dfff345" formatted="false">"特别的"</string>
+    <string name="ui_fc0c258288401c6f" formatted="false">"近战"</string>
+    <string name="ui_fd2df4c6a25bfd6a" formatted="false">"连接您的帐户"</string>
+    <string name="ui_fd38bd8c6c9c36e1" formatted="false">"未授予"</string>
+    <string name="ui_fd9bac4a8e546c3e" formatted="false">"触摸HUD并匹配menu"</string>
+    <string name="ui_fe5d26cbe1bc1576" formatted="false">"未告知签名"</string>
+    <string name="ui_feff8b5f716c79a1" formatted="false">"每个控制器占用一名玩家。触摸/键盘备用玩家 1. 游戏和会话必须支持本地多人游戏。下一场比赛有效。"</string>
+    <string name="ui_ff070ada77b9fef3" formatted="false">"亮度"</string>
+    <string name="ui_ff20d756c5955aa6" formatted="false">"本次尝试的极限：{0}。返回或取消离开队列。"</string>
+    <string name="ui_ffc85b563def9bc4" formatted="false">"测试振动/检查支撑"</string>
+</resources>

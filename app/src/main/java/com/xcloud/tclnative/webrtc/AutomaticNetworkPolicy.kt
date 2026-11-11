@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.webrtc
 
+import com.xcloud.tclnative.i18n.UiText
+
 import com.xcloud.tclnative.settings.IpPreference
 import org.webrtc.PeerConnection
 import java.util.Locale
@@ -24,7 +26,7 @@ object AutomaticNetworkPolicy {
 class NetworkRouteMonitor(private val preference: IpPreference) {
     private var pairId: String?=null
     private var changes=0
-    private var current="Rota ICE: aguardando estatísticas"
+    private var current=UiText.text("Rota ICE: aguardando estatísticas")
     @Synchronized fun collect(samples: Collection<RtcSample>) {
         val byId=samples.associateBy { it.id }
         val video=samples.filter { it.type=="inbound-rtp" && it.values["active"]!=false &&
@@ -32,7 +34,7 @@ class NetworkRouteMonitor(private val preference: IpPreference) {
         val transport=byId[video?.values?.get("transportId")]
             ?: samples.firstOrNull { it.type=="transport" && it.values["selectedCandidatePairId"] is String }
         val selected=byId[transport?.values?.get("selectedCandidatePairId")]?.takeIf { it.type=="candidate-pair" }
-        if(selected==null) { current="Rota ICE: seleção ainda não informada pelo WebRTC";return }
+        if(selected==null) { current=UiText.text("Rota ICE: seleção ainda não informada pelo WebRTC");return }
         if(pairId!=null && pairId!=selected.id) changes++
         pairId=selected.id
         val local=byId[selected.values["localCandidateId"]]
@@ -40,10 +42,9 @@ class NetworkRouteMonitor(private val preference: IpPreference) {
         val rtt=(selected.values["currentRoundTripTime"] as? Number)?.toDouble()?.takeIf { it.isFinite() && it>=0 }
             ?.let { String.format(Locale.US,"%.1f ms",it*1000) } ?: "n/d"
         val alternatives=samples.count { it.type=="candidate-pair" && it.id!=selected.id && it.values["state"]=="succeeded" }
-        current="Rota ICE: ${family(local)} → ${family(remote)} | RTT $rtt | mudanças observadas: $changes | pares alternativos validados: $alternatives"
+        current=UiText.text("Rota ICE: {0} → {1} | RTT {2} | mudanças observadas: {3} | pares alternativos validados: {4}",UiText.nested(family(local)),UiText.nested(family(remote)),UiText.nested(rtt),UiText.nested(changes),UiText.nested(alternatives))
     }
-    @Synchronized fun diagnostics(): String = "Rede: ${preference.label}\n"+current+
-        if(preference==IpPreference.AUTO) "\nAutomático: verificações contínuas de conectividade/RTT; seleção pelo WebRTC e servidor. Alternativas dependem da rede disponível." else ""
+    @Synchronized fun diagnostics(): String = UiText.join(UiText.text("Rede: {0}\n",UiText.nested(preference.label)),current,if(preference==IpPreference.AUTO) UiText.text("\nAutomático: verificações contínuas de conectividade/RTT; seleção pelo WebRTC e servidor. Alternativas dependem da rede disponível.") else "")
     private fun family(candidate: RtcSample?): String {
         val address=(candidate?.values?.get("address") ?: candidate?.values?.get("ip")) as? String ?: return "n/d"
         return when {

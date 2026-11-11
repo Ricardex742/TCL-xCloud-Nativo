@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.settings
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import android.view.InputDevice
 import com.xcloud.tclnative.webrtc.GamepadState
@@ -8,7 +10,9 @@ import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-enum class StickCurve(val label: String,val exponent: Float) { LINEAR("Linear",1f), PRECISE("Mais precisão no centro",1.6f), FAST("Resposta rápida",.7f) }
+enum class StickCurve(private val sourceLabel: String,val exponent: Float) { LINEAR("Linear",1f), PRECISE("Mais precisão no centro",1.6f), FAST("Resposta rápida",.7f) ;
+    val label: String get()=UiText.text(sourceLabel)
+}
 data class ControllerProfile(val leftDeadzone: Int=0,val rightDeadzone: Int=0,val leftSensitivity: Int=100,val rightSensitivity: Int=100,
     val curve: StickCurve=StickCurve.LINEAR,val invertLeftY: Boolean=false,val invertRightY: Boolean=false,
     val triggerDeadzone: Int=0,val swapTriggers: Boolean=false,val mapping: Map<Int,Int> = emptyMap()) {

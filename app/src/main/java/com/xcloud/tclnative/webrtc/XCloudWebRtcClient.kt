@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.webrtc
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import com.xcloud.tclnative.settings.VideoCodecMode
 import com.xcloud.tclnative.settings.IpPreference
@@ -58,13 +60,13 @@ class XCloudWebRtcClient(
     private val controllerEventTiming=ControllerEventTiming()
     fun recordControllerEvent(eventUptimeMs: Long,arrivalUptimeMs: Long,historySize: Int,name: String?) =
         controllerEventTiming.record(eventUptimeMs,arrivalUptimeMs,historySize,name)
-    private val decoderLatency = java.util.concurrent.atomic.AtomicReference("Codec LL: aguardando vídeo")
+    private val decoderLatency = java.util.concurrent.atomic.AtomicReference(UiText.text("Codec LL: aguardando vídeo"))
     private val effectiveCodec=if(compatibility) VideoCodecMode.H264_BASELINE else videoCodec
     private val codecTrace=CodecNegotiationTrace(effectiveCodec)
     private val decoderFactory: H264VideoDecoderFactory
-    fun codecDiagnostics(): String = codecTrace.diagnostics()+"\nBitrate máximo solicitado: "+(if(maxBitrateKbps==0) "Automático" else "${maxBitrateKbps/1000.0} Mbps")
+    fun codecDiagnostics(): String = codecTrace.diagnostics()+UiText.text("\nBitrate máximo solicitado: ")+(if(maxBitrateKbps==0) UiText.text("Automático") else "${maxBitrateKbps/1000.0} Mbps")
     private val networkRoutes=NetworkRouteMonitor(ipPreference)
-    fun iceDiagnostics(): String = iceReports.joinToString("\n").ifBlank { "ICE local: aguardando coleta" }+"\n"+networkRoutes.diagnostics()
+    fun iceDiagnostics(): String = iceReports.joinToString("\n").ifBlank { UiText.text("ICE local: aguardando coleta") }+"\n"+networkRoutes.diagnostics()
     private val mainHandler=android.os.Handler(android.os.Looper.getMainLooper())
     private val audioDevice: JavaAudioDeviceModule
     private val peakGuard=AudioPeakGuard().apply { set(outputGain) }
@@ -75,7 +77,7 @@ class XCloudWebRtcClient(
     @Volatile private var microphoneForeground=true
     @Volatile var microphoneActive=false
         private set
-    @Volatile private var microphoneStatus="Microfone: mudo"
+    @Volatile private var microphoneStatus=UiText.text("Microfone: mudo")
     @Volatile private var micBytes=0L
     private var chatNegotiated=false
     private val audioLock=Any()
@@ -84,7 +86,7 @@ class XCloudWebRtcClient(
         if(!closed.get()) audioTracks.forEach { it.setVolume(gain*peakGuard.effective) }
     } }
     fun currentInputMetrics(): InputMetrics = inputPump?.metrics ?: InputMetrics()
-    fun audioDiagnostics()=audioSession.diagnostics()+"\n${peakGuard.diagnostics()}\n$microphoneStatus • chatStream anunciado: $chatSupported • áudio enviado: $micBytes B"
+    fun audioDiagnostics()=audioSession.diagnostics()+UiText.text("\n{0}\n{1} • chatStream anunciado: {2} • áudio enviado: {3} B",UiText.nested(peakGuard.diagnostics()),UiText.nested(microphoneStatus),UiText.nested(chatSupported),UiText.nested(micBytes))
     fun setOutputGain(percent: Int) { peakGuard.set(percent);applyAudioGain() }
     private fun applyAudioGain() { synchronized(audioLock) { if(!closed.get()) audioTracks.forEach { it.setVolume(audioSession.gain*peakGuard.effective) } } }
     fun microphoneLabel()=if(microphoneActive) "Silenciar microfone" else "Ativar microfone"
@@ -94,10 +96,10 @@ class XCloudWebRtcClient(
         if(nativeKeyboardMouse && version!=8) throw IOException("INPUT_NATIVE: o serviço não confirmou input v8 para mouse/teclado. Selecione emulação ou controle.")
     }
     fun microphoneUnavailableReason()=when {
-        closed.get() -> "A sessão foi encerrada."
-        !microphoneAllowed -> "O microfone está desativado nesta sessão. Ative Áudio e microfone antes da próxima partida."
-        !chatSupported -> "O serviço não anunciou chatStream nesta sessão. A captura continua desligada."
-        else -> "Microfone indisponível."
+        closed.get() -> UiText.text("A sessão foi encerrada.")
+        !microphoneAllowed -> UiText.text("O microfone está desativado nesta sessão. Ative Áudio e microfone antes da próxima partida.")
+        !chatSupported -> UiText.text("O serviço não anunciou chatStream nesta sessão. A captura continua desligada.")
+        else -> UiText.text("Microfone indisponível.")
     }
     fun canUseMicrophone()=microphoneAllowed && chatSupported && !closed.get()
     fun microphoneNegotiated()=chatNegotiated
@@ -114,12 +116,12 @@ class XCloudWebRtcClient(
             val paused=setMicrophoneEncoding(false)
             audioDevice.setAudioRecordEnabled(false)
             if(micTrack!=null) audioDevice.requestStopRecording()
-            microphoneStatus=if(paused) "Microfone: mudo; envio pausado" else "Microfone: mudo; encoder recusou pausa"
+            microphoneStatus=if(paused) UiText.text("Microfone: mudo; envio pausado") else UiText.text("Microfone: mudo; encoder recusou pausa")
         } else {
             audioDevice.setAudioRecordEnabled(true)
             if(!setMicrophoneEncoding(true)) {
                 audioDevice.setAudioRecordEnabled(false)
-                microphoneStatus="Microfone: encoder recusou ativação; mudo"
+                microphoneStatus=UiText.text("Microfone: encoder recusou ativação; mudo")
                 return
             }
             micTrack?.setEnabled(true)
@@ -183,16 +185,16 @@ class XCloudWebRtcClient(
         if(closed.get() || peerConnection!==pc) return
         micSender?.let { pc.removeTrack(it) };micSender=null
         micTrack?.dispose();micTrack=null;micSource?.dispose();micSource=null;chatNegotiated=false
-        microphoneStatus="Microfone: negociação não concluída; mudo"
+        microphoneStatus=UiText.text("Microfone: negociação não concluída; mudo")
     }
     fun resumeAudio() { if(synchronized(audioLock) { audioTracks.isNotEmpty() }) audioSession.requestFocus() }
     fun inputDiagnostics(): String = (if(nativeTouch)
-        "Toque nativo: ${if(touchEnabled) "sinalizado ativo" else "desativado para HUD"}; espaço de input: ${inputDimensions?.let { "${it.width}×${it.height}" } ?: "aguardando metadata"}; slot virtual 0: ${if(channelsReady.isCompleted) "registro enviado" else "aguardando canal"}"
-        else if(nativeKeyboardMouse) "Input Xbox: mouse/teclado nativos, versão negociada $negotiatedInputVersion" else "Input Xbox: controle/HUD")+"\n"+controllerEventTiming.diagnostics()+
+        UiText.text("Toque nativo: {0}; espaço de input: {1}; slot virtual 0: {2}",UiText.nested(if(touchEnabled) UiText.text("sinalizado ativo") else UiText.text("desativado para HUD")),UiText.nested(inputDimensions?.let { "${it.width}×${it.height}" } ?: UiText.text("aguardando metadata")),UiText.nested(if(channelsReady.isCompleted) "registro enviado" else UiText.text("aguardando canal")))
+        else if(nativeKeyboardMouse) UiText.text("Input Xbox: mouse/teclado nativos, versão negociada {0}",UiText.nested(negotiatedInputVersion)) else UiText.text("Input Xbox: controle/HUD"))+"\n"+controllerEventTiming.diagnostics()+
         (if(nativeTouch) "\n${pendingTouch.diagnostics()}" else "")
     fun latencyDiagnostics(): String = (if (lowLatencyVideo) "Playout solicitado: 0–40 ms" else "Playout: adaptativo") +
-        " | " + (if (lowLatencyVideo) decoderLatency.get() else "codec padrão") +
-        if(nativeTouch) " | Toque: ${if(touchEnabled) "ativo" else "desativado"}, ${inputDimensions?.let { "${it.width}×${it.height}" } ?: "aguardando metadata"}, ${inputPump?.metrics?.pointerEventsSent ?: 0} eventos enviados" else ""
+        " | " + (if (lowLatencyVideo) decoderLatency.get() else UiText.text("codec padrão")) +
+        if(nativeTouch) UiText.text(" | Toque: {0}, {1}, {2} eventos enviados",UiText.nested(if(touchEnabled) UiText.text("ativo") else UiText.text("desativado")),UiText.nested(inputDimensions?.let { "${it.width}×${it.height}" } ?: UiText.text("aguardando metadata")),UiText.nested(inputPump?.metrics?.pointerEventsSent ?: 0)) else ""
 
     init {
         PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(context.applicationContext)
@@ -207,12 +209,12 @@ class XCloudWebRtcClient(
                     mainHandler.post { applyAudioGain() }
             }
             .setAudioRecordStateCallback(object: JavaAudioDeviceModule.AudioRecordStateCallback {
-                override fun onWebRtcAudioRecordStart() { if(microphoneActive) microphoneStatus="Microfone: captura iniciada" }
+                override fun onWebRtcAudioRecordStart() { if(microphoneActive) microphoneStatus=UiText.text("Microfone: captura iniciada") }
                 override fun onWebRtcAudioRecordStop() { if(microphoneActive) microphoneStatus="Microfone: captura parada pelo Android" }
             })
             .setAudioRecordErrorCallback(object: JavaAudioDeviceModule.AudioRecordErrorCallback {
                 private fun rejected() { mainHandler.post {
-                    if(!closed.get()) { setMicrophoneMuted(true);microphoneStatus="Microfone: captura recusada pelo Android; mudo" }
+                    if(!closed.get()) { setMicrophoneMuted(true);microphoneStatus=UiText.text("Microfone: captura recusada pelo Android; mudo") }
                 } }
                 override fun onWebRtcAudioRecordInitError(message: String) { rejected() }
                 override fun onWebRtcAudioRecordStartError(code: JavaAudioDeviceModule.AudioRecordStartErrorCode,message: String) { rejected() }
@@ -223,9 +225,9 @@ class XCloudWebRtcClient(
                 override fun onWebRtcAudioTrackStop() { audioSession.playing=false }
             })
             .setAudioTrackErrorCallback(object: JavaAudioDeviceModule.AudioTrackErrorCallback {
-                override fun onWebRtcAudioTrackInitError(message: String) { audioSession.error="inicialização: ${message.take(180)}" }
-                override fun onWebRtcAudioTrackStartError(code: JavaAudioDeviceModule.AudioTrackStartErrorCode,message: String) { audioSession.error="início: $code" }
-                override fun onWebRtcAudioTrackError(message: String) { audioSession.error="reprodução: ${message.take(180)}" }
+                override fun onWebRtcAudioTrackInitError(message: String) { audioSession.error=UiText.text("inicialização: {0}",UiText.nested(message.take(180))) }
+                override fun onWebRtcAudioTrackStartError(code: JavaAudioDeviceModule.AudioTrackStartErrorCode,message: String) { audioSession.error=UiText.text("início: {0}",UiText.nested(code)) }
+                override fun onWebRtcAudioTrackError(message: String) { audioSession.error=UiText.text("reprodução: {0}",UiText.nested(message.take(180))) }
             }).createAudioDeviceModule()
         audioDevice=audio
         audio.setMicrophoneMute(true);audio.setAudioRecordEnabled(false)

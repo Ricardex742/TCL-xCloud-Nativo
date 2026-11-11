@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.webrtc
 
+import com.xcloud.tclnative.i18n.UiText
+
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -36,5 +38,5 @@ class AudioPeakGuard {
         peak=0.0
         return abs(previous-effective)>.001
     }
-    fun diagnostics()="Ganho solicitado: $requested% • aplicado: ${(effective*100).toInt()}% • redução adaptativa de picos: ${if(measured) "disponível" else "formato indisponível; limitado a 100%"}"
+    fun diagnostics()=UiText.text("Ganho solicitado: {0}% • aplicado: {1}% • redução adaptativa de picos: {2}",UiText.nested(requested),UiText.nested((effective*100).toInt()),UiText.nested(if(measured) UiText.text("disponível") else UiText.text("formato indisponível; limitado a 100%")))
 }

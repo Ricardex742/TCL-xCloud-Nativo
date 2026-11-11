@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.webrtc
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.os.Build
 import android.view.InputDevice
 import android.view.View
@@ -19,10 +21,10 @@ class JoystickDispatchPreference(private val root: View) {
             requestedDuringSession=requestedDuringSession || immediate
         } catch(_: RuntimeException) { requested=false;rejected=true }
     }
-    fun diagnostics(): String = "Joystick Android: "+(when {
-        Build.VERSION.SDK_INT<30 -> "despacho imediato indisponível nesta API"
-        rejected -> "pedido de despacho imediato recusado"
-        requested -> "despacho imediato solicitado (sem espera pelo vsync da interface)"
-        else -> "despacho padrão"
-    })+if(Build.VERSION.SDK_INT>=30) "; pedido durante a sessão: ${if(requestedDuringSession) "sim" else "não"}" else ""
+    fun diagnostics(): String = UiText.join("Joystick Android: ",(when {
+        Build.VERSION.SDK_INT<30 -> UiText.text("despacho imediato indisponível nesta API")
+        rejected -> UiText.text("pedido de despacho imediato recusado")
+        requested -> UiText.text("despacho imediato solicitado (sem espera pelo vsync da interface)")
+        else -> UiText.text("despacho padrão")
+    }),if(Build.VERSION.SDK_INT>=30) UiText.text("; pedido durante a sessão: {0}",UiText.nested(if(requestedDuringSession) UiText.text("sim") else UiText.text("não"))) else "")
 }

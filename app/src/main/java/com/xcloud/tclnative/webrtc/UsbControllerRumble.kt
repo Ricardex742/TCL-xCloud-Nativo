@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.webrtc
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -60,8 +62,8 @@ class UsbControllerRumble(context: Context) : AutoCloseable {
                 val intf=device.getInterface(index)
                 "Interface ${intf.id}: %02x/%02x/%02x".format(intf.interfaceClass,intf.interfaceSubclass,intf.interfaceProtocol)
             }
-    }.ifBlank { "Nenhum dispositivo USB enumerado pelo Android." }+
-        "\n\nO teste aceita apenas Xbox 360/XInput (ff/5d/01). HID, Xbox One e outros protocolos precisam de implementação própria. Uma transferência aceita não comprova que o motor vibrou."
+    }.ifBlank { UiText.text("Nenhum dispositivo USB enumerado pelo Android.") }+
+        UiText.text("\n\nO teste aceita apenas Xbox 360/XInput (ff/5d/01). HID, Xbox One e outros protocolos precisam de implementação própria. Uma transferência aceita não comprova que o motor vibrou.")
 
     private val receiver=object: BroadcastReceiver() {
         override fun onReceive(context: Context,intent: Intent) {
@@ -155,9 +157,8 @@ class UsbControllerRumble(context: Context) : AutoCloseable {
             worker.schedule({
                 if(generation.get()==token && session===opened) {
                     if(!opened.write(0,0)) { disconnect();report("USB/XInput: falha ao encerrar o pulso; conexão liberada.") }
-                    else report("USB/XInput: pulso de 250 ms enviado. "+
-                        if(activeInputId==null) "Sem associação única ao controle Android; vibração da partida indisponível."
-                        else "Via USB disponível para este controle enquanto o app estiver aberto. Confirme se houve vibração.")
+                    else report(UiText.join("USB/XInput: pulso de 250 ms enviado. ",if(activeInputId==null) UiText.text("Sem associação única ao controle Android; vibração da partida indisponível.")
+                        else UiText.text("Via USB disponível para este controle enquanto o app estiver aberto. Confirme se houve vibração.")))
                 }
             },250,TimeUnit.MILLISECONDS)
         }

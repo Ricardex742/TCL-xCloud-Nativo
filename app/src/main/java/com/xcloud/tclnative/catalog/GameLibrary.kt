@@ -1,14 +1,17 @@
 package com.xcloud.tclnative.catalog
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import com.xcloud.tclnative.signaling.GameTitle
 import org.json.JSONObject
 import java.security.MessageDigest
 import java.util.Locale
 
-enum class LibraryTab(val label: String) {
+enum class LibraryTab(private val sourceLabel: String) {
     RECENT("VOLTAR A JOGAR"), FAVORITES("FAVORITOS"), GAME_PASS("GAME PASS"), PURCHASED("TRANSMITA SEU JOGO"),
-    ADDED("ADIÇÕES RECENTES"), ALL("TODOS OS JOGOS")
+    ADDED("ADIÇÕES RECENTES"), ALL("TODOS OS JOGOS");
+    val label: String get()=UiText.text(sourceLabel)
 }
 
 data class PlayRecord(val lastPlayed: Long, val launches: Int)
@@ -57,7 +60,7 @@ class GameLibrary(private val context: Context, accountId: String, legacyAccount
         val existing = next.firstOrNull { it.equals(id, true) }
         val added = if (existing != null) { next.remove(existing); false } else { next.add(id); true }
         // Complete the disk write before acknowledging the star, including immediate app exits.
-        if (!prefs.edit().putStringSet("favorites", next).commit()) throw java.io.IOException("Não foi possível salvar os favoritos no aparelho.")
+        if (!prefs.edit().putStringSet("favorites", next).commit()) throw java.io.IOException(UiText.text("Não foi possível salvar os favoritos no aparelho."))
         return added
     }
     fun recordPlayed(id: String, now: Long = System.currentTimeMillis()) {
@@ -81,7 +84,7 @@ class GameLibrary(private val context: Context, accountId: String, legacyAccount
     @Synchronized fun saveCloudRecent(ids: List<String>) {
         val data=ids.filter { it.isNotBlank() && it.length<=256 }.distinctBy { it.uppercase(Locale.ROOT) }.take(25)
         if(!prefs.edit().putString("cloud_recent",org.json.JSONArray(data).toString()).putLong("cloud_recent_at",System.currentTimeMillis()).commit())
-            throw java.io.IOException("Não foi possível salvar o histórico do Xbox neste aparelho.")
+            throw java.io.IOException(UiText.text("Não foi possível salvar o histórico do Xbox neste aparelho."))
     }
     companion object {
         fun accountKey(account: String): String = MessageDigest.getInstance("SHA-256")

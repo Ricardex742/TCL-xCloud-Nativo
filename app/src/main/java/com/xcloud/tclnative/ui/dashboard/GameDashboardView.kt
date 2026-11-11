@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.ui.dashboard
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import android.graphics.Color
 import android.graphics.RectF
@@ -115,7 +117,7 @@ class GameDashboardView(
     private val gamertag = label(24f).apply { setTextColor(DashboardTheme.muted) }
     private val subscription = label(20f).apply { gravity = Gravity.CENTER }
     private val settingsButton = DashboardTheme.button(context,"⚙") { onOptions() }.apply {
-        id=generateViewId(); contentDescription="Configurações"
+        id=generateViewId(); contentDescription=UiText.text("Configurações")
         typeface=android.graphics.Typeface.DEFAULT
         setPadding(0,0,0,0)
     }
@@ -176,7 +178,7 @@ class GameDashboardView(
         lb.background = rounded(0xff252527.toInt(), 6f, Color.LTGRAY)
         rb.background = rounded(0xff252527.toInt(), 6f, Color.LTGRAY)
         lb.isClickable = true; rb.isClickable = true
-        lb.contentDescription = "Categoria anterior, LB"; rb.contentDescription = "Próxima categoria, RB"
+        lb.contentDescription = UiText.text("Categoria anterior, LB"); rb.contentDescription = UiText.text("Próxima categoria, RB")
         lb.setOnClickListener { cycleTab(-1) }; rb.setOnClickListener { cycleTab(1) }
         lb.isFocusable = false; rb.isFocusable = false
         LibraryTab.entries.forEach { tab ->
@@ -200,16 +202,16 @@ class GameDashboardView(
         grid.adapter = adapter
         addView(grid); addView(emptyState)
         addView(footer); addView(catalogNote); addView(metadataNote)
-        hint("A", "SELECIONAR") { selectedCard?.let(::playCard) }
-        hint("B", "VOLTAR") { back() }
-        hint("Y", "FAVORITAR") { toggleSelectedFavorite() }
-        hint("X", "BUSCAR", onSearch)
-        hint("☰", "CONFIGURAÇÕES", onOptions)
+        hint("A", UiText.text("SELECIONAR")) { selectedCard?.let(::playCard) }
+        hint("B", UiText.text("VOLTAR")) { back() }
+        hint("Y", UiText.text("FAVORITAR")) { toggleSelectedFavorite() }
+        hint("X", UiText.text("BUSCAR"), onSearch)
+        hint("☰", UiText.text("CONFIGURAÇÕES"), onOptions)
         renderProfile()
         updateTabs()
     }
 
-    private fun label(size: Float, heavy: Boolean = true) = TextView(context).apply {
+    private fun label(size: Float, heavy: Boolean = true) = com.xcloud.tclnative.i18n.LocalizedTextView(context).apply {
         typeface = DashboardTheme.font(context, heavy)
         setTextColor(Color.WHITE); setTextSize(TypedValue.COMPLEX_UNIT_PX, size)
         includeFontPadding = false; maxLines = 1; ellipsize = TextUtils.TruncateAt.END
@@ -292,9 +294,9 @@ class GameDashboardView(
     fun isGamePassProduct(productId: String) = GamePassCatalog.productKey(productId) in (gamePassProducts ?: emptySet())
     fun setMetadataProgress(progress: com.xcloud.tclnative.catalog.CatalogService.Progress) {
         metadataStatus = when {
-            !progress.finished -> "CARREGANDO INFORMAÇÕES E CAPAS: ${progress.covers}/${progress.total}"
-            progress.covers == 0 -> "CAPAS INDISPONÍVEIS. START → ATUALIZAR CATÁLOGO."
-            progress.covers < progress.total -> "ALGUMAS CAPAS INDISPONÍVEIS. ATUALIZE NAS CONFIGURAÇÕES."
+            !progress.finished -> UiText.text("CARREGANDO INFORMAÇÕES E CAPAS: {0}/{1}",UiText.nested(progress.covers),UiText.nested(progress.total))
+            progress.covers == 0 -> UiText.text("CAPAS INDISPONÍVEIS. START → ATUALIZAR CATÁLOGO.")
+            progress.covers < progress.total -> UiText.text("ALGUMAS CAPAS INDISPONÍVEIS. ATUALIZE NAS CONFIGURAÇÕES.")
             else -> ""
         }
         renderMetadataNote()
@@ -306,11 +308,11 @@ class GameDashboardView(
     private fun renderProfile() {
         accountName.text = profile.displayName.uppercase(Locale.getDefault())
         gamertag.text = profile.gamertag.uppercase(Locale.getDefault())
-        subscription.text = profile.subscription?.let { if (it == "FREE") "FREE" else "GAME PASS $it" } ?: "ASSINATURA NÃO INFORMADA"
+        subscription.text = profile.subscription?.let { if (it == "FREE") "FREE" else "GAME PASS $it" } ?: UiText.text("ASSINATURA NÃO INFORMADA")
         subscription.background = DashboardTheme.shape(UiColor.SUBSCRIPTION, 3f)
         avatarLetter.text = profile.displayName.take(1).uppercase(Locale.getDefault())
-        connected.contentDescription = "Conta autenticada no Xbox Cloud"
-        profilePanel.contentDescription = "${profile.displayName}, ${profile.gamertag}. Abrir configurações"
+        connected.contentDescription = UiText.text("Conta autenticada no Xbox Cloud")
+        profilePanel.contentDescription = UiText.text("{0}, {1}. Abrir configurações",UiText.nested(profile.displayName),UiText.nested(profile.gamertag))
         val size=ArtworkSize.forDisplay((80*scale).roundToInt(),(80*scale).roundToInt())
         posters.load(avatar, profile.avatarUrl, size.width, size.height) { ready -> avatarLetter.visibility = if (ready) View.GONE else View.VISIBLE }
     }
@@ -384,33 +386,33 @@ class GameDashboardView(
         val gallery=kind?.let { officialGalleries[it] }
         emptyState.visibility = if (count==0) View.VISIBLE else View.GONE
         emptyState.text = when {
-            preparing -> "Carregando catálogo…"
-            searchQuery.isNotBlank() -> "Nenhum jogo encontrado para “$searchQuery”.\nX para pesquisar novamente."
-            activeTab == LibraryTab.FAVORITES -> "Seus favoritos aparecem aqui.\nSelecione um jogo e pressione Y para favoritar."
-            activeTab == LibraryTab.RECENT && recentLoading -> "Consultando seu histórico do Xbox Cloud…"
-            activeTab == LibraryTab.RECENT && recentFailed -> "Não foi possível consultar o histórico do Xbox.\nAtualize o catálogo nas configurações para tentar novamente."
-            activeTab == LibraryTab.RECENT -> "Seus jogos recentes do Xbox Cloud Gaming aparecerão aqui."
-            activeTab == LibraryTab.ADDED && !galleriesLoaded -> "Carregando adições recentes…"
-            activeTab == LibraryTab.ADDED && added == null -> "Adições recentes indisponíveis no momento.\nOs jogos continuam na aba Todos os jogos."
-            activeTab == LibraryTab.GAME_PASS && !gamePassLoaded -> "Carregando jogos do Game Pass…"
-            activeTab == LibraryTab.GAME_PASS && gamePassProducts == null -> "Não foi possível confirmar os jogos do Game Pass.\nAtualize o catálogo nas configurações."
-            activeTab == LibraryTab.GAME_PASS -> "Nenhum título do Game Pass disponível nesta lista."
-            activeTab == LibraryTab.PURCHASED && !officialGalleries.containsKey(OfficialGalleryKind.PURCHASED) -> "Carregando a lista oficial de jogos comprados compatíveis…"
-            activeTab == LibraryTab.PURCHASED && gallery == null -> "Não foi possível consultar a lista oficial.\nAtualize o catálogo nas configurações."
-            activeTab == LibraryTab.PURCHASED -> "A galeria oficial não retornou jogos nesta região."
-            else -> "Nenhum jogo disponível nesta categoria."
+            preparing -> UiText.text("Carregando catálogo…")
+            searchQuery.isNotBlank() -> UiText.text("Nenhum jogo encontrado para “{0}”.\nX para pesquisar novamente.",UiText.nested(searchQuery))
+            activeTab == LibraryTab.FAVORITES -> UiText.text("Seus favoritos aparecem aqui.\nSelecione um jogo e pressione Y para favoritar.")
+            activeTab == LibraryTab.RECENT && recentLoading -> UiText.text("Consultando seu histórico do Xbox Cloud…")
+            activeTab == LibraryTab.RECENT && recentFailed -> UiText.text("Não foi possível consultar o histórico do Xbox.\nAtualize o catálogo nas configurações para tentar novamente.")
+            activeTab == LibraryTab.RECENT -> UiText.text("Seus jogos recentes do Xbox Cloud Gaming aparecerão aqui.")
+            activeTab == LibraryTab.ADDED && !galleriesLoaded -> UiText.text("Carregando adições recentes…")
+            activeTab == LibraryTab.ADDED && added == null -> UiText.text("Adições recentes indisponíveis no momento.\nOs jogos continuam na aba Todos os jogos.")
+            activeTab == LibraryTab.GAME_PASS && !gamePassLoaded -> UiText.text("Carregando jogos do Game Pass…")
+            activeTab == LibraryTab.GAME_PASS && gamePassProducts == null -> UiText.text("Não foi possível confirmar os jogos do Game Pass.\nAtualize o catálogo nas configurações.")
+            activeTab == LibraryTab.GAME_PASS -> UiText.text("Nenhum título do Game Pass disponível nesta lista.")
+            activeTab == LibraryTab.PURCHASED && !officialGalleries.containsKey(OfficialGalleryKind.PURCHASED) -> UiText.text("Carregando a lista oficial de jogos comprados compatíveis…")
+            activeTab == LibraryTab.PURCHASED && gallery == null -> UiText.text("Não foi possível consultar a lista oficial.\nAtualize o catálogo nas configurações.")
+            activeTab == LibraryTab.PURCHASED -> UiText.text("A galeria oficial não retornou jogos nesta região.")
+            else -> UiText.text("Nenhum jogo disponível nesta categoria.")
         }
         catalogNote.text = when {
-            preparing -> "CARREGANDO CATÁLOGO…"
-            searchQuery.isNotBlank() -> "BUSCA: $searchQuery  •  $count JOGOS"
-            activeTab == LibraryTab.GAME_PASS && !gamePassLoaded -> "$count JOGOS • ATUALIZANDO GAME PASS…"
-            activeTab == LibraryTab.RECENT && recentLoading -> "$count JOGOS • ATUALIZANDO HISTÓRICO…"
-            activeTab == LibraryTab.RECENT && recentFailed && recent!=null -> "$count JOGOS • HISTÓRICO SALVO • ATUALIZAÇÃO INDISPONÍVEL"
-            kind!=null && officialGalleries.containsKey(kind) && gallery==null -> "LISTA OFICIAL INDISPONÍVEL"
-            gallery!=null && !gallery.metadataComplete -> "$count PRODUTOS • ATUALIZANDO"
-            gallery?.metadataFailed==true -> "$count PRODUTOS • DADOS PARCIAIS"
-            gallery!=null -> "$count JOGOS • LISTA OFICIAL"
-            else -> "$count JOGOS"
+            preparing -> UiText.text("CARREGANDO CATÁLOGO…")
+            searchQuery.isNotBlank() -> UiText.text("BUSCA: {0}  •  {1} JOGOS",UiText.nested(searchQuery),UiText.nested(count))
+            activeTab == LibraryTab.GAME_PASS && !gamePassLoaded -> UiText.text("{0} JOGOS • ATUALIZANDO GAME PASS…",UiText.nested(count))
+            activeTab == LibraryTab.RECENT && recentLoading -> UiText.text("{0} JOGOS • ATUALIZANDO HISTÓRICO…",UiText.nested(count))
+            activeTab == LibraryTab.RECENT && recentFailed && recent!=null -> UiText.text("{0} JOGOS • HISTÓRICO SALVO • ATUALIZAÇÃO INDISPONÍVEL",UiText.nested(count))
+            kind!=null && officialGalleries.containsKey(kind) && gallery==null -> UiText.text("LISTA OFICIAL INDISPONÍVEL")
+            gallery!=null && !gallery.metadataComplete -> UiText.text("{0} PRODUTOS • ATUALIZANDO",UiText.nested(count))
+            gallery?.metadataFailed==true -> UiText.text("{0} PRODUTOS • DADOS PARCIAIS",UiText.nested(count))
+            gallery!=null -> UiText.text("{0} JOGOS • LISTA OFICIAL",UiText.nested(count))
+            else -> UiText.text("{0} JOGOS",UiText.nested(count))
         }
         renderMetadataNote()
     }
@@ -418,12 +420,12 @@ class GameDashboardView(
         val kind=when(activeTab) { LibraryTab.GAME_PASS -> OfficialGalleryKind.GAME_PASS; LibraryTab.PURCHASED -> OfficialGalleryKind.PURCHASED; else -> null }
         val gallery=kind?.let { officialGalleries[it] }
         metadataNote.text=when {
-            activeTab==LibraryTab.PURCHASED && gallery?.metadataFailed==true -> "Algumas informações indisponíveis. A lista não confirma a propriedade; exige compra digital e condições do serviço."
-            activeTab==LibraryTab.PURCHASED && gallery!=null && !gallery.metadataComplete -> "Carregando informações da lista oficial. Não confirma a propriedade; exige compra digital e condições do serviço."
-            activeTab==LibraryTab.PURCHASED -> "Lista oficial de jogos compatíveis; exige compra digital e condições do serviço. Não confirma a propriedade na conta."
-            gallery?.metadataFailed==true -> "Lista oficial completa • Algumas informações/capas indisponíveis; atualize o catálogo nas configurações."
-            gallery!=null && !gallery.metadataComplete -> "Lista oficial completa • Carregando informações e capas…"
-            gallery!=null -> "Galeria oficial do Xbox Cloud Gaming • Inclui opções gratuitas; acesso depende da conta e das condições do serviço."
+            activeTab==LibraryTab.PURCHASED && gallery?.metadataFailed==true -> UiText.text("Algumas informações indisponíveis. A lista não confirma a propriedade; exige compra digital e condições do serviço.")
+            activeTab==LibraryTab.PURCHASED && gallery!=null && !gallery.metadataComplete -> UiText.text("Carregando informações da lista oficial. Não confirma a propriedade; exige compra digital e condições do serviço.")
+            activeTab==LibraryTab.PURCHASED -> UiText.text("Lista oficial de jogos compatíveis; exige compra digital e condições do serviço. Não confirma a propriedade na conta.")
+            gallery?.metadataFailed==true -> UiText.text("Lista oficial completa • Algumas informações/capas indisponíveis; atualize o catálogo nas configurações.")
+            gallery!=null && !gallery.metadataComplete -> UiText.text("Lista oficial completa • Carregando informações e capas…")
+            gallery!=null -> UiText.text("Galeria oficial do Xbox Cloud Gaming • Inclui opções gratuitas; acesso depende da conta e das condições do serviço.")
             else -> metadataStatus
         }
     }
@@ -439,7 +441,7 @@ class GameDashboardView(
         LibraryTab.entries.forEachIndexed { index, tab ->
             tabPlates[index].highlighted = activeTab == tab
             tabs[index].isSelected = activeTab == tab
-            tabs[index].contentDescription = tab.label + if (activeTab == tab) ", selecionado" else ""
+            tabs[index].contentDescription = tab.label + if (activeTab == tab) UiText.text(", selecionado") else ""
         }
     }
     private fun cycleTab(step: Int) {
@@ -475,7 +477,7 @@ class GameDashboardView(
         if (previous?.key==game?.key && previous?.name==game?.name && previous?.tileUrl==game?.tileUrl &&
             previous?.posterUrl==game?.posterUrl && headerTitle.text.isNotEmpty()) return
         headerArtJob?.cancel()
-        if (game == null) { headerTitle.text = "SUA BIBLIOTECA"; posters.load(headerIcon, null); return }
+        if (game == null) { headerTitle.text = UiText.text("SUA BIBLIOTECA"); posters.load(headerIcon, null); return }
         val words = game.name.uppercase(Locale.getDefault()).split(Regex("\\s+"))
         val split = if (words.size <= 1) words.size else if (words[0].length >= 10) 1 else
             (1 until words.size).minByOrNull { kotlin.math.abs(words.take(it).joinToString(" ").length - game.name.length / 2) } ?: 1
@@ -485,7 +487,7 @@ class GameDashboardView(
         headerTitle.text = SpannableString(title).apply {
             if (second.isNotEmpty()) setSpan(ForegroundColorSpan(DashboardTheme.accent), first.length + 1, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
-        headerIcon.contentDescription = "Ícone de ${game.name}"
+        headerIcon.contentDescription = UiText.text("Ícone de {0}",UiText.nested(game.name))
         // Fast D-pad navigation updates text immediately and loads art only after focus settles.
         headerArtJob=scope.launch { delay(120); if(selectedCard?.key==game.key) loadHeaderArtwork(game) }
     }
@@ -495,7 +497,7 @@ class GameDashboardView(
     }
     private fun toggleSelectedFavorite() {
         val game = selectedGame ?: run {
-            if(selectedCard?.product!=null) android.widget.Toast.makeText(context,"Selecione o jogo para verificar sua disponibilidade antes de favoritar.",android.widget.Toast.LENGTH_LONG).show()
+            if(selectedCard?.product!=null) android.widget.Toast.makeText(context,UiText.text("Selecione o jogo para verificar sua disponibilidade antes de favoritar."),android.widget.Toast.LENGTH_LONG).show()
             return
         }
         val added = try { library.toggleFavorite(game.titleId) } catch (error: java.io.IOException) {
@@ -503,7 +505,7 @@ class GameDashboardView(
             return
         }
         onFavoritesChanged()
-        announceForAccessibility(if (added) "${game.name} adicionado aos favoritos" else "${game.name} removido dos favoritos")
+        announceForAccessibility(if (added) UiText.text("{0} adicionado aos favoritos",UiText.nested(game.name)) else UiText.text("{0} removido dos favoritos",UiText.nested(game.name)))
         if (activeTab == LibraryTab.FAVORITES) { refresh(); focusFirstCover() }
         else adapter.items.indices.filter { adapter.items[it].game?.titleId==game.titleId }
             .forEach { adapter.notifyItemChanged(it,"favorite") }
@@ -696,7 +698,7 @@ class GameDashboardView(
         }
         fun bindFavorite(game: CatalogCard) {
             val starred=game.game?.let { library.isFavorite(it.titleId) } == true
-            contentDescription = game.name + if(starred) ", favorito" else ""
+            contentDescription = game.name + if(starred) UiText.text(", favorito") else ""
             favorite.visibility=if(starred) View.VISIBLE else View.GONE
         }
         fun bindArtwork(game: CatalogCard) {

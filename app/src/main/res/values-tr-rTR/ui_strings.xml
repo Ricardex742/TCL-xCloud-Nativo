@@ -1,0 +1,821 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_00337a440affe8d9" formatted="false">"FSR için çıktı çözünürlüğünde oluşturucu"</string>
+    <string name="ui_01097ccc24bdd54c" formatted="false">"Sipariş: {0}, {1} Mbps (alınan VBR değişiklik gösterebilir) | Menu+View: Kalkış; BİLGİ/F10: istatistikler\n{2}"</string>
+    <string name="ui_013a1e5debec7510" formatted="false">"Cep telefonu titreşimi"</string>
+    <string name="ui_013b6b53ec11bea0" formatted="false">"QR KODUYLA GİRİŞ YAP"</string>
+    <string name="ui_0160c60d129ba3c9" formatted="false">"Futbol denetleyici şeması"</string>
+    <string name="ui_019da395008ae750" formatted="false">"Mikrofon kullanılamıyor."</string>
+    <string name="ui_01d41b7846b0b45f" formatted="false">"Sola çevir Y: {0}"</string>
+    <string name="ui_0267884953a02355" formatted="false">"Yüksek kayıplar veya titreme. Yönlendiricinin yakınındaki Ethernet ve Wi-Fi\'yi karşılaştırın; Servis de değişiklik gösterebilir."</string>
+    <string name="ui_02c7b48c968b844b" formatted="false">"zaman aşımı aşıldı"</string>
+    <string name="ui_02d6ff6939c73b58" formatted="false">"Kısayol oluşturmadan önce Y ile oyunlar ekleyin."</string>
+    <string name="ui_031a5e835b1f6d36" formatted="false">"Bilinmeyen ağ"</string>
+    <string name="ui_031bde0f50ba5d49" formatted="false">"Başlatıcı kısayolu iste: {0}"</string>
+    <string name="ui_03561d241830a0e8" formatted="false">"Favori kanalını TV oluşturmadı."</string>
+    <string name="ui_043344ab2cab974f" formatted="false">"Oturumun bağlantısını kesin ve kataloğa dönün"</string>
+    <string name="ui_044419e9c7dfdf4f" formatted="false">"Video kod çözücü"</string>
+    <string name="ui_0471fc9b94d1d4e1" formatted="false">"Ekran: HDR10 Android tarafından duyuruldu."</string>
+    <string name="ui_0482ab2f5e9555df" formatted="false">"verimli: evet"</string>
+    <string name="ui_04fed7bc7eba27be" formatted="false">"Yerel dokunuş Xbox: {0}"</string>
+    <string name="ui_0576a13b7f8da156" formatted="false">"Denetleyicinin ve cep telefonunun titreşimi"</string>
+    <string name="ui_05c167f258910d47" formatted="false">"Gözlenen göz ardı edilenler: {0} • İlerleme yok: {1} ({2} bölümleri)\n"</string>
+    <string name="ui_05d410b61f115e54" formatted="false">"Tekrar oturum açın"</string>
+    <string name="ui_05f55ecde2095706" formatted="false">"Uygulama açıkken bu denetleyici için USB aracılığıyla kullanılabilir. Titreşim olup olmadığını kontrol edin."</string>
+    <string name="ui_063e3bb2ff5e1126" formatted="false">"Bu listede Game Pass başlığı yok."</string>
+    <string name="ui_072486acb1c2c3bc" formatted="false">"KATALOG YÜKLENİYOR…"</string>
+    <string name="ui_078c3c1c21cac018" formatted="false">"örnekleri bekliyorum"</string>
+    <string name="ui_07adc85579777aed" formatted="false">"istenmeyen"</string>
+    <string name="ui_07c30329e1fbb86e" formatted="false">"Kamera Ölü Bölge Telafisi"</string>
+    <string name="ui_085a7aac0ee4c17f" formatted="false">"Tahmini endeks. Kodu çözülen FPS, oyundan veya ekrandan gelen FPS değil. Ağ ve duraklamalar mevcut örnekleri yansıtır; link Wi-Fi internet hızını ölçmez."</string>
+    <string name="ui_087049dba46795c1" formatted="false">"Kontroller › Fare ve klavye"</string>
+    <string name="ui_088f4da0fb6e92f6" formatted="false">"Android veya USB testi desteklediğinde ilgili denetleyiciyi tetikler. Bir sonraki oyunda geçerlidir."</string>
+    <string name="ui_08fcc1f5b2d705ea" formatted="false">"Çekim yaparken nişan alın: {0}"</string>
+    <string name="ui_0964df415f982798" formatted="false">"Çözünürlük yok"</string>
+    <string name="ui_0a6ed0003ccbb5c5" formatted="false">"denetleyici titreşimi"</string>
+    <string name="ui_0a8a145f0c4c786b" formatted="false">"HDR10: ekran ve iletim"</string>
+    <string name="ui_0aadc3c5e893f94b" formatted="false">"Sol ölü bölge: {0}%"</string>
+    <string name="ui_0af64325f77fe6bf" formatted="false">"Oyunda kullanılan şemanın aynısını seçin. Uygula, özel konumları ve boyutları korurken futbol düğmesi eylemlerini ve jestlerini geri yükler."</string>
+    <string name="ui_0b23a612555311a0" formatted="false">"RTT yükseldi. Bağlantı ve hizmet bölgesini karşılaştırın. RTT, komuttan görüntüye geçiş gecikmesinin tamamını ölçmez."</string>
+    <string name="ui_0b2d680c438ef00a" formatted="false">"Çalıştırmak için analog sürükleme: {0}"</string>
+    <string name="ui_0b515c2eb55d0039" formatted="false">"Raporun bu versiyonunda kayıtlı değil."</string>
+    <string name="ui_0b6181c8fae6c214" formatted="false">"{0} Banner"</string>
+    <string name="ui_0bf12e52f3bc5819" formatted="false">"zaman aşımından önce hiçbir video karesi sunulmadı"</string>
+    <string name="ui_0c4d21bd3043de42" formatted="false">"Codec: {0}"</string>
+    <string name="ui_0c589d4d177557b9" formatted="false">"Yerel dokunma kuyruğu: D/U/M girişi {0}/{1}/{2}; "</string>
+    <string name="ui_0c62bc59af11fcee" formatted="false">"↑ Üst"</string>
+    <string name="ui_0cb22b8f1ab03a08" formatted="false">"Ölü bölge telafisi: {0}%"</string>
+    <string name="ui_0cef94b399905087" formatted="false">"Maç, video hazır olur olmaz gösterilecek."</string>
+    <string name="ui_0d1222c8a7720ee4" formatted="false">"Son eklemeler yükleniyor…"</string>
+    <string name="ui_0d220536c41d6fdb" formatted="false">"Sesi %100 korur. Bunun üzerinde uygulama, sesteki zirveleri tespit ettiğinde kazancı kademeli olarak artırır ve azaltır. Geçici durumlar yine de bozulabilir. %125\'ten başlayın. Android odağı ve ses düzeyi etkin kalır."</string>
+    <string name="ui_0d79621a7c3b95be" formatted="false">"Düşen kareler"</string>
+    <string name="ui_0d7a3d320a0fb006" formatted="false">"H.264 — varsayılan"</string>
+    <string name="ui_0d8c42edc4b4608f" formatted="false">"Sol hassasiyet: {0}%"</string>
+    <string name="ui_0d995dfdd2eeea56" formatted="false">"Aldatmacalar"</string>
+    <string name="ui_0d9a4b66ad7d5845" formatted="false">"Görünüm ve temalar"</string>
+    <string name="ui_0e01764ea4f7fbb1" formatted="false">"yerel sunumda hata"</string>
+    <string name="ui_0ea9a4d339b48e4f" formatted="false">"Başlangıç teşhisi"</string>
+    <string name="ui_0f2bd88ef0acbda9" formatted="false">"Kapatmak için"</string>
+    <string name="ui_1003f34d94801539" formatted="false">"Yardım"</string>
+    <string name="ui_106574feeec20607" formatted="false">"başlangıç: {0}"</string>
+    <string name="ui_10866a9df5f8be5b" formatted="false">"{0} {1}"</string>
+    <string name="ui_10a9f4a598e80ee7" formatted="false">"Etkileşime girmek"</string>
+    <string name="ui_10c71725a6c0bcad" formatted="false">"Mikrofon: yakalama başlatıldı"</string>
+    <string name="ui_11239872d178729a" formatted="false">"toplam"</string>
+    <string name="ui_11715c548ed9a603" formatted="false">"DZ uygulaması: kamera/LT/RT %0 | LT {0}% RT {1}% | Menu+View: Kalkış\n"</string>
+    <string name="ui_11eae6d197406791" formatted="false">"Menü dilini seçin. Değişiklik anında gerçekleşir ve bu cihaza kaydedilir. Oyunların dili oturum seçeneklerinde ayrı ayrı ayarlanır."</string>
+    <string name="ui_124cfe273495ea3d" formatted="false">"\n\nAndroid donanım kilidi ve sürücüsünün titreşim sunması gerekir. Denetleyici modunu XInput olarak değiştirmek desteği değiştirebilir; uygulama ürün yazılımını değiştirmez."</string>
+    <string name="ui_126169d397f54a6a" formatted="false">"Birlikte basılması gereken düğmeleri işaretleyin. Uygula düzenleyicideki kombinasyonu onaylar."</string>
+    <string name="ui_12ce320925daa43d" formatted="false">"OYUNA DEVAM ET"</string>
+    <string name="ui_13607cf86dd0cd21" formatted="false">"ICE bağlantısı başarısız oldu"</string>
+    <string name="ui_139cc249cd8ab25d" formatted="false">"Giriş kodunuz oluşturuluyor…"</string>
+    <string name="ui_13a72daec9032012" formatted="false">"LB\'yi tutarken"</string>
+    <string name="ui_14835c83f4a3a62d" formatted="false">"%0 orijinal görüntüyü korur. FSR dahil mevcut filtrelerle birlikte uygulanır."</string>
+    <string name="ui_148b35103d77bd4f" formatted="false">"Oran: {0} | Standart keskinlik: {1}% | Doygunluk: {2}% | Parlaklık: {3}% | Kontrast: {4}% | Sunum: {5}\'ye kadar FPS | AiPQ: uygulama tarafından doğrulanamıyor\n"</string>
+    <string name="ui_1538cbf237776afb" formatted="false">"güvenli bağlantı hatası"</string>
+    <string name="ui_155487355b5495ca" formatted="false">"kare"</string>
+    <string name="ui_1576aa44257d3798" formatted="false">"Videoyu alma"</string>
+    <string name="ui_15cf9ee6a4ebeb02" formatted="false">"Surface, {0}x{1}\'yi onaylamadı; standart ölçeği korumak"</string>
+    <string name="ui_15da365df4e752ab" formatted="false">"Teşhis bu cihaza kaydedilemedi."</string>
+    <string name="ui_164ee63a2378f434" formatted="false">"Mikrofon: sessiz; gönderme duraklatıldı"</string>
+    <string name="ui_166a16e88276e61b" formatted="false">", favori"</string>
+    <string name="ui_1692e0b849066c08" formatted="false">"Favorilere eklemeden önce kullanılabilirliğini kontrol etmek için oyunu seçin."</string>
+    <string name="ui_181c5dfa3b30b3fa" formatted="false">" ({0} talebinde bulunun)"</string>
+    <string name="ui_182c8cbab96988ee" formatted="false">"Hareketler"</string>
+    <string name="ui_185e5156066b1d9a" formatted="false">"Başka bir ağ"</string>
+    <string name="ui_18d1dc03989bfdb3" formatted="false">"Bölge: {0}"</string>
+    <string name="ui_18f6e83c63ccb23a" formatted="false">"OYUNUNUZU HAZIRLIYORUZ"</string>
+    <string name="ui_19ad4d1d326b4959" formatted="false">"{0} • {1}\nAndroid\'in maruz kaldığı titreşim: {2}"</string>
+    <string name="ui_19d3d24112a7096d" formatted="false">"HUD bu cihaza kaydedilemiyor."</string>
+    <string name="ui_1a757df92a3d1ed5" formatted="false">"Doğru hassasiyet"</string>
+    <string name="ui_1a83cde6a9686660" formatted="false">"AMD FSR 1.0.2: talep edildi; videoyu bekliyorum"</string>
+    <string name="ui_1a869f846de955ac" formatted="false">"Logo xCLOUD"</string>
+    <string name="ui_1adb254c868d66b5" formatted="false">"Etkin — oyundan çıkarken açılır"</string>
+    <string name="ui_1b0fd79f3f688e61" formatted="false">"B veya Geri tuşuyla iptal edebilirsiniz."</string>
+    <string name="ui_1b9635cedf51d570" formatted="false">"Cep telefonu üzerinden erişim"</string>
+    <string name="ui_1bb648eca3d0a17c" formatted="false">"Yüzey {0} → pencere {1}x{2} | Android çıkışı: {3}\n"</string>
+    <string name="ui_1bd516ba76b6bec4" formatted="false">"Aşırtma"</string>
+    <string name="ui_1bed6eca2f3d2df4" formatted="false">"“{0}” için eşleşme bulunamadı.\nTekrar aramak için X\'e basın."</string>
+    <string name="ui_1bfd08329378ce3b" formatted="false">"Hesabınıza bağlanmak için cep telefonunuzu kullanın."</string>
+    <string name="ui_1c042c6d4fcb67de" formatted="false">"HUD için devre dışı bırakıldı"</string>
+    <string name="ui_1ceb820c525c1311" formatted="false">"Android aracılığıyla test edin"</string>
+    <string name="ui_1d28145c262b0863" formatted="false">"Yetenek"</string>
+    <string name="ui_1d44ee5f40b2bcfd" formatted="false">"Parlaklık: {0}%"</string>
+    <string name="ui_1df117eddd08bb89" formatted="false">"Analog yarış"</string>
+    <string name="ui_1e62d8b4bb80e1b9" formatted="false">"Menülerin, kataloğun ve pencerelerin renklerini seçin. Yeşil varsayılandır. Seçim bu cihaza kaydedilir, anında uygulanır ve oyunun renkleri değişmez."</string>
+    <string name="ui_1eb6d17388ac788c" formatted="false">"Android tarafından numaralandırılan USB cihazı yok."</string>
+    <string name="ui_1eed183bf1eb2f09" formatted="false">"Geri sarma"</string>
+    <string name="ui_1f6b3d376df4294d" formatted="false">"TV\'de oyun fiziksel denetleyiciyi kullanıyor. Otomatik, mobil cihazlarda uyumlu oyunlarda yerel dokunmaya, diğerlerinde ise HUD\'a öncelik verir. Ayrıcalıklı — sanal denetleyici HUD\'u zorlar. Bir sonraki oyunda geçerlidir."</string>
+    <string name="ui_20e6627eb0692212" formatted="false">"{0} OYUNLARI"</string>
+    <string name="ui_20e935e179853823" formatted="false">"SDK, seçilen profille uyumlu bir H.264 teklifi oluşturmadı"</string>
+    <string name="ui_212b6b7b0d29c4c6" formatted="false">"Opaklık"</string>
+    <string name="ui_215b6bd084220c04" formatted="false">"Daha düşük gecikme arabellekleri azaltır. Uyarlanabilir, ağ için daha fazla marj sağlar. Uyumluluk 720p\'yi seçer, Otomatik\'te 6\'ya kadar Mbps ister, H.264 Baseline\'ye öncelik verir ve 30 kare/s\'ye kadar görüntüler. Kod çözme hala alınan akışa bağlıdır. Bir sonraki maç için geçerlidir."</string>
+    <string name="ui_226a50accaaf49b4" formatted="false">"Sürükleme hassasiyeti: {0}%"</string>
+    <string name="ui_232234ff7189cc5e" formatted="false">"Gecikme RTT"</string>
+    <string name="ui_23591ccac3b43411" formatted="false">"Resmi galeri bu bölgedeki oyunları iade etmedi."</string>
+    <string name="ui_23c4aad78636750d" formatted="false">"{0}%{1}"</string>
+    <string name="ui_23eb724140170539" formatted="false">"Ses Kazanımı: {0}%"</string>
+    <string name="ui_2450040316f27ba1" formatted="false">"Hareketler ve modlar kılavuzu"</string>
+    <string name="ui_2472c6d12770574a" formatted="false">"Kapatılma nedeni: {0}\n"</string>
+    <string name="ui_24a9373e8e720a68" formatted="false">"Maksimum bit hızı"</string>
+    <string name="ui_252f2ee920a16419" formatted="false">"aktif"</string>
+    <string name="ui_25397a53f2ee9d3e" formatted="false">"Xbox denetleyici"</string>
+    <string name="ui_25c27316580b7dec" formatted="false">"Resmi galeride geçersiz ürün; kataloğu güncelleyin."</string>
+    <string name="ui_262193abdb9a8260" formatted="false">"HUD\'daki sürükleme tepkisini ayarlar. Maksimum dönüş hızı aynı zamanda oyun içinde ayarlanan kontrol cihazının hassasiyetine de bağlıdır."</string>
+    <string name="ui_262393acfaff6b4f" formatted="false">"Mart –"</string>
+    <string name="ui_267edaa6bd49c2dc" formatted="false">"Katalog yükleniyor…"</string>
+    <string name="ui_26a8b63dd399e5fe" formatted="false">"Game Pass oyunları onaylanamıyor.\nKataloğu ayarlarda güncelleyin."</string>
+    <string name="ui_26f6986d29484edb" formatted="false">"kare hızı koruması: {0} FSR, {1}\'ler tarafından çizilir; Bu maçta standart ölçek"</string>
+    <string name="ui_2793dbcc6f49bf3a" formatted="false">"Bu oturumda mikrofon devre dışı bırakıldı. Bir sonraki maçınızdan önce Ses ve Mikrofonu etkinleştirin."</string>
+    <string name="ui_2847ddf190a84744" formatted="false">"Bir sonraki oyunda geçerlidir."</string>
+    <string name="ui_2848955efd7478c1" formatted="false">"AYARLAR"</string>
+    <string name="ui_28890e6bdaf9cc28" formatted="false">"Oyunlarınız. Ekranınızda."</string>
+    <string name="ui_294c831135f04db1" formatted="false">"{0} videonun dışında başlar; yoksayılan kişiler {1}; menu {2}; "</string>
+    <string name="ui_29aea3a73269d78a" formatted="false">"BAĞLANTI"</string>
+    <string name="ui_2a791bdb998c27a1" formatted="false">"Tahmin {0} önce güncellendi. Zaman değişebilir."</string>
+    <string name="ui_2ad646b0e7e0e12a" formatted="false">"Taklit edilen sağ analog çubuğu ayarlar. Yerel modda oyunun kendi hassasiyetini kullanın. Bir sonraki oyunda geçerlidir."</string>
+    <string name="ui_2af1d168c2064da9" formatted="false">"engelli"</string>
+    <string name="ui_2b17def9c2e690c9" formatted="false">"Konumu, boyutu ve eylemleri düzenleyin"</string>
+    <string name="ui_2c42f42f33a12558" formatted="false">"Mikrofonu etkinleştir"</string>
+    <string name="ui_2c6d80c5ed08e17f" formatted="false">"Yerel Yükseltme"</string>
+    <string name="ui_2c6da1d4dddf6065" formatted="false">"Ağ tercihi"</string>
+    <string name="ui_2ca6c3d2dbe986f6" formatted="false">"Yalnızca sanal denetleyici"</string>
+    <string name="ui_2cdf67ff75149d68" formatted="false">"Yarış – standart"</string>
+    <string name="ui_2d023dea2a9d9379" formatted="false">"Dışarı çıkmak"</string>
+    <string name="ui_2d5bc5113ae0ddb9" formatted="false">"İstenen kazanç: {0}% • uygulanan: {1}% • uyarlanabilir tepe azaltma: {2}"</string>
+    <string name="ui_2d95ceb7882c2a50" formatted="false">"İstenen codec bileşeni: {0} | {1}\n"</string>
+    <string name="ui_2df03869741616c7" formatted="false">"AMD FSR: {0}"</string>
+    <string name="ui_2e4aaf05df1cbfb3" formatted="false">"Ekstra"</string>
+    <string name="ui_2e4e5aceedd4d2e7" formatted="false">"beklemek"</string>
+    <string name="ui_2eab6a8f46701077" formatted="false">"Atlatmak"</string>
+    <string name="ui_2ec23126760fc5ad" formatted="false">"Platin Gümüş"</string>
+    <string name="ui_2f3069552c48aa40" formatted="false">"Kod çözücü tarafından bildirilen hata"</string>
+    <string name="ui_2f3aedca700af8d5" formatted="false">"Mikrofon: yakalama Android tarafından reddedildi; sesini kapatmak"</string>
+    <string name="ui_2f59ff1c404d1a1c" formatted="false">"raporun bu versiyonunda kaydedilmemiş"</string>
+    <string name="ui_2fab0c9bbaa45978" formatted="false">"Eylem: {0}"</string>
+    <string name="ui_3018c814b3eade1f" formatted="false">"Mart +"</string>
+    <string name="ui_30608d134be11507" formatted="false">"Düzen: {0}"</string>
+    <string name="ui_30feb8278a45f552" formatted="false">"{0}: ortalama {1} | dk. {2} | zirve {3} {4}\n"</string>
+    <string name="ui_3119ed950dc7cb32" formatted="false">"Giriş kanalında tıkanıklık beklemesi yaşandı. Bağlantı kararlılığını karşılaştırın."</string>
+    <string name="ui_312d7635e19fc07c" formatted="false">"xCLOUD Tanı"</string>
+    <string name="ui_313097aa9a44ecf7" formatted="false">"Video düzeni: {0} | Hesaplanan alan: {1}x{2} | Oluşturucu çerçevesi: {3}x{4}\n"</string>
+    <string name="ui_3248572c5b6c1107" formatted="false">"El bombası"</string>
+    <string name="ui_3332b8820c058240" formatted="false">"\n{0}\n{1} • duyurulan sohbet Akışı: {2} • ses gönderildi: {3} B"</string>
+    <string name="ui_334d13453041f240" formatted="false">"Oturum başarısız oldu"</string>
+    <string name="ui_334d1bd8efe38a97" formatted="false">"YENİ KOD OLUŞTUR"</string>
+    <string name="ui_33569f077d268758" formatted="false">"İletim hatası"</string>
+    <string name="ui_33aa74c990133347" formatted="false">"AMD FidelityFX Super Resolution"</string>
+    <string name="ui_34189d7d4bc30aea" formatted="false">"Volkanik Kırmızı"</string>
+    <string name="ui_349a1e5b5ad05003" formatted="false">"Oturum durumu Xbox"</string>
+    <string name="ui_35ba73e089626c8e" formatted="false">"Desen olağan H.264 ticaretini korur. Light yalnızca Baseline sunar, Otomatik\'te 720p ve 6\'ya kadar Mbps ister. Manuel başlangıç tavanı bu bütçenin yerini alabilir. Bu bir H.264 profilidir ve oyun zaten Baseline kullanıyorsa kazanma garantisi yoktur. Alınan çözünürlük ve bit hızı hizmete bağlıdır. Uyumluluk ayrıca Baseline\'yi kullanır. Bir sonraki maç için geçerlidir."</string>
+    <string name="ui_35bb70353b8e6473" formatted="false">"Plase şut"</string>
+    <string name="ui_36164ad19a82b356" formatted="false">"Son eklemeler şu anda kullanılamıyor.\nOyunlar Tüm Oyunlar sekmesinde kalır."</string>
+    <string name="ui_368b2b2e7200770e" formatted="false">"Otomatik • {0}"</string>
+    <string name="ui_377054dce167ab0e" formatted="false">"Otomatik — cihazı ve oyunu algıla"</string>
+    <string name="ui_3836b5a9a3deca64" formatted="false">"Fare ve klavye"</string>
+    <string name="ui_38e8ff046e8a4a9e" formatted="false">"hata HTTP yanıtı"</string>
+    <string name="ui_390eb77b9e11d082" formatted="false">"Bilinmeyen kaynak"</string>
+    <string name="ui_3957f59f76b9013c" formatted="false">"denetleyici kalibrasyonu ve yeniden eşleme"</string>
+    <string name="ui_395adc62ab03e0a6" formatted="false">"GÖRÜNTÜ ALINMASI"</string>
+    <string name="ui_3980046624a3f6c8" formatted="false">"Tahmini endeks: {0}/100 • {1}\n\n"</string>
+    <string name="ui_39aa7e5f1a46a860" formatted="false">"Mikrofon"</string>
+    <string name="ui_39d5684bfea642b6" formatted="false">"TV oyun kısayolunu oluşturmadı."</string>
+    <string name="ui_39dcf1cbeb5adbd0" formatted="false">"Kopyala"</string>
+    <string name="ui_3a67eba55d6fcdfb" formatted="false">"→ Sağ"</string>
+    <string name="ui_3a74acd87ad821ba" formatted="false">"EA SPORTS FC — savunma"</string>
+    <string name="ui_3b0428dedf9ea854" formatted="false">"Kayıp"</string>
+    <string name="ui_3b23327d8d0c923d" formatted="false">"Kod çözme"</string>
+    <string name="ui_3b4f4c207983e247" formatted="false">"Orijinal renkleri %100 korur. Daha yüksek değerler renkleri yoğunlaştırır; %0 görüntüyü gri bırakır."</string>
+    <string name="ui_3b5baabe54b4045f" formatted="false">"Otomatik olarak video profili bütçesini korur. Manuel tavan çözünürlükten bağımsızdır. Daha büyük değerler daha fazla ağ bağlantısı gerektirir ve kararlılığı kötüleştirebilir. Alınan bit hızına Xbox karar verir. Bir sonraki oyunda geçerlidir."</string>
+    <string name="ui_3bba665be043adac" formatted="false">"Kullanılabilir — sessize almayı başlat"</string>
+    <string name="ui_3bbc8e45b2068390" formatted="false">"Kimlik doğrulama gerekli. QR Kodunu kullanarak tekrar girin."</string>
+    <string name="ui_3c2811461be5b829" formatted="false">"Kısayol şablonu geçerli bir simge ve başlık içermiyor."</string>
+    <string name="ui_3c68ac114e871ac8" formatted="false">"Y\'yi sağa çevir: {0}"</string>
+    <string name="ui_3c9ca841b5ad5e6f" formatted="false">"Oyun kumandaları ve dokunmatik"</string>
+    <string name="ui_3cd7a4601d9fbb2c" formatted="false">"Hizmet bu oturumda chatStream\'i duyurmadı. Yakalama kapalı kalır."</string>
+    <string name="ui_3ce2d0b17b1880b0" formatted="false">"Hiçbir denetleyici bağlı değil. Dongle\'ı takın ve bir düğmeye basın."</string>
+    <string name="ui_3ce4d5fe1a4367a1" formatted="false">"Görüntü ayarlamaları"</string>
+    <string name="ui_3dbcda5ffe525dad" formatted="false">"xCLOUD [Android {0} | SoC: {1}] | Oturum bekleniyor"</string>
+    <string name="ui_3e43c37eb67f0ff7" formatted="false">"standart ölçek"</string>
+    <string name="ui_3f16c644774c196c" formatted="false">"Harika"</string>
+    <string name="ui_3f799bff91ffca8b" formatted="false">"Titreşim: {0}, uygulamayı açtığından beri ilgili hedefle komut veriyor; Android aracılığıyla {1}; {2}, USB\'ye iletildi.\n"</string>
+    <string name="ui_3f95bcdb951e0e6a" formatted="false">"Yönlü →"</string>
+    <string name="ui_3fa41ffd6881476b" formatted="false">"Ses Kazanımı"</string>
+    <string name="ui_40f3e2c9fdf5bf3e" formatted="false">"Kısmi veriler"</string>
+    <string name="ui_414e7c6771bfb5c7" formatted="false">"Uygulama teması: {0}"</string>
+    <string name="ui_41bfa23fb3fe9d31" formatted="false">"FAVORİLER"</string>
+    <string name="ui_4242ea82be64774d" formatted="false">"Sağ ölü bölge"</string>
+    <string name="ui_42992c7d3ad53072" formatted="false">"Tam endeksi hesaplamak için yeterli örnek yok. Ölçülmeyen alanlar mevcut değil olarak görünür."</string>
+    <string name="ui_42fe4324d5ee6872" formatted="false">"WebRTC düşen kareler"</string>
+    <string name="ui_43192ec0eecec6e4" formatted="false">"Öykünülmüş fare duyarlılığı"</string>
+    <string name="ui_431d2cdd95977d50" formatted="false">"İletim çözünürlüğü"</string>
+    <string name="ui_447aaf10738f1398" formatted="false">"Kısayol oluşturuldu ancak TV tarafından kurulum izni verilmedi."</string>
+    <string name="ui_44b3f5569624ba66" formatted="false">"Dönmek"</string>
+    <string name="ui_44d1cde7bab89024" formatted="false">"Çevir ←"</string>
+    <string name="ui_4533ad51a1eb993c" formatted="false">"Denetleyici tarafından kalibrasyon ve yeniden eşleme"</string>
+    <string name="ui_45a2fb181b2175b2" formatted="false">"Etkinleştirildi"</string>
+    <string name="ui_462a08f2206f636c" formatted="false">"{0}\'yi günceller; bozuk kontaklar atıldı {1}; son denetleyici: {2}\n{3}"</string>
+    <string name="ui_4637c7608d05cd03" formatted="false">"Bu oyun bu hesabın kataloğunda mevcut değil. Kataloğu ayarlarda güncelleyin."</string>
+    <string name="ui_46dedd48c84d8e41" formatted="false">"Bağlantı kuruldu. Oyunun ilk karesini bekliyorum."</string>
+    <string name="ui_47035f5bf6e7df11" formatted="false">"Bu API\'de anında gönderim kullanılamıyor"</string>
+    <string name="ui_472b7cb5c787f296" formatted="false">"Futbol şeması: {0}"</string>
+    <string name="ui_4750ad41b3122b74" formatted="false">"xCloud Hatası"</string>
+    <string name="ui_478c39f86a8161d1" formatted="false">"Oyun kısayolu"</string>
+    <string name="ui_47a18fda47bdd27f" formatted="false">"AMD FSR 1.0.2: kapalı"</string>
+    <string name="ui_47cf330e4355aac3" formatted="false">"Bu motorun iletimi: SDR\'de 8 bit H.264. Video yüzeyi 8 bit RGB kullanır.\n\n"</string>
+    <string name="ui_48020357dd273e65" formatted="false">"Microsoft\'ta onayınız bekleniyor…"</string>
+    <string name="ui_48111b2c9ff4898e" formatted="false">"Yerel Küme: {0}"</string>
+    <string name="ui_4875bd46f6938df1" formatted="false">"Jiroskop: {0}"</string>
+    <string name="ui_48a6f1b5c95c945d" formatted="false">"Xbox oturum bakımı"</string>
+    <string name="ui_490f22e0cafe2260" formatted="false">"H.264 Baseline • 720p talep edildi • profil/maç teklifi"</string>
+    <string name="ui_497403cfde5a4210" formatted="false">"Keskinlik: {0}%"</string>
+    <string name="ui_49e7b21dec4f31de" formatted="false">"Kısayol bu cihazda oluşturulamadı."</string>
+    <string name="ui_4a52c47f66c99ec4" formatted="false">"1440p — 2560×1440"</string>
+    <string name="ui_4a9889dafc31b83f" formatted="false">"Uyarlanabilir"</string>
+    <string name="ui_4aa85902acc25d50" formatted="false">"Hala gösterilecek videoyla eşleşme yok."</string>
+    <string name="ui_4ad9c2f74dbab613" formatted="false">"Tetikleyiciler"</string>
+    <string name="ui_4adbcf7454d6a1fe" formatted="false">"Yerel Küme"</string>
+    <string name="ui_4b05c960591853ee" formatted="false">"elde edilmedi"</string>
+    <string name="ui_4b1ac785b8de8c36" formatted="false">"RCAS keskinlik yoğunluğunu ayarlar; %50, GPU maliyetinin yarısı anlamına gelmez. %50 ile başlayın; %0, RCAS keskinliğini kapatır ve yakınlaştırma sırasında EASU\'yi korur. Büyütme olmadan ve %0\'da RCAS ile standart filtreyi kullanın. Aşağıdaki varsayılan keskinleştirme, FSR etkin olmadığında kullanılır."</string>
+    <string name="ui_4bfae14f85787073" formatted="false">"İstenen video profili: {0}×{1} • {2}\nİstenen bölge: {3} | İstenen dil: {4}"</string>
+    <string name="ui_4c36ee9f3bc47001" formatted="false">"Kaleci"</string>
+    <string name="ui_4c77ddc5bf055290" formatted="false">"Dil / Language"</string>
+    <string name="ui_4c9cf78b2618b0b7" formatted="false">"Jiroskop: kapalı"</string>
+    <string name="ui_4d04522711e96d11" formatted="false">"Birleşik hareketler ve komutlar"</string>
+    <string name="ui_4d9fc216d26f7fa6" formatted="false">"Ağ: {0}\n"</string>
+    <string name="ui_4db70b3589ba6f62" formatted="false">"kontrol kanalı kapatıldı"</string>
+    <string name="ui_4ec7a4faa45c612e" formatted="false">"Kısayol oluşturma"</string>
+    <string name="ui_4f3090753c8d2fdb" formatted="false">"Hadi oynayalım"</string>
+    <string name="ui_4f58650d467e195f" formatted="false">"{0} OYUNLARI • GAME PASS GÜNCELLENİYOR…"</string>
+    <string name="ui_504fb1a48efc40eb" formatted="false">"Ekran modu: Android tarafından bildirilmedi"</string>
+    <string name="ui_5052c95dbb7a4d8d" formatted="false">"Oturumunuz geri yükleniyor…"</string>
+    <string name="ui_507a9a8be3d145a8" formatted="false">"Evet"</string>
+    <string name="ui_510c8504b7666c02" formatted="false">"Ekran: HDR10 Android tarafından duyurulmadı."</string>
+    <string name="ui_5120d6e6ce58a9f2" formatted="false">"Ses: Medya/Oyun • İstenen Stereo • Medya Sesi {0} • Sessiz: {1} • Odak: {2} • Odak Kazanımı {3}% • Oynatma {4}"</string>
+    <string name="ui_51807ae73e427a4e" formatted="false">"ağ bağlantısı hatası"</string>
+    <string name="ui_519384df60862471" formatted="false">"WebRTC Arabellek Ağı Minimum"</string>
+    <string name="ui_519db67915a19f2b" formatted="false">"Xbox Cloud\'da oyunun kullanılabilirliği kontrol ediliyor…"</string>
+    <string name="ui_51ceb32461a802b0" formatted="false">"LL Codec: video bekleniyor"</string>
+    <string name="ui_523a44f3354defec" formatted="false">"Tahmin değişebilir. Yeniden deneme sınırı: {0}."</string>
+    <string name="ui_52db9735e5787eb4" formatted="false">"Bir denetleyici bağlayın ve Android\'in onu tanımlaması için bir düğmeye basın."</string>
+    <string name="ui_5320b4ddb576ee67" formatted="false">"etkin olarak işaretlendi"</string>
+    <string name="ui_54046e97b2af0d03" formatted="false">"AMD FSR 1.0.2: standart ölçeğe dönüş — {0}"</string>
+    <string name="ui_5407798aed2c5f8e" formatted="false">"Giriş Xbox: denetleyici/HUD"</string>
+    <string name="ui_5462b1a62e38d020" formatted="false">"Kısayolu yükle"</string>
+    <string name="ui_547895e7e49f46e2" formatted="false">"Xbox henüz bir bekleme tahmini sunmadı."</string>
+    <string name="ui_5495e90894e99c50" formatted="false">"Oturum bakımı: {0} onayları; {1} hataları; "</string>
+    <string name="ui_564483fdaa0be6c5" formatted="false">"Ağ kullanılamıyor olabilir veya hâlâ başlatılıyor olabilir. Bağlantıyı kontrol edip tekrar deneyin.\n{0}"</string>
+    <string name="ui_5667ddc7bc6e6282" formatted="false">"denetleyici Profilleri"</string>
+    <string name="ui_567d3c6715a99815" formatted="false">"Görüntü ilerlemesi olmadan alınan video vardı. Kod çözücüyü, çözünürlüğü, filtreleri ve paket kayıplarını karşılaştırın."</string>
+    <string name="ui_56991385beba9fac" formatted="false">"Yerel yükseltme: {0}"</string>
+    <string name="ui_5724963f98d0fef6" formatted="false">"Dokunarak oynayın"</string>
+    <string name="ui_572b75effcf75068" formatted="false">"Talep ekranı modu: {0} | mevcut fiziksel: {1} | Uygulamaya bildirilen oran: {2}Hz\n"</string>
+    <string name="ui_577f2fb9fa976da6" formatted="false">"Etkin, iki Ateş düğmesiyle nişan alma ve çekimi birleştirir. Devre dışı, ateş etmeyi nişan alma işleminden ayrı tutar. Uygula bu düğmelerin eylemlerini geri yükler ve konumlarını korur."</string>
+    <string name="ui_57ae557d5235ddcc" formatted="false">"kontrollerin/yapılandırmanın gönderilememesi"</string>
+    <string name="ui_58580f4aca95c13c" formatted="false">"Başlatıcı isteği kabul etmedi."</string>
+    <string name="ui_586c88220c070b1a" formatted="false">"Mikrofon: kodlayıcı aktivasyonu reddetti; sesini kapatmak"</string>
+    <string name="ui_58ae522829aae08e" formatted="false">"Orijinal, alınan formatı korur ve pencereye sığan en büyük boyutu kullanır. 16:9\'luk bir video cep telefonunuzda kenar çubuklarının kalmasına neden olabilir; Yerel dokunuşa sahip bazı oyunlar daha geniş video sunar. Uzatma, kırpmadan doldurur ancak görüntüyü çarpıtır. Yakınlaştırma, kenarları kırpmadan, deforme olmadan doldurur. Sabit oranlar da deforme olabilir. Tüm seçenekleri görmek için ↑/↓ tuşlarını kullanın veya kaydırın. Değişiklik maç sırasında anında uygulanır ve gelecek oyunlar için kaydedilir."</string>
+    <string name="ui_58b3b5116d5572a2" formatted="false">"Oyun başına bit hızı, bölge ve dil"</string>
+    <string name="ui_58b938545dce3978" formatted="false">"Çevir →"</string>
+    <string name="ui_58cb5d0c620f3ad0" formatted="false">"Kontrollerin boyutu"</string>
+    <string name="ui_595dcec8fc90991d" formatted="false">"Giriş Xbox: yerel fare/klavye, anlaşmalı sürüm {0}"</string>
+    <string name="ui_596730c4eb46c6f1" formatted="false">"En son Xbox Bulut Oyun oyunlarınız burada görünecek."</string>
+    <string name="ui_596903e9ec975722" formatted="false">"Kodun süresi doldu. Devam etmek için yeni bir kod oluşturun."</string>
+    <string name="ui_59dc926760d04aea" formatted="false">"Geri"</string>
+    <string name="ui_5a15decff9c895af" formatted="false">"Bağlantı şu anda geri yüklenemiyor. Kayıtlı giriş bilgileriniz korunmuştur."</string>
+    <string name="ui_5ac0d2258a8ba03f" formatted="false">"Otomatik, IPv4/IPv6\'yi kullanılabilir durumda tutar ve kalkış sırasında rotaları kontrol eder. WebRTC, yedekleme alternatiflerini koruyarak bağlantı, alım ve RTT\'yi dikkate alır. IPv4/IPv6 tercihleri seçilen aileye 750\'ye kadar başlangıç ms verir ve diğerini korur. Rota aynı zamanda sunucuya da bağlıdır; en düşük ping garantisi yoktur. Bir sonraki oyunda geçerlidir."</string>
+    <string name="ui_5ae68007466819b0" formatted="false">"16:9 — standart"</string>
+    <string name="ui_5af3de070991f5ab" formatted="false">"Düğmeleri yeniden eşle"</string>
+    <string name="ui_5ba350d83209ffab" formatted="false">"Adına göre bir oyun bulun."</string>
+    <string name="ui_5baaabe3ca0e3e5b" formatted="false">"Başlatıcıya istek gönderildi. Ana ekranda onaylayın."</string>
+    <string name="ui_5c0d9d1247ade676" formatted="false">"Yerel dokunuş: {0}; giriş alanı: {1}; sanal yuva 0: {2}"</string>
+    <string name="ui_5c2de6412ff6a812" formatted="false">"denetleyici: kuyruk {0} B | maksimum yerel gecikme {1} ms | birleştirilmiş {2} | kanalı bekle {3}\n"</string>
+    <string name="ui_5c5df1e844450eee" formatted="false">"Game Pass\'den oyunlar yükleniyor…"</string>
+    <string name="ui_5c87f1038115e48d" formatted="false">"Resmi listeden bilgi yükleniyor. Sahipliği onaylamaz; dijital satın alma ve hizmet koşullarını gerektirir."</string>
+    <string name="ui_5cf2eabe2f7ead4e" formatted="false">"Hızlı yanıt"</string>
+    <string name="ui_5cfd306d0c680720" formatted="false">"Endüstriyel Turuncu"</string>
+    <string name="ui_5d3015b63d8af4f4" formatted="false">"Masa"</string>
+    <string name="ui_5d6bd99ad57d78a7" formatted="false">"Rota ICE: seçim henüz WebRTC tarafından bildirilmedi"</string>
+    <string name="ui_5da6b119769c1053" formatted="false">"Pas"</string>
+    <string name="ui_5e192548c7bcc788" formatted="false">"Xbox geçmişi kontrol edilemiyor.\nTekrar denemek için lütfen ayarlardan kataloğu güncelleyin."</string>
+    <string name="ui_5e704f128723d932" formatted="false">"Resmi Xbox Bulut Oyun Galerisi • Ücretsiz seçenekler içerir; Erişim, hesaba ve hizmet koşullarına bağlıdır."</string>
+    <string name="ui_5e9122e22aeea829" formatted="false">"Yerel fare ve klavye — desteklenen oyunlar"</string>
+    <string name="ui_5ebd45db6acabfbc" formatted="false">"Kanal ana ekranda görünmüyordu. TV\'de Kurulum kısayolunu kullanın: oyun, Google TV dahil Uygulamalar\'da görünecektir."</string>
+    <string name="ui_5f2f459cff03b9b5" formatted="false">"Otomatik — Maç sırasında IPv4/IPv6"</string>
+    <string name="ui_5f55edf900896012" formatted="false">"Aramak"</string>
+    <string name="ui_5fc03d596bcf540c" formatted="false">" - engelli"</string>
+    <string name="ui_5fc7e20f01a4a3ed" formatted="false">"Etkinleştirildi"</string>
+    <string name="ui_60193beabdba3ac4" formatted="false">"Alternatif – X vuruşu"</string>
+    <string name="ui_6021b0f36cb336f1" formatted="false">"Bu maçta sanal denetleyiciyi kullan"</string>
+    <string name="ui_6035eadf7ad73a21" formatted="false">"Çömelme/kayma"</string>
+    <string name="ui_60533ba9536c7060" formatted="false">"aktif video yok"</string>
+    <string name="ui_60956010e192ec09" formatted="false">"Bu oyun yerel fare ve klavyenin reklamını yapmıyordu. Öykünme veya denetleyici kullanın."</string>
+    <string name="ui_60d41a2db12a0294" formatted="false">"İstenen FSR çıktısı: {0} | istenen arabellek: {1}\n"</string>
+    <string name="ui_6127593882e201a2" formatted="false">"şema {0}; "</string>
+    <string name="ui_61435946c25099f8" formatted="false">"Yerel ritim FSR: {0} (oyun/ekran GPU veya FPS\'yi ölçmez)\n"</string>
+    <string name="ui_61cc7d07af524282" formatted="false">"Kayarak müdahale"</string>
+    <string name="ui_61e168bce1c2a966" formatted="false">"KAPAKLAR MEVCUT DEĞİLDİR. BAŞLAT → KATALOĞU GÜNCELLE."</string>
+    <string name="ui_62b866eb9e9df7d4" formatted="false">"Jiroskop: sensörsüz cihaz"</string>
+    <string name="ui_62e41bce3d084026" formatted="false">"USB/XInput — {0}\'yi test edin"</string>
+    <string name="ui_633366eb5029868a" formatted="false">"Başvuru kapatıldı"</string>
+    <string name="ui_63a8d72dce1a6d39" formatted="false">"Taktik"</string>
+    <string name="ui_63e2bbaf1c924391" formatted="false">"Devam etmek"</string>
+    <string name="ui_651cd3eade26bd7c" formatted="false">"Kontrast: {0}%"</string>
+    <string name="ui_65f4d02ea718ba50" formatted="false">"Görüntü 30 saniye sonra geri dönmedi. Videonun kurtarılması eşleşmenin açık kalmasını sağlar. Kataloğa geri dönmek oturumu sonlandırır."</string>
+    <string name="ui_6624c0d31888ecac" formatted="false">"Taşınmak"</string>
+    <string name="ui_66a2c683ac7c3e27" formatted="false">"KISMİ"</string>
+    <string name="ui_66d33467591ba3dc" formatted="false">"Kataloğunuzu hazırlıyoruz."</string>
+    <string name="ui_66d46ce399af3308" formatted="false">"Bu oyunu xCLOUD\'ye açacak küçük bir uygulama yüklenecek. Ardından Uygulamalar\'da oyunu arayın. Google TV\'de, ana ekrandan favori uygulamalar satırınıza ekleyin."</string>
+    <string name="ui_67343c55f838d078" formatted="false">"SAVUNMA"</string>
+    <string name="ui_676b6063ae4c96d9" formatted="false">"{0}  {1}"</string>
+    <string name="ui_67b550f6dfc6e20d" formatted="false">"Uyumlu satın alınan oyunların resmi listesi yükleniyor…"</string>
+    <string name="ui_6856b67e9e111e7d" formatted="false">"{0} Hakkında"</string>
+    <string name="ui_68a0db34478f420a" formatted="false">"SALDIRI"</string>
+    <string name="ui_68a0ecfad3311a2b" formatted="false">"Benzetilmiş fare duyarlılığı: {0}%"</string>
+    <string name="ui_68a1a961130ed783" formatted="false">"Oturum varsayılanları"</string>
+    <string name="ui_68d82a5111f30acc" formatted="false">"Video kurtarılıyor: ekran yüzeyi yeniden oluşturuluyor…"</string>
+    <string name="ui_6914f8a347d4a25c" formatted="false">"Ses, video ve denetleyicinin Xbox\'ye bağlanması."</string>
+    <string name="ui_693c263b104df9e9" formatted="false">"Düğmeleri birleştir"</string>
+    <string name="ui_6960e07fabc8e3a9" formatted="false">"Bağlantı kurulamıyor: {0}"</string>
+    <string name="ui_69d920c63dd1a626" formatted="false">"Video codec\'i"</string>
+    <string name="ui_6a38ddba7b1ce307" formatted="false">"Mikrofon: müzakere tamamlanmadı; sesini kapatmak"</string>
+    <string name="ui_6a58eca53330b508" formatted="false">"A SEÇ B GERİ DÖN"</string>
+    <string name="ui_6a6f834e8503b318" formatted="false">"\n\nÖrnek değerler mevcut. Kod çözücüdeki FPS, oyundaki veya ekrandaki FPS değil. Gözlemlenen arabellek, WebRTC hedefi ve ağ minimumu farklı ölçümlerdir; playout talebi gözlemlenen değeri garanti etmez. Decode, yalnızca işlemeyi değil codec boru hattını da içerir. Fotona girdiyi tahmin etmek için bu ölçümleri eklemeyin. WebRTC sayaçları tüm bağlantı trafiğini içermeyebilir. Endeks yerel bir tahmindir, hız testi değildir. Duraklatmalar her kareyi yakalayarak değil, gözlemci tarafından gözlemlenir."</string>
+    <string name="ui_6aa4511fc00e6c8a" formatted="false">"Ayarlar › {0}"</string>
+    <string name="ui_6b3a73ce76d187ae" formatted="false">"Oyun Sonrası Teşhis: {0}"</string>
+    <string name="ui_6bb02cbf4e61a203" formatted="false">"{0} OYUNLARI • GEÇMİŞ GÜNCELLENİYOR…"</string>
+    <string name="ui_6bf330c92a591795" formatted="false">"Basınç"</string>
+    <string name="ui_6c5cc18b8f198ece" formatted="false">"kayıp"</string>
+    <string name="ui_6c6adaaff42d504c" formatted="false">"denetleyici düzeni"</string>
+    <string name="ui_6ccce0bc37d3c34e" formatted="false">"format mevcut değil; %100 ile sınırlı"</string>
+    <string name="ui_6d69c920b76df7b0" formatted="false">"Şut"</string>
+    <string name="ui_6e1c002bff40ba7b" formatted="false">"Yüzey Ölçeği: {0}; görüntü pencereye ayarlandı | {1} FPS Yüzeye İşaretlenen İçerik: {2} | Minimum işlem sonrası: {3}; Bildirilen Android desteği: {4}\n"</string>
+    <string name="ui_6e3a7123b1149629" formatted="false">"İyi"</string>
+    <string name="ui_6e61d9ceb42e584a" formatted="false">"Oyun"</string>
+    <string name="ui_6e82ce7109479e3d" formatted="false">"el freni"</string>
+    <string name="ui_6e91752edf51a9a4" formatted="false">"Bitti"</string>
+    <string name="ui_6eeaf16b99c69f98" formatted="false">"Ayrıntıları kopyala"</string>
+    <string name="ui_6f0f039d818b877c" formatted="false">"Uzat — ekranı doldur"</string>
+    <string name="ui_6f95371be31c293e" formatted="false">"Top kap"</string>
+    <string name="ui_6f9ead072155818b" formatted="false">"Nişan al"</string>
+    <string name="ui_6fa65c8b1d86be1a" formatted="false">"Sert şut"</string>
+    <string name="ui_6fc11b786d442bc3" formatted="false">"Kullan/yeniden yükle"</string>
+    <string name="ui_708da79e6a0a6a1a" formatted="false">"HUD\'u etkinleştirmek için kontrollerin bağlanmasını bekleyin."</string>
+    <string name="ui_7091e08252b19a9f" formatted="false">"Rota ICE: istatistikler bekleniyor"</string>
+    <string name="ui_70b2bc30a20bd443" formatted="false">"Oturum başarısızlıkla sonuçlandı. Endeks, gözlemlenen örnekleri özetler ve maçın sonundaki bir kesintiyi hariç tutmaz."</string>
+    <string name="ui_715e6e852db4669e" formatted="false">"Kontroller › Fiziksel denetleyici"</string>
+    <string name="ui_7228b14b7339d276" formatted="false">"Standart H.264"</string>
+    <string name="ui_725773cdf3a0c425" formatted="false">"Yeşil — varsayılan"</string>
+    <string name="ui_728ce9e009f430f8" formatted="false">"Video sunumu"</string>
+    <string name="ui_729a44abc3854402" formatted="false">" • servis kodu: {0}"</string>
+    <string name="ui_729ddc2d6a14b63c" formatted="false">"Geçen süre"</string>
+    <string name="ui_72c062443055110e" formatted="false">"ARAMA: {0}  •  {1} OYUN"</string>
+    <string name="ui_730c8f35817cbf13" formatted="false">"Eşleşme • Menu + View"</string>
+    <string name="ui_7347fdd20909d059" formatted="false">"Bu denetleyiciyi geri yükle"</string>
+    <string name="ui_73ec6d749ebb1765" formatted="false">"Bu oyunun bit hızı, bölgesi ve dili"</string>
+    <string name="ui_74397518ecd59cbc" formatted="false">"SDP teklifi hazırlandı: {0} | POST onaylandı: {1}\n"</string>
+    <string name="ui_743ece07f975ba41" formatted="false">"Sol hassasiyet"</string>
+    <string name="ui_7441c03b2f6c21aa" formatted="false">"Kısayol imzası doğrulanamadı. Tekrar oluşturmayı deneyin."</string>
+    <string name="ui_7490e4a94af107e2" formatted="false">" • denetleyici: {0}"</string>
+    <string name="ui_74c70bb3042fd0b1" formatted="false">"Düşük gecikme"</string>
+    <string name="ui_757c830e53da57d8" formatted="false">"Kitaplık ve hesap"</string>
+    <string name="ui_75c4bfe48d33e19e" formatted="false">"Danışmanlık…"</string>
+    <string name="ui_7632ae27575e3ad6" formatted="false">"\n\nTest yalnızca Xbox 360/XInput (ff/5d/01) kabul eder. HID, Xbox One ve diğer protokoller kendi uygulamalarını gerektirir. Kabul edilen bir aktarım, motorun titrediğini kanıtlamaz."</string>
+    <string name="ui_768de1111f0f42af" formatted="false">"Oyunlara bağlanmak için QR Kodunu kullanarak giriş bilgilerinizi güncelleyin."</string>
+    <string name="ui_76900e0682cc8062" formatted="false">"Devre dışı — yalnızca çekim yapın"</string>
+    <string name="ui_76b0fb6ad18939ac" formatted="false">"Ayarlar"</string>
+    <string name="ui_76b720722ff9a19b" formatted="false">"Video bit hızı"</string>
+    <string name="ui_76daee1631fea659" formatted="false">"HAYIR"</string>
+    <string name="ui_76e1824b75a3c908" formatted="false">"hiçbiri"</string>
+    <string name="ui_7826af008248bda6" formatted="false">"SAHİP OLDUĞUN OYUNU YAYINLA"</string>
+    <string name="ui_78adbf905929c0f6" formatted="false">"Favorileriniz"</string>
+    <string name="ui_791477787eca5791" formatted="false">"Oyunlarınıza erişmek için Microsoft hesabınızı bağlayın."</string>
+    <string name="ui_79651e7e684870d0" formatted="false">"mevcut"</string>
+    <string name="ui_7a240c47b9aaafed" formatted="false">"Jiroskop hassasiyeti"</string>
+    <string name="ui_7a96e3cbb12396ce" formatted="false">"{0} ms ile {1} FPS aralığında kod çözme süresi. Boru hattı çerçevelerle örtüşebilir; bu tek başına aşırı yükü kanıtlamaz. 720p\'yi ve cihazda devre dışı bırakılan filtreleri karşılaştırın."</string>
+    <string name="ui_7afdaf11d46f293f" formatted="false">"Görüntü en boy oranı"</string>
+    <string name="ui_7b4d92374d3bf359" formatted="false">"KÜTÜPHANENİZ"</string>
+    <string name="ui_7b6509a9aa6c2d74" formatted="false">"Sağ hassasiyet: {0}%"</string>
+    <string name="ui_7bb50f81a7f81db7" formatted="false">"Çözünürlük: {0}"</string>
+    <string name="ui_7bd998451d35ad13" formatted="false">"Etkin Yerel Video [{0}]"</string>
+    <string name="ui_7be697d4a90b3424" formatted="false">"Futbol — standart"</string>
+    <string name="ui_7bf56c45ea80b5eb" formatted="false">"Xbox, oturumun {0}\'ler için sıraya alındığını doğruladı."</string>
+    <string name="ui_7cfb945aa92e9e4f" formatted="false">"Zıtlık"</string>
+    <string name="ui_7d1c4b172d9e5abe" formatted="false">"Oturum açma işlemi tamamlanamıyor. {0}"</string>
+    <string name="ui_7d7155a2737ecabe" formatted="false">"YÜKLEME BİLGİLERİ VE KAPAKLAR: {0}/{1}"</string>
+    <string name="ui_7ddd23f8251df791" formatted="false">"{0} simgesi"</string>
+    <string name="ui_7df581cb7d119a56" formatted="false">"Video ve yayın"</string>
+    <string name="ui_7e0b3df0e4a57a89" formatted="false">"Bağlı hesap"</string>
+    <string name="ui_7f3a4c49553afc6e" formatted="false">"Oturum görüşmesi"</string>
+    <string name="ui_7f5fa50224d18ac3" formatted="false">"üreme: {0}"</string>
+    <string name="ui_7f76d1772534348e" formatted="false">"Saldırı HUD\'unu göster"</string>
+    <string name="ui_7faa3bcd054b0e23" formatted="false">"Oturum kapatıldı."</string>
+    <string name="ui_7fb22bed7386678e" formatted="false">"Fren"</string>
+    <string name="ui_7fc1783485bda2bf" formatted="false">"Sık kullanılanlar kısayolları"</string>
+    <string name="ui_801b999df4383400" formatted="false">"Android joystick etkinliği → uygulama: ortalama {0} | dk. {1} | zirve {2} ms"</string>
+    <string name="ui_805bfea64db39921" formatted="false">"Tampon WebRTC: gözlemlendi {0} ms | hedef {1} ms | minimum ağ {2} ms\n"</string>
+    <string name="ui_81bccda7a718cabd" formatted="false">"İstenen dil: {0}"</string>
+    <string name="ui_81ccdb1302afecc4" formatted="false">"{0}\'yi uygula"</string>
+    <string name="ui_81d7338f4f5df49f" formatted="false">"{0}\'yi ayarlayın"</string>
+    <string name="ui_8222c7e9b2afed67" formatted="false">"; son hata {0}"</string>
+    <string name="ui_8227e3d90b56a55a" formatted="false">"Mikrofon: sessiz"</string>
+    <string name="ui_82fd204362ad266a" formatted="false">"SIRADA VAR"</string>
+    <string name="ui_8391da809dd9ca6b" formatted="false">"{0}{1}"</string>
+    <string name="ui_8396f8dc3a730105" formatted="false">"SEÇME"</string>
+    <string name="ui_83b1836da0c78588" formatted="false">"Engelli"</string>
+    <string name="ui_83b7a65bfb29335c" formatted="false">"Resmi Microsoft oturum açma QR Kodu"</string>
+    <string name="ui_83ca0cd5f7dba936" formatted="false">"Görüntü, seçilen en boy oranına bağlı olarak her iki modda da pencereye ayarlanır. Surface Android ölçeklendirmesi için etkin istemler; off, oluşturucu ölçeğini kullanır. FSR etkin olduğunda, işleyiciyi çıkış çözünürlüğünde kullanır. TV işleme TV\'nin kendisinde ayarlanır. Bir sonraki maç için geçerlidir."</string>
+    <string name="ui_844c52cfd57f0757" formatted="false">"Tahmine {0} önce danışıldı"</string>
+    <string name="ui_84f22e1a625e7c17" formatted="false">"{0} favorilere eklendi"</string>
+    <string name="ui_858ac8f652d62519" formatted="false">"Tahmin değişebilir; Garantili bir süre değil."</string>
+    <string name="ui_85e9d6584577736e" formatted="false">"hizmet seçilen H.264 profilinin dışında bir biçimde yanıt verdi"</string>
+    <string name="ui_8666d79d9ebc7140" formatted="false">"Uyumluluk — daha düşük güçlü TV\'ler"</string>
+    <string name="ui_86c4d56695aa213e" formatted="false">"Oturum Tanılama ({0})"</string>
+    <string name="ui_86fbfb699dd0e310" formatted="false">"OTURUMUNUZ"</string>
+    <string name="ui_879cfabd793d0157" formatted="false">"FSR Çıkışı: {0}"</string>
+    <string name="ui_87c3860190710a08" formatted="false">"{0} ÜRÜNLER • KISMİ VERİ"</string>
+    <string name="ui_881e8bd48dc88da0" formatted="false">"hassasiyet {0}%; ölü bölge {1}%; "</string>
+    <string name="ui_886e0210ef167b68" formatted="false">"AMD FSR 1.0.2 — deneysel"</string>
+    <string name="ui_8892d243f5537424" formatted="false">"Orijinal kontrastı %100 korur. Aşırı değerler açık veya koyu ayrıntıları gizleyebilir."</string>
+    <string name="ui_892188af00d5e76a" formatted="false">"Tahmin değişebilir; Zaman garantisi değildir."</string>
+    <string name="ui_893b96a29b56340e" formatted="false">"Game Pass\'de mevcut"</string>
+    <string name="ui_8a88e3a86b08b2ec" formatted="false">"Görüntü ve ekran"</string>
+    <string name="ui_8b5d3029ee3db112" formatted="false">"Hesap değiştir"</string>
+    <string name="ui_8b8695ec9db0bfce" formatted="false">"Görüntü ayarları — keskinlik, doygunluk, parlaklık ve kontrast"</string>
+    <string name="ui_8bc4692e3412c04d" formatted="false">"Her zaman maç sırasında"</string>
+    <string name="ui_8c1c85b9a6670ba8" formatted="false">"anında gönderim istendi (arayüz vsync\'i beklemek yok)"</string>
+    <string name="ui_8d0f0a4a48121b78" formatted="false">"Ara pas"</string>
+    <string name="ui_8daf0c9652bbce83" formatted="false">"FPS\'nin kodu çözüldü"</string>
+    <string name="ui_8dcf516ab73b515d" formatted="false">"GERİ DÖNMEK İÇİN"</string>
+    <string name="ui_8e6585681b74fcb7" formatted="false">"Hareket çubuğunu, çubuğun kenarının ötesine, Koş yönünde yukarı sürükleyin. Yedekleme, çalıştırma komutunu serbest bırakır; parmağınızı serbest bırakmak aynı zamanda hareketi de sıfırlar. Oyun seçenekleri ırk davranışını tanımlar. Çalıştır düğmesi aynı zamanda dokunarak da çalışır."</string>
+    <string name="ui_8ea1b4a47e8ff6fa" formatted="false">"4K — 3840×2160 (deneysel)"</string>
+    <string name="ui_8ea541b087ec2c75" formatted="false">"teknik sınıflandırma olmadan hata"</string>
+    <string name="ui_8f593701d1d0bb29" formatted="false">"Giriş: {0} bekler | {1} birleştirilmiş geçişler\n"</string>
+    <string name="ui_90b7766e2c2b1cb8" formatted="false">"Oyundan çıkmak…"</string>
+    <string name="ui_911946e859f7e597" formatted="false">"paket"</string>
+    <string name="ui_913d38b99bed0a3c" formatted="false">"onaylanmamış"</string>
+    <string name="ui_91659ea32014744d" formatted="false">"ŞANZIMANIN BAĞLANMASI"</string>
+    <string name="ui_91a83117cbba2fb1" formatted="false">"Son yerel özeti kaydeder. Maç istatistikleri siz onları etkinleştirene kadar gizli kalır."</string>
+    <string name="ui_91d709d706494887" formatted="false">"Görüntüde ilerleme yok: {1} gözlemlenen bölümlerde {0}\n"</string>
+    <string name="ui_927e3af3d6f75587" formatted="false">"Kuyruk onaylandı {0}"</string>
+    <string name="ui_92b8e926c2168679" formatted="false">"Kamera hassasiyetini sürükleyin"</string>
+    <string name="ui_92bba5c8f9add126" formatted="false">"LT\'yi tutarken"</string>
+    <string name="ui_9313455e45aa2243" formatted="false">"Evet"</string>
+    <string name="ui_93534e3e8a8dccfd" formatted="false">"Menüler"</string>
+    <string name="ui_936fa7aae91087f9" formatted="false">"{0} OYUNLARI • RESMİ LİSTE"</string>
+    <string name="ui_94670b84224ce29d" formatted="false">"Hesabınız Xbox\'ye bağlanıyor…"</string>
+    <string name="ui_952551ccad9942ba" formatted="false">"Kataloğa dönüyoruz…"</string>
+    <string name="ui_95ceb3e6dbc1704c" formatted="false">"xCLOUD ile bulutta oynayın"</string>
+    <string name="ui_95daf899e2a35b7d" formatted="false">"Zaten beklediniz: {0}."</string>
+    <string name="ui_960127b1f234801c" formatted="false">"Başlıksız resmi galeri."</string>
+    <string name="ui_962e526f2fb4c866" formatted="false">"{0} çekerken nişan alın; "</string>
+    <string name="ui_964847849afda69b" formatted="false">"{0} [{1}] → {2}"</string>
+    <string name="ui_96966750f35e19c9" formatted="false">"Önceki kategori, LB"</string>
+    <string name="ui_96a6b9f2b8c3d779" formatted="false">"Ağ ve oturum"</string>
+    <string name="ui_96ec241ac11e3242" formatted="false">"Denetleyiciyi fare ve klavyeyle taklit edin"</string>
+    <string name="ui_975f261b38408189" formatted="false">"Futbol - savunma"</string>
+    <string name="ui_97a9221076144318" formatted="false">"Mevcut göstergeler bu koleksiyonda önemli bir uyarı sunmadı."</string>
+    <string name="ui_97ff8f05d7df6240" formatted="false">"Android denetleyiciyle benzersiz bir ilişki yok; başlangıç titreşimi mevcut değil."</string>
+    <string name="ui_9808395daf5344df" formatted="false">"Sistem Sık Kullanılanlar kanalı xCLOUD\'yi yetkilendirdi. Görüntüsü TV\'nin ana ekranına bağlıdır. Doğrudan erişim uygulaması oluşturmak için TV Kısayolunu Yükle\'yi kullanın."</string>
+    <string name="ui_988a7912b3147f0c" formatted="false">"Bu basımı, kimliği doğrulanmış katalogdaki oynanabilir bir oyunla ilişkilendiremedik. Bu, hesabınıza/bölgenize erişim eksikliğini onaylamaz. Kataloğu güncelleyin ve tekrar deneyin. Ürün: {0}."</string>
+    <string name="ui_98f15e53a1bd096c" formatted="false">"Tüm maçlar için standart"</string>
+    <string name="ui_9934abcab76d65f1" formatted="false">" — orijinal"</string>
+    <string name="ui_9ae35f5f91ad2ad9" formatted="false">"Kullanılabilir — sessize alınır"</string>
+    <string name="ui_9b293fc455603d84" formatted="false">"SDK, RTP tercihlerini reddetti"</string>
+    <string name="ui_9b7c788c87298b87" formatted="false">"Maksimum bit hızı: {0}"</string>
+    <string name="ui_9b850f6c640c8388" formatted="false">"hizmet etkin video olmadan yanıt verdi"</string>
+    <string name="ui_9bc947e58b62b2fe" formatted="false">"HAYIR"</string>
+    <string name="ui_9bd4d1e04ad51df3" formatted="false">"Duraklat"</string>
+    <string name="ui_9c01bae80b35415f" formatted="false">"Oturumunuzun yenilenmesi gerekiyor. Devam etmek için QR Kodu ile girin."</string>
+    <string name="ui_9c8bc8bbd1e7fa45" formatted="false">"Alındı WebRTC: {0} • Gönderildi: {1}\n"</string>
+    <string name="ui_9d37f98efd33b2f9" formatted="false">"RESMİ LİSTE MEVCUT DEĞİL"</string>
+    <string name="ui_9d952199b3f90d45" formatted="false">"Güçlü geç"</string>
+    <string name="ui_9dfcfd53b29994a4" formatted="false">"QR Kodu oluşturulamıyor. {0}"</string>
+    <string name="ui_9e29d8ee79027a75" formatted="false">"sistem varsayılanı (#0)"</string>
+    <string name="ui_9e98acc9f05ebb19" formatted="false">"xCLOUD • Oyun sonrası teşhis\n{0}\n{1}\n{2}\n"</string>
+    <string name="ui_9ea0e18723f59099" formatted="false">"Kısayolu yükle: {0}"</string>
+    <string name="ui_9ee25e963d051150" formatted="false">"İsteğe bağlı test: Parmaklarınızı doğal dokunuşta tutun ve sağ analog çubukla nişan alın. Bazı oyunlar giriş arayüzünü değiştirebilir. Mod Kapalıysa, bu test etkinleştirilirken Her Zaman seçilir. LT/LB, yerel temasta fiziksel denetleyici gerektirir. Bir sonraki oyunda geçerlidir."</string>
+    <string name="ui_9f3ebbde555a2c21" formatted="false">"Aramayı temizle"</string>
+    <string name="ui_9f944b0487751781" formatted="false">"Korumak"</string>
+    <string name="ui_9fe40625cfedb8a2" formatted="false">"Uygulama dili: {0}"</string>
+    <string name="ui_9ff2d5081992d239" formatted="false">"ICE konumu: teslim alınmayı bekliyor"</string>
+    <string name="ui_a037abd19f1ff1bb" formatted="false">"Fare ve klavyeyi yakala/bırak - F8"</string>
+    <string name="ui_a111ca34ef6b91c0" formatted="false">"{0} | Sipariş: {1} | Talep edilen sunum: {2} FPS\n"</string>
+    <string name="ui_a132cc573276e191" formatted="false">"Kataloğu güncelle"</string>
+    <string name="ui_a14359b05d91e1ac" formatted="false">"FSR Keskinliği (RCAS): {0}%"</string>
+    <string name="ui_a190afc4b4adb7f6" formatted="false">"İçermek"</string>
+    <string name="ui_a1bdb563a765ac41" formatted="false">"Kopyalanan tanı."</string>
+    <string name="ui_a1f9822e5355c082" formatted="false">"Rota ICE: {0} → {1} | RTT {2} | gözlemlenen değişiklikler: {3} | doğrulanmış alternatif çiftler: {4}"</string>
+    <string name="ui_a25e282550325946" formatted="false">"{0}  ■  {1}"</string>
+    <string name="ui_a2785a754a255bed" formatted="false">"standart"</string>
+    <string name="ui_a285fed899aeb882" formatted="false">"Hareket • {0}"</string>
+    <string name="ui_a2a5acaabb8c378d" formatted="false">"Sol ölü bölge"</string>
+    <string name="ui_a2e5f957fe19031f" formatted="false">"SDP Yanıtı: {0} | uygulanan: {1}"</string>
+    <string name="ui_a320e31d01bb4da5" formatted="false">"Xbox tahmini: yaklaşık {0}."</string>
+    <string name="ui_a38dc37dc8fe7b15" formatted="false">"720p — daha hafif"</string>
+    <string name="ui_a3d84c955a3fb0b3" formatted="false">"İsteğe bağlı görüntü ayarları. Keskinlik gürültüyü vurgulayabilir ve daha fazla GPU gerektirebilir. Maç sırasında değişiklikler anında gerçekleşir."</string>
+    <string name="ui_a3e0d2415190a8a6" formatted="false">"Hecelemek"</string>
+    <string name="ui_a41900826715a772" formatted="false">"geri kazanımlar {0}; ardışık arızalar {1}"</string>
+    <string name="ui_a451f1f2dfc6d41d" formatted="false">"{0}: HTTP {1}"</string>
+    <string name="ui_a4a455282b33666a" formatted="false">"Jest yok"</string>
+    <string name="ui_a4f285fa2d5ec93e" formatted="false">"hiçbiri bilgilendirilmedi"</string>
+    <string name="ui_a5575a1a9fa7978f" formatted="false">"Değiştir"</string>
+    <string name="ui_a57846c4bb3360ff" formatted="false">"Silahı değiştir"</string>
+    <string name="ui_a5d4e1d783941562" formatted="false">"Video modu"</string>
+    <string name="ui_a5fe1cbebea0c09c" formatted="false">"Video RTP\'si: {0} | Kanal tarafından kabul edilen giriş: {1}\n"</string>
+    <string name="ui_a6304667a4694dfc" formatted="false">"B İPTAL"</string>
+    <string name="ui_a64fd7ed84b6520a" formatted="false">"Kontroller › Titreşim"</string>
+    <string name="ui_a6b403097a36fa25" formatted="false">"Kamera X/Y: {0}/{1} | LT/RT: {2}%/{3}% | DZ uygulaması: %0 | 250\'ye kadar giriş Hz\n"</string>
+    <string name="ui_a6c5801ccc839510" formatted="false">"Yerel akış ve denetleyici navigasyonu içeren Xbox Bulut kataloğunuz."</string>
+    <string name="ui_a6cc9f20bfd7382d" formatted="false">"GİRİŞ SAYFASINI AÇ"</string>
+    <string name="ui_a71919f039859a7b" formatted="false">"Hesap onaylandı. Bağlantınız sonlandırılıyor…"</string>
+    <string name="ui_a73b0eb5c2120771" formatted="false">"Video modu: {0}"</string>
+    <string name="ui_a750bbb9a02f1dde" formatted="false">"Yüzey {0}x{1} → Android çıkışı "</string>
+    <string name="ui_a779e12ba7fd20f0" formatted="false">"\n{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10} | Fare/klavye: {11} | Aktif MKB Girişi: {12} | Android Yakalama: {13}"</string>
+    <string name="ui_a88536f370073a7d" formatted="false">"Hızlandırın"</string>
+    <string name="ui_a8877b8210604258" formatted="false">"Kullanıcı tarafından sonlandırıldı"</string>
+    <string name="ui_a8c2ac325cfa919b" formatted="false">"BOŞ YER BEKLİYORUZ"</string>
+    <string name="ui_a8eec455db88ba33" formatted="false">"Bağlantı tamamlanmadı"</string>
+    <string name="ui_a8f09d77366f1fa0" formatted="false">"Favorileriniz burada görünür.\nBir oyun seçin ve favorilerinize eklemek için Y tuşuna basın."</string>
+    <string name="ui_a9178552fda4292a" formatted="false">"FAVORİ"</string>
+    <string name="ui_a959007d05d3e862" formatted="false">"Bu cihazdaki Android kısayol paketini okuyamadı. Kısayol yükleyiciye gönderilmedi."</string>
+    <string name="ui_a9d4711b82648956" formatted="false">"Videoyu kurtar"</string>
+    <string name="ui_aa01028ec629a161" formatted="false">"beklenen yetenekler"</string>
+    <string name="ui_aaa8b17189f8e9c5" formatted="false">"Etkin — nişan al ve ateş et"</string>
+    <string name="ui_ab82b7fdb8e46107" formatted="false">"Tanılama"</string>
+    <string name="ui_abf15538afefb4b8" formatted="false">"\nAlınan WebRTC: {0} | WebRTC gönderildi: {1}\n"</string>
+    <string name="ui_abf5c1bbfeb0ebd7" formatted="false">"Komutlar standart Xbox denetleyici eşlemesini kullanır. Düzenleyici ve oyun ayarlarında her eylemi ayarlayabilirsiniz."</string>
+    <string name="ui_ac0405b91f35077a" formatted="false">"{0} OYUNLARI • KAYITLI GEÇMİŞ • GÜNCELLEME MEVCUT DEĞİL"</string>
+    <string name="ui_ac1653e071f8f7e8" formatted="false">"Orta yap"</string>
+    <string name="ui_ac1cd1430435899b" formatted="false">"Uygulamadan çıkılsın mı?"</string>
+    <string name="ui_ac1f216ed980fbc8" formatted="false">"verimli: hayır"</string>
+    <string name="ui_ac73aa9300406c83" formatted="false">"Otomatik olarak açılma"</string>
+    <string name="ui_acf055bba88baa0f" formatted="false">"FSR çıkışı"</string>
+    <string name="ui_ad308eca51baa9f5" formatted="false">"Bir maç daha başladı"</string>
+    <string name="ui_ad6cf30be5863ae2" formatted="false">"HDR10: Ekranı ve Akışı Kontrol Edin"</string>
+    <string name="ui_ad95a1eab4868093" formatted="false">"Ana ekran kanalı"</string>
+    <string name="ui_ada597c825c967dc" formatted="false">"Kurtarma girişimleri: {0}\n\n"</string>
+    <string name="ui_adc902bee601b133" formatted="false">"Favoriler cihaza kaydedilemedi."</string>
+    <string name="ui_ae271b987acb95d6" formatted="false">"Xbox bir oturum yayınladığında oyununuz açılacaktır."</string>
+    <string name="ui_aea7344883349a13" formatted="false">"Kısayollarınızı oluşturmak için Y ile favorilerinize oyun ekleyin."</string>
+    <string name="ui_aecdbc5fd56d8e66" formatted="false">"Hafif H.264 (Uyumluluk)"</string>
+    <string name="ui_aef7cd5b2081351d" formatted="false">"Kaydet"</string>
+    <string name="ui_af6f5bcb22418bc6" formatted="false">"Oyun ara"</string>
+    <string name="ui_afb58c5ef14296d0" formatted="false">"Fiziksel denetleyici ve yerel kümes"</string>
+    <string name="ui_afbcc421a945e702" formatted="false">"Gerçek HDR10\'nin 10 bit akışa, BT.2020 renge, PQ aktarımına ve tam zincirli HDR oynatmaya ihtiyacı vardır. Mevcut yol, uyumlu bir TV\'de bile bu kombinasyonu sunmuyor.\n\n"</string>
+    <string name="ui_afd65886ed07d629" formatted="false">"TEKRAR DENEYİN"</string>
+    <string name="ui_b019906f6858044e" formatted="false">"xCLOUD {0} • Başlangıç girişi: {1} • {2}"</string>
+    <string name="ui_b0944e467b311f8d" formatted="false">"{0}\'nin Kaderi"</string>
+    <string name="ui_b0b4626cc5d27e57" formatted="false">"← Sol"</string>
+    <string name="ui_b0b961d4ec123362" formatted="false">"Ana ekrandan favori kanalı isteyin"</string>
+    <string name="ui_b0d7170b7a348938" formatted="false">"İsteğe bağlı mikrofon"</string>
+    <string name="ui_b0f8a4c6147a77ca" formatted="false">"Dikkat"</string>
+    <string name="ui_b0fb3c524b9a6398" formatted="false">"WebRTC arabellek hedefi"</string>
+    <string name="ui_b184ba49fad5bdda" formatted="false">"\nOtomatik: sürekli bağlantı kontrolleri/RTT; WebRTC ve sunucuya göre seçim. Alternatifler mevcut ağa bağlıdır."</string>
+    <string name="ui_b195ba9ba106c658" formatted="false">"ICE bağlantısı kapatıldı"</string>
+    <string name="ui_b1a57cb0ce19ab77" formatted="false">"Yerel dokunuşlu jiroskop Xbox"</string>
+    <string name="ui_b1b3b2be00607986" formatted="false">"Yaklaşan maçlarda mikrofon: {0}"</string>
+    <string name="ui_b1b83340a2e6e991" formatted="false">"Mobil ağ"</string>
+    <string name="ui_b20277600256b5af" formatted="false">"İstatistikler: örnekler bekleniyor WebRTC..."</string>
+    <string name="ui_b257b4fde1d7e0c6" formatted="false">"Bazı bilgiler mevcut değil. Listeleme mülkiyeti onaylamaz; dijital satın alma ve hizmet koşullarını gerektirir."</string>
+    <string name="ui_b29603a502aa8d8c" formatted="false">"{0} favorilerden kaldırıldı"</string>
+    <string name="ui_b2a876364adeafae" formatted="false">"Tam resmi liste • Bazı bilgiler/kapaklar mevcut değil; Kataloğu ayarlarda güncelleyin."</string>
+    <string name="ui_b2d1202a54152282" formatted="false">"Savunma HUD\'unu göster"</string>
+    <string name="ui_b3d71cae0cc33739" formatted="false">"Yetkisiz kurulum"</string>
+    <string name="ui_b455784ab5307277" formatted="false">"Düzenli"</string>
+    <string name="ui_b4fd5598411dcca4" formatted="false">"Microsoft Aboneliğini Yönetin"</string>
+    <string name="ui_b525c8f63004a345" formatted="false">"Mikrofon müzakere ediliyor…"</string>
+    <string name="ui_b5758662f5d045a7" formatted="false">"USB testini devre dışı bırak"</string>
+    <string name="ui_b669fb4b755c8302" formatted="false">"Futbolda komutları değiştirmek için SALDIRI / SAVUNMA\'ya dokunun. Değişim manueldir. Vuruşta: yerleştirme için aşağı, cavadinha için yukarı ve süper vuruş için yanlara doğru sürükleyin. Mark, RT + A\'yı birleştirir.\n\nDüzenleyicide Eylem, düğmeleri birleştirmenize olanak tanır; Hareketler her sürükleme yönünü yapılandırır. Komutlar oyununuzun düzenini takip eder.\n\nCoD\'de kamerayı hareket ettirmek için Nişan Al veya Çek öğesini basılı tutun ve sürükleyin. Ateş ederken nişan almak isteğe bağlıdır. Analog çubuğu Çalıştır\'a doğru sürüklemek, bu seçenek açıkken koşmayı etkinleştirir.\n\nAtıcılık oyunlarında HUD hassasiyetini artırın ve ölü bölge telafisini ayarlayın. Maksimum dönüş hızı aynı zamanda oyun içinde ayarlanan kontrol cihazının hassasiyetine de bağlıdır."</string>
+    <string name="ui_b6c65960870c1c5e" formatted="false">"\nTeknik kod: {0}"</string>
+    <string name="ui_b772dc025eba9d11" formatted="false">"Sağ ölü bölge: {0}%"</string>
+    <string name="ui_b788c7c5fda4ab79" formatted="false">"Siber Mavi"</string>
+    <string name="ui_b803f24d52edd7bc" formatted="false">"Otomatik"</string>
+    <string name="ui_b82619b14335e532" formatted="false">"Galeri tanınmayan sayfalandırmayı döndürdü; listenin eksiksiz olduğu onaylanmadı."</string>
+    <string name="ui_b83158eab62b99d9" formatted="false">" — kod {0}"</string>
+    <string name="ui_b8c2ee925a3aab1f" formatted="false">"{0} • {1} • {2}"</string>
+    <string name="ui_b8c99375c71e298a" formatted="false">"Tahmin güncellenemiyor; Boşluk istişareleri devam ediyor."</string>
+    <string name="ui_b9e10688be012d8b" formatted="false">"Tekrar deneyin"</string>
+    <string name="ui_ba5e5d364d10aa1b" formatted="false">"Xbox oturumunuzu ayırıyor ve hazırlıyor."</string>
+    <string name="ui_bab27e2c850b00b2" formatted="false">"ORTALAMA/ZİRVE • {0} örnekleri • {1} gözlemlendi • ↑/↓ veya ayrıntılar için kaydırın"</string>
+    <string name="ui_bb9dbb406dcbd524" formatted="false">"İptal"</string>
+    <string name="ui_bbb6bca5ca31729a" formatted="false">"XBOX TAHMİNİ"</string>
+    <string name="ui_bbc01c73fe29c18f" formatted="false">"kısa mesafe yarışı {0}; "</string>
+    <string name="ui_bbe0ec8ca31b468c" formatted="false">"Titreşim: {0}"</string>
+    <string name="ui_bcbb4e0f88f1dd5e" formatted="false">"standart gönderi"</string>
+    <string name="ui_bce05db4b83249e2" formatted="false">"ms/kare"</string>
+    <string name="ui_bd10a9bd1958e9f0" formatted="false">"meta veriler bekleniyor"</string>
+    <string name="ui_bd59e1e564ce5c46" formatted="false">"Titreşim"</string>
+    <string name="ui_bd5b62d71cdd98d3" formatted="false">"Yönlü ↓"</string>
+    <string name="ui_bdb73aa9fd97600d" formatted="false">"Mikrofon: sessiz; kodlayıcı duraklatmayı reddetti"</string>
+    <string name="ui_be0c7ddbc14398f4" formatted="false">"İlişkili bir fiziksel denetleyici olmadığında dokunmatik oynatıcının gürültüsünü kullanır. Cep telefonunda Titreşimin etkinleştirilmesini ve titreşimin kullanılmasını gerektirir. Bir sonraki oyunda geçerlidir."</string>
+    <string name="ui_be4651d6aa4e8b87" formatted="false">"Kataloğa geri dön"</string>
+    <string name="ui_bfabaebcc64e9c48" formatted="false">"IPv4 / IPv6: {0}"</string>
+    <string name="ui_bfc167f5ded3ac78" formatted="false">"Alınan çözünürlüğü veya ağ tüketimini artırmadan yerel sunumu ayarlar. Otomatik, TV\'lerde 1080p ile sınırlı olup akıcılığa öncelik vererek pencereyi takip eder. Seçenekler mevcut fiziksel çıktıyla sınırlıdır ve en boy oranı korunur. 1440p ve 4K, GPU\'den daha pahalıdır; 60 FPS\'yi garanti etmez. AMD FSR\'nin etkinleştirilmesini gerektirir; Uyumluluk filtreyi kapalı tutar. Filtre başarısız olursa veya video gelirken tempo birkaç saniye boyunca çok yavaş kalırsa uygulama varsayılan ölçeklendirmeye döner. Sonraki maç için geçerlidir."</string>
+    <string name="ui_bfcd75a03efeb613" formatted="false">"Jiroskop: yerel dokunma devre dışıyken test edin"</string>
+    <string name="ui_c06b55029589f9aa" formatted="false">"Hafif H.264 — Baseline (720p)"</string>
+    <string name="ui_c0e06d1a547e1e02" formatted="false">"Oyun doğrulanamıyor. Lütfen tekrar deneyin veya kataloğu güncelleyin. Satın alınan oyunlar Xbox dijital lisansını ve hizmet şartlarını gerektirir."</string>
+    <string name="ui_c0eb1a54b2adee0d" formatted="false">"Klasik – B vuruşu"</string>
+    <string name="ui_c14311ffdf175c3f" formatted="false">" • {0} olayları • geçmiş maks. {1}"</string>
+    <string name="ui_c149ec2f90b933d5" formatted="false">"ARAMAK"</string>
+    <string name="ui_c1601679448149f0" formatted="false">"Atış — standart"</string>
+    <string name="ui_c165b9199b45bcd6" formatted="false">"Bu oyunun HUD ve kontrolleri"</string>
+    <string name="ui_c18707da3aeeac79" formatted="false">"hedef {0} ms | minimum ağ {1} ms | "</string>
+    <string name="ui_c24ad4a9b806d36f" formatted="false">"Sonraki kategori, RB"</string>
+    <string name="ui_c294e7b002393a8d" formatted="false">"FSR Keskinliği (RCAS)"</string>
+    <string name="ui_c362ba09dc7291e1" formatted="false">"Bu hareketi kaldır"</string>
+    <string name="ui_c4361eb26a5f858e" formatted="false">"Xbox Serisi X|S için optimize edildi"</string>
+    <string name="ui_c43891cea5d2cf81" formatted="false">"{0} {1} | Android {2} | {3}\n{4}\n{5}\n{6}\n{7}"</string>
+    <string name="ui_c48c51103740a734" formatted="false">"Resim güncellenmedi"</string>
+    <string name="ui_c4b7abb559efc0c2" formatted="false">"Android → uygulamaya dokunun: ortalama yaş/zirve {0}; aşağı/yukarı/taşı/iptal et {1}/{2}/{3}/{4}; "</string>
+    <string name="ui_c4bc021431f3c0b9" formatted="false">"başlatma: {0}"</string>
+    <string name="ui_c587065de995e6a6" formatted="false">"Ekran Modu: yok"</string>
+    <string name="ui_c592501facbaea8c" formatted="false">"Doygunluk: {0}%"</string>
+    <string name="ui_c68b7df08912cf8f" formatted="false">"Eski tahmin. Boş kontenjan arayışı devam ediyor."</string>
+    <string name="ui_c6903698265c4ac7" formatted="false">"Kapalı — fiziksel denetleyici"</string>
+    <string name="ui_c709991bfe8aced1" formatted="false">"BAZI KAPAKLAR MEVCUT DEĞİLDİR. AYARLARDA GÜNCELLEME."</string>
+    <string name="ui_c7396b1f339d9a49" formatted="false">"Seçenekler: {0}"</string>
+    <string name="ui_c73b5744c4698b8a" formatted="false">"Örnek videolarınızı bekliyorum."</string>
+    <string name="ui_c7d422473615e69d" formatted="false">"Video RTP: {0} • Giriş: {1}\n"</string>
+    <string name="ui_c90dd4a7f4f16d4e" formatted="false">"Resmi listeye başvurmak mümkün olmadı.\nKataloğu ayarlarda güncelleyin."</string>
+    <string name="ui_c917e2441a33ab85" formatted="false">"Otomatik — varsayılan hesap bölgesi"</string>
+    <string name="ui_c985cb075b6ff172" formatted="false">"Cihaz belirtilmedi"</string>
+    <string name="ui_ca5962d0f8fb5020" formatted="false">"Xbox\'ye danışmanlık; kuyruktaki son onay {0}\'dir."</string>
+    <string name="ui_cb201cc243f2d150" formatted="false">"sunucu bulunamadı"</string>
+    <string name="ui_cb2559452c9c352f" formatted="false">"{0} • {1} bağlı"</string>
+    <string name="ui_cb9b4a0d6fde640c" formatted="false">"Opaklık: {0}%"</string>
+    <string name="ui_cc5eb4d7dd2d1e2e" formatted="false">"Uygulama dili"</string>
+    <string name="ui_ccb39a83e3b26d2a" formatted="false">"QR Kodunu cep telefonunuzla tarayın veya Microsoft oturum açma sayfasına erişin."</string>
+    <string name="ui_ccc5ddf0e986b6dc" formatted="false">"Hafif H.264 ve Uyumluluk, başka bir seçenek kaydedilmiş olsa bile 720p kullanır. 720p daha az bant genişliği ve kod çözme işi gerektirir. Alınan çözünürlük Xbox\'ye, oyuna ve bağlantıya bağlıdır. Bir sonraki maç için geçerlidir."</string>
+    <string name="ui_ccec6af8dfc9a3c9" formatted="false">"Denetleyici/HUD üzerinde doğru analog çubuğu taklit eder. Xbox yerel dokunuşu eşleştirmek için Jiroskop kategorisindeki testi de etkinleştirin. Yerel dokunmadaki LT/LB, fiziksel denetleyiciye dayanır. Bir sonraki oyunda geçerlidir."</string>
+    <string name="ui_cdbfce5b72ebff87" formatted="false">"Tetikleyici ölü bölge: {0}%"</string>
+    <string name="ui_ce04190840b5df23" formatted="false">"Xbox Bulut geçmişiniz kontrol ediliyor…"</string>
+    <string name="ui_ce49e4a3777bd79d" formatted="false">"Giriş bilgileriniz ve favorileriniz bu cihaza kaydedilmeye devam edecek."</string>
+    <string name="ui_ce841257afc795fe" formatted="false">"{0}, {1}. Ayarları aç"</string>
+    <string name="ui_cee3aa77fe99ae5a" formatted="false">"diğer video formatı"</string>
+    <string name="ui_cfec65af653e127f" formatted="false">"Bu oyunun HUD\'sini geri yükleyin"</string>
+    <string name="ui_d00d630e6c32f971" formatted="false">" • deneysel yerel dokunuş"</string>
+    <string name="ui_d0bb4a4037d8fd3d" formatted="false">"Kısayol oyunu hazırlanıyor…"</string>
+    <string name="ui_d109c6d44ff057b7" formatted="false">"{0} {1} • Android {2}"</string>
+    <string name="ui_d1225458fd479a1f" formatted="false">"Devre Dışı — oluşturucu ölçeği"</string>
+    <string name="ui_d13e17270be9aa6a" formatted="false">"Yönlü ←"</string>
+    <string name="ui_d220d05a7861ed7d" formatted="false">"Yükleyici kullanılamıyor"</string>
+    <string name="ui_d23162e04eddf351" formatted="false">"Ateş ederken nişan alın"</string>
+    <string name="ui_d294972e7616ce46" formatted="false">"İstatistikleri göster/gizle"</string>
+    <string name="ui_d2ad993f02c491da" formatted="false">"Zıpla"</string>
+    <string name="ui_d2ce0bc9f7f8998b" formatted="false">"HUD\'u gizle"</string>
+    <string name="ui_d2f671e0a6015903" formatted="false">"Harita"</string>
+    <string name="ui_d368683d0c7e0d26" formatted="false">"Ses ve video"</string>
+    <string name="ui_d373287e7248cfe5" formatted="false">"kanal bekleniyor"</string>
+    <string name="ui_d3b2d6009b1e4b0a" formatted="false">"iletişim hatası"</string>
+    <string name="ui_d42dfb2ef63549c6" formatted="false">"1\'den az min"</string>
+    <string name="ui_d45fee8a599e40cc" formatted="false">"Dokunulduğunda cep telefonu titreşimi: {0}"</string>
+    <string name="ui_d4665a4a146e28e6" formatted="false">"QR Kodunu tarayın veya erişin\n{0} ve kodu girin:"</string>
+    <string name="ui_d48c492ec604a5a0" formatted="false">"Xbox tahmini: şu anda mevcut değil."</string>
+    <string name="ui_d49877fbdb35a493" formatted="false">"HUD\'I DÜZENLE • DÜĞMELERİ SÜRÜKLEYİN"</string>
+    <string name="ui_d4a0ecff23664366" formatted="false">"KAPANMA NEDENİ\n"</string>
+    <string name="ui_d5f9cf0229d64cd8" formatted="false">"Xbox yerleşik dokunmatik — deneysel"</string>
+    <string name="ui_d5fc8994d873c100" formatted="false">"Android bu cihazda bir jiroskop bildirmedi."</string>
+    <string name="ui_d61df2985b00e754" formatted="false">"AMD FSR 1.0.2: Uyumluluk modunda etkin değil"</string>
+    <string name="ui_d67d7a22a9d85ee1" formatted="false">"Jiroskop"</string>
+    <string name="ui_d699b3523f2e4530" formatted="false">"Kontrol boyutu: {0}%"</string>
+    <string name="ui_d6a06884ced98edc" formatted="false">"varsayılan codec bileşeni"</string>
+    <string name="ui_d6c2efe70cd031d9" formatted="false">"Talep edilen sunum: {0} FPS • Kod çözücü: {1}"</string>
+    <string name="ui_d6df5d0593b1d522" formatted="false">"Oturum her zaman sessiz başlar. Bu seçenekle uygulama sohbet desteğine başvurur; Android\'e izin verdikten sonra maçın menu\'sini yakalamayı etkinleştirin. Arka plan sessize alınıyor. Bazı sunucular sohbet sunmayabilir."</string>
+    <string name="ui_d7ab4b0aca3b07cf" formatted="false">"Gözlemlenen arabellek, istenen sunumun iki aralığını aşıyor. RTT ve düşük kod çözmelerde bile gecikme hissine katkıda bulunabilir. En Kısa Gecikme ile Uyarlanabilirliği Karşılaştırın; talep edilen hedef garanti edilen bir tavan değildir."</string>
+    <string name="ui_d7cbd013a2f6068b" formatted="false">"Yeni çerçeveler içermeyen video. Resim güncellemesi isteniyor…"</string>
+    <string name="ui_d8742a3decdd0df5" formatted="false">"Ağ İsteği"</string>
+    <string name="ui_d87bd8469bfe6376" formatted="false">"Ses ve mikrofon"</string>
+    <string name="ui_d8cdcbc7ebdaae0d" formatted="false">"Oturum varsayılanlarını kullan"</string>
+    <string name="ui_d8fb58e618d83fe1" formatted="false">"Kullanılabilirlik onaylanmadı"</string>
+    <string name="ui_d908762c8d942e27" formatted="false">"Bakmak için sürükleyin"</string>
+    <string name="ui_d98c49960e02dbf0" formatted="false">"Paket kaybı"</string>
+    <string name="ui_d98f313ee5a346c8" formatted="false">"TV\'ye kısayol yükleyin: {0}"</string>
+    <string name="ui_d99aa29897d612dc" formatted="false">"Xbox Cloud\'da kimliği doğrulanmış hesap"</string>
+    <string name="ui_d9e854b45b44b286" formatted="false">"Veri yok: {0} | Verilerle birlikte: {1}\n"</string>
+    <string name="ui_da3388b19048bd0d" formatted="false">"OYUNLARIN.\nSENİN EKRANINDA."</string>
+    <string name="ui_daa6b913c3a993f5" formatted="false">"Devre Dışı (Uyumluluk)"</string>
+    <string name="ui_dae2928050707d95" formatted="false">"SIRA"</string>
+    <string name="ui_dafb61aca12d33e0" formatted="false">"Kamera"</string>
+    <string name="ui_db3e58808ddb39bc" formatted="false">"Hareket hedefleme"</string>
+    <string name="ui_db48ebd18aae5755" formatted="false">"Ayrıntılar kopyalandı!"</string>
+    <string name="ui_db6368593c24380d" formatted="false">"Uyumlu oyunların resmi listesi; dijital satın alma ve hizmet koşullarını gerektirir. Hesabın sahipliğini onaylamaz."</string>
+    <string name="ui_dcd82253fc1b9333" formatted="false">"başladı"</string>
+    <string name="ui_dcde76e0abae913f" formatted="false">"Hassasiyet: {0}%"</string>
+    <string name="ui_dd1177426b964f31" formatted="false">"{0}: istek başarısız oldu ({1})"</string>
+    <string name="ui_dd191c539b7bdee4" formatted="false">"İşaretlemek için"</string>
+    <string name="ui_dd1f60df310c6ac7" formatted="false">"Analog eğri"</string>
+    <string name="ui_dd8a9255bf7ad0db" formatted="false">"Oturum dili"</string>
+    <string name="ui_ddc53964b5fe0059" formatted="false">"Ateş"</string>
+    <string name="ui_ddf7ac150ff295a9" formatted="false">"Neredeyse hazır"</string>
+    <string name="ui_de10ccc1614b9a4a" formatted="false">"aralık"</string>
+    <string name="ui_de26c2fcfd1fdd63" formatted="false">"Keskinlik"</string>
+    <string name="ui_df1f3af61e81fd98" formatted="false">"Etkin — Yüzey ölçekleme"</string>
+    <string name="ui_df41bc6b69dd0a4d" formatted="false">"\nİstenen maksimum bit hızı: "</string>
+    <string name="ui_df79a066dff74946" formatted="false">"Devre dışı - ayarlara bakın"</string>
+    <string name="ui_df87f243111ed2d4" formatted="false">"Beklemek"</string>
+    <string name="ui_dfa86dac52babb92" formatted="false">"Bekletmeyi iptal et ve kataloğa dön"</string>
+    <string name="ui_e07fe1fc111ea9e6" formatted="false">" | dokunun: {0}, {1}, {2} gönderilen olaylar"</string>
+    <string name="ui_e0f02d042121b2a0" formatted="false">"TV favori kanala izin vermedi. Bireysel oyun girişleri oluşturmak için TV Kısayolunu Yükle\'yi kullanın."</string>
+    <string name="ui_e0fdcc38d021c280" formatted="false">"Etkin — 4 oyuncuya kadar"</string>
+    <string name="ui_e14441aaa6331504" formatted="false">"Son tanı"</string>
+    <string name="ui_e1623a9ceaca4129" formatted="false">"Bağlantı zamanı: {0} | Gözlemlendi: {1} | {2} örnekleri\n"</string>
+    <string name="ui_e16a49eedde76282" formatted="false">"{0} ÜRÜNLER • GÜNCELLENİYOR"</string>
+    <string name="ui_e18cbc44b23c7f78" formatted="false">"Doygunluk"</string>
+    <string name="ui_e21b8dd97e1d4d63" formatted="false">"Bu seçenek, uygulamanın menülerinin dilinden bağımsızdır. Dil Xbox\'den istenir; bazı oyunlar kendi ayarlarını kullanır veya bunu göz ardı edebilir. Bir sonraki oyunda geçerlidir."</string>
+    <string name="ui_e2c1eb3e21262571" formatted="false">"Gözlemlenen Video Arabelleği"</string>
+    <string name="ui_e2cc58057bac44ca" formatted="false">"Oyun bağlantısı onaylanmadı"</string>
+    <string name="ui_e2cf4129d958d3cc" formatted="false">"Oran: {0}"</string>
+    <string name="ui_e31fe0e7c18095f5" formatted="false">"Bu hesaba yalnızca Xbox tarafından sunulan bölgeler. Seçildiğinde o bölgedeki oturum istenir; ping veya oyun sırasını tahmin etmez. Kaydedilen bir bölge artık sunulmuyorsa uygulama varsayılan bölgeyi kullanır ve teşhis sırasında sizi bilgilendirir. Bir sonraki oyunda geçerlidir."</string>
+    <string name="ui_e35865317817e866" formatted="false">"WebRTC Bağlantısı"</string>
+    <string name="ui_e3ac02bd2ccd6d6e" formatted="false">"Alındı: {0} | {1} | {2}\n"</string>
+    <string name="ui_e3c9951db767377e" formatted="false">"Ekran: HDR desteği Android tarafından bildirilmemektedir."</string>
+    <string name="ui_e40b250bfbf97c8e" formatted="false">"Video kurtarılıyor: Kod çözücü bir sonraki ana karede yeniden başlatılıyor…"</string>
+    <string name="ui_e41e160eef41ad25" formatted="false">"FSR 1.0.2, EASU ve RCAS keskinleştirmeyle videoyu yükseltir. Video ve çıktı aynı boyutta olduğunda büyütmeden yalnızca RCAS uygulayın. Otomatik\'te FSR Çıkışı ve %50\'de RCAS ile başlayın. Komutların keskinliğini, akıcılığını ve yanıtını karşılaştırın; 1440p ve 4K daha fazla GPU gerektirir. Teşhis, genişlemeyi yerel RCAS\'den ayırır. FSR, Yerel Yükseltme açıkken bile ölçeklendirmeyi devralır. Görüntü Ayarlamalarında RCAS\'yi ayarlayın. Uyumluluk FSR\'yi kapalı tutar. Bir sonraki maç için geçerlidir."</string>
+    <string name="ui_e425c594c6c37587" formatted="false">"Xbox tahmini: 1 dakikadan az."</string>
+    <string name="ui_e470e20093b5665d" formatted="false">"Bu oyun: {0}"</string>
+    <string name="ui_e478889056bb4cfc" formatted="false">"Orijinal — en boy oranını koruyun"</string>
+    <string name="ui_e48e3afad74a7664" formatted="false">"LT ve RT\'yi değiştirin: {0}"</string>
+    <string name="ui_e528576451072d03" formatted="false">"HAZIRLIK"</string>
+    <string name="ui_e6acff5f42562f1a" formatted="false">"Kodlayıcı yok"</string>
+    <string name="ui_e7933921372c4fd7" formatted="false">"Kısayol kullanılamıyor"</string>
+    <string name="ui_e834630bef0ef550" formatted="false">"Xbox\'den yanıt beklenirken zaman aşımı"</string>
+    <string name="ui_e84bcd0234e07712" formatted="false">"Bağlantılı ulaşım. İlk video karesini bekliyorum..."</string>
+    <string name="ui_e914de1e4fae95a7" formatted="false">"TÜM OYUNLAR"</string>
+    <string name="ui_e9e53c0c5177e18c" formatted="false">"Otomatik — kaydedilen bölge hesaba sunulmuyor"</string>
+    <string name="ui_ea0fd82513d807df" formatted="false">"Düğme hareketleri"</string>
+    <string name="ui_ea6a1717f5c88030" formatted="false">"\n\nGiriş planlayıcısı yalnızca gönderen iş parçacığını ölçer. Android olay yaşı, kumanda kolu için Etkinlik ve dokunma için View\'de ölçülür; tüm Bluetooth/USB yolunu, fiziksel dokunma algılamayı, oyun tepkisini veya ekranı içermez. Düşük ping ve kod çözme, düşük toplam komut gecikmesini göstermez."</string>
+    <string name="ui_ea882cac2bd2ad5f" formatted="false">"H.264 Baseline • Uyumluluk • 720p talep edildi • profil/eşleşme teklifi"</string>
+    <string name="ui_eacaad041ff7e933" formatted="false">"Video henüz gelmedi. Xbox oturumu açık kalır."</string>
+    <string name="ui_eb145ebce21c228a" formatted="false">"Video alınmadan duraklamalar yaşandı. Hizmetin ağını ve teslimatının sürekliliğini araştırın."</string>
+    <string name="ui_eb1bcf0482eeba71" formatted="false">"etkinleştirildi"</string>
+    <string name="ui_eb88b483ea19114e" formatted="false">"Uygulama teması"</string>
+    <string name="ui_ebee0532a3cc3057" formatted="false">"IPv6\'yi tercih edin — deneysel, IPv4 mevcut"</string>
+    <string name="ui_ec090a775820f486" formatted="false">"Saldırı"</string>
+    <string name="ui_ec0fcae16cb08806" formatted="false">", seçilmiş"</string>
+    <string name="ui_ec3103a5a55b8611" formatted="false">"Kontroller › Jiroskop"</string>
+    <string name="ui_ec7c4c3f379a1d51" formatted="false">"Mod: {0}"</string>
+    <string name="ui_ecbc02a1d1b01fe4" formatted="false">"#{0} habersiz"</string>
+    <string name="ui_eccf310fa9817174" formatted="false">"Eğri: {0}"</string>
+    <string name="ui_ece0fd9e5729873e" formatted="false">"↓ Bas"</string>
+    <string name="ui_ed57b826da4ae9b2" formatted="false">"Etkin — deneysel"</string>
+    <string name="ui_eda02893d340c1be" formatted="false">"Eski haline getirmek"</string>
+    <string name="ui_eda74028f3497040" formatted="false">"Hesap bağlandı. Kataloğunuz yükleniyor…"</string>
+    <string name="ui_edbc01e14a74f6c4" formatted="false">"TV ayarlarınızda xCLOUD\'nin oyun kısayollarını yüklemesine izin verin."</string>
+    <string name="ui_ee8e00814924a050" formatted="false">"acil gönderim talebi reddedildi"</string>
+    <string name="ui_eebb383ece16304a" formatted="false">"konsolide hareketler {0}; {1} yeniden senkronizasyonları"</string>
+    <string name="ui_eef444f5f2ad5527" formatted="false">"Bu kategoride oyun bulunmuyor."</string>
+    <string name="ui_ef63798c42e5cbfc" formatted="false">"Yeniden eşleme — Menu + View ayrılmıştır"</string>
+    <string name="ui_ef9e7f887a4e6b63" formatted="false">"Kodun geçerlilik süresi: {0} dk {1} sn."</string>
+    <string name="ui_efb486aeecda2759" formatted="false">"Favoriler kanalı"</string>
+    <string name="ui_f0396835eb883e35" formatted="false">"Oyun adı"</string>
+    <string name="ui_f08e468a1f1c0e01" formatted="false">"Ağ titreşimi"</string>
+    <string name="ui_f0a5d0b85c1fe428" formatted="false">"Profil bilgilendirilmedi"</string>
+    <string name="ui_f10cadbc47a09be6" formatted="false">"Galaksi Moru"</string>
+    <string name="ui_f11e7df036a8fd99" formatted="false">"; oturum sırasındaki sipariş: {0}"</string>
+    <string name="ui_f12b9d29b2cf0da6" formatted="false">"Doygunluğu artırmak veya TV\'yi HDR moduna zorlamak, SDR akışını HDR10\'ye dönüştürmez. TV\'nin kendi görüntü kontrolleri hâlâ mevcuttur."</string>
+    <string name="ui_f1a05e988e609704" formatted="false">"TV, kısayol için bir uygulama yükleyici sağlamadı."</string>
+    <string name="ui_f1dd04ae0fde2ba0" formatted="false">"Yakınlaştır — kırpmayla doldur"</string>
+    <string name="ui_f20f404de2b58f35" formatted="false">"Xbox geçmişi bu cihaza kaydedilemiyor."</string>
+    <string name="ui_f2b3bbccd1e3770c" formatted="false">"Oyunun"</string>
+    <string name="ui_f30b36266e720ad6" formatted="false">"OYNAMAK İÇİN GİRİŞ YAP"</string>
+    <string name="ui_f43e7dd113b16494" formatted="false">"%0 orijinal görüntüyü korur. %25 ile başlayın ve oluşturma süresini karşılaştırın."</string>
+    <string name="ui_f47dfde9cb6fd44e" formatted="false">"Engelli"</string>
+    <string name="ui_f486a903433f0619" formatted="false">"IPv4\'yi tercih edin — IPv6 mevcuttur"</string>
+    <string name="ui_f4a68a16351cdffc" formatted="false">"Resmi listenin tamamlanması • Bilgiler ve kapaklar yükleniyor…"</string>
+    <string name="ui_f51e982360461a76" formatted="false">"Jiroskop: Kayıt Android tarafından reddedildi"</string>
+    <string name="ui_f538ea4afa396b9b" formatted="false">"Kuruluma izin ver"</string>
+    <string name="ui_f58a67a713c98dd0" formatted="false">"Koş"</string>
+    <string name="ui_f6088eea2bd70977" formatted="false">"Prestij Altın"</string>
+    <string name="ui_f650f7200a36b5c1" formatted="false">"Kanalı favorilerden kaldır"</string>
+    <string name="ui_f680dda7acf9b89f" formatted="false">"Oyun sonrası tanılama"</string>
+    <string name="ui_f692b4b7e0efc7a4" formatted="false">"Havadan ara pas"</string>
+    <string name="ui_f6cb3b238d304c1b" formatted="false">"YENİ EKLENENLER"</string>
+    <string name="ui_f71b322dba0c5203" formatted="false">"Oyununuz hazırlanıyor…"</string>
+    <string name="ui_f71e2412211daacb" formatted="false">"Debriyaj"</string>
+    <string name="ui_f78f25086a60b340" formatted="false">"Giriş Zamanlayıcı"</string>
+    <string name="ui_f797fce773730594" formatted="false">"kodları STUN: {0}"</string>
+    <string name="ui_f7a82599a68b1b1e" formatted="false">"jestle anında gönderim: {0} siparişleri verildi, {1} reddedildi"</string>
+    <string name="ui_f7d070ebd521bf46" formatted="false">"Sunucu bölgesi"</string>
+    <string name="ui_f7dc6cc4bf3cbdc7" formatted="false">"Eylem — varsayılan"</string>
+    <string name="ui_f902df3c35163c5b" formatted="false">"{0} → {1}"</string>
+    <string name="ui_f972f402af4185e2" formatted="false">"Dokunarak oynayın: {0}"</string>
+    <string name="ui_f9a320a7e570459b" formatted="false">"Yönlü ↑"</string>
+    <string name="ui_f9c01b65b5e225b2" formatted="false">"Merkezde daha fazla hassasiyet"</string>
+    <string name="ui_fa6c9c8af2f428a1" formatted="false">"Emülasyon: WASD hareketi, fareyle nişan alma, sol tıklama RT, sağ LT; Boşluk A, Ctrl B, R/E X, Q Y, Shift L3, Sekme View ve Esc Menu. Yerel, anahtarları ve fareyi yalnızca desteğin reklamını yapan oyunlarda gönderir. F7, uygulamanın menu\'sini açar; F8 girişleri yakalar/serbest bırakır. Göreceli yakalama Android 8+ gerektirir. Bir sonraki oyunda geçerlidir."</string>
+    <string name="ui_faca76428c612f9e" formatted="false">"Değiştirilen oturum bakımı"</string>
+    <string name="ui_fb2175902de0d504" formatted="false">"Kanalı kontrol eder"</string>
+    <string name="ui_fb40f5b8acf0a571" formatted="false">"Android joystick olayı → uygulama: yok (hiçbir fiziksel olay gözlenmedi)"</string>
+    <string name="ui_fb62fe2ae6b2ae6c" formatted="false">"{0}: {1}"</string>
+    <string name="ui_fbebbef769b8bbb3" formatted="false">"Eşleştirme seçenekleri"</string>
+    <string name="ui_fbfcb9e12dfff345" formatted="false">"Özel"</string>
+    <string name="ui_fc0c258288401c6f" formatted="false">"Yakın Dövüş"</string>
+    <string name="ui_fd2df4c6a25bfd6a" formatted="false">"HESABINIZI BAĞLAYIN"</string>
+    <string name="ui_fd38bd8c6c9c36e1" formatted="false">"verilmedi"</string>
+    <string name="ui_fd9bac4a8e546c3e" formatted="false">"HUD\'a dokunun ve menu ile eşleştirin"</string>
+    <string name="ui_fe5d26cbe1bc1576" formatted="false">"İMZA BİLGİLENDİRİLMEDİ"</string>
+    <string name="ui_feff8b5f716c79a1" formatted="false">"Her kontrolör bir oyuncuyu işgal eder. Dokunmatik/klavye yedek oyuncu 1. Oyun ve oturum yerel çok oyunculuyu desteklemelidir. Bir sonraki oyunda geçerlidir."</string>
+    <string name="ui_ff070ada77b9fef3" formatted="false">"Parlaklık"</string>
+    <string name="ui_ff20d756c5955aa6" formatted="false">"Bu denemenin sınırı: {0}. Geri veya İptal kuyruktan çıkar."</string>
+    <string name="ui_ffc85b563def9bc4" formatted="false">"Titreşimi test edin / desteği kontrol edin"</string>
+</resources>

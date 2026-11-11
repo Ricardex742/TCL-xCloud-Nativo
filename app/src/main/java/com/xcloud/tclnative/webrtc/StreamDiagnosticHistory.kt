@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.webrtc
 
+import com.xcloud.tclnative.i18n.UiText
+
 /** Local, bounded metrics only: no account identifiers, IP addresses, tokens or SDP. */
 class StreamDiagnosticHistory {
     private data class Sample(val time: Long,val metrics: StreamMetrics,val input: InputMetrics)
@@ -11,14 +13,11 @@ class StreamDiagnosticHistory {
     }
     @Synchronized fun receivingVideo(now: Long): Boolean? = samples.lastOrNull()?.takeIf { now-it.time<=2500 }
         ?.metrics?.receivedVideoBytes?.let { it>0 }
-    @Synchronized fun report(): String = if(samples.isEmpty()) "Aguardando amostras de vídeo." else {
+    @Synchronized fun report(): String = if(samples.isEmpty()) UiText.text("Aguardando amostras de vídeo.") else {
         val start=samples.first.time
         samples.joinToString("\n") { s ->
             val m=s.metrics
-            "+${(s.time-start)/1000}s RX ${m.receivedVideoBytes ?: "n/d"} B | decode ${m.decodedFrames ?: "n/d"} quadros | " +
-                "${m.width ?: "?"}x${m.height ?: "?"} | buffer ${m.jitterBufferMs?.toInt() ?: "?"} ms | " +
-                "alvo ${m.jitterBufferTargetMs?.toInt() ?: "?"} ms | mínimo rede ${m.jitterBufferMinimumMs?.toInt() ?: "?"} ms | " +
-                "perda ${m.lostPackets ?: "?"} | ${m.decoder ?: "decoder n/d"}"
+            UiText.join("+${(s.time-start)/1000}s RX ${m.receivedVideoBytes ?: "n/d"} B | decode ${m.decodedFrames ?: "n/d"} ${UiText.text("quadros")} | ","${m.width ?: "?"}x${m.height ?: "?"} | buffer ${m.jitterBufferMs?.toInt() ?: "?"} ms | ",UiText.text("alvo {0} ms | mínimo rede {1} ms | ",UiText.nested(m.jitterBufferTargetMs?.toInt() ?: "?"),UiText.nested(m.jitterBufferMinimumMs?.toInt() ?: "?")),"${UiText.text("perda")} ${m.lostPackets ?: "?"} | ${m.decoder ?: "decoder n/d"}")
         }
     }
 }

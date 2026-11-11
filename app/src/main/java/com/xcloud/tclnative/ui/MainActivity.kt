@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.ui
 
+import com.xcloud.tclnative.i18n.UiText
+
 import com.xcloud.tclnative.settings.*
 import com.xcloud.tclnative.webrtc.*
 import android.app.Activity
@@ -159,6 +161,7 @@ open class MainActivity : Activity() {
     private var gameMenuDialog: Dialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        com.xcloud.tclnative.i18n.UiText.install(this)
         com.xcloud.tclnative.ui.dashboard.DashboardTheme.install(this)
         super.onCreate(savedInstanceState)
         volumeControlStream=android.media.AudioManager.STREAM_MUSIC
@@ -199,8 +202,8 @@ open class MainActivity : Activity() {
 
         val androidVer = Build.VERSION.RELEASE
         val socModel = Build.HARDWARE
-        hudTextView = TextView(this).apply {
-            text = "xCLOUD [Android $androidVer | SoC: $socModel] | Aguardando sessão"
+        hudTextView = com.xcloud.tclnative.i18n.LocalizedTextView(this).apply {
+            text = UiText.text("xCLOUD [Android {0} | SoC: {1}] | Aguardando sessão",UiText.nested(androidVer),UiText.nested(socModel))
             setTextColor(Color.GREEN)
             textSize = 12f
             setBackgroundColor(Color.argb(190, 0, 0, 0))
@@ -237,7 +240,7 @@ open class MainActivity : Activity() {
         queuePanel = GameLoadingView(this) { cancelPlayback() }
         rootLayout.addView(queuePanel, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
-        statsView = TextView(this).apply {
+        statsView = com.xcloud.tclnative.i18n.LocalizedTextView(this).apply {
             textSize = 12f
             typeface = android.graphics.Typeface.MONOSPACE
             setTextColor(Color.WHITE)
@@ -281,7 +284,7 @@ open class MainActivity : Activity() {
             connectToXboxCloud(savedTicket)
         } else {
             renderLoginMenu()
-            if(!savedTicket.isNullOrEmpty()) loginView?.showError("Atualize seu login pelo QR Code para conectar os jogos.")
+            if(!savedTicket.isNullOrEmpty()) loginView?.showError(UiText.text("Atualize seu login pelo QR Code para conectar os jogos."))
         }
     }
 
@@ -291,7 +294,7 @@ open class MainActivity : Activity() {
             setIntent(intent)
             lastShortcutRequest=intent.getStringExtra("shortcut_request")
             if(transitionPanel.visibility==View.VISIBLE && !transitionPanel.exiting) {
-                transitionPanel.showStartup(pendingLaunch.titleId?.let { GameTitle(it,"Seu jogo") },"Preparando seu jogo…")
+                transitionPanel.showStartup(pendingLaunch.titleId?.let { GameTitle(it,UiText.text("Seu jogo")) },UiText.text("Preparando seu jogo…"))
                 loadStartupArtwork()
             }
             launchPendingShortcut()
@@ -311,7 +314,7 @@ open class MainActivity : Activity() {
         if (pendingLaunch.titleId == null) return false
         val game = pendingLaunch.consume(currentGames)
         if (game == null) {
-            ConsoleDialogs.message(this,"Atalho indisponível","Este jogo não está disponível no catálogo desta conta. Atualize o catálogo nas configurações.")
+            ConsoleDialogs.message(this,UiText.text("Atalho indisponível"),UiText.text("Este jogo não está disponível no catálogo desta conta. Atualize o catálogo nas configurações."))
         } else if (activeGame?.titleId != game.titleId || gameJob?.isActive != true) {
             launchCloudGame(signaling,game)
             return true
@@ -368,8 +371,8 @@ open class MainActivity : Activity() {
         loginView?.close(); loginView=null
         controlPanel.removeAllViews(); controlPanel.visibility=View.GONE
         val id=pendingLaunch.titleId
-        transitionPanel.showStartup(id?.let { GameTitle(it,"Seu jogo") },
-            if(id!=null) "Preparando seu jogo…" else "Restaurando sua sessão…")
+        transitionPanel.showStartup(id?.let { GameTitle(it,UiText.text("Seu jogo")) },
+            if(id!=null) UiText.text("Preparando seu jogo…") else UiText.text("Restaurando sua sessão…"))
         hudTextView.visibility=View.GONE
         loadStartupArtwork()
     }
@@ -389,10 +392,10 @@ open class MainActivity : Activity() {
     private fun accountFailure(error: Throwable, retry: () -> Unit) {
         if(error is com.xcloud.tclnative.auth.AuthenticationRequiredException) {
             authenticator.clearSession(); renderLoginMenu()
-            loginView?.showError("Sua sessão precisa ser renovada. Entre pelo QR Code para continuar.")
-        } else if(loginView!=null) loginView?.showError("Não foi possível conectar: ${error.message}")
-        else ConsoleDialogs.message(this,"Conexão não concluída","Não foi possível restaurar a conexão agora. Seu login salvo foi preservado.",
-            listOf(ConsoleAction("Tentar novamente",retry),ConsoleAction("Entrar novamente") { renderLoginMenu() }))
+            loginView?.showError(UiText.text("Sua sessão precisa ser renovada. Entre pelo QR Code para continuar."))
+        } else if(loginView!=null) loginView?.showError(UiText.text("Não foi possível conectar: {0}",UiText.nested(error.message)))
+        else ConsoleDialogs.message(this,UiText.text("Conexão não concluída"),UiText.text("Não foi possível restaurar a conexão agora. Seu login salvo foi preservado."),
+            listOf(ConsoleAction(UiText.text("Tentar novamente"),retry),ConsoleAction(UiText.text("Entrar novamente")) { renderLoginMenu() }))
     }
 
     private fun startQrCodeLoginFlow() {
@@ -407,10 +410,10 @@ open class MainActivity : Activity() {
                 authenticator.pollForDeviceCodeLogin(info).onSuccess { ticket ->
                     if (loginView === view) connectToXboxCloud(ticket)
                 }.onFailure { error ->
-                    if (loginView === view) view.showError("Não foi possível concluir o login. ${error.message.orEmpty()}")
+                    if (loginView === view) view.showError(UiText.text("Não foi possível concluir o login. {0}",UiText.nested(error.message.orEmpty())))
                 }
             }.onFailure { error ->
-                if (loginView === view) view.showError("Não foi possível gerar o QR Code. ${error.message.orEmpty()}")
+                if (loginView === view) view.showError(UiText.text("Não foi possível gerar o QR Code. {0}",UiText.nested(error.message.orEmpty())))
             }
         }
     }
@@ -418,7 +421,7 @@ open class MainActivity : Activity() {
     private fun connectToXboxCloud(rpsTicket: String) {
         accountJob?.cancel()
         val view = loginView
-        accountProgress("Conectando sua conta ao Xbox…")
+        accountProgress(UiText.text("Conectando sua conta ao Xbox…"))
         accountJob = mainScope.launch {
             authenticator.authenticateToXCloud(rpsTicket).onSuccess { session ->
                 try {
@@ -430,7 +433,7 @@ open class MainActivity : Activity() {
                 }
                 if (loginView !== view) return@launch
                 currentSession=session
-                accountProgress(if(pendingLaunch.titleId!=null) "Preparando o jogo do atalho…" else "Conta conectada. Carregando seu catálogo…")
+                accountProgress(if(pendingLaunch.titleId!=null) UiText.text("Preparando o jogo do atalho…") else UiText.text("Conta conectada. Carregando seu catálogo…"))
                 renderGameDashboard(session)
             }.onFailure { error ->
                 if (loginView === view) accountFailure(error) { connectToXboxCloud(rpsTicket) }
@@ -439,9 +442,9 @@ open class MainActivity : Activity() {
     }
 
     private fun showExitDialog() {
-        ConsoleDialogs.message(this,"Sair do aplicativo?",
-            "Seu login e seus favoritos continuarão salvos neste aparelho.", listOf(
-                ConsoleAction("Continuar") {}, ConsoleAction("Sair") { finish() }))
+        ConsoleDialogs.message(this,UiText.text("Sair do aplicativo?"),
+            UiText.text("Seu login e seus favoritos continuarão salvos neste aparelho."), listOf(
+                ConsoleAction(UiText.text("Continuar")) {}, ConsoleAction(UiText.text("Sair")) { finish() }))
     }
 
     private fun renderGameDashboard(session: XCloudSession, validatedGames: List<GameTitle>? = null) {
@@ -542,7 +545,7 @@ open class MainActivity : Activity() {
         val view=dashboard ?: return
         val generation=playbackGeneration
         galleryLaunchJob?.cancel()
-        Toast.makeText(this,"Verificando disponibilidade do jogo no Xbox Cloud…",Toast.LENGTH_SHORT).show()
+        Toast.makeText(this,UiText.text("Verificando disponibilidade do jogo no Xbox Cloud…"),Toast.LENGTH_SHORT).show()
         galleryLaunchJob=mainScope.launch {
             try {
                 val known=currentGames
@@ -550,8 +553,8 @@ open class MainActivity : Activity() {
                     ?: signaling.resolveGalleryProduct(product.productId)
                 if(dashboard!==view || currentSignaling!==signaling || generation!=playbackGeneration || controlPanel.visibility!=View.VISIBLE) return@launch
                 if(resolved==null) {
-                    ConsoleDialogs.message(this@MainActivity,"Vínculo do jogo não confirmado",
-                        "Não foi possível associar esta edição a um título jogável do catálogo autenticado. Isso não confirma falta de acesso na sua conta/região. Atualize o catálogo e tente novamente. Produto: ${product.productId}.")
+                    ConsoleDialogs.message(this@MainActivity,UiText.text("Vínculo do jogo não confirmado"),
+                        UiText.text("Não foi possível associar esta edição a um título jogável do catálogo autenticado. Isso não confirma falta de acesso na sua conta/região. Atualize o catálogo e tente novamente. Produto: {0}.",UiText.nested(product.productId)))
                     return@launch
                 }
                 val native=currentGames.firstOrNull { it.titleId.equals(resolved.titleId,true) } ?: resolved
@@ -563,8 +566,8 @@ open class MainActivity : Activity() {
             } catch(cancelled: CancellationException) { throw cancelled }
             catch(_: Exception) {
                 if(dashboard===view && currentSignaling===signaling)
-                    ConsoleDialogs.message(this@MainActivity,"Disponibilidade não confirmada",
-                        "Não foi possível verificar o jogo. Tente novamente ou atualize o catálogo. Jogos comprados exigem a licença digital e as condições do serviço Xbox.")
+                    ConsoleDialogs.message(this@MainActivity,UiText.text("Disponibilidade não confirmada"),
+                        UiText.text("Não foi possível verificar o jogo. Tente novamente ou atualize o catálogo. Jogos comprados exigem a licença digital e as condições do serviço Xbox."))
             }
         }
     }
@@ -609,19 +612,19 @@ open class MainActivity : Activity() {
     private fun showSessionOptionsMenu(session: XCloudSession,onBack: () -> Unit={ if(webrtcClient!=null) showGameMenu() else showSettings(session,SettingsPage.NETWORK) }) {
         val game=activeGame ?: dashboard?.selectedGame
         val store=SessionOptionsStore(this,session.libraryAccountId)
-        val actions=mutableListOf(ConsoleAction("Padrão para todas as partidas") {
+        val actions=mutableListOf(ConsoleAction(UiText.text("Padrão para todas as partidas")) {
             com.xcloud.tclnative.ui.dashboard.SessionOptionsPanel(this,store,session.regions,back={ showSessionOptionsMenu(session,onBack) }).show()
         })
-        if(game!=null) actions.add(ConsoleAction("Este jogo: ${game.name}") {
+        if(game!=null) actions.add(ConsoleAction(UiText.text("Este jogo: {0}",UiText.nested(game.name))) {
             com.xcloud.tclnative.ui.dashboard.SessionOptionsPanel(this,store,session.regions,game.titleId,game.name) {
                 showSessionOptionsMenu(session,onBack)
             }.show()
         })
-        ConsoleDialogs.menu(this,"Opções das partidas",actions,onBack=onBack)
+        ConsoleDialogs.menu(this,UiText.text("Opções das partidas"),actions,onBack=onBack)
     }
     private fun showLatestReport(onBack: (() -> Unit)?=null) {
         val report=lastSessionReport ?: reportStore.read()
-        if(report==null) ConsoleDialogs.message(this,"Último diagnóstico","Ainda não há uma partida com vídeo para mostrar.",listOf(ConsoleAction("Voltar") { onBack?.invoke() }),onCancel=onBack)
+        if(report==null) ConsoleDialogs.message(this,UiText.text("Último diagnóstico"),UiText.text("Ainda não há uma partida com vídeo para mostrar."),listOf(ConsoleAction(UiText.text("Voltar")) { onBack?.invoke() }),onCancel=onBack)
         else postSessionDialog=SessionReportPanel.show(this,report,onBack=onBack)
     }
     private suspend fun finishSessionReport(tracker: SessionReportTracker) {
@@ -658,8 +661,8 @@ open class MainActivity : Activity() {
                 if(requestVisibility && channel!=null) requestHomeChannel(channel)
             } catch(cancelled: CancellationException) { throw cancelled }
             catch(error: Exception) {
-                if(requestVisibility) ConsoleDialogs.message(this@MainActivity,"Canal da tela inicial",
-                    "A TV não autorizou o canal de favoritos. Use Instalar atalho na TV para criar entradas individuais dos jogos.")
+                if(requestVisibility) ConsoleDialogs.message(this@MainActivity,UiText.text("Canal da tela inicial"),
+                    UiText.text("A TV não autorizou o canal de favoritos. Use Instalar atalho na TV para criar entradas individuais dos jogos."))
             }
         }
     }
@@ -676,40 +679,40 @@ open class MainActivity : Activity() {
         mainScope.launch {
             val visible=withContext(Dispatchers.IO) { runCatching { homeShortcuts.isBrowsable(channel) }.getOrDefault(false) }
             pendingHomeChannel=null
-            ConsoleDialogs.message(this@MainActivity,"Canal de favoritos",if(visible)
-                "O sistema autorizou o canal Favoritos xCLOUD. Sua exibição depende da tela inicial da TV. Para criar um aplicativo de acesso direto, use Instalar atalho na TV."
-                else "O canal não ficou visível na tela inicial. Use Instalar atalho na TV: o jogo aparecerá em Aplicativos, inclusive no Google TV.")
+            ConsoleDialogs.message(this@MainActivity,UiText.text("Canal de favoritos"),if(visible)
+                UiText.text("O sistema autorizou o canal Favoritos xCLOUD. Sua exibição depende da tela inicial da TV. Para criar um aplicativo de acesso direto, use Instalar atalho na TV.")
+                else UiText.text("O canal não ficou visível na tela inicial. Use Instalar atalho na TV: o jogo aparecerá em Aplicativos, inclusive no Google TV."))
         }
     }
     private fun showHomeShortcuts(onBack: (() -> Unit)?=null) {
         val favorites=currentGames.filter { gameLibrary?.isFavorite(it.titleId)==true }
         val actions=mutableListOf<ConsoleAction>()
         favorites.forEach { game ->
-            actions+=ConsoleAction("Instalar atalho na TV: ${game.name}") { createInstalledShortcut(game) }
+            actions+=ConsoleAction(UiText.text("Instalar atalho na TV: {0}",UiText.nested(game.name))) { createInstalledShortcut(game) }
         }
         if(homeShortcuts.supportsChannel) {
-            actions+=ConsoleAction("Solicitar canal de favoritos na tela inicial") {
-                if(favorites.isEmpty()) ConsoleDialogs.message(this,"Seus favoritos","Adicione jogos com Y antes de criar os atalhos.")
+            actions+=ConsoleAction(UiText.text("Solicitar canal de favoritos na tela inicial")) {
+                if(favorites.isEmpty()) ConsoleDialogs.message(this,UiText.text("Seus favoritos"),UiText.text("Adicione jogos com Y antes de criar os atalhos."))
                 else { homeShortcuts.enable(true); syncHomeShortcuts(requestVisibility=true) }
             }
-            if(homeShortcuts.enabled) actions+=ConsoleAction("Remover canal de favoritos") {
+            if(homeShortcuts.enabled) actions+=ConsoleAction(UiText.text("Remover canal de favoritos")) {
                 homeShortcuts.enable(false); homeJobs.cancel()
                 homeJobs.schedule(true) { withContext(Dispatchers.IO) { runCatching { homeShortcuts.sync(emptyList()) } } }
             }
         }
         if(homeShortcuts.supportsPin) favorites.forEach { game ->
-            actions+=ConsoleAction("Pedir atalho ao launcher: ${game.name}") {
+            actions+=ConsoleAction(UiText.text("Pedir atalho ao launcher: {0}",UiText.nested(game.name))) {
                 val snapshot=currentGames
                 mainScope.launch(Dispatchers.IO) { catalogCache.save(snapshot) }
                 val image=ImageView(this)
                 shortcutPosters.load(image,game.tileUrl ?: game.posterUrl,192,192,notifyPlaceholder=false) {
                     val accepted=homeShortcuts.pin(game,(image.drawable as? BitmapDrawable)?.bitmap)
-                    Toast.makeText(this,if(accepted) "Pedido enviado ao launcher. Confirme na tela inicial." else "O launcher não aceitou o pedido.",Toast.LENGTH_LONG).show()
+                    Toast.makeText(this,if(accepted) UiText.text("Pedido enviado ao launcher. Confirme na tela inicial.") else UiText.text("O launcher não aceitou o pedido."),Toast.LENGTH_LONG).show()
                 }
             }
         }
-        if(actions.isEmpty()) ConsoleDialogs.message(this,"Atalhos dos favoritos","Adicione jogos aos favoritos com Y para criar seus atalhos.",listOf(ConsoleAction("Voltar") { onBack?.invoke() }),onCancel=onBack)
-        else ConsoleDialogs.menu(this,"Atalhos dos favoritos",actions,onBack=onBack ?: {})
+        if(actions.isEmpty()) ConsoleDialogs.message(this,UiText.text("Atalhos dos favoritos"),UiText.text("Adicione jogos aos favoritos com Y para criar seus atalhos."),listOf(ConsoleAction(UiText.text("Voltar")) { onBack?.invoke() }),onCancel=onBack)
+        else ConsoleDialogs.menu(this,UiText.text("Atalhos dos favoritos"),actions,onBack=onBack ?: {})
     }
     private fun createInstalledShortcut(game: GameTitle) {
         if(shortcutInstallJob?.isActive==true) return
@@ -717,8 +720,8 @@ open class MainActivity : Activity() {
             val snapshot=currentGames
             withContext(Dispatchers.IO) { catalogCache.save(snapshot) }
             val image=ImageView(this@MainActivity)
-            val waiting=ConsoleDialogs.message(this@MainActivity,"Criando atalho",game.name,
-                listOf(ConsoleAction("Cancelar") { shortcutInstallJob?.cancel() }),onCancel={ shortcutInstallJob?.cancel() })
+            val waiting=ConsoleDialogs.message(this@MainActivity,UiText.text("Criando atalho"),game.name,
+                listOf(ConsoleAction(UiText.text("Cancelar")) { shortcutInstallJob?.cancel() }),onCancel={ shortcutInstallJob?.cancel() })
             try {
                 val artwork=CompletableDeferred<android.graphics.Bitmap?>()
                 shortcutPosters.load(image,game.tileUrl ?: game.posterUrl,256,256,notifyPlaceholder=false) {
@@ -728,12 +731,12 @@ open class MainActivity : Activity() {
                 val apk=withContext(Dispatchers.IO) { com.xcloud.tclnative.home.GameShortcutInstaller(this@MainActivity).create(game,bitmap) }
                 waiting.dismiss()
                 pendingShortcutApk=apk
-                ConsoleDialogs.message(this@MainActivity,"Instalar atalho: ${game.name}",
-                    "Será instalado um pequeno aplicativo que abre este jogo no xCLOUD. Depois, procure o jogo em Aplicativos. No Google TV, adicione-o à fileira de apps favoritos pela própria tela inicial.",
-                    listOf(ConsoleAction("Instalar atalho") { installPendingShortcut() },ConsoleAction("Cancelar") { pendingShortcutApk=null }),
+                ConsoleDialogs.message(this@MainActivity,UiText.text("Instalar atalho: {0}",UiText.nested(game.name)),
+                    UiText.text("Será instalado um pequeno aplicativo que abre este jogo no xCLOUD. Depois, procure o jogo em Aplicativos. No Google TV, adicione-o à fileira de apps favoritos pela própria tela inicial."),
+                    listOf(ConsoleAction(UiText.text("Instalar atalho")) { installPendingShortcut() },ConsoleAction(UiText.text("Cancelar")) { pendingShortcutApk=null }),
                     onCancel={ pendingShortcutApk=null })
             } catch(cancelled: CancellationException) { throw cancelled }
-            catch(error: Exception) { showCopyableErrorDialog("Atalho do jogo",error.message ?: "Não foi possível criar o atalho neste aparelho.") }
+            catch(error: Exception) { showCopyableErrorDialog(UiText.text("Atalho do jogo"),error.message ?: UiText.text("Não foi possível criar o atalho neste aparelho.")) }
             finally { shortcutPosters.cancel(image); waiting.dismiss() }
         }
     }
@@ -742,20 +745,20 @@ open class MainActivity : Activity() {
         if(Build.VERSION.SDK_INT>=26 && !packageManager.canRequestPackageInstalls()) {
             try { startActivityForResult(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                 Uri.parse("package:$packageName")),REQUEST_SHORTCUT_INSTALL_PERMISSION) }
-            catch(_: android.content.ActivityNotFoundException) { ConsoleDialogs.message(this,"Permitir instalação","Nas configurações da TV, permita que o xCLOUD instale os atalhos dos jogos.") }
+            catch(_: android.content.ActivityNotFoundException) { ConsoleDialogs.message(this,UiText.text("Permitir instalação"),UiText.text("Nas configurações da TV, permita que o xCLOUD instale os atalhos dos jogos.")) }
             return
         }
         val uri=androidx.core.content.FileProvider.getUriForFile(this,"$packageName.shortcuts",apk)
         try { startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri,"application/vnd.android.package-archive")
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)) }
-        catch(_: android.content.ActivityNotFoundException) { ConsoleDialogs.message(this,"Instalador indisponível","A TV não disponibilizou um instalador de aplicativos para o atalho.") }
+        catch(_: android.content.ActivityNotFoundException) { ConsoleDialogs.message(this,UiText.text("Instalador indisponível"),UiText.text("A TV não disponibilizou um instalador de aplicativos para o atalho.")) }
     }
     override fun onActivityResult(requestCode: Int,resultCode: Int,data: Intent?) {
         super.onActivityResult(requestCode,resultCode,data)
         if(requestCode==REQUEST_HOME_CHANNEL) pendingHomeChannel?.let(::verifyHomeChannel)
         if(requestCode==REQUEST_SHORTCUT_INSTALL_PERMISSION) {
             if(Build.VERSION.SDK_INT<26 || packageManager.canRequestPackageInstalls()) installPendingShortcut()
-            else ConsoleDialogs.message(this,"Instalação não autorizada","O atalho foi criado, mas a permissão de instalação não foi concedida pela TV.")
+            else ConsoleDialogs.message(this,UiText.text("Instalação não autorizada"),UiText.text("O atalho foi criado, mas a permissão de instalação não foi concedida pela TV."))
         }
     }
     private fun applyPlaybackSettings(settings: PlaybackSettings) {
@@ -770,15 +773,15 @@ open class MainActivity : Activity() {
         webrtcClient?.setOutputGain(settings.audioGain)
     }
     private fun showRumbleDiagnostics(back: () -> Unit) {
-        val actions=mutableListOf(ConsoleAction("Testar via Android") { rumble.test();showRumbleDiagnostics(back) })
+        val actions=mutableListOf(ConsoleAction(UiText.text("Testar via Android")) { rumble.test();showRumbleDiagnostics(back) })
         usbRumble.candidates().forEach { candidate ->
-            actions.add(ConsoleAction("Testar USB/XInput — ${candidate.label}") {
+            actions.add(ConsoleAction(UiText.text("Testar USB/XInput — {0}",UiText.nested(candidate.label))) {
                 usbRumble.enableAndTest(candidate) { if(!isFinishing && !isDestroyed) showRumbleDiagnostics(back) }
             })
         }
-        actions.add(ConsoleAction("Desativar teste USB") { usbRumble.disable();showRumbleDiagnostics(back) })
-        actions.add(ConsoleAction("Voltar",back))
-        ConsoleDialogs.message(this,"Vibração do controle",rumble.describe()+"\n\n"+usbRumble.describe(),actions,onCancel=back)
+        actions.add(ConsoleAction(UiText.text("Desativar teste USB")) { usbRumble.disable();showRumbleDiagnostics(back) })
+        actions.add(ConsoleAction(UiText.text("Voltar"),back))
+        ConsoleDialogs.message(this,UiText.text("Vibração do controle"),rumble.describe()+"\n\n"+usbRumble.describe(),actions,onCancel=back)
     }
     private fun showGameMenu() {
         if (transitionPanel.visibility==View.VISIBLE || gameMenuDialog?.isShowing == true || webrtcClient == null || queuePanel.visibility == View.VISIBLE) return
@@ -787,12 +790,13 @@ open class MainActivity : Activity() {
             image={ PlaybackSettingsPanel(this,settingsStore,::applyPlaybackSettings,{}, {}, {}).showImageAdjustments(onBack={ showGameMenu() }) },
             aspect={ PlaybackSettingsPanel(this,settingsStore,::applyPlaybackSettings,{}, {}, {}).chooseAspect(onBack={ showGameMenu() }) },
             statistics={ cycleStatistics() },
-            diagnostics={ showCopyableErrorDialog("Áudio e vídeo","${Build.MANUFACTURER} ${Build.MODEL} | Android ${Build.VERSION.RELEASE} | ${Build.HARDWARE}\n${surfaceRenderer.diagnostics()}\n${currentSignaling?.profileDiagnostics() ?: ""}\n${webrtcClient?.audioDiagnostics() ?: ""}\n${streamHistory.report()}") },
+            diagnostics={ showCopyableErrorDialog(UiText.text("Áudio e vídeo"),UiText.text("{0} {1} | Android {2} | {3}\n{4}\n{5}\n{6}\n{7}",UiText.nested(Build.MANUFACTURER),UiText.nested(Build.MODEL),UiText.nested(Build.VERSION.RELEASE),UiText.nested(Build.HARDWARE),UiText.nested(surfaceRenderer.diagnostics()),UiText.nested(currentSignaling?.profileDiagnostics() ?: ""),UiText.nested(webrtcClient?.audioDiagnostics() ?: ""),UiText.nested(streamHistory.report()))) },
             disconnect={ cancelPlayback() },
             hud={ showGameHudSettings() },
             sessionOptions={ currentSession?.let(::showSessionOptionsMenu) },
             audio={ PlaybackSettingsPanel(this,settingsStore,::applyPlaybackSettings,{}, {}, {}).showAudio { showGameMenu() } },
-            microphone=::toggleMicrophone,microphoneLabel=webrtcClient?.microphoneLabel() ?: "Ativar microfone",
+            language={ com.xcloud.tclnative.ui.dashboard.LanguageMenu.show(this) { showGameMenu() } },
+            microphone=::toggleMicrophone,microphoneLabel=webrtcClient?.microphoneLabel() ?: UiText.text("Ativar microfone"),
             controllerProfiles={ showControllerProfiles { showGameMenu() } },
             mouse=if(sessionDesktopMode==DesktopInputMode.OFF) null else ({ auxiliaryHandler.post { setDesktopCapture(!desktopCaptured) } })).also { dialog ->
                 dialog.setOnDismissListener { if(gameMenuDialog===dialog) gameMenuDialog=null }
@@ -801,7 +805,7 @@ open class MainActivity : Activity() {
     private fun enableGameHud(): Boolean {
         val game=activeGame ?: return false
         if(currentTouchMode==TouchMode.NATIVE && webrtcClient?.setNativeTouchEnabled(false)!=true) {
-            Toast.makeText(this,"Aguarde a conexão dos controles para ativar o HUD.",Toast.LENGTH_LONG).show()
+            Toast.makeText(this,UiText.text("Aguarde a conexão dos controles para ativar o HUD."),Toast.LENGTH_LONG).show()
             return false
         }
         if(currentTouchMode!=TouchMode.VIRTUAL) {
@@ -826,7 +830,7 @@ open class MainActivity : Activity() {
     private fun openAccountPage(url: String) {
         try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
         catch (_: android.content.ActivityNotFoundException) {
-            ConsoleDialogs.message(this,"Acesse pelo celular",url)
+            ConsoleDialogs.message(this,UiText.text("Acesse pelo celular"),url)
         }
     }
 
@@ -937,7 +941,7 @@ open class MainActivity : Activity() {
         sessionSettings=settings
         val sessionOptions=currentSession?.let { SessionOptionsStore(this,it.libraryAccountId).read(titleId) } ?: SessionOptions()
         sessionDesktopMode=if(settings.desktopInput==DesktopInputMode.NATIVE && !DesktopKeys.nativeSupported(game.supportedInputTypes)) {
-            Toast.makeText(this,"Este jogo não anunciou mouse e teclado nativos. Use emulação ou controle.",Toast.LENGTH_LONG).show()
+            Toast.makeText(this,UiText.text("Este jogo não anunciou mouse e teclado nativos. Use emulação ou controle."),Toast.LENGTH_LONG).show()
             DesktopInputMode.OFF
         } else settings.desktopInput
         joystickDispatch.request(false)
@@ -948,8 +952,8 @@ open class MainActivity : Activity() {
         touchView.beginSession()
         touchView.immediateNativeDispatch=settings.videoMode.lowLatency
         postSessionDialog?.dismiss()
-        val tracker=SessionReportTracker(gameName,"${Build.MANUFACTURER} ${Build.MODEL} • Android ${Build.VERSION.RELEASE}",
-            "${settings.resolution.label} • ${settings.videoMode.label} • ${settings.videoCodec.label}",if(compatible) 30 else 60)
+        val tracker=SessionReportTracker(gameName,UiText.text("{0} {1} • Android {2}",UiText.nested(Build.MANUFACTURER),UiText.nested(Build.MODEL),UiText.nested(Build.VERSION.RELEASE)),
+            UiText.text("{0} • {1} • {2}",UiText.nested(settings.resolution.label),UiText.nested(settings.videoMode.label),UiText.nested(settings.videoCodec.label)),if(compatible) 30 else 60)
         tracker.setVisible(activityVisible); reportTracker=tracker
         streamHistory.clear()
         catalogWork.pause()
@@ -965,7 +969,7 @@ open class MainActivity : Activity() {
         val generation = ++playbackGeneration
         controlPanel.visibility = View.GONE
         statsView.visibility = View.GONE
-        statsView.text = "Estatísticas: aguardando amostras WebRTC..."
+        statsView.text = UiText.text("Estatísticas: aguardando amostras WebRTC...")
         hudTextView.visibility = View.GONE
         beginLoading(game)
         hudTextView.text = "PLAY: Solicitando sessão para [$gameName]. Voltar cancela."
@@ -1000,7 +1004,7 @@ open class MainActivity : Activity() {
                     resumeAuxiliaryInput()
                     hudTextView.visibility = View.GONE
                     gameLibrary?.recordPlayed(titleId)
-                    hudTextView.text = "Vídeo nativo ativo [$gameName]"
+                    hudTextView.text = UiText.text("Vídeo nativo ativo [{0}]",UiText.nested(gameName))
                     hudTextView.setTextColor(Color.GREEN)
                     statsView.visibility = if (statistics.mode != 0) View.VISIBLE else View.GONE
                 }
@@ -1050,9 +1054,7 @@ open class MainActivity : Activity() {
                     microphoneAllowed=settings.microphone,outputGain=settings.audioGain).also { allocatedRtc=it } }
                 webrtcClient = rtc
                 val appVersion=packageManager.getPackageInfo(packageName,0).versionName ?: "n/d"
-                tracker.inputDetails = { "xCLOUD $appVersion • Entrada inicial: ${touchMode.label} • ${rtc.inputDiagnostics()}"+
-                    (when(touchMode) { TouchMode.NATIVE -> "\n${touchView.nativeDiagnostics()}";TouchMode.VIRTUAL -> "\n${touchView.hudDiagnostics()}";else -> "" })+
-                    "\n${joystickDispatch.diagnostics()}\n${signaling.profileDiagnostics()}\n${signaling.keepAliveDiagnostics()}\n${surfaceRenderer.diagnostics()}\n${playbackDisplay.diagnostics(window.decorView.display)}\n${rtc.audioDiagnostics()}\n${rtc.latencyDiagnostics()}\n${rtc.iceDiagnostics()}\n${rtc.codecDiagnostics()}\n${rumble.diagnostics()}\n${gyro.status} | Mouse/teclado: ${sessionDesktopMode.label} | Entrada MKB ativa: $desktopCaptured | Captura Android: ${if(Build.VERSION.SDK_INT>=26) window.decorView.hasPointerCapture() else false}" }
+                tracker.inputDetails = { UiText.join(UiText.text("xCLOUD {0} • Entrada inicial: {1} • {2}",UiText.nested(appVersion),UiText.nested(touchMode.label),UiText.nested(rtc.inputDiagnostics())),(when(touchMode) { TouchMode.NATIVE -> "\n${touchView.nativeDiagnostics()}";TouchMode.VIRTUAL -> "\n${touchView.hudDiagnostics()}";else -> "" }),UiText.text("\n{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10} | Mouse/teclado: {11} | Entrada MKB ativa: {12} | Captura Android: {13}",UiText.nested(joystickDispatch.diagnostics()),UiText.nested(signaling.profileDiagnostics()),UiText.nested(signaling.keepAliveDiagnostics()),UiText.nested(surfaceRenderer.diagnostics()),UiText.nested(playbackDisplay.diagnostics(window.decorView.display)),UiText.nested(rtc.audioDiagnostics()),UiText.nested(rtc.latencyDiagnostics()),UiText.nested(rtc.iceDiagnostics()),UiText.nested(rtc.codecDiagnostics()),UiText.nested(rumble.diagnostics()),UiText.nested(gyro.status),UiText.nested(sessionDesktopMode.label),UiText.nested(desktopCaptured),UiText.nested(if(Build.VERSION.SDK_INT>=26) window.decorView.hasPointerCapture() else false))) }
                 surfaceRenderer.displayDimensions()?.let(rtc::updateDisplayDimensions)
                 if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
                 signaling.startAndConnectWebRtcSession(titleId, rtc, resolution = settings.resolution, nativeTouch=touchMode==TouchMode.NATIVE,options=sessionOptions,microphone=settings.microphone, onQueueStatus = { status -> runOnUiThread {
@@ -1091,7 +1093,7 @@ open class MainActivity : Activity() {
                             recovering = false
                             hudTextView.visibility = View.GONE
                             videoRecoveryDialog?.dismiss()
-                            hudTextView.text = "Vídeo nativo ativo [$gameName]"
+                            hudTextView.text = UiText.text("Vídeo nativo ativo [{0}]",UiText.nested(gameName))
                             hudTextView.setTextColor(Color.GREEN)
                         }
                         lastToken = health.presentedToken
@@ -1100,29 +1102,29 @@ open class MainActivity : Activity() {
                             VideoRecoveryAction.REQUEST_KEYFRAME -> {
                                 recovering = true
                                 hudTextView.visibility = View.VISIBLE
-                                hudTextView.text = "Vídeo sem novos quadros. Solicitando atualização da imagem…"
+                                hudTextView.text = UiText.text("Vídeo sem novos quadros. Solicitando atualização da imagem…")
                                 hudTextView.setTextColor(Color.YELLOW)
                                 rtc.requestVideoKeyframe()
                             }
                             VideoRecoveryAction.RESET_DECODER -> {
-                                hudTextView.text = "Recuperando vídeo: reiniciando decoder no próximo quadro-chave…"
+                                hudTextView.text = UiText.text("Recuperando vídeo: reiniciando decoder no próximo quadro-chave…")
                                 rtc.recoverVideoDecoder()
                             }
                             VideoRecoveryAction.REBUILD_SURFACE -> {
-                                hudTextView.text = "Recuperando vídeo: recriando superfície de exibição…"
+                                hudTextView.text = UiText.text("Recuperando vídeo: recriando superfície de exibição…")
                                 surfaceRenderer.rebuildSurface()
                                 rtc.requestVideoKeyframe()
                             }
                             VideoRecoveryAction.OFFER_RETRY -> {
-                                hudTextView.text = "O vídeo ainda não voltou. A sessão Xbox continua aberta."
+                                hudTextView.text = UiText.text("O vídeo ainda não voltou. A sessão Xbox continua aberta.")
                                 resetController()
-                                val dialog = ConsoleDialogs.message(this@MainActivity,"Imagem sem atualização",
-                                    "A imagem não voltou após 30 segundos. Recuperar o vídeo mantém a partida aberta. Voltar ao catálogo encerra a sessão.",
-                                    listOf(ConsoleAction("Recuperar vídeo") {
+                                val dialog = ConsoleDialogs.message(this@MainActivity,UiText.text("Imagem sem atualização"),
+                                    UiText.text("A imagem não voltou após 30 segundos. Recuperar o vídeo mantém a partida aberta. Voltar ao catálogo encerra a sessão."),
+                                    listOf(ConsoleAction(UiText.text("Recuperar vídeo")) {
                                         recovery.retry(android.os.SystemClock.elapsedRealtime())
                                         if (surfaceRenderer.probeVideoHealth().deliveredRecently) surfaceRenderer.rebuildSurface()
                                         rtc.recoverVideoDecoder()
-                                    }, ConsoleAction("Voltar ao catálogo") { cancelPlayback() }),
+                                    }, ConsoleAction(UiText.text("Voltar ao catálogo")) { cancelPlayback() }),
                                     onCancel = { cancelPlayback() })
                                 videoRecoveryDialog = dialog
                                 dialog.setOnDismissListener { if (videoRecoveryDialog === dialog) videoRecoveryDialog = null }
@@ -1136,7 +1138,7 @@ open class MainActivity : Activity() {
                 failed=true
                 tracker.recordFailure(error)
                 if (generation == playbackGeneration && (!firstFrame.isCompleted || !settingsStore.read().sessionReport)) {
-                    val details = error.message ?: "Falha na sessão"
+                    val details = error.message ?: UiText.text("Falha na sessão")
                     hudTextView.text = details
                     hudTextView.setTextColor(Color.RED)
                     showCopyableErrorDialog(gameName, details)
@@ -1213,9 +1215,9 @@ open class MainActivity : Activity() {
     private fun toggleMicrophone() {
         val rtc=webrtcClient ?: return
         if(rtc.microphoneActive) { rtc.setMicrophoneMuted(true);return }
-        if(microphoneJob?.isActive==true) { Toast.makeText(this,"Negociando microfone…",Toast.LENGTH_SHORT).show();return }
+        if(microphoneJob?.isActive==true) { Toast.makeText(this,UiText.text("Negociando microfone…"),Toast.LENGTH_SHORT).show();return }
         if(!rtc.canUseMicrophone()) {
-            ConsoleDialogs.message(this,"Microfone",rtc.microphoneUnavailableReason())
+            ConsoleDialogs.message(this,UiText.text("Microfone"),rtc.microphoneUnavailableReason())
             return
         }
         if(androidx.core.content.ContextCompat.checkSelfPermission(this,android.Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED) {
@@ -1240,7 +1242,7 @@ open class MainActivity : Activity() {
                 withContext(NonCancellable) { rtc.rejectChat() };throw cancelled
             } catch(error: Exception) {
                 rtc.rejectChat()
-                if(generation==playbackGeneration) showCopyableErrorDialog("Microfone",error.message ?: "CHAT: não foi possível negociar o microfone")
+                if(generation==playbackGeneration) showCopyableErrorDialog(UiText.text("Microfone"),error.message ?: "CHAT: não foi possível negociar o microfone")
             }
         }
     }
@@ -1277,12 +1279,12 @@ open class MainActivity : Activity() {
     }
 
     private fun showCopyableErrorDialog(gameName: String, fullError: String) {
-        ConsoleDialogs.message(this,"Diagnóstico de sessão ($gameName)",fullError,listOf(
-            ConsoleAction("Copiar detalhes") {
+        ConsoleDialogs.message(this,UiText.text("Diagnóstico de sessão ({0})",UiText.nested(gameName)),fullError,listOf(
+            ConsoleAction(UiText.text("Copiar detalhes")) {
                 val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                clipboard.setPrimaryClip(ClipData.newPlainText("xCloud Error", fullError))
-                Toast.makeText(this,"Detalhes copiados!",Toast.LENGTH_LONG).show()
-            }, ConsoleAction("Fechar") {}))
+                clipboard.setPrimaryClip(ClipData.newPlainText(UiText.text("xCloud Error"), fullError))
+                Toast.makeText(this,UiText.text("Detalhes copiados!"),Toast.LENGTH_LONG).show()
+            }, ConsoleAction(UiText.text("Fechar")) {}))
     }
 
     private fun gameplayInputEnabled() = controlPanel.visibility == View.GONE &&

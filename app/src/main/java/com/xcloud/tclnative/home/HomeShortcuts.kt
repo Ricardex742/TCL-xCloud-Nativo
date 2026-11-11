@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.home
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
@@ -75,7 +77,7 @@ class HomeShortcuts(private val context: Context) {
                     context.packageManager.getLaunchIntentForPackage(context.packageName)?.toUri(Intent.URI_INTENT_SCHEME))
             }
             channel = resolver.insert(TvContract.Channels.CONTENT_URI, values)?.let(ContentUris::parseId)
-                ?: throw java.io.IOException("A TV não criou o canal de favoritos.")
+                ?: throw java.io.IOException(UiText.text("A TV não criou o canal de favoritos."))
             // A channel logo is required by Android TV launchers before browsing is enabled.
             resolver.openOutputStream(TvContract.buildChannelLogoUri(channel!!))?.use { output ->
                 context.resources.openRawResource(R.drawable.brand_logo).use { it.copyTo(output) }
@@ -90,7 +92,7 @@ class HomeShortcuts(private val context: Context) {
             val values = programValues(context, channelId, game, games.size - index)
             val row = existing.remove(game.titleId)
             if (row == null) {
-                checkNotNull(resolver.insert(TvContract.PreviewPrograms.CONTENT_URI, values)) { "A TV não criou o atalho do jogo." }
+                checkNotNull(resolver.insert(TvContract.PreviewPrograms.CONTENT_URI, values)) { UiText.text("A TV não criou o atalho do jogo.") }
             } else resolver.update(TvContract.buildPreviewProgramUri(row), values, null, null)
         }
         existing.values.forEach { resolver.delete(TvContract.buildPreviewProgramUri(it), null, null) }
@@ -105,7 +107,7 @@ class HomeShortcuts(private val context: Context) {
             put(TvContract.PreviewPrograms.COLUMN_INTERNAL_PROVIDER_ID, game.titleId)
             put(TvContract.PreviewPrograms.COLUMN_TYPE, TvContract.PreviewPrograms.TYPE_CLIP)
             put(TvContract.PreviewPrograms.COLUMN_TITLE, game.name)
-            put(TvContract.PreviewPrograms.COLUMN_SHORT_DESCRIPTION, "Jogar na nuvem com xCLOUD")
+            put(TvContract.PreviewPrograms.COLUMN_SHORT_DESCRIPTION, UiText.text("Jogar na nuvem com xCLOUD"))
             put(TvContract.PreviewPrograms.COLUMN_INTENT_URI, GameLaunchLink.intent(context, game.titleId).toUri(Intent.URI_INTENT_SCHEME))
             put(TvContract.PreviewPrograms.COLUMN_POSTER_ART_URI, game.posterUrl ?: game.tileUrl
                 ?: Uri.parse("android.resource://${context.packageName}/${R.drawable.brand_logo}").toString())

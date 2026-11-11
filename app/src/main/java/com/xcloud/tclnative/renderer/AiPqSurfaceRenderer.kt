@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.renderer
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import android.graphics.Color
 import android.view.Gravity
@@ -246,7 +248,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
             if(released || generation!=id || requestedBuffer!=target || !view.isAttachedToWindow || !view.holder.surface.isValid) return@Runnable
             val frame=view.holder.surfaceFrame
             if(frame.width()!=target.width || frame.height()!=target.height)
-                fallbackFsr("Surface não confirmou ${target.width}x${target.height}; mantendo escala padrão")
+                fallbackFsr(UiText.text("Surface não confirmou {0}x{1}; mantendo escala padrão",UiText.nested(target.width),UiText.nested(target.height)))
         }.also { postDelayed(it,2000) }
     }
     private fun fallbackFsr(reason: String) {
@@ -262,7 +264,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         val fresh=now>=sampledAtMs && now-sampledAtMs<=500
         val slow=fsrPerformance.observe(now,fsrDraws.get(),metrics,foreground && fresh) ?: return
         val rate=String.format(java.util.Locale.US,"%.1f",slow.drawsPerSecond)
-        fallbackFsr("proteção de fluidez: $rate desenhos FSR/s por ${slow.durationMs/1000}s; escala padrão nesta partida")
+        fallbackFsr(UiText.text("proteção de fluidez: {0} desenhos FSR/s por {1}s; escala padrão nesta partida",UiText.nested(rate),UiText.nested(slow.durationMs/1000)))
     }
     fun attachVideoTrack(track: VideoTrack) {
         val id = generation
@@ -319,21 +321,14 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         val layout=renderer?.let { "${it.width}x${it.height}" } ?: "n/d"
         val expected=VideoScalingPolicy.viewport(width,height,videoWidth,videoHeight,aspect)
         val minimalSupport=if(android.os.Build.VERSION.SDK_INT>=30) runCatching { display?.isMinimalPostProcessingSupported }.getOrNull() else null
-        val minimalLabel=when(minimalSupport) { true -> "sim";false -> "não";null -> "n/d" }
-        return "Surface $size → janela ${width}x$height | Saída Android: $output\n" +
-            "Layout do vídeo: $layout | Área calculada: ${expected.width}x${expected.height} | Quadro do renderer: ${videoWidth}x$videoHeight\n" +
-            "Escala da Surface: ${if(fsrEnabled) "renderer em resolução de saída para FSR" else if (nativeUpscaling) "HW solicitada" else "HW desativada"}; imagem ajustada à janela | Conteúdo ${if(compatibility) 30 else 60} FPS sinalizado à Surface: ${if (frameRateHintRequested) "sim" else "não confirmado"} | Pós-processamento mínimo: ${if (minimalPostProcessingRequested) "solicitado" else "padrão"}; suporte Android declarado: $minimalLabel\n" +
-            "Proporção: ${aspect.label} | Nitidez padrão: $sharpness% | Saturação: $saturation% | Brilho: $brightness% | Contraste: $contrast% | Apresentação: até ${if(compatibility) 30 else 60} FPS | AiPQ: não verificável pelo app\n"+
-            (if(fsrRequested) "Saída FSR solicitada: ${fsrOutput.label} | buffer solicitado: ${requestedBuffer?.let { "${it.width}x${it.height}" } ?: "escala padrão"}\n" else "")+
-            (if(fsrEnabled) "Cadência local FSR: ${fsrPerformance.lastRate?.let { String.format(java.util.Locale.US,"%.1f desenhos/s",it) } ?: "aguardando amostras"} (não mede GPU nem FPS do jogo/tela)\n" else "")+
-            (if(fsrFailure!=null) "AMD FSR 1.0.2: retorno à escala padrão — $fsrFailure" else if(fsrRequested && compatibility) "AMD FSR 1.0.2: inativo no modo Compatibilidade" else aspectDrawer?.fsrDiagnostics() ?: "AMD FSR 1.0.2: desligado")
+        val minimalLabel=when(minimalSupport) { true -> UiText.text("sim");false -> UiText.text("não");null -> "n/d" }
+        return UiText.join(UiText.text("Surface {0} → janela {1}x{2} | Saída Android: {3}\n",UiText.nested(size),UiText.nested(width),UiText.nested(height),UiText.nested(output)),UiText.text("Layout do vídeo: {0} | Área calculada: {1}x{2} | Quadro do renderer: {3}x{4}\n",UiText.nested(layout),UiText.nested(expected.width),UiText.nested(expected.height),UiText.nested(videoWidth),UiText.nested(videoHeight)),UiText.text("Escala da Surface: {0}; imagem ajustada à janela | Conteúdo {1} FPS sinalizado à Surface: {2} | Pós-processamento mínimo: {3}; suporte Android declarado: {4}\n",UiText.nested(if(fsrEnabled) UiText.text("renderer em resolução de saída para FSR") else if (nativeUpscaling) "HW solicitada" else "HW desativada"),UiText.nested(if(compatibility) 30 else 60),UiText.nested(if (frameRateHintRequested) UiText.text("sim") else UiText.text("não confirmado")),UiText.nested(if (minimalPostProcessingRequested) "solicitado" else UiText.text("padrão")),UiText.nested(minimalLabel)),UiText.text("Proporção: {0} | Nitidez padrão: {1}% | Saturação: {2}% | Brilho: {3}% | Contraste: {4}% | Apresentação: até {5} FPS | AiPQ: não verificável pelo app\n",UiText.nested(aspect.label),UiText.nested(sharpness),UiText.nested(saturation),UiText.nested(brightness),UiText.nested(contrast),UiText.nested(if(compatibility) 30 else 60)),(if(fsrRequested) UiText.text("Saída FSR solicitada: {0} | buffer solicitado: {1}\n",UiText.nested(fsrOutput.label),UiText.nested(requestedBuffer?.let { "${it.width}x${it.height}" } ?: UiText.text("escala padrão"))) else ""),(if(fsrEnabled) UiText.text("Cadência local FSR: {0} (não mede GPU nem FPS do jogo/tela)\n",UiText.nested(fsrPerformance.lastRate?.let { String.format(java.util.Locale.US,"%.1f desenhos/s",it) } ?: UiText.text("aguardando amostras"))) else ""),(if(fsrFailure!=null) UiText.text("AMD FSR 1.0.2: retorno à escala padrão — {0}",UiText.nested(fsrFailure)) else if(fsrRequested && compatibility) UiText.text("AMD FSR 1.0.2: inativo no modo Compatibilidade") else aspectDrawer?.fsrDiagnostics() ?: UiText.text("AMD FSR 1.0.2: desligado")))
     }
 
     fun compactDiagnostics(): String {
         val surface = renderer?.holder?.surfaceFrame
         val mode = display?.mode
-        return "Surface ${surface?.width() ?: 0}x${surface?.height() ?: 0} → saída Android " +
-            (mode?.let { "${it.physicalWidth}x${it.physicalHeight}@${kotlin.math.round(it.refreshRate).toInt()}Hz" } ?: "n/d")
+        return UiText.join(UiText.text("Surface {0}x{1} → saída Android ",UiText.nested(surface?.width() ?: 0),UiText.nested(surface?.height() ?: 0)),(mode?.let { "${it.physicalWidth}x${it.physicalHeight}@${kotlin.math.round(it.refreshRate).toInt()}Hz" } ?: "n/d"))
     }
 
     fun release() {

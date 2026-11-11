@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.signaling
 
+import com.xcloud.tclnative.i18n.UiText
+
 import com.xcloud.tclnative.diagnostics.SessionFailure
 import com.xcloud.tclnative.net.CloudHttpException
 import com.xcloud.tclnative.net.CloudRequestException
@@ -22,9 +24,7 @@ class SessionKeepAlive(
 
     fun diagnostics(): String {
         val value=status
-        return "Manutenção da sessão: confirmações ${value.confirmations}; falhas ${value.failures}; "+
-            "recuperações ${value.recoveries}; falhas consecutivas ${value.consecutiveFailures}"+
-            (value.lastFailure?.let { "; último erro $it" } ?: "")
+        return UiText.join(UiText.text("Manutenção da sessão: confirmações {0}; falhas {1}; ",UiText.nested(value.confirmations),UiText.nested(value.failures)),UiText.text("recuperações {0}; falhas consecutivas {1}",UiText.nested(value.recoveries),UiText.nested(value.consecutiveFailures)),(value.lastFailure?.let { UiText.text("; último erro {0}",UiText.nested(it)) } ?: ""))
     }
 
     suspend fun run(send: suspend () -> Unit) {

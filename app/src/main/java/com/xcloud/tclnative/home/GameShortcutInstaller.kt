@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.home
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -53,7 +55,7 @@ class GameShortcutInstaller(private val context: Context) {
             val parsed=context.packageManager.getPackageArchiveInfo(output.path,PackageManager.GET_ACTIVITIES)
             check(parsed?.packageName==packageName && parsed.activities?.any {
                 it.name=="com.xcloud.shortcut.ShortcutActivity" && it.exported
-            }==true) { "O Android deste aparelho não conseguiu ler o pacote do atalho. O atalho não foi enviado ao instalador." }
+            }==true) { UiText.text("O Android deste aparelho não conseguiu ler o pacote do atalho. O atalho não foi enviado ao instalador.") }
             output
         } catch(error: Exception) { output.delete(); throw error }
         finally { template.delete(); fallback?.recycle() }

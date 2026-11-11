@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.webrtc
 
+import com.xcloud.tclnative.i18n.UiText
+
 import java.util.Locale
 
 /** Constant-memory observations from Android's event timestamp to Activity delivery, not RF latency. */
@@ -21,8 +23,7 @@ class ControllerEventTiming {
         }
     }
     @Synchronized fun diagnostics(): String {
-        if(count==0L) return "Evento de joystick Android → app: n/d (sem eventos físicos observados)"
-        return "Evento de joystick Android → app: média ${String.format(Locale.US,"%.2f",totalMs/count)} | mín. $minMs | pico $peakMs ms"+
-            " • $count eventos • histórico máx. $maximumHistory"+(deviceName?.let { " • controle: $it" } ?: "")
+        if(count==0L) return UiText.text("Evento de joystick Android → app: n/d (sem eventos físicos observados)")
+        return UiText.join(UiText.text("Evento de joystick Android → app: média {0} | mín. {1} | pico {2} ms",UiText.nested(String.format(Locale.US,"%.2f",totalMs/count)),UiText.nested(minMs),UiText.nested(peakMs)),UiText.text(" • {0} eventos • histórico máx. {1}",UiText.nested(count),UiText.nested(maximumHistory)),(deviceName?.let { UiText.text(" • controle: {0}",UiText.nested(it)) } ?: ""))
     }
 }

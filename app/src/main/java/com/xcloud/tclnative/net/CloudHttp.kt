@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.net
 
+import com.xcloud.tclnative.i18n.UiText
+
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.Call
 import okhttp3.Callback
@@ -27,12 +29,11 @@ suspend fun Call.awaitResponse(): Response = suspendCancellableCoroutine { conti
 
 class CloudHttpException(val stage: String, val status: Int, val serviceCode: String?, requestId: String?,
                          val retryAfterMs: Long?=null) :
-    IOException("$stage: HTTP $status" + (serviceCode?.let { " — código $it" } ?: "") +
-        (requestId?.let { " (requisição $it)" } ?: ""))
+    IOException(UiText.join(UiText.text("{0}: HTTP {1}",UiText.nested(stage),UiText.nested(status)),(serviceCode?.let { UiText.text(" — código {0}",UiText.nested(it)) } ?: ""),(requestId?.let { UiText.text(" (requisição {0})",UiText.nested(it)) } ?: "")))
 
 /** Preserve the failed request stage; raw socket messages can contain private endpoint URLs. */
 class CloudRequestException(val stage: String,cause: IOException):
-    IOException("$stage: falha na requisição (${cause.javaClass.simpleName})",cause)
+    IOException(UiText.text("{0}: falha na requisição ({1})",UiText.nested(stage),UiText.nested(cause.javaClass.simpleName)),cause)
 
 internal fun retryAfterDelayMs(value: String?,nowMs: Long=System.currentTimeMillis()): Long? {
     val text=value?.trim()?.takeIf { it.isNotEmpty() } ?: return null

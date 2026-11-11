@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.webrtc
 
+import com.xcloud.tclnative.i18n.UiText
+
 import java.util.ArrayDeque
 
 data class TouchInputDimensions(val width: Int, val height: Int) {
@@ -52,9 +54,7 @@ class NativeTouchBuffer {
     @Synchronized fun accepted(events: List<NativePointer>) {
         sentDown+=events.count { it.type==1 };sentUp+=events.count { it.type==2 };sentMove+=events.count { it.type==3 }
     }
-    @Synchronized fun diagnostics(): String = "Fila de toque nativo: entrada D/U/M $receivedDown/$receivedUp/$receivedMove; "+
-        "aceitos pelo canal D/U/M $sentDown/$sentUp/$sentMove; lotes pendentes ${queue.size}, pico $peakBatches; "+
-        "movimentos consolidados $mergedMoves; ressincronizações $resyncs"
+    @Synchronized fun diagnostics(): String = UiText.join(UiText.text("Fila de toque nativo: entrada D/U/M {0}/{1}/{2}; ",UiText.nested(receivedDown),UiText.nested(receivedUp),UiText.nested(receivedMove)),"aceitos pelo canal D/U/M $sentDown/$sentUp/$sentMove; lotes pendentes ${queue.size}, pico $peakBatches; ",UiText.text("movimentos consolidados {0}; ressincronizações {1}",UiText.nested(mergedMoves),UiText.nested(resyncs)))
     @Synchronized fun release() {
         known.values.filter { it.type!=2 }.map { it.copy(type=2,pressure=0f) }.chunked(10).forEach(::add)
         active.clear()

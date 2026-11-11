@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.ui.dashboard
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import android.app.Activity
 import android.content.res.ColorStateList
@@ -92,7 +94,7 @@ internal object DashboardTheme {
         gradient(GradientDrawable.Orientation.TOP_BOTTOM,arrayOf(fill),strokeWidth,stroke).apply { cornerRadius=radius }
     fun panel(radius: Float = 12f)=gradient(GradientDrawable.Orientation.TL_BR,
         arrayOf(UiColor.PANEL_TOP,UiColor.PANEL_BOTTOM),1,UiColor.BORDER).apply { cornerRadius=radius }
-    fun button(context: Context, label: String, scale: Float = 1f, action: () -> Unit): TextView = TextView(context).apply {
+    fun button(context: Context, label: String, scale: Float = 1f, action: () -> Unit): TextView = com.xcloud.tclnative.i18n.LocalizedTextView(context).apply {
         text = label; typeface = font(context); includeFontPadding = false
         setTextSize(TypedValue.COMPLEX_UNIT_PX, 23*scale); setTextColor(Color.WHITE)
         gravity = Gravity.CENTER; maxLines = 2

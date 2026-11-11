@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.ui.dashboard
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
@@ -21,8 +23,8 @@ internal class GameBadgesView(context: Context) : FrameLayout(context) {
         isFocusable=false
         isClickable=false
     }
-    private val pass=badge(R.drawable.badge_game_pass,"Disponível no Game Pass")
-    private val series=badge(R.drawable.badge_series_xs,"Otimizado para Xbox Series X|S")
+    private val pass=badge(R.drawable.badge_game_pass,UiText.text("Disponível no Game Pass"))
+    private val series=badge(R.drawable.badge_series_xs,UiText.text("Otimizado para Xbox Series X|S"))
     init {
         isFocusable=false
         background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,intArrayOf(Color.TRANSPARENT,0xcf000000.toInt()))

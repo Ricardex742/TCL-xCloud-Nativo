@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.renderer
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.view.Window
 import android.view.Display
 import java.util.Locale
@@ -30,14 +32,13 @@ class PlaybackDisplayPreference(private val window: Window) {
 
     /** A successful request is distinct from the active physical mode and the app's rate override. */
     fun diagnostics(display: Display?): String = runCatching {
-        if(display==null) return@runCatching "Modo de tela: n/d"
+        if(display==null) return@runCatching UiText.text("Modo de tela: n/d")
         fun rate(hz: Float)=if(hz.isFinite()) String.format(Locale.US,"%.2f",hz) else "n/d"
         fun describe(mode: Display.Mode)="#${mode.modeId} ${mode.physicalWidth}x${mode.physicalHeight}@${rate(mode.refreshRate)}Hz"
         val modes=display.supportedModes.toList()
         val requested=window.attributes.preferredDisplayModeId
         val request=modes.firstOrNull { it.modeId==requested }?.let(::describe)
-            ?: if(requested==0) "padrão do sistema (#0)" else "#$requested não anunciado"
-        "Modo de tela pedido: $request | físico atual: ${describe(display.mode)} | taxa informada ao app: ${rate(display.refreshRate)}Hz\n"+
-            "Modos anunciados: ${modes.take(12).joinToString("; ",transform=::describe)}"
-    }.getOrDefault("Modo de tela: não informado pelo Android")
+            ?: if(requested==0) UiText.text("padrão do sistema (#0)") else UiText.text("#{0} não anunciado",UiText.nested(requested))
+        UiText.join(UiText.text("Modo de tela pedido: {0} | físico atual: {1} | taxa informada ao app: {2}Hz\n",UiText.nested(request),UiText.nested(describe(display.mode)),UiText.nested(rate(display.refreshRate))),"Modos anunciados: ${modes.take(12).joinToString("; ",transform=::describe)}")
+    }.getOrDefault(UiText.text("Modo de tela: não informado pelo Android"))
 }

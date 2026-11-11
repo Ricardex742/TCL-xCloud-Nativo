@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.renderer
 
+import com.xcloud.tclnative.i18n.UiText
+
 import org.webrtc.GlRectDrawer
 import org.webrtc.RendererCommon
 import org.webrtc.ImageAdjustmentDrawer
@@ -45,8 +47,8 @@ class AspectVideoDrawer(@Volatile var stretch: Boolean,
         if(!failureReported) fsr?.failureReason()?.let { failureReported=true;onFsrFailure(it) }
     }
     fun isFsrBypassed(): Boolean = fsr?.isBypassed()==true
-    fun fsrDiagnostics(): String = if(!fsrEnabled) "AMD FSR 1.0.2: desligado"
-        else fsr?.diagnostics() ?: "AMD FSR 1.0.2: solicitado; aguardando vídeo"
+    fun fsrDiagnostics(): String = if(!fsrEnabled) UiText.text("AMD FSR 1.0.2: desligado")
+        else fsr?.diagnostics() ?: UiText.text("AMD FSR 1.0.2: solicitado; aguardando vídeo")
     private fun upscaler(width: Int,height: Int): FsrUpscaler? {
         if(!fsrEnabled) { fsr?.release();fsr=null;return null }
         return (fsr ?: fsrFactory?.invoke()?.also { fsr=it })?.also {

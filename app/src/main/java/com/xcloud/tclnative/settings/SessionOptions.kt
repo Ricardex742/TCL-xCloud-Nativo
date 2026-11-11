@@ -1,16 +1,23 @@
 package com.xcloud.tclnative.settings
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import org.json.JSONObject
 import java.security.MessageDigest
 
-enum class IpPreference(val label: String,val preferredFamily: Int? = null) {
+enum class IpPreference(private val sourceLabel: String,val preferredFamily: Int? = null) {
     AUTO("Automático — IPv4/IPv6 durante a partida"),
     IPV4("Preferir IPv4 — com IPv6 disponível",4),
-    IPV6("Preferir IPv6 — experimental, com IPv4 disponível",6)
+    IPV6("Preferir IPv6 — experimental, com IPv4 disponível",6);
+    val label: String get()=UiText.text(sourceLabel)
 }
-enum class DesktopInputMode(val label: String) { OFF("Desativado"), EMULATED("Emular controle com mouse e teclado"), NATIVE("Mouse e teclado nativos — jogos compatíveis") }
-enum class GyroMode(val label: String) { OFF("Desativado"), LT("Enquanto segurar LT"), LB("Enquanto segurar LB"), ALWAYS("Sempre durante a partida") }
+enum class DesktopInputMode(private val sourceLabel: String) { OFF("Desativado"), EMULATED("Emular controle com mouse e teclado"), NATIVE("Mouse e teclado nativos — jogos compatíveis") ;
+    val label: String get()=UiText.text(sourceLabel)
+}
+enum class GyroMode(private val sourceLabel: String) { OFF("Desativado"), LT("Enquanto segurar LT"), LB("Enquanto segurar LB"), ALWAYS("Sempre durante a partida") ;
+    val label: String get()=UiText.text(sourceLabel)
+}
 
 data class SessionOptions(val maxBitrateKbps: Int=0,val locale: String="pt-BR",val region: String="") {
     fun normalized()=copy(maxBitrateKbps=if(maxBitrateKbps==0) 0 else maxBitrateKbps.coerceIn(1000,50000),

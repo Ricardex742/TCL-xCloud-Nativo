@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.catalog
 
+import com.xcloud.tclnative.i18n.UiText
+
 import com.xcloud.tclnative.signaling.GameTitle
 import org.json.JSONArray
 import java.io.IOException
@@ -25,15 +27,15 @@ data class OfficialGallery(
 ) {
     companion object {
         fun parse(kind: OfficialGalleryKind, data: JSONArray): OfficialGallery {
-            val header = data.optJSONObject(0) ?: throw IOException("Galeria oficial sem cabeçalho.")
+            val header = data.optJSONObject(0) ?: throw IOException(UiText.text("Galeria oficial sem cabeçalho."))
             if (!header.optString("siglId").equals(kind.id, true)) throw IOException("Galeria oficial diferente da solicitada.")
             if (listOf("continuationToken", "nextLink").any { !header.isNull(it) && header.optString(it).isNotBlank() })
-                throw IOException("A galeria retornou paginação não reconhecida; a lista não foi confirmada como completa.")
+                throw IOException(UiText.text("A galeria retornou paginação não reconhecida; a lista não foi confirmada como completa."))
             val ids = linkedSetOf<String>()
             for (index in 1 until data.length()) {
                 val id = data.optJSONObject(index)?.optString("id")?.trim()?.uppercase(Locale.ROOT)
                 if (id == null || !id.matches(Regex("[A-Z0-9]{12}")))
-                    throw IOException("Produto inválido na galeria oficial; atualize o catálogo.")
+                    throw IOException(UiText.text("Produto inválido na galeria oficial; atualize o catálogo."))
                 ids.add(id)
             }
             return OfficialGallery(kind, ids.map(::GalleryProduct))

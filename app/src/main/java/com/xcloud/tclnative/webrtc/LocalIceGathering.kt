@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.webrtc
 
+import com.xcloud.tclnative.i18n.UiText
+
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -56,16 +58,13 @@ class LocalIceGathering {
             val fields=candidate.sdp.split(Regex("\\s+"))
             fields.getOrNull(fields.indexOf("typ")+1)
         }
-        return "ICE local $attempt/2: coleta ${snapshot.gathering.name}; candidatos ${snapshot.candidates.size}"+
-            " (host ${types.count { it=="host" }}, srflx ${types.count { it=="srflx" }}, relay ${types.count { it=="relay" }}); "+
-            "códigos STUN: ${snapshot.errorCodes.joinToString(",").ifBlank { "nenhum informado" }}"
+        return UiText.join("ICE local $attempt/2: coleta ${snapshot.gathering.name}; candidatos ${snapshot.candidates.size}"," (host ${types.count { it=="host" }}, srflx ${types.count { it=="srflx" }}, relay ${types.count { it=="relay" }}); ",UiText.text("códigos STUN: {0}",UiText.nested(snapshot.errorCodes.joinToString(",").ifBlank { UiText.text("nenhum informado") })))
     }
     private fun same(a: IceCandidate,b: IceCandidate)=a.sdpMid==b.sdpMid && a.sdpMLineIndex==b.sdpMLineIndex && a.sdp==b.sdp
 }
 
 class LocalIceUnavailableException(attempt: Int,diagnostics: String): IOException(
-    "ICE_LOCAL: nenhum candidato de rede disponível após a coleta $attempt/2. "+
-        "A rede pode estar indisponível ou ainda inicializando. Verifique a conexão e tente novamente.\n$diagnostics")
+    UiText.join("ICE_LOCAL: nenhum candidato de rede disponível após a coleta $attempt/2. ",UiText.text("A rede pode estar indisponível ou ainda inicializando. Verifique a conexão e tente novamente.\n{0}",UiText.nested(diagnostics))))
 
 /** Retry only local empty gathering, before posting SDP; keep the allocated Xbox session. */
 object LocalIceOfferRetry {

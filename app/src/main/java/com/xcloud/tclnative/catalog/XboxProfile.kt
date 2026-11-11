@@ -1,8 +1,10 @@
 package com.xcloud.tclnative.catalog
 
+import com.xcloud.tclnative.i18n.UiText
+
 import org.json.JSONObject
 
-data class XboxProfile(val displayName: String = "PERFIL XBOX", val gamertag: String = "Conta conectada",
+data class XboxProfile(val displayName: String = "PERFIL XBOX", val gamertag: String = UiText.text("Conta conectada"),
                        val avatarUrl: String? = null, val subscription: String? = null, val xuid: String? = null) {
     companion object {
         private val claimSeparators=Regex("[^a-z0-9]")

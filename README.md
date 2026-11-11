@@ -3,7 +3,8 @@
   <h1>xCLOUD</h1>
   <p><strong>Seus jogos. Na sua tela.</strong></p>
   <p>Cliente Android independente para Xbox Cloud Gaming, com transmissão nativa e interface para Android TV, Google TV e celulares.</p>
-  <p><a href="#conta-e-biblioteca">Biblioteca</a> · <a href="#aparência-e-temas">Temas</a> · <a href="#transmissão-e-fila">Transmissão</a> · <a href="#imagem-e-tela">Imagem</a> · <a href="#controles-e-periféricos">Controles</a> · <a href="#touch-nativo">Touch nativo</a> · <a href="#controles-de-toque">HUDs</a><br /><a href="#áudio-e-microfone">Áudio</a> · <a href="#rede-e-preferências">Rede</a> · <a href="#estatísticas-e-diagnósticos">Diagnósticos</a> · <a href="#tela-inicial-da-tv">Atalhos na TV</a> · <a href="#compatibilidade">Compatibilidade</a></p>
+  <p><a href="https://github.com/Ricardex742/TCL-xCloud-Nativo/releases/latest"><strong>Baixar APK</strong></a></p>
+  <p><a href="#conta-e-biblioteca">Biblioteca</a> · <a href="#aparência-e-temas">Temas</a> · <a href="#idiomas-do-aplicativo">Idiomas</a> · <a href="#transmissão-e-fila">Transmissão</a> · <a href="#imagem-e-tela">Imagem</a> · <a href="#controles-e-periféricos">Controles</a> · <a href="#touch-nativo">Touch nativo</a> · <a href="#controles-de-toque">HUDs</a><br /><a href="#áudio-e-microfone">Áudio</a> · <a href="#rede-e-preferências">Rede</a> · <a href="#estatísticas-e-diagnósticos">Diagnósticos</a> · <a href="#tela-inicial-da-tv">Atalhos na TV</a> · <a href="#compatibilidade">Compatibilidade</a></p>
 </div>
 
 ![Menu inicial do xCLOUD com a aba Voltar a jogar](docs/screenshots/home-return-to-play.jpg)
@@ -62,6 +63,35 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
   <tr>
     <td width="50%"><img src="docs/screenshots/theme-galaxy-purple.png" alt="Tema Roxo Galáxia, com fundo roxo escuro e destaques violeta." /><br /><strong>Roxo Galáxia</strong></td>
     <td width="50%"><img src="docs/screenshots/theme-platinum-silver.png" alt="Tema Prata Platina, com fundo cinza escuro e destaques prateados." /><br /><strong>Prata Platina</strong></td>
+  </tr>
+</table>
+
+## Idiomas do aplicativo
+
+- **Português (Brasil)** como padrão, com dez idiomas adicionais disponíveis sem baixar pacotes.
+- Troca em **Configurações › Aparência e temas › Idioma do aplicativo**, na tela de login ou no menu da partida.
+- Aplicação imediata e preferência salva no aparelho, sem reiniciar o app ou desconectar a partida.
+- Nomes dos idiomas exibidos em sua forma nativa, para facilitar a volta ao idioma desejado.
+- O idioma dos menus é independente do idioma solicitado aos jogos nas opções da sessão.
+
+| País | Idioma |
+|---|---|
+| Brasil | Português |
+| Estados Unidos | Inglês |
+| Espanha | Espanhol |
+| França | Francês |
+| Alemanha | Alemão |
+| Itália | Italiano |
+| Japão | Japonês |
+| Coreia do Sul | Coreano |
+| China | Chinês simplificado |
+| Rússia | Russo |
+| Turquia | Turco |
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/language-english.png" alt="Tela de login do aplicativo em inglês, com acesso ao seletor de idioma." /><br /><strong>Inglês</strong> — Troca de idioma disponível antes do login.</td>
+    <td width="50%"><img src="docs/screenshots/language-japanese.png" alt="Tela de login do aplicativo em japonês, mantendo o tema verde." /><br /><strong>Japonês</strong> — Menus e textos no idioma escolhido.</td>
   </tr>
 </table>
 

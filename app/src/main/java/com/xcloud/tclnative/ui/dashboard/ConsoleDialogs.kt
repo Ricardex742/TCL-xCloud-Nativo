@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.ui.dashboard
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.app.Activity
 import android.app.Dialog
 import android.content.Context
@@ -77,13 +79,13 @@ class ConsoleDialog(context: Context, heading: String) : Dialog(context, R.style
         }
     }
     fun px(value: Int) = (value*scale).roundToInt()
-    fun text(value: String, size: Int = 22, heavy: Boolean = false, color: Int = Color.WHITE) = TextView(context).apply {
+    fun text(value: String, size: Int = 22, heavy: Boolean = false, color: Int = Color.WHITE) = com.xcloud.tclnative.i18n.LocalizedTextView(context).apply {
         text=value; typeface=DashboardTheme.font(context, heavy); includeFontPadding=false
         setTextColor(color); setTextSize(TypedValue.COMPLEX_UNIT_PX, size*scale)
     }
     fun focusFirst(view: View) { initialFocus = view }
     fun addAction(label: String, action: () -> Unit): TextView {
-        val button = DashboardTheme.button(context, label.uppercase(Locale.getDefault()), scale) { dismiss(); action() }
+        val button = DashboardTheme.button(context, UiText.uppercase(label), scale) { dismiss(); action() }
         actions.addView(button, LinearLayout.LayoutParams(0, px(58), 1f).apply {
             if (actions.childCount > 1) marginStart = px(10)
         })
@@ -94,6 +96,8 @@ class ConsoleDialog(context: Context, heading: String) : Dialog(context, R.style
         val item = DashboardTheme.button(context, label, scale) { dismiss(); action() }.apply {
             gravity = Gravity.CENTER_VERTICAL or Gravity.START
             setPadding(px(20), px(10), px(20), px(10))
+            if(android.os.Build.VERSION.SDK_INT>=26) setAutoSizeTextTypeUniformWithConfiguration(
+                px(13).coerceAtLeast(1),px(23).coerceAtLeast(2),1,TypedValue.COMPLEX_UNIT_PX)
         }
         body.addView(item, LinearLayout.LayoutParams(-1, px(62)).apply { bottomMargin = px(7) })
         if (initialFocus == null) initialFocus = item
@@ -116,9 +120,9 @@ class ConsoleDialog(context: Context, heading: String) : Dialog(context, R.style
 
 object ConsoleDialogs {
     fun search(context: Context, query: String, onSearch: (String) -> Unit): ConsoleDialog {
-        val dialog = ConsoleDialog(context, "Pesquisar jogos")
+        val dialog = ConsoleDialog(context, UiText.text("Pesquisar jogos"))
         val field = EditText(dialog.context).apply {
-            setText(query); hint="Nome do jogo"; isSingleLine=true
+            setText(query); hint=UiText.text("Nome do jogo"); isSingleLine=true
             typeface=DashboardTheme.font(context, false)
             setTextColor(Color.WHITE); setHintTextColor(DashboardTheme.muted)
             setTextSize(TypedValue.COMPLEX_UNIT_PX, 28*dialog.scale)
@@ -136,12 +140,12 @@ object ConsoleDialogs {
             }
             selectAll()
         }
-        dialog.body.addView(dialog.text("Encontre um jogo pelo nome.", 21, color=DashboardTheme.muted), LinearLayout.LayoutParams(-1,-2)
+        dialog.body.addView(dialog.text(UiText.text("Encontre um jogo pelo nome."), 21, color=DashboardTheme.muted), LinearLayout.LayoutParams(-1,-2)
             .apply { bottomMargin=dialog.px(17) })
         dialog.body.addView(field, LinearLayout.LayoutParams(-1,dialog.px(65)))
-        dialog.addAction("Limpar busca") { onSearch("") }
-        dialog.addAction("Voltar") {}
-        dialog.addAction("Buscar") { onSearch(field.text.toString()) }
+        dialog.addAction(UiText.text("Limpar busca")) { onSearch("") }
+        dialog.addAction(UiText.text("Voltar")) {}
+        dialog.addAction(UiText.text("Buscar")) { onSearch(field.text.toString()) }
         dialog.focusFirst(field)
         dialog.show()
         if(context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN)) {
@@ -155,11 +159,11 @@ object ConsoleDialogs {
     }
     fun menu(context: Context, title: String, items: List<ConsoleAction>, onBack: () -> Unit = {}): ConsoleDialog = ConsoleDialog(context,title).apply {
         items.forEach { addMenuItem(it.label, it.action) }
-        addAction("Voltar",onBack)
+        addAction(UiText.text("Voltar"),onBack)
         setOnCancelListener { onBack() }
         show()
     }
-    fun message(context: Context, title: String, message: String, actions: List<ConsoleAction> = listOf(ConsoleAction("Fechar") {}),
+    fun message(context: Context, title: String, message: String, actions: List<ConsoleAction> = listOf(ConsoleAction(UiText.text("Fechar")) {}),
                 onCancel: (() -> Unit)? = null): ConsoleDialog = ConsoleDialog(context,title).apply {
         body.addView(text(message,22), LinearLayout.LayoutParams(-1,-2))
         actions.forEach { addAction(it.label,it.action) }

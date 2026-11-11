@@ -1,0 +1,821 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_00337a440affe8d9" formatted="false">"FSR용 출력 해상도의 렌더러"</string>
+    <string name="ui_01097ccc24bdd54c" formatted="false">"주문: {0}, {1} Mbps (수신된 VBR은 다를 수 있음) | Menu+View: 출발; INFO/F10: 통계\n{2}"</string>
+    <string name="ui_013a1e5debec7510" formatted="false">"휴대폰 진동"</string>
+    <string name="ui_013b6b53ec11bea0" formatted="false">"QR 코드로 로그인"</string>
+    <string name="ui_0160c60d129ba3c9" formatted="false">"축구 컨트롤러 구성표"</string>
+    <string name="ui_019da395008ae750" formatted="false">"마이크를 사용할 수 없습니다."</string>
+    <string name="ui_01d41b7846b0b45f" formatted="false">"왼쪽으로 뒤집기 Y: {0}"</string>
+    <string name="ui_0267884953a02355" formatted="false">"손실 또는 지터가 높습니다. 라우터 근처의 Ethernet와 Wi-Fi를 비교하세요. 서비스도 달라질 수 있습니다."</string>
+    <string name="ui_02c7b48c968b844b" formatted="false">"시간 초과가 초과되었습니다."</string>
+    <string name="ui_02d6ff6939c73b58" formatted="false">"바로가기를 만들기 전에 Y를 사용하여 게임을 추가하세요."</string>
+    <string name="ui_031a5e835b1f6d36" formatted="false">"알 수 없는 네트워크"</string>
+    <string name="ui_031bde0f50ba5d49" formatted="false">"런처 바로가기 요청: {0}"</string>
+    <string name="ui_03561d241830a0e8" formatted="false">"TV가 즐겨찾기 채널을 만들지 않았습니다."</string>
+    <string name="ui_043344ab2cab974f" formatted="false">"세션 연결을 끊고 카탈로그로 돌아가기"</string>
+    <string name="ui_044419e9c7dfdf4f" formatted="false">"비디오 디코더"</string>
+    <string name="ui_0471fc9b94d1d4e1" formatted="false">"화면: Android에서 발표한 HDR10."</string>
+    <string name="ui_0482ab2f5e9555df" formatted="false">"효율적인: 예"</string>
+    <string name="ui_04fed7bc7eba27be" formatted="false">"네이티브 터치 Xbox: {0}"</string>
+    <string name="ui_0576a13b7f8da156" formatted="false">"컨트롤러와 휴대폰의 진동"</string>
+    <string name="ui_05c167f258910d47" formatted="false">"관찰된 삭제: {0} • 진행 없음: {1}({2} 에피소드)\n"</string>
+    <string name="ui_05d410b61f115e54" formatted="false">"다시 로그인"</string>
+    <string name="ui_05f55ecde2095706" formatted="false">"앱이 열려 있는 동안 이 컨트롤러에 USB를 통해 사용할 수 있습니다. 진동이 있었는지 확인하세요."</string>
+    <string name="ui_063e3bb2ff5e1126" formatted="false">"이 목록에는 Game Pass 타이틀이 없습니다."</string>
+    <string name="ui_072486acb1c2c3bc" formatted="false">"카탈로그 로드 중…"</string>
+    <string name="ui_078c3c1c21cac018" formatted="false">"샘플을 기다리는 중"</string>
+    <string name="ui_07adc85579777aed" formatted="false">"원치 않는"</string>
+    <string name="ui_07c30329e1fbb86e" formatted="false">"카메라 데드존 보상"</string>
+    <string name="ui_085a7aac0ee4c17f" formatted="false">"추정 지수. 디코딩된 FPS는 게임이나 화면의 FPS가 아닙니다. 네트워크 및 일시 중지는 사용 가능한 샘플을 반영합니다. link Wi-Fi는 인터넷 속도를 측정하지 않습니다."</string>
+    <string name="ui_087049dba46795c1" formatted="false">"컨트롤 › 마우스 및 키보드"</string>
+    <string name="ui_088f4da0fb6e92f6" formatted="false">"Android 또는 USB 테스트가 지원하는 경우 해당 컨트롤러를 트리거합니다. 다음 게임에서 유효합니다."</string>
+    <string name="ui_08fcc1f5b2d705ea" formatted="false">"촬영 시 조준: {0}"</string>
+    <string name="ui_0964df415f982798" formatted="false">"해상도 해당 사항 없음"</string>
+    <string name="ui_0a6ed0003ccbb5c5" formatted="false">"컨트롤러 진동"</string>
+    <string name="ui_0a8a145f0c4c786b" formatted="false">"HDR10: 화면 및 전송"</string>
+    <string name="ui_0aadc3c5e893f94b" formatted="false">"왼쪽 데드존: {0}%"</string>
+    <string name="ui_0af64325f77fe6bf" formatted="false">"게임 내에서 사용되는 것과 동일한 구성표를 선택하십시오. Apply는 사용자 지정 위치와 크기를 유지하면서 축구 버튼 동작과 동작을 복원합니다."</string>
+    <string name="ui_0b23a612555311a0" formatted="false">"RTT 상승. 연결 및 서비스 지역을 비교해보세요. RTT는 전체 명령-이미지 대기 시간을 측정하지 않습니다."</string>
+    <string name="ui_0b2d680c438ef00a" formatted="false">"실행할 아날로그 드래그: {0}"</string>
+    <string name="ui_0b515c2eb55d0039" formatted="false">"이 버전의 보고서에는 기록되지 않았습니다."</string>
+    <string name="ui_0b6181c8fae6c214" formatted="false">"{0} 배너"</string>
+    <string name="ui_0bf12e52f3bc5819" formatted="false">"시간 초과 전에 비디오 프레임이 표시되지 않았습니다."</string>
+    <string name="ui_0c4d21bd3043de42" formatted="false">"코덱: {0}"</string>
+    <string name="ui_0c589d4d177557b9" formatted="false">"기본 터치 대기열: D/U/M 입력 {0}/{1}/{2}; "</string>
+    <string name="ui_0c62bc59af11fcee" formatted="false">"↑ 맨 위로"</string>
+    <string name="ui_0cb22b8f1ab03a08" formatted="false">"데드존 보상: {0}%"</string>
+    <string name="ui_0cef94b399905087" formatted="false">"영상이 준비되는 대로 경기가 표시됩니다."</string>
+    <string name="ui_0d1222c8a7720ee4" formatted="false">"최근 추가사항 로드 중…"</string>
+    <string name="ui_0d220536c41d6fdb" formatted="false">"100%는 볼륨을 유지합니다. 그 이상으로 앱은 오디오의 최고점을 감지하면 게인을 점진적으로 늘리거나 줄입니다. 과도 현상은 여전히 왜곡될 수 있습니다. 125%에서 시작하세요. Android 포커스와 볼륨은 활성 상태로 유지됩니다."</string>
+    <string name="ui_0d79621a7c3b95be" formatted="false">"누락 프레임"</string>
+    <string name="ui_0d7a3d320a0fb006" formatted="false">"H.264 — 기본값"</string>
+    <string name="ui_0d8c42edc4b4608f" formatted="false">"왼쪽 감도: {0}%"</string>
+    <string name="ui_0d995dfdd2eeea56" formatted="false">"페인트"</string>
+    <string name="ui_0d9a4b66ad7d5845" formatted="false">"화면 스타일 및 테마"</string>
+    <string name="ui_0e01764ea4f7fbb1" formatted="false">"로컬 프리젠테이션 오류"</string>
+    <string name="ui_0ea9a4d339b48e4f" formatted="false">"시동 진단"</string>
+    <string name="ui_0f2bd88ef0acbda9" formatted="false">"닫으려면"</string>
+    <string name="ui_1003f34d94801539" formatted="false">"지원"</string>
+    <string name="ui_106574feeec20607" formatted="false">"시작: {0}"</string>
+    <string name="ui_10866a9df5f8be5b" formatted="false">"{0} {1}"</string>
+    <string name="ui_10a9f4a598e80ee7" formatted="false">"상호작용"</string>
+    <string name="ui_10c71725a6c0bcad" formatted="false">"마이크: 캡처가 시작되었습니다."</string>
+    <string name="ui_11239872d178729a" formatted="false">"합계"</string>
+    <string name="ui_11715c548ed9a603" formatted="false">"DZ 앱: 카메라/LT/RT 0% | LT {0}% RT {1}% | Menu+View: 출발\n"</string>
+    <string name="ui_11eae6d197406791" formatted="false">"메뉴 언어를 선택하세요. 변경 사항은 즉시 적용되며 이 장치에 저장됩니다. 게임 언어는 세션 옵션에서 별도로 설정됩니다."</string>
+    <string name="ui_124cfe273495ea3d" formatted="false">"\n\n안드로이드 동글과 드라이버는 진동을 제공해야 합니다. 컨트롤러 모드를 XInput로 변경하면 지원이 변경될 수 있습니다. 앱은 펌웨어를 변경하지 않습니다."</string>
+    <string name="ui_126169d397f54a6a" formatted="false">"함께 눌러야 하는 버튼을 표시하세요. 적용은 편집기에서 조합을 확인합니다."</string>
+    <string name="ui_12ce320925daa43d" formatted="false">"다시 플레이"</string>
+    <string name="ui_13607cf86dd0cd21" formatted="false">"ICE 연결 실패"</string>
+    <string name="ui_139cc249cd8ab25d" formatted="false">"로그인 코드 생성 중…"</string>
+    <string name="ui_13a72daec9032012" formatted="false">"LB를 누른 상태에서"</string>
+    <string name="ui_14835c83f4a3a62d" formatted="false">"0%는 원본 이미지를 유지합니다. FSR을 포함한 기존 필터와 함께 적용됩니다."</string>
+    <string name="ui_148b35103d77bd4f" formatted="false">"비율: {0} | 표준 선명도: {1}% | 채도: {2}% | 밝기: {3}% | 대비: {4}% | 프레젠테이션: 최대 {5} FPS | AiPQ: 앱에서 확인할 수 없음\n"</string>
+    <string name="ui_1538cbf237776afb" formatted="false">"보안 연결 실패"</string>
+    <string name="ui_155487355b5495ca" formatted="false">"프레임"</string>
+    <string name="ui_1576aa44257d3798" formatted="false">"영상을 받는 중"</string>
+    <string name="ui_15cf9ee6a4ebeb02" formatted="false">"표면은 {0}x{1}를 확인하지 않았습니다. 표준 규모 유지"</string>
+    <string name="ui_15da365df4e752ab" formatted="false">"이 장치에 진단을 저장할 수 없습니다."</string>
+    <string name="ui_164ee63a2378f434" formatted="false">"마이크: 음소거; 전송이 일시 중지되었습니다."</string>
+    <string name="ui_166a16e88276e61b" formatted="false">", 가장 좋아하는"</string>
+    <string name="ui_1692e0b849066c08" formatted="false">"즐겨찾기 전에 게임을 선택하여 사용 가능 여부를 확인하세요."</string>
+    <string name="ui_181c5dfa3b30b3fa" formatted="false">" ({0} 요청)"</string>
+    <string name="ui_182c8cbab96988ee" formatted="false">"제스처"</string>
+    <string name="ui_185e5156066b1d9a" formatted="false">"다른 네트워크"</string>
+    <string name="ui_18d1dc03989bfdb3" formatted="false">"지역: {0}"</string>
+    <string name="ui_18f6e83c63ccb23a" formatted="false">"게임 준비"</string>
+    <string name="ui_19ad4d1d326b4959" formatted="false">"{0} • {1}\nAndroid에서 노출되는 진동: {2}"</string>
+    <string name="ui_19d3d24112a7096d" formatted="false">"이 기기에 HUD를 저장할 수 없습니다."</string>
+    <string name="ui_1a757df92a3d1ed5" formatted="false">"올바른 감도"</string>
+    <string name="ui_1a83cde6a9686660" formatted="false">"AMD FSR 1.0.2: 요청됨; 영상을 기다리는 중"</string>
+    <string name="ui_1a869f846de955ac" formatted="false">"로고 xCLOUD"</string>
+    <string name="ui_1adb254c868d66b5" formatted="false">"활성화됨 - 게임 종료 시 열립니다."</string>
+    <string name="ui_1b0fd79f3f688e61" formatted="false">"B 또는 뒤로를 눌러 취소할 수 있습니다."</string>
+    <string name="ui_1b9635cedf51d570" formatted="false">"휴대폰을 통한 접속"</string>
+    <string name="ui_1bb648eca3d0a17c" formatted="false">"표면 {0} → 창 {1}x{2} | 안드로이드 출력: {3}\n"</string>
+    <string name="ui_1bd516ba76b6bec4" formatted="false">"칩슛"</string>
+    <string name="ui_1bed6eca2f3d2df4" formatted="false">"“{0}”와 일치하는 항목이 없습니다.\nX 다시 검색하세요."</string>
+    <string name="ui_1bfd08329378ce3b" formatted="false">"휴대폰을 사용하여 계정을 연결하세요."</string>
+    <string name="ui_1c042c6d4fcb67de" formatted="false">"HUD에 대해 비활성화됨"</string>
+    <string name="ui_1ceb820c525c1311" formatted="false">"Android를 통해 테스트"</string>
+    <string name="ui_1d28145c262b0863" formatted="false">"능력"</string>
+    <string name="ui_1d44ee5f40b2bcfd" formatted="false">"밝기: {0}%"</string>
+    <string name="ui_1df117eddd08bb89" formatted="false">"아날로그 경주"</string>
+    <string name="ui_1e62d8b4bb80e1b9" formatted="false">"메뉴, 카탈로그, 창의 색상을 선택하세요. 녹색이 기본값입니다. 선택 사항은 이 장치에 저장되고 즉시 적용되며 게임 색상이 변경되지 않습니다."</string>
+    <string name="ui_1eb6d17388ac788c" formatted="false">"Android에서 열거한 USB 장치가 없습니다."</string>
+    <string name="ui_1eed183bf1eb2f09" formatted="false">"되감기"</string>
+    <string name="ui_1f6b3d376df4294d" formatted="false">"TV에서 게임은 물리적 컨트롤러를 사용합니다. 모바일에서 자동은 호환되는 게임에서는 기본 터치를, 다른 게임에서는 HUD를 우선시합니다. 독점 — 가상 컨트롤러가 HUD를 강제합니다. 다음 게임에서 유효합니다."</string>
+    <string name="ui_20e6627eb0692212" formatted="false">"{0} 게임"</string>
+    <string name="ui_20e935e179853823" formatted="false">"SDK가 선택한 프로필과 호환되는 H.264 제안을 생성하지 않았습니다."</string>
+    <string name="ui_212b6b7b0d29c4c6" formatted="false">"불투명"</string>
+    <string name="ui_215b6bd084220c04" formatted="false">"지연이 낮을수록 버퍼가 줄어듭니다. 적응형은 네트워크에 더 많은 여유를 허용합니다. 호환성은 720p를 선택하고 자동에서 최대 6개의 Mbps를 요청하며 H.264 Baseline에 우선 순위를 부여하고 최대 30프레임/초를 표시합니다. 디코딩은 여전히 수신된 스트림에 따라 달라집니다. 다음 경기에 적용됩니다."</string>
+    <string name="ui_226a50accaaf49b4" formatted="false">"드래그 감도: {0}%"</string>
+    <string name="ui_232234ff7189cc5e" formatted="false">"대기 시간 RTT"</string>
+    <string name="ui_23591ccac3b43411" formatted="false">"공식 갤러리에서는 이 지역의 게임을 반환하지 않았습니다."</string>
+    <string name="ui_23c4aad78636750d" formatted="false">"{0}%{1}"</string>
+    <string name="ui_23eb724140170539" formatted="false">"오디오 게인: {0}%"</string>
+    <string name="ui_2450040316f27ba1" formatted="false">"제스처 및 모드 가이드"</string>
+    <string name="ui_2472c6d12770574a" formatted="false">"폐쇄 이유: {0}\n"</string>
+    <string name="ui_24a9373e8e720a68" formatted="false">"최대 비트 전송률"</string>
+    <string name="ui_252f2ee920a16419" formatted="false">"활동적인"</string>
+    <string name="ui_25397a53f2ee9d3e" formatted="false">"Xbox 컨트롤러"</string>
+    <string name="ui_25c27316580b7dec" formatted="false">"공식 갤러리에 잘못된 제품이 있습니다. 카탈로그를 업데이트하세요."</string>
+    <string name="ui_262193abdb9a8260" formatted="false">"HUD의 드래그 반응을 조정합니다. 최대 회전 속도는 게임 내에서 설정된 컨트롤러 감도에 따라 달라집니다."</string>
+    <string name="ui_262393acfaff6b4f" formatted="false">"3월 −"</string>
+    <string name="ui_267edaa6bd49c2dc" formatted="false">"카탈로그 로드 중…"</string>
+    <string name="ui_26a8b63dd399e5fe" formatted="false">"Game Pass 게임을 확인할 수 없습니다.\n설정에서 카탈로그를 업데이트하세요."</string>
+    <string name="ui_26f6986d29484edb" formatted="false">"프레임 속도 보호: {0} FSR은 {1}에 의해 그려집니다. 이번 시합의 표준 규모"</string>
+    <string name="ui_2793dbcc6f49bf3a" formatted="false">"이 세션에서는 마이크가 비활성화됩니다. 다음 경기 전에 오디오와 마이크를 활성화하세요."</string>
+    <string name="ui_2847ddf190a84744" formatted="false">"다음 게임에서 유효합니다."</string>
+    <string name="ui_2848955efd7478c1" formatted="false">"설정"</string>
+    <string name="ui_28890e6bdaf9cc28" formatted="false">"당신의 게임. 화면에."</string>
+    <string name="ui_294c831135f04db1" formatted="false">"비디오 {0} 외부에서 시작됩니다. 무시된 연락처 {1}; menu {2}; "</string>
+    <string name="ui_29aea3a73269d78a" formatted="false">"연결"</string>
+    <string name="ui_2a791bdb998c27a1" formatted="false">"추정치는 {0} 전에 업데이트되었습니다. 시간은 다를 수 있습니다."</string>
+    <string name="ui_2ad646b0e7e0e12a" formatted="false">"에뮬레이트된 오른쪽 아날로그 스틱을 조정합니다. 기본 모드에서는 게임 고유의 감도를 사용하세요. 다음 게임에서 유효합니다."</string>
+    <string name="ui_2af1d168c2064da9" formatted="false">"장애가 있는"</string>
+    <string name="ui_2b17def9c2e690c9" formatted="false">"위치, 크기, 동작 편집"</string>
+    <string name="ui_2c42f42f33a12558" formatted="false">"마이크 활성화"</string>
+    <string name="ui_2c6d80c5ed08e17f" formatted="false">"네이티브 업스케일링"</string>
+    <string name="ui_2c6da1d4dddf6065" formatted="false">"네트워크 환경설정"</string>
+    <string name="ui_2ca6c3d2dbe986f6" formatted="false">"가상 컨트롤러만"</string>
+    <string name="ui_2cdf67ff75149d68" formatted="false">"인종 — 표준"</string>
+    <string name="ui_2d023dea2a9d9379" formatted="false">"외출하다"</string>
+    <string name="ui_2d5bc5113ae0ddb9" formatted="false">"요청된 게인: {0}% • 적용: {1}% • 적응형 피크 감소: {2}"</string>
+    <string name="ui_2d95ceb7882c2a50" formatted="false">"요청 코덱: {0} | {1}\n"</string>
+    <string name="ui_2df03869741616c7" formatted="false">"AMD FSR: {0}"</string>
+    <string name="ui_2e4aaf05df1cbfb3" formatted="false">"추가의"</string>
+    <string name="ui_2e4e5aceedd4d2e7" formatted="false">"대기 중"</string>
+    <string name="ui_2eab6a8f46701077" formatted="false">"다지"</string>
+    <string name="ui_2ec23126760fc5ad" formatted="false">"플래티넘 실버"</string>
+    <string name="ui_2f3069552c48aa40" formatted="false">"디코더에서 보고된 오류"</string>
+    <string name="ui_2f3aedca700af8d5" formatted="false">"마이크: Android에서 캡처를 거부했습니다. 무음"</string>
+    <string name="ui_2f59ff1c404d1a1c" formatted="false">"이 버전의 보고서에는 기록되지 않았습니다."</string>
+    <string name="ui_2fab0c9bbaa45978" formatted="false">"액션: {0}"</string>
+    <string name="ui_3018c814b3eade1f" formatted="false">"3월 +"</string>
+    <string name="ui_30608d134be11507" formatted="false">"레이아웃: {0}"</string>
+    <string name="ui_30feb8278a45f552" formatted="false">"{0}: 평균 {1} | 분. {2} | 피크 {3} {4}\n"</string>
+    <string name="ui_3119ed950dc7cb32" formatted="false">"입력 채널에 혼잡 대기가 발생했습니다. 연결 안정성을 비교해보세요."</string>
+    <string name="ui_312d7635e19fc07c" formatted="false">"xCLOUD 진단"</string>
+    <string name="ui_313097aa9a44ecf7" formatted="false">"비디오 레이아웃: {0} | 계산된 면적: {1}x{2} | 렌더러 프레임: {3}x{4}\n"</string>
+    <string name="ui_3248572c5b6c1107" formatted="false">"수류탄"</string>
+    <string name="ui_3332b8820c058240" formatted="false">"\n{0}\n{1} • 발표된 chatStream: {2} • 전송된 오디오: {3} B"</string>
+    <string name="ui_334d13453041f240" formatted="false">"세션 실패"</string>
+    <string name="ui_334d1bd8efe38a97" formatted="false">"새 코드 생성"</string>
+    <string name="ui_33569f077d268758" formatted="false">"전송 실패"</string>
+    <string name="ui_33aa74c990133347" formatted="false">"AMD FidelityFX Super Resolution"</string>
+    <string name="ui_34189d7d4bc30aea" formatted="false">"볼케이노 레드"</string>
+    <string name="ui_349a1e5b5ad05003" formatted="false">"세션 상태 Xbox"</string>
+    <string name="ui_35ba73e089626c8e" formatted="false">"패턴은 일반적인 H.264 거래를 유지합니다. Light는 Baseline만 제공하며 Auto에서는 720p 및 최대 6개의 Mbps를 요청합니다. 수동 시작 한도는 이 예산을 대체할 수 있습니다. 게임에서 이미 Baseline를 사용한 경우 승리가 보장되지 않는 H.264 프로필입니다. 수신되는 해상도와 비트 전송률은 서비스에 따라 다릅니다. 호환성에는 Baseline도 사용됩니다. 다음 경기에 적용됩니다."</string>
+    <string name="ui_35bb70353b8e6473" formatted="false">"감아차기"</string>
+    <string name="ui_36164ad19a82b356" formatted="false">"최근 추가 항목은 현재 사용할 수 없습니다.\n게임은 모든 게임 탭에 남아 있습니다."</string>
+    <string name="ui_368b2b2e7200770e" formatted="false">"자동 • {0}"</string>
+    <string name="ui_377054dce167ab0e" formatted="false">"자동 - 장치 및 게임 감지"</string>
+    <string name="ui_3836b5a9a3deca64" formatted="false">"마우스와 키보드"</string>
+    <string name="ui_38e8ff046e8a4a9e" formatted="false">"오류 HTTP 응답"</string>
+    <string name="ui_390eb77b9e11d082" formatted="false">"알 수 없는 출처"</string>
+    <string name="ui_3957f59f76b9013c" formatted="false">"컨트롤러 보정 및 재매핑"</string>
+    <string name="ui_395adc62ab03e0a6" formatted="false">"이미지 수신"</string>
+    <string name="ui_3980046624a3f6c8" formatted="false">"추정 지수: {0}/100 • {1}\n\n"</string>
+    <string name="ui_39aa7e5f1a46a860" formatted="false">"마이크로폰"</string>
+    <string name="ui_39d5684bfea642b6" formatted="false">"TV에서 게임 바로가기를 만들지 않았습니다."</string>
+    <string name="ui_39dcf1cbeb5adbd0" formatted="false">"복사"</string>
+    <string name="ui_3a67eba55d6fcdfb" formatted="false">"→ 오른쪽"</string>
+    <string name="ui_3a74acd87ad821ba" formatted="false">"EA SPORTS FC — 수비"</string>
+    <string name="ui_3b0428dedf9ea854" formatted="false">"손실"</string>
+    <string name="ui_3b23327d8d0c923d" formatted="false">"디코딩"</string>
+    <string name="ui_3b4f4c207983e247" formatted="false">"100% 원래 색상을 유지합니다. 값이 높을수록 색상이 강해집니다. 0%는 이미지를 회색으로 둡니다."</string>
+    <string name="ui_3b5baabe54b4045f" formatted="false">"자동은 비디오 프로필 예산을 유지합니다. 수동 한도는 해상도와 무관합니다. 값이 클수록 더 많은 네트워킹이 필요하며 안정성이 저하될 수 있습니다. Xbox는 수신된 비트 전송률을 결정합니다. 다음 게임에서 유효합니다."</string>
+    <string name="ui_3bba665be043adac" formatted="false">"사용 가능 — 음소거 시작"</string>
+    <string name="ui_3bbc8e45b2068390" formatted="false">"인증이 필요합니다. QR코드를 이용하여 다시 입력하세요."</string>
+    <string name="ui_3c2811461be5b829" formatted="false">"바로가기 템플릿에 유효한 아이콘과 배너가 포함되어 있지 않습니다."</string>
+    <string name="ui_3c68ac114e871ac8" formatted="false">"Y를 오른쪽으로 반전: {0}"</string>
+    <string name="ui_3c9ca841b5ad5e6f" formatted="false">"컨트롤러 및 터치"</string>
+    <string name="ui_3cd7a4601d9fbb2c" formatted="false">"서비스는 이 세션에서 chatStream을 발표하지 않았습니다. 캡처가 꺼진 상태로 유지됩니다."</string>
+    <string name="ui_3ce2d0b17b1880b0" formatted="false">"연결된 컨트롤러가 없습니다. 동글을 연결하고 버튼을 누릅니다."</string>
+    <string name="ui_3ce4d5fe1a4367a1" formatted="false">"이미지 조정"</string>
+    <string name="ui_3dbcda5ffe525dad" formatted="false">"xCLOUD [안드로이드 {0} | SoC: {1}] | 세션을 기다리는 중"</string>
+    <string name="ui_3e43c37eb67f0ff7" formatted="false">"표준 규모"</string>
+    <string name="ui_3f16c644774c196c" formatted="false">"훌륭한"</string>
+    <string name="ui_3f799bff91ffca8b" formatted="false">"진동: 앱을 연 이후 연결된 대상과 함께 {0} 명령; 안드로이드를 통한 {1}; {2}가 USB로 전달되었습니다.\n"</string>
+    <string name="ui_3f95bcdb951e0e6a" formatted="false">"방향성 →"</string>
+    <string name="ui_3fa41ffd6881476b" formatted="false">"오디오 게인"</string>
+    <string name="ui_40f3e2c9fdf5bf3e" formatted="false">"부분 데이터"</string>
+    <string name="ui_414e7c6771bfb5c7" formatted="false">"앱 테마: {0}"</string>
+    <string name="ui_41bfa23fb3fe9d31" formatted="false">"즐겨찾기"</string>
+    <string name="ui_4242ea82be64774d" formatted="false">"오른쪽 데드존"</string>
+    <string name="ui_42992c7d3ad53072" formatted="false">"전체 지수를 계산하기에는 샘플이 부족합니다. 측정되지 않은 필드는 해당 사항 없음으로 표시됩니다."</string>
+    <string name="ui_42fe4324d5ee6872" formatted="false">"WebRTC 누락 프레임"</string>
+    <string name="ui_43192ec0eecec6e4" formatted="false">"에뮬레이트된 마우스 감도"</string>
+    <string name="ui_431d2cdd95977d50" formatted="false">"전송 해상도"</string>
+    <string name="ui_447aaf10738f1398" formatted="false">"바로가기가 생성되었으나 TV에서 설치 권한을 부여하지 않았습니다."</string>
+    <string name="ui_44b3f5569624ba66" formatted="false">"회전하려면"</string>
+    <string name="ui_44d1cde7bab89024" formatted="false">"뒤집기 ←"</string>
+    <string name="ui_4533ad51a1eb993c" formatted="false">"컨트롤러를 통한 교정 및 재매핑"</string>
+    <string name="ui_45a2fb181b2175b2" formatted="false">"활성화됨"</string>
+    <string name="ui_462a08f2206f636c" formatted="false">"{0}를 업데이트합니다. 깨진 접점은 폐기됨 {1}; 마지막 컨트롤러: {2}\n{3}"</string>
+    <string name="ui_4637c7608d05cd03" formatted="false">"이 게임은 이 계정의 카탈로그에서 사용할 수 없습니다. 설정에서 카탈로그를 업데이트하세요."</string>
+    <string name="ui_46dedd48c84d8e41" formatted="false">"연결이 설정되었습니다. 게임의 첫 번째 프레임을 기다리고 있습니다."</string>
+    <string name="ui_47035f5bf6e7df11" formatted="false">"이 API에서는 즉시 파견이 불가능합니다."</string>
+    <string name="ui_472b7cb5c787f296" formatted="false">"축구 계획: {0}"</string>
+    <string name="ui_4750ad41b3122b74" formatted="false">"xCloud 오류"</string>
+    <string name="ui_478c39f86a8161d1" formatted="false">"게임 바로가기"</string>
+    <string name="ui_47a18fda47bdd27f" formatted="false">"AMD FSR 1.0.2: 꺼짐"</string>
+    <string name="ui_47cf330e4355aac3" formatted="false">"이 엔진의 전송: SDR의 8비트 H.264. 비디오 표면은 8비트 RGB를 사용합니다.\n\n"</string>
+    <string name="ui_48020357dd273e65" formatted="false">"Microsoft의 승인을 기다리는 중…"</string>
+    <string name="ui_48111b2c9ff4898e" formatted="false">"지역 협동조합: {0}"</string>
+    <string name="ui_4875bd46f6938df1" formatted="false">"자이로스코프: {0}"</string>
+    <string name="ui_48a6f1b5c95c945d" formatted="false">"Xbox 세션 유지 관리"</string>
+    <string name="ui_490f22e0cafe2260" formatted="false">"H.264 Baseline • 720p 요청됨 • 프로필/경기 인용"</string>
+    <string name="ui_497403cfde5a4210" formatted="false">"선명도: {0}%"</string>
+    <string name="ui_49e7b21dec4f31de" formatted="false">"이 기기에서는 바로가기를 만들 수 없습니다."</string>
+    <string name="ui_4a52c47f66c99ec4" formatted="false">"1440p — 2560×1440"</string>
+    <string name="ui_4a9889dafc31b83f" formatted="false">"적응형"</string>
+    <string name="ui_4aa85902acc25d50" formatted="false">"아직 표시할 동영상과 일치하는 항목이 없습니다."</string>
+    <string name="ui_4ad9c2f74dbab613" formatted="false">"트리거"</string>
+    <string name="ui_4adbcf7454d6a1fe" formatted="false">"지역 협동조합"</string>
+    <string name="ui_4b05c960591853ee" formatted="false">"획득하지 못함"</string>
+    <string name="ui_4b1ac785b8de8c36" formatted="false">"RCAS는 선명도 강도를 조정합니다. 50%는 GPU 비용의 절반을 의미하지 않습니다. 50%부터 시작하세요. 0%는 RCAS 선명도를 끄고 확대/축소 시 EASU를 유지합니다. 배율이 없고 RCAS가 0%인 경우 표준 필터를 사용합니다. 아래의 기본 선명화는 FSR이 활성화되지 않은 경우 사용됩니다."</string>
+    <string name="ui_4bfae14f85787073" formatted="false">"요청한 비디오 프로필: {0}×{1} • {2}\n요청 지역: {3} | 요청 언어: {4}"</string>
+    <string name="ui_4c36ee9f3bc47001" formatted="false">"골키퍼"</string>
+    <string name="ui_4c77ddc5bf055290" formatted="false">"언어 / Language"</string>
+    <string name="ui_4c9cf78b2618b0b7" formatted="false">"자이로스코프: 꺼짐"</string>
+    <string name="ui_4d04522711e96d11" formatted="false">"제스처와 명령이 결합됨"</string>
+    <string name="ui_4d9fc216d26f7fa6" formatted="false">"네트워크: {0}\n"</string>
+    <string name="ui_4db70b3589ba6f62" formatted="false">"제어 채널이 닫혔습니다"</string>
+    <string name="ui_4ec7a4faa45c612e" formatted="false">"바로가기 만들기"</string>
+    <string name="ui_4f3090753c8d2fdb" formatted="false">"놀자"</string>
+    <string name="ui_4f58650d467e195f" formatted="false">"{0} 게임 • GAME PASS 업데이트 중…"</string>
+    <string name="ui_504fb1a48efc40eb" formatted="false">"화면 모드: Android에서 보고되지 않음"</string>
+    <string name="ui_5052c95dbb7a4d8d" formatted="false">"세션을 복원하는 중…"</string>
+    <string name="ui_507a9a8be3d145a8" formatted="false">"예"</string>
+    <string name="ui_510c8504b7666c02" formatted="false">"화면: HDR10는 Android에서 발표되지 않았습니다."</string>
+    <string name="ui_5120d6e6ce58a9f2" formatted="false">"오디오: 미디어/게임 • 요청된 스테레오 • 미디어 볼륨 {0} • 음소거: {1} • 초점: {2} • 초점 게인 {3}% • 재생 {4}"</string>
+    <string name="ui_51807ae73e427a4e" formatted="false">"네트워크 연결 실패"</string>
+    <string name="ui_519384df60862471" formatted="false">"WebRTC 버퍼 네트워크 최소"</string>
+    <string name="ui_519db67915a19f2b" formatted="false">"Xbox Cloud에서 게임 가용성을 확인하는 중…"</string>
+    <string name="ui_51ceb32461a802b0" formatted="false">"LL 코덱: 비디오 대기 중"</string>
+    <string name="ui_523a44f3354defec" formatted="false">"예측은 변경될 수 있습니다. 재시도 제한: {0}."</string>
+    <string name="ui_52db9735e5787eb4" formatted="false">"컨트롤러를 연결하고 Android용 버튼을 눌러 식별합니다."</string>
+    <string name="ui_5320b4ddb576ee67" formatted="false">"활성 상태로 표시됨"</string>
+    <string name="ui_54046e97b2af0d03" formatted="false">"AMD FSR 1.0.2: 표준 스케일로 복귀 — {0}"</string>
+    <string name="ui_5407798aed2c5f8e" formatted="false">"입력 Xbox: 컨트롤러/HUD"</string>
+    <string name="ui_5462b1a62e38d020" formatted="false">"바로가기 설치"</string>
+    <string name="ui_547895e7e49f46e2" formatted="false">"Xbox는 아직 예상 대기 시간을 제공하지 않았습니다."</string>
+    <string name="ui_5495e90894e99c50" formatted="false">"세션 유지 관리: {0} 확인; {1} 오류; "</string>
+    <string name="ui_564483fdaa0be6c5" formatted="false">"네트워크를 사용할 수 없거나 아직 초기화 중일 수 있습니다. 연결을 확인하고 다시 시도해 보세요.\n{0}"</string>
+    <string name="ui_5667ddc7bc6e6282" formatted="false">"컨트롤러 프로필"</string>
+    <string name="ui_567d3c6715a99815" formatted="false">"영상 진행 없이 영상이 수신되었습니다. 디코더, 해상도, 필터 및 패킷 손실을 비교하십시오."</string>
+    <string name="ui_56991385beba9fac" formatted="false">"기본 업스케일링: {0}"</string>
+    <string name="ui_5724963f98d0fef6" formatted="false">"터치로 플레이"</string>
+    <string name="ui_572b75effcf75068" formatted="false">"요청 화면 모드: {0} | 현재 물리적: {1} | 앱에 보고된 속도: {2}Hz\n"</string>
+    <string name="ui_577f2fb9fa976da6" formatted="false">"활성화는 두 개의 촬영 버튼에 조준과 사격을 결합합니다. 장애인은 조준과 별도로 사격을 계속합니다. 적용은 이러한 버튼의 동작을 복원하고 해당 위치를 유지합니다."</string>
+    <string name="ui_57ae557d5235ddcc" formatted="false">"제어/구성 전송 실패"</string>
+    <string name="ui_58580f4aca95c13c" formatted="false">"런처가 요청을 수락하지 않았습니다."</string>
+    <string name="ui_586c88220c070b1a" formatted="false">"마이크: 인코더가 활성화를 거부했습니다. 무음"</string>
+    <string name="ui_58ae522829aae08e" formatted="false">"원본은 수신된 형식을 유지하고 창에 맞는 가장 큰 크기를 사용합니다. 16:9 비디오는 휴대전화에 사이드바를 남길 수 있습니다. 네이티브 터치를 지원하는 일부 게임은 더 넓은 비디오를 제공합니다. 늘이면 자르지 않고 채워지지만 이미지가 휘어집니다. 확대/축소는 변형 없이 가장자리를 잘라내어 채웁니다. 고정 비율도 변형될 수 있습니다. 모든 옵션을 보려면 ↑/↓를 사용하거나 스와이프하세요. 변경 사항은 경기 중에 즉시 적용되며 향후 게임을 위해 저장됩니다."</string>
+    <string name="ui_58b3b5116d5572a2" formatted="false">"게임당 비트 전송률, 지역 및 언어"</string>
+    <string name="ui_58b938545dce3978" formatted="false">"뒤집기 →"</string>
+    <string name="ui_58cb5d0c620f3ad0" formatted="false">"컨트롤 크기"</string>
+    <string name="ui_595dcec8fc90991d" formatted="false">"입력 Xbox: 기본 마우스/키보드, 협상된 버전 {0}"</string>
+    <string name="ui_596730c4eb46c6f1" formatted="false">"최근 Xbox Cloud Gaming 게임이 여기에 표시됩니다."</string>
+    <string name="ui_596903e9ec975722" formatted="false">"코드가 만료되었습니다. 계속하려면 새 코드를 생성하세요."</string>
+    <string name="ui_59dc926760d04aea" formatted="false">"뒤로"</string>
+    <string name="ui_5a15decff9c895af" formatted="false">"지금은 연결을 복원할 수 없습니다. 저장된 로그인이 보존되었습니다."</string>
+    <string name="ui_5ac0d2258a8ba03f" formatted="false">"자동은 IPv4/IPv6를 사용 가능한 상태로 유지하고 출발 중에 경로를 확인합니다. WebRTC는 연결성, 수신 및 RTT를 고려하여 백업 대안을 유지합니다. IPv4/IPv6 기본 설정은 선택한 계열에 최대 750개의 초기 ms를 제공하고 다른 계열은 보존합니다. 경로는 서버에 따라 다릅니다. 최저 핑이 보장되지 않습니다. 다음 게임에서 유효합니다."</string>
+    <string name="ui_5ae68007466819b0" formatted="false">"16:9 — 표준"</string>
+    <string name="ui_5af3de070991f5ab" formatted="false">"버튼 매핑 변경"</string>
+    <string name="ui_5ba350d83209ffab" formatted="false">"이름으로 게임을 찾으세요."</string>
+    <string name="ui_5baaabe3ca0e3e5b" formatted="false">"요청이 런처로 전송되었습니다. 홈 화면에서 확인하세요."</string>
+    <string name="ui_5c0d9d1247ade676" formatted="false">"기본 터치: {0}; 입력 공간: {1}; 가상 슬롯 0: {2}"</string>
+    <string name="ui_5c2de6412ff6a812" formatted="false">"컨트롤러: 대기열 {0} B | 최대 로컬 지연 {1} ms | {2}를 합체 | 대기 채널 {3}\n"</string>
+    <string name="ui_5c5df1e844450eee" formatted="false">"Game Pass에서 게임을 로드하는 중…"</string>
+    <string name="ui_5c87f1038115e48d" formatted="false">"공식 목록에서 정보를 로드하는 중입니다. 소유권을 확인하지 않습니다. 디지털 구매 및 서비스 조건이 필요합니다."</string>
+    <string name="ui_5cf2eabe2f7ead4e" formatted="false">"빠른 응답"</string>
+    <string name="ui_5cfd306d0c680720" formatted="false">"인더스트리얼 오렌지"</string>
+    <string name="ui_5d3015b63d8af4f4" formatted="false">"테이블"</string>
+    <string name="ui_5d6bd99ad57d78a7" formatted="false">"경로 ICE: WebRTC에서 아직 정보를 제공하지 않은 선택"</string>
+    <string name="ui_5da6b119769c1053" formatted="false">"패스"</string>
+    <string name="ui_5e192548c7bcc788" formatted="false">"Xbox의 기록을 확인할 수 없습니다.\n다시 시도하려면 설정에서 카탈로그를 업데이트하세요."</string>
+    <string name="ui_5e704f128723d932" formatted="false">"공식 Xbox 클라우드 게임 갤러리 • 무료 옵션이 포함되어 있습니다. 액세스 권한은 계정 및 서비스 조건에 따라 다릅니다."</string>
+    <string name="ui_5e9122e22aeea829" formatted="false">"기본 마우스 및 키보드 — 지원되는 게임"</string>
+    <string name="ui_5ebd45db6acabfbc" formatted="false">"홈 화면에 채널이 표시되지 않았습니다. TV에 설치 바로가기 사용: 게임이 Google TV를 포함한 애플리케이션에 표시됩니다."</string>
+    <string name="ui_5f2f459cff03b9b5" formatted="false">"자동 — 경기 중 IPv4/IPv6"</string>
+    <string name="ui_5f55edf900896012" formatted="false">"찾다"</string>
+    <string name="ui_5fc03d596bcf540c" formatted="false">" - 장애가 있는"</string>
+    <string name="ui_5fc7e20f01a4a3ed" formatted="false">"활성화됨"</string>
+    <string name="ui_60193beabdba3ac4" formatted="false">"대안 — X 킥"</string>
+    <string name="ui_6021b0f36cb336f1" formatted="false">"이 경기에서 가상 컨트롤러를 사용하세요"</string>
+    <string name="ui_6035eadf7ad73a21" formatted="false">"크라우치/슬라이드"</string>
+    <string name="ui_60533ba9536c7060" formatted="false">"활성 동영상 없음"</string>
+    <string name="ui_60956010e192ec09" formatted="false">"이 게임은 기본 마우스와 키보드를 광고하지 않았습니다. 에뮬레이션이나 컨트롤러를 사용하세요."</string>
+    <string name="ui_60d41a2db12a0294" formatted="false">"요청된 FSR 출력: {0} | 요청된 버퍼: {1}\n"</string>
+    <string name="ui_6127593882e201a2" formatted="false">"스키마 {0}; "</string>
+    <string name="ui_61435946c25099f8" formatted="false">"로컬 케이던스 FSR: {0}(게임/화면 GPU 또는 FPS를 측정하지 않음)\n"</string>
+    <string name="ui_61cc7d07af524282" formatted="false">"슬라이딩 태클"</string>
+    <string name="ui_61e168bce1c2a966" formatted="false">"커버를 사용할 수 없습니다. 시작 → 카탈로그 업데이트."</string>
+    <string name="ui_62b866eb9e9df7d4" formatted="false">"자이로스코프: 센서리스 장치"</string>
+    <string name="ui_62e41bce3d084026" formatted="false">"테스트 USB/XInput — {0}"</string>
+    <string name="ui_633366eb5029868a" formatted="false">"신청이 마감되었습니다"</string>
+    <string name="ui_63a8d72dce1a6d39" formatted="false">"전술적"</string>
+    <string name="ui_63e2bbaf1c924391" formatted="false">"계속하다"</string>
+    <string name="ui_651cd3eade26bd7c" formatted="false">"대비: {0}%"</string>
+    <string name="ui_65f4d02ea718ba50" formatted="false">"30초 후에도 이미지가 반환되지 않았습니다. 비디오를 복구하면 매치가 계속 열려 있습니다. 카탈로그로 돌아가면 세션이 종료됩니다."</string>
+    <string name="ui_6624c0d31888ecac" formatted="false">"이동하다"</string>
+    <string name="ui_66a2c683ac7c3e27" formatted="false">"부분"</string>
+    <string name="ui_66d33467591ba3dc" formatted="false">"카탈로그를 준비 중입니다."</string>
+    <string name="ui_66d46ce399af3308" formatted="false">"xCLOUD에서 이 게임을 여는 작은 응용 프로그램이 설치됩니다. 그런 다음 응용 프로그램에서 게임을 찾으세요. Google TV의 홈 화면에서 즐겨찾는 앱 행에 추가하세요."</string>
+    <string name="ui_67343c55f838d078" formatted="false">"방어"</string>
+    <string name="ui_676b6063ae4c96d9" formatted="false">"{0}  {1}"</string>
+    <string name="ui_67b550f6dfc6e20d" formatted="false">"호환되는 구매 게임의 공식 목록을 로드하는 중…"</string>
+    <string name="ui_6856b67e9e111e7d" formatted="false">"{0} 소개"</string>
+    <string name="ui_68a0db34478f420a" formatted="false">"공격"</string>
+    <string name="ui_68a0ecfad3311a2b" formatted="false">"에뮬레이트된 마우스 감도: {0}%"</string>
+    <string name="ui_68a1a961130ed783" formatted="false">"세션 기본값"</string>
+    <string name="ui_68d82a5111f30acc" formatted="false">"비디오 복구 중: 디스플레이 표면을 다시 만드는 중…"</string>
+    <string name="ui_6914f8a347d4a25c" formatted="false">"오디오, 비디오 및 컨트롤러를 Xbox에 연결합니다."</string>
+    <string name="ui_693c263b104df9e9" formatted="false">"버튼 결합"</string>
+    <string name="ui_6960e07fabc8e3a9" formatted="false">"연결할 수 없음: {0}"</string>
+    <string name="ui_69d920c63dd1a626" formatted="false">"비디오 코덱"</string>
+    <string name="ui_6a38ddba7b1ce307" formatted="false">"마이크: 협상이 완료되지 않았습니다. 무음"</string>
+    <string name="ui_6a58eca53330b508" formatted="false">"A 선택 B 반환"</string>
+    <string name="ui_6a6f834e8503b318" formatted="false">"\n\n샘플 값을 사용할 수 있습니다. 디코더의 FPS는 게임이나 화면의 FPS가 아닙니다. 관찰된 버퍼, WebRTC 타겟 및 네트워크 최소값은 별개의 측정값입니다. 재생 요청은 관찰된 값을 보장하지 않습니다. 디코드에는 처리뿐만 아니라 코덱 파이프라인도 포함됩니다. 입력 대 광자를 추정하기 위해 이러한 측정값을 추가하지 마십시오. WebRTC 카운터에는 모든 연결 트래픽이 포함되지 않을 수 있습니다. 지수는 속도 테스트가 아닌 지역 추정치입니다. 일시 정지는 각 프레임을 캡처하는 것이 아니라 감시 장치에 의해 관찰됩니다."</string>
+    <string name="ui_6aa4511fc00e6c8a" formatted="false">"설정 › {0}"</string>
+    <string name="ui_6b3a73ce76d187ae" formatted="false">"게임 후 진단: {0}"</string>
+    <string name="ui_6bb02cbf4e61a203" formatted="false">"{0} 게임 • 기록 업데이트 중…"</string>
+    <string name="ui_6bf330c92a591795" formatted="false">"압력"</string>
+    <string name="ui_6c5cc18b8f198ece" formatted="false">"손실"</string>
+    <string name="ui_6c6adaaff42d504c" formatted="false">"컨트롤러 레이아웃"</string>
+    <string name="ui_6ccce0bc37d3c34e" formatted="false">"형식을 사용할 수 없습니다. 100%로 제한됨"</string>
+    <string name="ui_6d69c920b76df7b0" formatted="false">"슛"</string>
+    <string name="ui_6e1c002bff40ba7b" formatted="false">"표면 규모: {0}; 창에 맞춰진 이미지 | {1} FPS 표면에 플래그가 지정된 콘텐츠: {2} | 최소 후처리: {3}; 안드로이드 지원 선언: {4}\n"</string>
+    <string name="ui_6e3a7123b1149629" formatted="false">"좋은"</string>
+    <string name="ui_6e61d9ceb42e584a" formatted="false">"게임"</string>
+    <string name="ui_6e82ce7109479e3d" formatted="false">"핸드 브레이크"</string>
+    <string name="ui_6e91752edf51a9a4" formatted="false">"완료"</string>
+    <string name="ui_6eeaf16b99c69f98" formatted="false">"세부정보 복사"</string>
+    <string name="ui_6f0f039d818b877c" formatted="false">"늘이기 - 화면 채우기"</string>
+    <string name="ui_6f95371be31c293e" formatted="false">"태클"</string>
+    <string name="ui_6f9ead072155818b" formatted="false">"조준"</string>
+    <string name="ui_6fa65c8b1d86be1a" formatted="false">"파워 슛"</string>
+    <string name="ui_6fc11b786d442bc3" formatted="false">"사용/새로고침"</string>
+    <string name="ui_708da79e6a0a6a1a" formatted="false">"HUD를 활성화하려면 컨트롤이 연결될 때까지 기다리세요."</string>
+    <string name="ui_7091e08252b19a9f" formatted="false">"경로 ICE: 통계를 기다리는 중"</string>
+    <string name="ui_70b2bc30a20bd443" formatted="false">"세션이 실패로 종료되었습니다. 인덱스는 관찰된 샘플을 요약하며 경기 종료 시 중단을 제외하지 않습니다."</string>
+    <string name="ui_715e6e852db4669e" formatted="false">"제어 › 물리적 컨트롤러"</string>
+    <string name="ui_7228b14b7339d276" formatted="false">"표준 H.264"</string>
+    <string name="ui_725773cdf3a0c425" formatted="false">"녹색 — 기본값"</string>
+    <string name="ui_728ce9e009f430f8" formatted="false">"비디오 프레젠테이션"</string>
+    <string name="ui_729a44abc3854402" formatted="false">" • 서비스 코드: {0}"</string>
+    <string name="ui_729ddc2d6a14b63c" formatted="false">"경과 시간"</string>
+    <string name="ui_72c062443055110e" formatted="false">"검색: {0}  •  게임 {1}개"</string>
+    <string name="ui_730c8f35817cbf13" formatted="false">"매치 • Menu + View"</string>
+    <string name="ui_7347fdd20909d059" formatted="false">"이 컨트롤러를 복원하세요"</string>
+    <string name="ui_73ec6d749ebb1765" formatted="false">"이 게임의 비트 전송률, 지역 및 언어"</string>
+    <string name="ui_74397518ecd59cbc" formatted="false">"SDP 제안 준비됨: {0} | POST 확인됨: {1}\n"</string>
+    <string name="ui_743ece07f975ba41" formatted="false">"왼쪽 감도"</string>
+    <string name="ui_7441c03b2f6c21aa" formatted="false">"바로가기 서명을 확인할 수 없습니다. 다시 만들어 보세요."</string>
+    <string name="ui_7490e4a94af107e2" formatted="false">" • 컨트롤러: {0}"</string>
+    <string name="ui_74c70bb3042fd0b1" formatted="false">"낮은 지연 시간"</string>
+    <string name="ui_757c830e53da57d8" formatted="false">"라이브러리 및 계정"</string>
+    <string name="ui_75c4bfe48d33e19e" formatted="false">"컨설팅…"</string>
+    <string name="ui_7632ae27575e3ad6" formatted="false">"\n\n이 테스트에서는 Xbox 360/XInput(ff/5d/01)만 허용됩니다. HID, Xbox One 및 기타 프로토콜에는 자체 구현이 필요합니다. 승인된 전송은 엔진이 진동했음을 증명하지 않습니다."</string>
+    <string name="ui_768de1111f0f42af" formatted="false">"게임을 연결하려면 QR 코드를 사용하여 로그인을 업데이트하세요."</string>
+    <string name="ui_76900e0682cc8062" formatted="false">"비활성화됨 - 촬영만 가능"</string>
+    <string name="ui_76b0fb6ad18939ac" formatted="false">"설정"</string>
+    <string name="ui_76b720722ff9a19b" formatted="false">"비디오 비트레이트"</string>
+    <string name="ui_76daee1631fea659" formatted="false">"아니요"</string>
+    <string name="ui_76e1824b75a3c908" formatted="false">"없음"</string>
+    <string name="ui_7826af008248bda6" formatted="false">"보유한 게임 스트리밍"</string>
+    <string name="ui_78adbf905929c0f6" formatted="false">"즐겨찾기"</string>
+    <string name="ui_791477787eca5791" formatted="false">"게임에 액세스하려면 Microsoft 계정을 연결하세요."</string>
+    <string name="ui_79651e7e684870d0" formatted="false">"사용 가능"</string>
+    <string name="ui_7a240c47b9aaafed" formatted="false">"자이로 감도"</string>
+    <string name="ui_7a96e3cbb12396ce" formatted="false">"{0} ms ~ {1} FPS 범위의 디코딩 시간입니다. 파이프라인은 프레임과 겹칠 수 있습니다. 이것만으로는 과부하가 입증되지 않습니다. 720p와 기기에서 비활성화된 필터를 비교하세요."</string>
+    <string name="ui_7afdaf11d46f293f" formatted="false">"이미지 종횡비"</string>
+    <string name="ui_7b4d92374d3bf359" formatted="false">"당신의 라이브러리"</string>
+    <string name="ui_7b6509a9aa6c2d74" formatted="false">"올바른 감도: {0}%"</string>
+    <string name="ui_7bb50f81a7f81db7" formatted="false">"해상도: {0}"</string>
+    <string name="ui_7bd998451d35ad13" formatted="false">"활성 네이티브 비디오 [{0}]"</string>
+    <string name="ui_7be697d4a90b3424" formatted="false">"축구 — 표준"</string>
+    <string name="ui_7bf56c45ea80b5eb" formatted="false">"Xbox는 세션이 {0}에 대해 대기열에 있음을 확인했습니다."</string>
+    <string name="ui_7cfb945aa92e9e4f" formatted="false">"차이"</string>
+    <string name="ui_7d1c4b172d9e5abe" formatted="false">"로그인을 완료할 수 없습니다. {0}"</string>
+    <string name="ui_7d7155a2737ecabe" formatted="false">"로딩 정보 및 표지: {0}/{1}"</string>
+    <string name="ui_7ddd23f8251df791" formatted="false">"{0} 아이콘"</string>
+    <string name="ui_7df581cb7d119a56" formatted="false">"영상 및 스트리밍"</string>
+    <string name="ui_7e0b3df0e4a57a89" formatted="false">"연결된 계정"</string>
+    <string name="ui_7f3a4c49553afc6e" formatted="false">"세션 협상"</string>
+    <string name="ui_7f5fa50224d18ac3" formatted="false">"재생산 : {0}"</string>
+    <string name="ui_7f76d1772534348e" formatted="false">"공격 HUD 표시"</string>
+    <string name="ui_7faa3bcd054b0e23" formatted="false">"세션이 종료되었습니다."</string>
+    <string name="ui_7fb22bed7386678e" formatted="false">"브레이크"</string>
+    <string name="ui_7fc1783485bda2bf" formatted="false">"즐겨찾기 바로가기"</string>
+    <string name="ui_801b999df4383400" formatted="false">"Android 조이스틱 이벤트 → 앱: 평균 {0} | 분. {1} | 피크 {2} ms"</string>
+    <string name="ui_805bfea64db39921" formatted="false">"버퍼 WebRTC: 관찰된 {0} ms | 대상 {1} ms | 최소 네트워크 {2} ms\n"</string>
+    <string name="ui_81bccda7a718cabd" formatted="false">"요청 언어: {0}"</string>
+    <string name="ui_81ccdb1302afecc4" formatted="false">"{0} 적용"</string>
+    <string name="ui_81d7338f4f5df49f" formatted="false">"{0} 조정"</string>
+    <string name="ui_8222c7e9b2afed67" formatted="false">"; 마지막 오류 {0}"</string>
+    <string name="ui_8227e3d90b56a55a" formatted="false">"마이크: 음소거"</string>
+    <string name="ui_82fd204362ad266a" formatted="false">"대기열에 있습니다"</string>
+    <string name="ui_8391da809dd9ca6b" formatted="false">"{0}{1}"</string>
+    <string name="ui_8396f8dc3a730105" formatted="false">"선택하다"</string>
+    <string name="ui_83b1836da0c78588" formatted="false">"장애가 있는"</string>
+    <string name="ui_83b7a65bfb29335c" formatted="false">"공식 Microsoft 로그인 QR 코드"</string>
+    <string name="ui_83ca0cd5f7dba936" formatted="false">"이미지는 선택한 화면비에 따라 두 모드 모두에서 창에 맞게 조정됩니다. Surface Android 스케일링에 대한 프롬프트가 활성화되었습니다. off는 렌더러 스케일을 사용합니다. FSR이 활성화되면 출력 해상도에서 렌더러를 사용합니다. TV 처리는 TV 자체에서 조정됩니다. 다음 경기에 적용됩니다."</string>
+    <string name="ui_844c52cfd57f0757" formatted="false">"예측은 {0} 전에 컨설팅되었습니다."</string>
+    <string name="ui_84f22e1a625e7c17" formatted="false">"{0}가 즐겨찾기에 추가되었습니다"</string>
+    <string name="ui_858ac8f652d62519" formatted="false">"추정치는 변경될 수 있습니다. 보장된 시간은 아닙니다."</string>
+    <string name="ui_85e9d6584577736e" formatted="false">"서비스가 선택한 H.264 프로필 외부 형식으로 응답했습니다."</string>
+    <string name="ui_8666d79d9ebc7140" formatted="false">"호환성 — 저전력 TV"</string>
+    <string name="ui_86c4d56695aa213e" formatted="false">"세션 진단({0})"</string>
+    <string name="ui_86fbfb699dd0e310" formatted="false">"귀하의 세션"</string>
+    <string name="ui_879cfabd793d0157" formatted="false">"FSR 출력: {0}"</string>
+    <string name="ui_87c3860190710a08" formatted="false">"{0} 제품 • 부분 데이터"</string>
+    <string name="ui_881e8bd48dc88da0" formatted="false">"감도 {0}%; 데드존 {1}%; "</string>
+    <string name="ui_886e0210ef167b68" formatted="false">"AMD FSR 1.0.2 — 실험적"</string>
+    <string name="ui_8892d243f5537424" formatted="false">"100%는 원래 대비를 유지합니다. 극단적인 값은 밝거나 어두운 세부 사항을 숨길 수 있습니다."</string>
+    <string name="ui_892188af00d5e76a" formatted="false">"예측은 변경될 수 있습니다. 시간을 보장하는 것은 아닙니다."</string>
+    <string name="ui_893b96a29b56340e" formatted="false">"Game Pass에서 사용 가능"</string>
+    <string name="ui_8a88e3a86b08b2ec" formatted="false">"화질 및 화면"</string>
+    <string name="ui_8b5d3029ee3db112" formatted="false">"계정 전환"</string>
+    <string name="ui_8b8695ec9db0bfce" formatted="false">"이미지 조정 - 선명도, 채도, 밝기 및 대비"</string>
+    <string name="ui_8bc4692e3412c04d" formatted="false">"경기 중에 항상"</string>
+    <string name="ui_8c1c85b9a6670ba8" formatted="false">"즉시 디스패치 요청됨(인터페이스 vsync를 기다리지 않음)"</string>
+    <string name="ui_8d0f0a4a48121b78" formatted="false">"스루 패스"</string>
+    <string name="ui_8daf0c9652bbce83" formatted="false">"FPS 디코딩됨"</string>
+    <string name="ui_8dcf516ab73b515d" formatted="false">"돌아가려면"</string>
+    <string name="ui_8e6585681b74fcb7" formatted="false">"이동 스틱을 스틱 가장자리 너머로 실행 방향으로 위로 드래그합니다. 백업하면 실행 명령이 해제됩니다. 손가락을 떼면 움직임도 재설정됩니다. 게임 옵션은 경주 동작을 정의합니다. 실행 버튼은 터치로도 작동합니다."</string>
+    <string name="ui_8ea1b4a47e8ff6fa" formatted="false">"4K — 3840×2160(실험적)"</string>
+    <string name="ui_8ea541b087ec2c75" formatted="false">"기술적 분류가 없는 오류"</string>
+    <string name="ui_8f593701d1d0bb29" formatted="false">"입력: {0} 대기 | {1} 통합 전환\n"</string>
+    <string name="ui_90b7766e2c2b1cb8" formatted="false">"게임을 종료합니다…"</string>
+    <string name="ui_911946e859f7e597" formatted="false">"패킷"</string>
+    <string name="ui_913d38b99bed0a3c" formatted="false">"확인되지 않은"</string>
+    <string name="ui_91659ea32014744d" formatted="false">"변속기 연결"</string>
+    <string name="ui_91a83117cbba2fb1" formatted="false">"마지막 로컬 요약을 저장합니다. 경기 통계는 활성화할 때까지 숨겨진 상태로 유지됩니다."</string>
+    <string name="ui_91d709d706494887" formatted="false">"이미지 진행 없음: {1} 관찰 에피소드의 {0}\n"</string>
+    <string name="ui_927e3af3d6f75587" formatted="false">"대기열 확인됨 {0}"</string>
+    <string name="ui_92b8e926c2168679" formatted="false">"카메라 감도 드래그"</string>
+    <string name="ui_92bba5c8f9add126" formatted="false">"LT를 누른 상태에서"</string>
+    <string name="ui_9313455e45aa2243" formatted="false">"예"</string>
+    <string name="ui_93534e3e8a8dccfd" formatted="false">"메뉴"</string>
+    <string name="ui_936fa7aae91087f9" formatted="false">"{0} 게임 • 공식 목록"</string>
+    <string name="ui_94670b84224ce29d" formatted="false">"Xbox에 계정을 연결하는 중…"</string>
+    <string name="ui_952551ccad9942ba" formatted="false">"카탈로그로 돌아가기…"</string>
+    <string name="ui_95ceb3e6dbc1704c" formatted="false">"xCLOUD로 클라우드에서 플레이하세요"</string>
+    <string name="ui_95daf899e2a35b7d" formatted="false">"이미 기다리셨습니다: {0}."</string>
+    <string name="ui_960127b1f234801c" formatted="false">"헤더가 없는 공식 갤러리입니다."</string>
+    <string name="ui_962e526f2fb4c866" formatted="false">"{0}를 촬영할 때 조준하세요. "</string>
+    <string name="ui_964847849afda69b" formatted="false">"{0} [{1}] → {2}"</string>
+    <string name="ui_96966750f35e19c9" formatted="false">"이전 카테고리, LB"</string>
+    <string name="ui_96a6b9f2b8c3d779" formatted="false">"네트워크 및 세션"</string>
+    <string name="ui_96ec241ac11e3242" formatted="false">"마우스와 키보드로 컨트롤러를 에뮬레이션"</string>
+    <string name="ui_975f261b38408189" formatted="false">"축구 — 수비"</string>
+    <string name="ui_97a9221076144318" formatted="false">"사용 가능한 지표는 이 컬렉션에서 중요한 경고를 나타내지 않았습니다."</string>
+    <string name="ui_97ff8f05d7df6240" formatted="false">"Android 컨트롤러와 고유한 연결이 없습니다. 진동 시작을 사용할 수 없습니다."</string>
+    <string name="ui_9808395daf5344df" formatted="false">"시스템은 즐겨찾기 채널 xCLOUD를 승인했습니다. 표시는 TV의 홈 화면에 따라 다릅니다. 직접 액세스 앱을 만들려면 TV 바로가기 설치를 사용하세요."</string>
+    <string name="ui_988a7912b3147f0c" formatted="false">"이 에디션을 인증된 카탈로그의 재생 가능한 타이틀과 연결할 수 없습니다. 이는 귀하의 계정/지역에 대한 액세스 권한이 없음을 확인하는 것이 아닙니다. 카탈로그를 업데이트하고 다시 시도하세요. 제품: {0}."</string>
+    <string name="ui_98f15e53a1bd096c" formatted="false">"모든 경기에 대한 표준"</string>
+    <string name="ui_9934abcab76d65f1" formatted="false">" - 원래의"</string>
+    <string name="ui_9ae35f5f91ad2ad9" formatted="false">"사용 가능 - 음소거 시작"</string>
+    <string name="ui_9b293fc455603d84" formatted="false">"SDK가 RTP 기본 설정을 거부했습니다."</string>
+    <string name="ui_9b7c788c87298b87" formatted="false">"최대 비트레이트: {0}"</string>
+    <string name="ui_9b850f6c640c8388" formatted="false">"활성 영상 없이 서비스가 응답했습니다."</string>
+    <string name="ui_9bc947e58b62b2fe" formatted="false">"아니요"</string>
+    <string name="ui_9bd4d1e04ad51df3" formatted="false">"정지시키다"</string>
+    <string name="ui_9c01bae80b35415f" formatted="false">"세션을 갱신해야 합니다. 계속하려면 QR 코드를 통해 입력하세요."</string>
+    <string name="ui_9c8bc8bbd1e7fa45" formatted="false">"수신됨: WebRTC: {0} • 전송됨: {1}\n"</string>
+    <string name="ui_9d37f98efd33b2f9" formatted="false">"공식 목록을 사용할 수 없습니다."</string>
+    <string name="ui_9d952199b3f90d45" formatted="false">"강하게 패스하세요"</string>
+    <string name="ui_9dfcfd53b29994a4" formatted="false">"QR 코드를 생성할 수 없습니다. {0}"</string>
+    <string name="ui_9e29d8ee79027a75" formatted="false">"시스템 기본값(#0)"</string>
+    <string name="ui_9e98acc9f05ebb19" formatted="false">"xCLOUD • 경기 후 진단\n{0}\n{1}\n{2}\n"</string>
+    <string name="ui_9ea0e18723f59099" formatted="false">"설치 바로가기: {0}"</string>
+    <string name="ui_9ee25e963d051150" formatted="false">"선택적 테스트: 손가락을 기본 터치 상태로 유지하고 오른쪽 아날로그 스틱을 통해 조준을 보냅니다. 일부 게임은 입력 인터페이스를 전환할 수 있습니다. 모드가 꺼짐인 경우 이 테스트를 활성화하려면 항상을 선택합니다. LT/LB에는 기본 터치의 물리적 컨트롤러가 필요합니다. 다음 게임에서 유효합니다."</string>
+    <string name="ui_9f3ebbde555a2c21" formatted="false">"검색 지우기"</string>
+    <string name="ui_9f944b0487751781" formatted="false">"보호하다"</string>
+    <string name="ui_9fe40625cfedb8a2" formatted="false">"앱 언어: {0}"</string>
+    <string name="ui_9ff2d5081992d239" formatted="false">"ICE 위치: 픽업 대기 중"</string>
+    <string name="ui_a037abd19f1ff1bb" formatted="false">"마우스 및 키보드 캡처/해제 — F8"</string>
+    <string name="ui_a111ca34ef6b91c0" formatted="false">"{0} | 주문: {1} | 요청된 프레젠테이션: {2} FPS\n"</string>
+    <string name="ui_a132cc573276e191" formatted="false">"카탈로그 업데이트"</string>
+    <string name="ui_a14359b05d91e1ac" formatted="false">"FSR 선명도(RCAS): {0}%"</string>
+    <string name="ui_a190afc4b4adb7f6" formatted="false">"포함하다"</string>
+    <string name="ui_a1bdb563a765ac41" formatted="false">"진단서를 복사했습니다."</string>
+    <string name="ui_a1f9822e5355c082" formatted="false">"노선 ICE: {0} → {1} | RTT {2} | 관찰된 변경 사항: {3} | 검증된 대체 쌍: {4}"</string>
+    <string name="ui_a25e282550325946" formatted="false">"{0}  ■  {1}"</string>
+    <string name="ui_a2785a754a255bed" formatted="false">"기준"</string>
+    <string name="ui_a285fed899aeb882" formatted="false">"제스처 • {0}"</string>
+    <string name="ui_a2a5acaabb8c378d" formatted="false">"왼쪽 데드존"</string>
+    <string name="ui_a2e5f957fe19031f" formatted="false">"SDP 응답: {0} | 적용 : {1}"</string>
+    <string name="ui_a320e31d01bb4da5" formatted="false">"Xbox 추정치: 약 {0}."</string>
+    <string name="ui_a38dc37dc8fe7b15" formatted="false">"720p — 더 밝음"</string>
+    <string name="ui_a3d84c955a3fb0b3" formatted="false">"선택적 이미지 조정. 선명도는 노이즈를 강조할 수 있으며 더 많은 GPU가 필요할 수 있습니다. 경기 중에는 변경 사항이 즉시 적용됩니다."</string>
+    <string name="ui_a3e0d2415190a8a6" formatted="false">"주문"</string>
+    <string name="ui_a41900826715a772" formatted="false">"복구 {0}; 연속 실패 {1}"</string>
+    <string name="ui_a451f1f2dfc6d41d" formatted="false">"{0}: HTTP {1}"</string>
+    <string name="ui_a4a455282b33666a" formatted="false">"제스처 없음"</string>
+    <string name="ui_a4f285fa2d5ec93e" formatted="false">"아무도 알리지 않았다"</string>
+    <string name="ui_a5575a1a9fa7978f" formatted="false">"전환"</string>
+    <string name="ui_a57846c4bb3360ff" formatted="false">"무기 변경"</string>
+    <string name="ui_a5d4e1d783941562" formatted="false">"비디오 모드"</string>
+    <string name="ui_a5fe1cbebea0c09c" formatted="false">"비디오 RTP: {0} | 채널에서 허용되는 입력: {1}\n"</string>
+    <string name="ui_a6304667a4694dfc" formatted="false">"B 취소"</string>
+    <string name="ui_a64fd7ed84b6520a" formatted="false">"제어 › 진동"</string>
+    <string name="ui_a6b403097a36fa25" formatted="false">"카메라 X/Y: {0}/{1} | LT/RT: {2}%/{3}% | DZ 앱: 0% | 최대 250 Hz 입력\n"</string>
+    <string name="ui_a6c5801ccc839510" formatted="false">"기본 스트리밍 및 컨트롤러 탐색 기능을 갖춘 Xbox 클라우드 카탈로그."</string>
+    <string name="ui_a6cc9f20bfd7382d" formatted="false">"로그인 페이지 열기"</string>
+    <string name="ui_a71919f039859a7b" formatted="false">"계정이 승인되었습니다. 연결을 마무리하는 중…"</string>
+    <string name="ui_a73b0eb5c2120771" formatted="false">"비디오 모드: {0}"</string>
+    <string name="ui_a750bbb9a02f1dde" formatted="false">"Surface {0}x{1} → Android 출력 "</string>
+    <string name="ui_a779e12ba7fd20f0" formatted="false">"\n{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10} | 마우스/키보드: {11} | 활성 MKB 입력: {12} | 안드로이드 캡처: {13}"</string>
+    <string name="ui_a88536f370073a7d" formatted="false">"속도를 높이다"</string>
+    <string name="ui_a8877b8210604258" formatted="false">"사용자에 의해 종료됨"</string>
+    <string name="ui_a8c2ac325cfa919b" formatted="false">"공석을 기다리는 중"</string>
+    <string name="ui_a8eec455db88ba33" formatted="false">"연결이 완료되지 않았습니다."</string>
+    <string name="ui_a8f09d77366f1fa0" formatted="false">"즐겨찾기가 여기에 표시됩니다.\n게임을 선택하고 Y를 눌러 즐겨찾기에 추가하세요."</string>
+    <string name="ui_a9178552fda4292a" formatted="false">"즐겨찾기"</string>
+    <string name="ui_a959007d05d3e862" formatted="false">"이 기기의 Android에서 바로가기 패키지를 읽을 수 없습니다. 바로가기가 설치 프로그램으로 전송되지 않았습니다."</string>
+    <string name="ui_a9d4711b82648956" formatted="false">"비디오 복구"</string>
+    <string name="ui_aa01028ec629a161" formatted="false">"대기 중인 기능"</string>
+    <string name="ui_aaa8b17189f8e9c5" formatted="false">"활성화됨 - 조준하고 쏘세요"</string>
+    <string name="ui_ab82b7fdb8e46107" formatted="false">"진단"</string>
+    <string name="ui_abf15538afefb4b8" formatted="false">"\nWebRTC 수신: {0} | WebRTC를 보냈습니다: {1}\n"</string>
+    <string name="ui_abf5c1bbfeb0ebd7" formatted="false">"명령은 표준 Xbox 컨트롤러 매핑을 사용합니다. 편집기 및 게임 설정에서 각 작업을 조정할 수 있습니다."</string>
+    <string name="ui_ac0405b91f35077a" formatted="false">"{0} 게임 • 저장된 기록 • 업데이트 불가"</string>
+    <string name="ui_ac1653e071f8f7e8" formatted="false">"크로스"</string>
+    <string name="ui_ac1cd1430435899b" formatted="false">"애플리케이션을 종료하시겠습니까?"</string>
+    <string name="ui_ac1f216ed980fbc8" formatted="false">"효율적인: 아니요"</string>
+    <string name="ui_ac73aa9300406c83" formatted="false">"자동으로 열리지 않음"</string>
+    <string name="ui_acf055bba88baa0f" formatted="false">"FSR 출력"</string>
+    <string name="ui_ad308eca51baa9f5" formatted="false">"또 다른 경기가 시작됐다"</string>
+    <string name="ui_ad6cf30be5863ae2" formatted="false">"HDR10: 화면 및 스트림 확인"</string>
+    <string name="ui_ad95a1eab4868093" formatted="false">"홈 화면 채널"</string>
+    <string name="ui_ada597c825c967dc" formatted="false">"복구 시도: {0}\n\n"</string>
+    <string name="ui_adc902bee601b133" formatted="false">"즐겨찾기를 기기에 저장할 수 없습니다."</string>
+    <string name="ui_ae271b987acb95d6" formatted="false">"Xbox가 세션을 출시하자마자 게임이 열립니다."</string>
+    <string name="ui_aea7344883349a13" formatted="false">"바로가기를 만들려면 Y를 사용하여 즐겨찾기에 게임을 추가하세요."</string>
+    <string name="ui_aecdbc5fd56d8e66" formatted="false">"경량 H.264(호환성)"</string>
+    <string name="ui_aef7cd5b2081351d" formatted="false">"저장"</string>
+    <string name="ui_af6f5bcb22418bc6" formatted="false">"게임 검색"</string>
+    <string name="ui_afb58c5ef14296d0" formatted="false">"물리적 컨트롤러 및 로컬 협동조합"</string>
+    <string name="ui_afbcc421a945e702" formatted="false">"실제 HDR10에는 10비트 스트리밍, BT.2020 컬러, PQ 전송 및 전체 체인 HDR 재생이 필요합니다. 현재 경로는 호환되는 TV에서도 이 조합을 제공하지 않습니다.\n\n"</string>
+    <string name="ui_afd65886ed07d629" formatted="false">"다시 시도하세요"</string>
+    <string name="ui_b019906f6858044e" formatted="false">"xCLOUD {0} • 초기 입력: {1} • {2}"</string>
+    <string name="ui_b0944e467b311f8d" formatted="false">"{0}의 운명"</string>
+    <string name="ui_b0b4626cc5d27e57" formatted="false">"← 왼쪽"</string>
+    <string name="ui_b0b961d4ec123362" formatted="false">"홈 화면에서 즐겨찾는 채널 요청"</string>
+    <string name="ui_b0d7170b7a348938" formatted="false">"마이크(옵션)"</string>
+    <string name="ui_b0f8a4c6147a77ca" formatted="false">"주목"</string>
+    <string name="ui_b0fb3c524b9a6398" formatted="false">"WebRTC 버퍼 타겟"</string>
+    <string name="ui_b184ba49fad5bdda" formatted="false">"\n자동: 지속적인 연결 확인/RTT; WebRTC 및 서버에 의한 선택. 대안은 사용 가능한 네트워크에 따라 다릅니다."</string>
+    <string name="ui_b195ba9ba106c658" formatted="false">"ICE 연결이 종료되었습니다"</string>
+    <string name="ui_b1a57cb0ce19ab77" formatted="false">"네이티브 터치 Xbox를 갖춘 자이로스코프"</string>
+    <string name="ui_b1b3b2be00607986" formatted="false">"다가오는 경기의 마이크: {0}"</string>
+    <string name="ui_b1b83340a2e6e991" formatted="false">"모바일 네트워크"</string>
+    <string name="ui_b20277600256b5af" formatted="false">"통계: 샘플 WebRTC 대기 중..."</string>
+    <string name="ui_b257b4fde1d7e0c6" formatted="false">"일부 정보를 사용할 수 없습니다. 목록은 소유권을 확인하지 않습니다. 디지털 구매 및 서비스 조건이 필요합니다."</string>
+    <string name="ui_b29603a502aa8d8c" formatted="false">"{0}가 즐겨찾기에서 제거되었습니다."</string>
+    <string name="ui_b2a876364adeafae" formatted="false">"전체 공식 목록 • 일부 정보/표지는 사용할 수 없습니다. 설정에서 카탈로그를 업데이트하세요."</string>
+    <string name="ui_b2d1202a54152282" formatted="false">"방어 HUD 표시"</string>
+    <string name="ui_b3d71cae0cc33739" formatted="false">"무단 설치"</string>
+    <string name="ui_b455784ab5307277" formatted="false">"정기적인"</string>
+    <string name="ui_b4fd5598411dcca4" formatted="false">"Microsoft 구독 관리"</string>
+    <string name="ui_b525c8f63004a345" formatted="false">"마이크 협상 중…"</string>
+    <string name="ui_b5758662f5d045a7" formatted="false">"USB 테스트 비활성화"</string>
+    <string name="ui_b669fb4b755c8302" formatted="false">"축구에서는 ATTACK / DEFENSE를 눌러 명령을 전환하세요. 교환은 수동입니다. 킥: 배치를 위해 아래로 드래그하고, 카바디냐를 위해 위로 드래그하고, 슈퍼 킥을 위해 측면으로 드래그합니다. 마크는 RT + A를 결합합니다.\n\n편집기에서 Action을 사용하면 버튼을 결합할 수 있습니다. 제스처는 각 드래그 방향을 구성합니다. 명령은 게임의 레이아웃을 따릅니다.\n\nCoD에서는 Aim 또는 Shoot를 길게 누른 채 드래그하여 카메라를 이동합니다. 촬영 시 조준은 선택 사항입니다. 이 옵션이 켜져 있을 때 아날로그 스틱을 실행 방향으로 드래그하면 실행이 활성화됩니다.\n\n슈팅 게임에서는 HUD 감도를 높이고 데드존 보상을 조정합니다. 최대 회전 속도는 게임 내에서 설정된 컨트롤러 감도에 따라 달라집니다."</string>
+    <string name="ui_b6c65960870c1c5e" formatted="false">"\n기술 코드: {0}"</string>
+    <string name="ui_b772dc025eba9d11" formatted="false">"오른쪽 데드존: {0}%"</string>
+    <string name="ui_b788c7c5fda4ab79" formatted="false">"사이버 블루"</string>
+    <string name="ui_b803f24d52edd7bc" formatted="false">"오토매틱"</string>
+    <string name="ui_b82619b14335e532" formatted="false">"갤러리에서 인식할 수 없는 페이지 매김이 반환되었습니다. 목록이 완전한 것으로 확인되지 않았습니다."</string>
+    <string name="ui_b83158eab62b99d9" formatted="false">" — 코드 {0}"</string>
+    <string name="ui_b8c2ee925a3aab1f" formatted="false">"{0} • {1} • {2}"</string>
+    <string name="ui_b8c99375c71e298a" formatted="false">"예측을 업데이트할 수 없습니다. 공석상담은 계속됩니다."</string>
+    <string name="ui_b9e10688be012d8b" formatted="false">"다시 시도하세요"</string>
+    <string name="ui_ba5e5d364d10aa1b" formatted="false">"Xbox가 세션을 예약하고 준비 중입니다."</string>
+    <string name="ui_bab27e2c850b00b2" formatted="false">"평균/피크 • {0} 샘플 • {1} 관찰됨 • 자세한 내용을 보려면 ↑/↓ 또는 스와이프하세요."</string>
+    <string name="ui_bb9dbb406dcbd524" formatted="false">"취소"</string>
+    <string name="ui_bbb6bca5ca31729a" formatted="false">"XBOX 예측"</string>
+    <string name="ui_bbc01c73fe29c18f" formatted="false">"드래그 레이싱 {0}; "</string>
+    <string name="ui_bbe0ec8ca31b468c" formatted="false">"진동: {0}"</string>
+    <string name="ui_bcbb4e0f88f1dd5e" formatted="false">"표준 파견"</string>
+    <string name="ui_bce05db4b83249e2" formatted="false">"ms/프레임"</string>
+    <string name="ui_bd10a9bd1958e9f0" formatted="false">"메타데이터를 기다리는 중"</string>
+    <string name="ui_bd59e1e564ce5c46" formatted="false">"진동"</string>
+    <string name="ui_bd5b62d71cdd98d3" formatted="false">"방향 ↓"</string>
+    <string name="ui_bdb73aa9fd97600d" formatted="false">"마이크: 음소거; 인코더가 일시 중지를 거부했습니다."</string>
+    <string name="ui_be0c7ddbc14398f4" formatted="false">"연결된 물리적 컨트롤러가 없을 때 터치 플레이어 럼블을 사용합니다. 진동이 활성화되어 있어야 하며 휴대폰에 진동 장치가 있어야 합니다. 다음 게임에서 유효합니다."</string>
+    <string name="ui_be4651d6aa4e8b87" formatted="false">"카탈로그로 돌아가기"</string>
+    <string name="ui_bfabaebcc64e9c48" formatted="false">"IPv4 / IPv6: {0}"</string>
+    <string name="ui_bfc167f5ded3ac78" formatted="false">"수신 해상도나 네트워크 소비를 늘리지 않고 로컬 프레젠테이션을 설정합니다. 자동은 창을 따르며 TV에서는 1080p로 제한되어 유동성을 우선시합니다. 선택 사항은 사용 가능한 물리적 출력에 따라 제한되며 종횡비를 유지합니다. 1440p 및 4K는 GPU보다 비용이 더 많이 듭니다. 60 FPS를 보장하지 않습니다. AMD FSR 활성화가 필요합니다. 호환성으로 인해 필터가 꺼진 상태로 유지됩니다. 필터가 실패하거나 비디오가 수신될 때 몇 초 동안 케이던스가 너무 느린 경우 앱은 기본 크기 조정으로 돌아갑니다. 다음 일치에 적용됩니다."</string>
+    <string name="ui_bfcd75a03efeb613" formatted="false">"자이로스코프: 기본 터치가 비활성화된 상태에서 테스트"</string>
+    <string name="ui_c06b55029589f9aa" formatted="false">"라이트 H.264 — Baseline (720p)"</string>
+    <string name="ui_c0e06d1a547e1e02" formatted="false">"게임을 확인할 수 없습니다. 다시 시도하거나 카탈로그를 업데이트하십시오. 구매한 게임에는 Xbox 디지털 라이선스와 서비스 약관이 필요합니다."</string>
+    <string name="ui_c0eb1a54b2adee0d" formatted="false">"클래식 — B 킥"</string>
+    <string name="ui_c14311ffdf175c3f" formatted="false">" • {0} 이벤트 • 기록 최대. {1}"</string>
+    <string name="ui_c149ec2f90b933d5" formatted="false">"찾다"</string>
+    <string name="ui_c1601679448149f0" formatted="false">"샷 - 표준"</string>
+    <string name="ui_c165b9199b45bcd6" formatted="false">"이 게임의 HUD 및 컨트롤"</string>
+    <string name="ui_c18707da3aeeac79" formatted="false">"대상 {0} ms | 최소 네트워크 {1} ms | "</string>
+    <string name="ui_c24ad4a9b806d36f" formatted="false">"다음 카테고리, RB"</string>
+    <string name="ui_c294e7b002393a8d" formatted="false">"FSR 선명도(RCAS)"</string>
+    <string name="ui_c362ba09dc7291e1" formatted="false">"이 동작 삭제"</string>
+    <string name="ui_c4361eb26a5f858e" formatted="false">"Xbox 시리즈 X|S에 최적화됨"</string>
+    <string name="ui_c43891cea5d2cf81" formatted="false">"{0} {1} | Android {2} | {3}\n{4}\n{5}\n{6}\n{7}"</string>
+    <string name="ui_c48c51103740a734" formatted="false">"이미지가 업데이트되지 않았습니다."</string>
+    <string name="ui_c4b7abb559efc0c2" formatted="false">"Android → 앱: 평균 연령/피크 {0}를 탭합니다. 아래로/위로/이동/취소 {1}/{2}/{3}/{4}; "</string>
+    <string name="ui_c4bc021431f3c0b9" formatted="false">"초기화: {0}"</string>
+    <string name="ui_c587065de995e6a6" formatted="false">"화면 모드: 해당 없음"</string>
+    <string name="ui_c592501facbaea8c" formatted="false">"채도: {0}%"</string>
+    <string name="ui_c68b7df08912cf8f" formatted="false">"오래된 예측. 공석 검색은 계속됩니다."</string>
+    <string name="ui_c6903698265c4ac7" formatted="false">"꺼짐 - 물리적 컨트롤러"</string>
+    <string name="ui_c709991bfe8aced1" formatted="false">"일부 커버를 사용할 수 없습니다. 설정 업데이트."</string>
+    <string name="ui_c7396b1f339d9a49" formatted="false">"옵션: {0}"</string>
+    <string name="ui_c73b5744c4698b8a" formatted="false">"영상 샘플을 기다리고 있습니다."</string>
+    <string name="ui_c7d422473615e69d" formatted="false">"비디오 RTP: {0} • 입력: {1}\n"</string>
+    <string name="ui_c90dd4a7f4f16d4e" formatted="false">"공식 목록을 참조하는 것은 불가능했습니다.\n설정에서 카탈로그를 업데이트하세요."</string>
+    <string name="ui_c917e2441a33ab85" formatted="false">"자동 — 기본 계정 지역"</string>
+    <string name="ui_c985cb075b6ff172" formatted="false">"장치가 지정되지 않았습니다."</string>
+    <string name="ui_ca5962d0f8fb5020" formatted="false">"컨설팅 Xbox; 대기열의 마지막 확인에는 {0}가 있습니다."</string>
+    <string name="ui_cb201cc243f2d150" formatted="false">"서버를 찾지 못했습니다"</string>
+    <string name="ui_cb2559452c9c352f" formatted="false">"{0} • {1} 연결됨"</string>
+    <string name="ui_cb9b4a0d6fde640c" formatted="false">"불투명도: {0}%"</string>
+    <string name="ui_cc5eb4d7dd2d1e2e" formatted="false">"앱 언어"</string>
+    <string name="ui_ccb39a83e3b26d2a" formatted="false">"휴대폰으로 QR 코드를 스캔하거나 Microsoft 로그인 페이지에 액세스하세요."</string>
+    <string name="ui_ccc5ddf0e986b6dc" formatted="false">"경량 H.264 및 호환성은 다른 선택 항목을 저장한 경우에도 720p를 사용합니다. 720p에는 대역폭과 디코딩 작업이 덜 필요합니다. 수신되는 해상도는 Xbox, 게임 및 연결에 따라 다릅니다. 다음 경기에 적용됩니다."</string>
+    <string name="ui_ccec6af8dfc9a3c9" formatted="false">"컨트롤러/HUD에서 오른쪽 아날로그 스틱을 에뮬레이션합니다. Xbox 기본 터치를 일치시키려면 자이로스코프 카테고리에서도 테스트를 활성화하세요. 기본 터치의 LT/LB는 물리적 컨트롤러를 사용합니다. 다음 게임에서 유효합니다."</string>
+    <string name="ui_cdbfce5b72ebff87" formatted="false">"트리거 데드존: {0}%"</string>
+    <string name="ui_ce04190840b5df23" formatted="false">"Xbox 클라우드 기록을 확인하는 중…"</string>
+    <string name="ui_ce49e4a3777bd79d" formatted="false">"귀하의 로그인 정보와 즐겨찾기는 이 장치에 계속 저장됩니다."</string>
+    <string name="ui_ce841257afc795fe" formatted="false">"{0}, {1}. 설정 열기"</string>
+    <string name="ui_cee3aa77fe99ae5a" formatted="false">"다른 비디오 형식"</string>
+    <string name="ui_cfec65af653e127f" formatted="false">"이 게임의 HUD 복원"</string>
+    <string name="ui_d00d630e6c32f971" formatted="false">" • 실험적인 네이티브 터치"</string>
+    <string name="ui_d0bb4a4037d8fd3d" formatted="false">"바로가기 게임 준비 중…"</string>
+    <string name="ui_d109c6d44ff057b7" formatted="false">"{0} {1} • 안드로이드 {2}"</string>
+    <string name="ui_d1225458fd479a1f" formatted="false">"비활성화됨 - 렌더러 크기"</string>
+    <string name="ui_d13e17270be9aa6a" formatted="false">"방향성 ←"</string>
+    <string name="ui_d220d05a7861ed7d" formatted="false">"설치 프로그램을 사용할 수 없습니다."</string>
+    <string name="ui_d23162e04eddf351" formatted="false">"촬영할 때 조준"</string>
+    <string name="ui_d294972e7616ce46" formatted="false">"통계 표시/숨기기"</string>
+    <string name="ui_d2ad993f02c491da" formatted="false">"점프"</string>
+    <string name="ui_d2ce0bc9f7f8998b" formatted="false">"HUD 숨기기"</string>
+    <string name="ui_d2f671e0a6015903" formatted="false">"지도"</string>
+    <string name="ui_d368683d0c7e0d26" formatted="false">"오디오 및 비디오"</string>
+    <string name="ui_d373287e7248cfe5" formatted="false">"채널을 기다리는 중"</string>
+    <string name="ui_d3b2d6009b1e4b0a" formatted="false">"통신 실패"</string>
+    <string name="ui_d42dfb2ef63549c6" formatted="false">"1min 미만"</string>
+    <string name="ui_d45fee8a599e40cc" formatted="false">"터치시 휴대폰 진동 : {0}"</string>
+    <string name="ui_d4665a4a146e28e6" formatted="false">"QR 코드를 스캔하거나 접속하세요\n{0}를 입력하고 코드를 입력하세요."</string>
+    <string name="ui_d48c492ec604a5a0" formatted="false">"Xbox 추정: 현재 사용할 수 없습니다."</string>
+    <string name="ui_d49877fbdb35a493" formatted="false">"HUD 편집 • 버튼을 드래그하세요"</string>
+    <string name="ui_d4a0ecff23664366" formatted="false">"폐쇄 이유\n"</string>
+    <string name="ui_d5f9cf0229d64cd8" formatted="false">"Xbox 기본 터치 — 실험적"</string>
+    <string name="ui_d5fc8994d873c100" formatted="false">"Android에서는 이 기기의 자이로스코프를 보고하지 않았습니다."</string>
+    <string name="ui_d61df2985b00e754" formatted="false">"AMD FSR 1.0.2: 호환성 모드에서 비활성화됨"</string>
+    <string name="ui_d67d7a22a9d85ee1" formatted="false">"자이로스코프"</string>
+    <string name="ui_d699b3523f2e4530" formatted="false">"제어 크기: {0}%"</string>
+    <string name="ui_d6a06884ced98edc" formatted="false">"기본 코덱"</string>
+    <string name="ui_d6c2efe70cd031d9" formatted="false">"요청된 프레젠테이션: {0} FPS • 디코더: {1}"</string>
+    <string name="ui_d6df5d0593b1d522" formatted="false">"세션은 항상 음소거로 시작됩니다. 이 옵션을 사용하면 앱이 채팅 지원에 문의합니다. Android 권한을 부여한 후 경기의 menu에서 캡처를 활성화하세요. 배경 음소거로 전환됩니다. 일부 서버에서는 채팅을 제공하지 않을 수 있습니다."</string>
+    <string name="ui_d7ab4b0aca3b07cf" formatted="false">"관찰된 버퍼가 요청된 프리젠테이션의 두 간격을 초과합니다. RTT 및 낮은 디코드에서도 지연 느낌에 기여할 수 있습니다. 최단 지연과 적응형을 비교합니다. 요청한 목표는 보장된 한도가 아닙니다."</string>
+    <string name="ui_d7cbd013a2f6068b" formatted="false">"새 프레임이 없는 비디오. 이미지 업데이트 요청 중…"</string>
+    <string name="ui_d8742a3decdd0df5" formatted="false">"네트워크 요청"</string>
+    <string name="ui_d87bd8469bfe6376" formatted="false">"오디오 및 마이크"</string>
+    <string name="ui_d8cdcbc7ebdaae0d" formatted="false">"세션 기본값 사용"</string>
+    <string name="ui_d8fb58e618d83fe1" formatted="false">"이용 가능 여부가 확인되지 않음"</string>
+    <string name="ui_d908762c8d942e27" formatted="false">"드래그하여 살펴보세요"</string>
+    <string name="ui_d98c49960e02dbf0" formatted="false">"패킷 손실"</string>
+    <string name="ui_d98f313ee5a346c8" formatted="false">"TV에 바로가기 설치: {0}"</string>
+    <string name="ui_d99aa29897d612dc" formatted="false">"Xbox Cloud에서 인증된 계정"</string>
+    <string name="ui_d9e854b45b44b286" formatted="false">"데이터 없음: {0} | 데이터 포함: {1}\n"</string>
+    <string name="ui_da3388b19048bd0d" formatted="false">"나의 게임을.\n나의 화면에서."</string>
+    <string name="ui_daa6b913c3a993f5" formatted="false">"비활성화됨(호환성)"</string>
+    <string name="ui_dae2928050707d95" formatted="false">"대기줄"</string>
+    <string name="ui_dafb61aca12d33e0" formatted="false">"카메라"</string>
+    <string name="ui_db3e58808ddb39bc" formatted="false">"모션 타겟팅"</string>
+    <string name="ui_db48ebd18aae5755" formatted="false">"세부정보가 복사되었습니다!"</string>
+    <string name="ui_db6368593c24380d" formatted="false">"호환되는 게임의 공식 목록 디지털 구매 및 서비스 조건이 필요합니다. 계정의 소유권을 확인하지 않습니다."</string>
+    <string name="ui_dcd82253fc1b9333" formatted="false">"시작했다"</string>
+    <string name="ui_dcde76e0abae913f" formatted="false">"감도: {0}%"</string>
+    <string name="ui_dd1177426b964f31" formatted="false">"{0}: 요청 실패({1})"</string>
+    <string name="ui_dd191c539b7bdee4" formatted="false">"표시하려면"</string>
+    <string name="ui_dd1f60df310c6ac7" formatted="false">"아날로그 곡선"</string>
+    <string name="ui_dd8a9255bf7ad0db" formatted="false">"세션 언어"</string>
+    <string name="ui_ddc53964b5fe0059" formatted="false">"사격"</string>
+    <string name="ui_ddf7ac150ff295a9" formatted="false">"거의 준비됨"</string>
+    <string name="ui_de10ccc1614b9a4a" formatted="false">"구간"</string>
+    <string name="ui_de26c2fcfd1fdd63" formatted="false">"선명도"</string>
+    <string name="ui_df1f3af61e81fd98" formatted="false">"활성화됨 — 표면 스케일링"</string>
+    <string name="ui_df41bc6b69dd0a4d" formatted="false">"\n요청된 최대 비트 전송률: "</string>
+    <string name="ui_df79a066dff74946" formatted="false">"비활성화됨 - 설정 참조"</string>
+    <string name="ui_df87f243111ed2d4" formatted="false">"기다리다"</string>
+    <string name="ui_dfa86dac52babb92" formatted="false">"보류를 취소하고 카탈로그로 돌아가기"</string>
+    <string name="ui_e07fe1fc111ea9e6" formatted="false">" | 터치: {0}, {1}, {2} 이벤트 전송됨"</string>
+    <string name="ui_e0f02d042121b2a0" formatted="false">"TV가 즐겨찾기 채널을 인증하지 않았습니다. 개별 게임 항목을 생성하려면 TV 바로가기 설치를 사용하세요."</string>
+    <string name="ui_e0fdcc38d021c280" formatted="false">"활성화됨 — 최대 4명의 플레이어"</string>
+    <string name="ui_e14441aaa6331504" formatted="false">"마지막 진단"</string>
+    <string name="ui_e1623a9ceaca4129" formatted="false">"연결 시간: {0} | 관찰됨: {1} | {2} 샘플\n"</string>
+    <string name="ui_e16a49eedde76282" formatted="false">"{0} 제품 • 업데이트 중"</string>
+    <string name="ui_e18cbc44b23c7f78" formatted="false">"포화"</string>
+    <string name="ui_e21b8dd97e1d4d63" formatted="false">"이 옵션은 앱 메뉴의 언어와 무관합니다. 언어는 Xbox에서 요청됩니다. 일부 게임은 자체 설정을 사용하거나 무시할 수 있습니다. 다음 게임에서 유효합니다."</string>
+    <string name="ui_e2c1eb3e21262571" formatted="false">"관찰된 비디오 버퍼"</string>
+    <string name="ui_e2cc58057bac44ca" formatted="false">"게임 링크가 확인되지 않았습니다"</string>
+    <string name="ui_e2cf4129d958d3cc" formatted="false">"비율: {0}"</string>
+    <string name="ui_e31fe0e7c18095f5" formatted="false">"이 계정에는 Xbox가 제공하는 지역만 있습니다. 선택하면 해당 지역의 세션이 요청됩니다. 핑이나 게임 대기열을 예측하지 않습니다. 저장된 지역이 더 이상 제공되지 않는 경우 앱은 기본 지역을 사용하고 진단을 통해 알려줍니다. 다음 게임에서 유효합니다."</string>
+    <string name="ui_e35865317817e866" formatted="false">"WebRTC 연결"</string>
+    <string name="ui_e3ac02bd2ccd6d6e" formatted="false">"수신됨: {0} | {1} | {2}\n"</string>
+    <string name="ui_e3c9951db767377e" formatted="false">"화면: Android에서는 HDR 지원이 보고되지 않습니다."</string>
+    <string name="ui_e40b250bfbf97c8e" formatted="false">"비디오 복구 중: 다음 키프레임에서 디코더를 다시 시작하는 중…"</string>
+    <string name="ui_e41e160eef41ad25" formatted="false">"FSR 1.0.2는 EASU 및 RCAS 선명화를 통해 비디오를 업스케일링합니다. 영상과 출력의 크기가 같은 경우에는 확대하지 않고 RCAS만 적용합니다. Auto에서 FSR 출력을 시작하고 50%에서 RCAS를 시작합니다. 명령의 선명도, 유동성 및 반응을 비교합니다. 1440p 및 4K에는 더 많은 GPU가 필요합니다. 진단은 확대를 기본 RCAS와 구별합니다. 네이티브 업스케일링이 활성화된 경우에도 FSR이 스케일링을 담당합니다. 이미지 조정에서 RCAS를 조정합니다. 호환성으로 인해 FSR이 꺼집니다. 다음 경기에 적용됩니다."</string>
+    <string name="ui_e425c594c6c37587" formatted="false">"Xbox 예상 시간: 1분 미만."</string>
+    <string name="ui_e470e20093b5665d" formatted="false">"이 게임: {0}"</string>
+    <string name="ui_e478889056bb4cfc" formatted="false">"원본 - 종횡비 유지"</string>
+    <string name="ui_e48e3afad74a7664" formatted="false">"LT 및 RT 교체: {0}"</string>
+    <string name="ui_e528576451072d03" formatted="false">"준비"</string>
+    <string name="ui_e6acff5f42562f1a" formatted="false">"코덱 해당 없음"</string>
+    <string name="ui_e7933921372c4fd7" formatted="false">"바로가기를 사용할 수 없음"</string>
+    <string name="ui_e834630bef0ef550" formatted="false">"Xbox의 응답을 기다리는 동안 시간이 초과되었습니다."</string>
+    <string name="ui_e84bcd0234e07712" formatted="false">"연결된 운송. 첫 번째 비디오 프레임을 기다리는 중..."</string>
+    <string name="ui_e914de1e4fae95a7" formatted="false">"모든 게임"</string>
+    <string name="ui_e9e53c0c5177e18c" formatted="false">"자동 — 저장된 지역이 계정에 제공되지 않음"</string>
+    <string name="ui_ea0fd82513d807df" formatted="false">"버튼 동작"</string>
+    <string name="ui_ea6a1717f5c88030" formatted="false">"\n\n입력 스케줄러는 전송 스레드만 측정합니다. Android 이벤트 기간은 조이스틱의 경우 활동, 터치의 경우 View로 측정됩니다. 모든 Bluetooth/USB 경로, 물리적 터치 감지, 게임 응답 또는 화면이 포함되지 않습니다. 낮은 핑 및 디코드는 총 명령 대기 시간이 낮다는 것을 나타내지 않습니다."</string>
+    <string name="ui_ea882cac2bd2ad5f" formatted="false">"H.264 Baseline • 호환성 • 720p 요청됨 • 프로필/경기 견적"</string>
+    <string name="ui_eacaad041ff7e933" formatted="false">"아직 영상이 돌아오지 않았습니다. 세션 Xbox는 계속 열려 있습니다."</string>
+    <string name="ui_eb145ebce21c228a" formatted="false">"영상 수신 없이 일시정지가 발생했습니다. 서비스의 네트워크 및 전달 연속성을 조사합니다."</string>
+    <string name="ui_eb1bcf0482eeba71" formatted="false">"활성화됨"</string>
+    <string name="ui_eb88b483ea19114e" formatted="false">"앱 테마"</string>
+    <string name="ui_ebee0532a3cc3057" formatted="false">"IPv6 선호 — 실험적, IPv4 사용 가능"</string>
+    <string name="ui_ec090a775820f486" formatted="false">"공격"</string>
+    <string name="ui_ec0fcae16cb08806" formatted="false">", 선택됨"</string>
+    <string name="ui_ec3103a5a55b8611" formatted="false">"컨트롤 › 자이로스코프"</string>
+    <string name="ui_ec7c4c3f379a1d51" formatted="false">"모드: {0}"</string>
+    <string name="ui_ecbc02a1d1b01fe4" formatted="false">"#{0} 예고되지 않음"</string>
+    <string name="ui_eccf310fa9817174" formatted="false">"곡선: {0}"</string>
+    <string name="ui_ece0fd9e5729873e" formatted="false">"↓ 베이스"</string>
+    <string name="ui_ed57b826da4ae9b2" formatted="false">"활성화됨 — 실험적"</string>
+    <string name="ui_eda02893d340c1be" formatted="false">"복원하다"</string>
+    <string name="ui_eda74028f3497040" formatted="false">"계정이 연결되었습니다. 카탈로그 로드 중…"</string>
+    <string name="ui_edbc01e14a74f6c4" formatted="false">"TV 설정에서 xCLOUD가 게임 바로가기를 설치할 수 있도록 허용하세요."</string>
+    <string name="ui_ee8e00814924a050" formatted="false">"즉시배송요청 거절"</string>
+    <string name="ui_eebb383ece16304a" formatted="false">"통합 움직임 {0}; {1} 재동기화"</string>
+    <string name="ui_eef444f5f2ad5527" formatted="false">"이 카테고리에는 게임이 없습니다."</string>
+    <string name="ui_ef63798c42e5cbfc" formatted="false">"다시 매핑 — Menu + View 예약됨"</string>
+    <string name="ui_ef9e7f887a4e6b63" formatted="false">"코드 만료까지 {0}분 {1}초."</string>
+    <string name="ui_efb486aeecda2759" formatted="false">"즐겨찾기 채널"</string>
+    <string name="ui_f0396835eb883e35" formatted="false">"게임 이름"</string>
+    <string name="ui_f08e468a1f1c0e01" formatted="false">"네트워크 지터"</string>
+    <string name="ui_f0a5d0b85c1fe428" formatted="false">"프로필에 알리지 않음"</string>
+    <string name="ui_f10cadbc47a09be6" formatted="false">"갤럭시 퍼플"</string>
+    <string name="ui_f11e7df036a8fd99" formatted="false">"; 세션 중 주문: {0}"</string>
+    <string name="ui_f12b9d29b2cf0da6" formatted="false">"채도를 높이거나 TV를 HDR 모드로 강제 전환해도 SDR 스트림이 HDR10로 변환되지 않습니다. TV 자체의 이미지 컨트롤은 계속 사용할 수 있습니다."</string>
+    <string name="ui_f1a05e988e609704" formatted="false">"TV에서 바로가기에 대한 애플리케이션 설치 프로그램을 제공하지 않았습니다."</string>
+    <string name="ui_f1dd04ae0fde2ba0" formatted="false">"확대/축소 — 자르기로 채우기"</string>
+    <string name="ui_f20f404de2b58f35" formatted="false">"이 기기에 Xbox 기록을 저장할 수 없습니다."</string>
+    <string name="ui_f2b3bbccd1e3770c" formatted="false">"당신의 게임"</string>
+    <string name="ui_f30b36266e720ad6" formatted="false">"로그인하고 플레이"</string>
+    <string name="ui_f43e7dd113b16494" formatted="false">"0%는 원본 이미지를 유지합니다. 25%로 시작하여 렌더링 시간을 비교해 보세요."</string>
+    <string name="ui_f47dfde9cb6fd44e" formatted="false">"장애가 있는"</string>
+    <string name="ui_f486a903433f0619" formatted="false">"IPv4 선호 — IPv6 사용 가능"</string>
+    <string name="ui_f4a68a16351cdffc" formatted="false">"전체 공식 목록 • 정보 및 표지 로드 중…"</string>
+    <string name="ui_f51e982360461a76" formatted="false">"자이로스코프: Android에서 등록이 거부되었습니다."</string>
+    <string name="ui_f538ea4afa396b9b" formatted="false">"설치 허용"</string>
+    <string name="ui_f58a67a713c98dd0" formatted="false">"질주"</string>
+    <string name="ui_f6088eea2bd70977" formatted="false">"프레스티지 골드"</string>
+    <string name="ui_f650f7200a36b5c1" formatted="false">"즐겨찾기에서 채널 삭제"</string>
+    <string name="ui_f680dda7acf9b89f" formatted="false">"플레이 후 진단"</string>
+    <string name="ui_f692b4b7e0efc7a4" formatted="false">"로빙 스루 패스"</string>
+    <string name="ui_f6cb3b238d304c1b" formatted="false">"최근 추가된 게임"</string>
+    <string name="ui_f71b322dba0c5203" formatted="false">"게임 준비 중…"</string>
+    <string name="ui_f71e2412211daacb" formatted="false">"클러치"</string>
+    <string name="ui_f78f25086a60b340" formatted="false">"입력 스케줄러"</string>
+    <string name="ui_f797fce773730594" formatted="false">"코드 STUN: {0}"</string>
+    <string name="ui_f7a82599a68b1b1e" formatted="false">"제스처를 통한 즉시 발송: {0} 주문, {1} 거부"</string>
+    <string name="ui_f7d070ebd521bf46" formatted="false">"서버 지역"</string>
+    <string name="ui_f7dc6cc4bf3cbdc7" formatted="false">"작업 - 기본값"</string>
+    <string name="ui_f902df3c35163c5b" formatted="false">"{0} → {1}"</string>
+    <string name="ui_f972f402af4185e2" formatted="false">"터치로 플레이: {0}"</string>
+    <string name="ui_f9a320a7e570459b" formatted="false">"방향 ↑"</string>
+    <string name="ui_f9c01b65b5e225b2" formatted="false">"중앙에서 더 정밀함"</string>
+    <string name="ui_fa6c9c8af2f428a1" formatted="false">"에뮬레이션: WASD 이동, 마우스 조준, 왼쪽 클릭 RT, 오른쪽 LT; 스페이스 A, Ctrl B, R/E X, Q Y, Shift L3, Tab View 및 Esc Menu. 네이티브는 지원을 광고하는 게임에서만 키와 마우스를 제공합니다. F7은 앱의 menu를 엽니다. F8은 항목을 캡처/해제합니다. 상대 캡처에는 Android 8 이상이 필요합니다. 다음 게임에서 유효합니다."</string>
+    <string name="ui_faca76428c612f9e" formatted="false">"대체된 세션 유지 관리"</string>
+    <string name="ui_fb2175902de0d504" formatted="false">"채널 제어"</string>
+    <string name="ui_fb40f5b8acf0a571" formatted="false">"Android 조이스틱 이벤트 → 앱: 해당 없음(물리적 이벤트가 관찰되지 않음)"</string>
+    <string name="ui_fb62fe2ae6b2ae6c" formatted="false">"{0}: {1}"</string>
+    <string name="ui_fbebbef769b8bbb3" formatted="false">"경기 옵션"</string>
+    <string name="ui_fbfcb9e12dfff345" formatted="false">"특별한"</string>
+    <string name="ui_fc0c258288401c6f" formatted="false">"난투"</string>
+    <string name="ui_fd2df4c6a25bfd6a" formatted="false">"계정을 연결하세요"</string>
+    <string name="ui_fd38bd8c6c9c36e1" formatted="false">"부여되지 않음"</string>
+    <string name="ui_fd9bac4a8e546c3e" formatted="false">"HUD를 터치하고 menu를 일치시킵니다."</string>
+    <string name="ui_fe5d26cbe1bc1576" formatted="false">"서명이 통보되지 않음"</string>
+    <string name="ui_feff8b5f716c79a1" formatted="false">"각 컨트롤러는 한 명의 플레이어를 차지합니다. 터치/키보드 예비 플레이어 1. 게임 및 세션은 로컬 멀티플레이어를 지원해야 합니다. 다음 게임에서 유효합니다."</string>
+    <string name="ui_ff070ada77b9fef3" formatted="false">"밝기"</string>
+    <string name="ui_ff20d756c5955aa6" formatted="false">"이 시도의 한계: {0}. 뒤로 또는 취소가 대기열을 떠납니다."</string>
+    <string name="ui_ffc85b563def9bc4" formatted="false">"테스트 진동/체크 지원"</string>
+</resources>

@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.ui.dashboard
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
@@ -46,14 +48,14 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
     private val steps = List(3) { index -> text(21f).apply { gravity = Gravity.CENTER; tag = index } }
     private val note = text(17f, false).apply { setTextColor(DashboardTheme.color(UiColor.QUEUE_TEXT)); maxLines = 2 }
     private val cancelButton = text(22f).apply {
-        text = "B  CANCELAR"; gravity = Gravity.CENTER
+        text = UiText.text("B  CANCELAR"); gravity = Gravity.CENTER
         isFocusable = true; isFocusableInTouchMode = true; isClickable = true
         DashboardTheme.customFocus(this)
         val plate = FocusPlate(7f, 5f)
         background = plate
         setOnFocusChangeListener { _, focus -> plate.highlighted = focus }
         setOnClickListener { cancel() }
-        contentDescription = "Cancelar espera e voltar ao catálogo"
+        contentDescription = UiText.text("Cancelar espera e voltar ao catálogo")
     }
     private var game: GameTitle? = null
     private var lastBackdrop: String? = null
@@ -72,7 +74,7 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
         addView(panel); steps.forEach(::addView); addView(note); addView(cancelButton)
         visibility = View.GONE
     }
-    private fun text(size: Float, heavy: Boolean = true) = TextView(context).apply {
+    private fun text(size: Float, heavy: Boolean = true) = com.xcloud.tclnative.i18n.LocalizedTextView(context).apply {
         typeface = DashboardTheme.font(context, heavy); includeFontPadding = false
         setTextColor(Color.WHITE); setTextSize(TypedValue.COMPLEX_UNIT_PX, size)
         maxLines = 1
@@ -115,37 +117,37 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
     fun render(nowMs: Long) {
         val snapshot = queue?.takeIf { phase == LoadingPhase.QUEUED }
         status.text = when (phase) {
-            LoadingPhase.QUEUED -> "AGUARDANDO UMA VAGA"
-            LoadingPhase.PREPARING -> "PREPARANDO SEU JOGO"
-            LoadingPhase.CONNECTING -> "CONECTANDO A TRANSMISSÃO"
-            LoadingPhase.VIDEO -> "RECEBENDO A IMAGEM"
+            LoadingPhase.QUEUED -> UiText.text("AGUARDANDO UMA VAGA")
+            LoadingPhase.PREPARING -> UiText.text("PREPARANDO SEU JOGO")
+            LoadingPhase.CONNECTING -> UiText.text("CONECTANDO A TRANSMISSÃO")
+            LoadingPhase.VIDEO -> UiText.text("RECEBENDO A IMAGEM")
         }
-        estimateLabel.text = if (phase == LoadingPhase.QUEUED) "PREVISÃO DO XBOX" else "SUA SESSÃO"
+        estimateLabel.text = if (phase == LoadingPhase.QUEUED) UiText.text("PREVISÃO DO XBOX") else UiText.text("SUA SESSÃO")
         estimate.text = if (phase == LoadingPhase.QUEUED) snapshot?.estimate?.let {
-            if (it.seconds < 60) "Menos de 1 min" else "Cerca de ${QueueStatus.duration(it.seconds)}"
-        } ?: "Consultando…" else if (phase == LoadingPhase.PREPARING) "Vamos jogar" else "Quase pronto"
-        elapsedLabel.text = if (snapshot != null) "NA FILA HÁ" else "TEMPO DECORRIDO"
+            if (it.seconds < 60) UiText.text("Menos de 1 min") else UiText.text("Cerca de {0}",UiText.nested(QueueStatus.duration(it.seconds)))
+        } ?: UiText.text("Consultando…") else if (phase == LoadingPhase.PREPARING) UiText.text("Vamos jogar") else UiText.text("Quase pronto")
+        elapsedLabel.text = if (snapshot != null) UiText.text("NA FILA HÁ") else UiText.text("TEMPO DECORRIDO")
         elapsed.text = QueueStatus.duration((nowMs-(snapshot?.enteredAtMs ?: startedAt)).coerceAtLeast(0)/1000)
         explanation.text = when (phase) {
-            LoadingPhase.QUEUED -> "Seu jogo abrirá assim que o Xbox liberar uma sessão."
-            LoadingPhase.PREPARING -> "O Xbox está reservando e preparando a sua sessão."
-            LoadingPhase.CONNECTING -> "Conectando áudio, vídeo e controle ao Xbox."
-            LoadingPhase.VIDEO -> "Conexão estabelecida. Aguardando o primeiro quadro do jogo."
+            LoadingPhase.QUEUED -> UiText.text("Seu jogo abrirá assim que o Xbox liberar uma sessão.")
+            LoadingPhase.PREPARING -> UiText.text("O Xbox está reservando e preparando a sua sessão.")
+            LoadingPhase.CONNECTING -> UiText.text("Conectando áudio, vídeo e controle ao Xbox.")
+            LoadingPhase.VIDEO -> UiText.text("Conexão estabelecida. Aguardando o primeiro quadro do jogo.")
         }
-        heartbeat.text = snapshot?.let { "Fila confirmada há ${QueueStatus.duration((nowMs-it.confirmedAtMs).coerceAtLeast(0)/1000)}" }
-            ?: "Você pode cancelar com B ou Voltar."
+        heartbeat.text = snapshot?.let { UiText.text("Fila confirmada há {0}",UiText.nested(QueueStatus.duration((nowMs-it.confirmedAtMs).coerceAtLeast(0)/1000))) }
+            ?: UiText.text("Você pode cancelar com B ou Voltar.")
         val age = snapshot?.estimateAtMs?.let { (nowMs-it).coerceAtLeast(0)/1000 }
         val stale = snapshot?.estimateFailed == true || (age ?: 0) > 90
         freshness.text = when {
             snapshot == null -> ""
-            snapshot.estimate == null -> "O Xbox ainda não informou uma estimativa de espera."
-            stale -> "Previsão desatualizada. A busca por uma vaga continua."
-            age != null -> "Estimativa atualizada há ${QueueStatus.duration(age)}. O tempo pode variar."
-            else -> "A estimativa pode mudar; não é um horário garantido."
+            snapshot.estimate == null -> UiText.text("O Xbox ainda não informou uma estimativa de espera.")
+            stale -> UiText.text("Previsão desatualizada. A busca por uma vaga continua.")
+            age != null -> UiText.text("Estimativa atualizada há {0}. O tempo pode variar.",UiText.nested(QueueStatus.duration(age)))
+            else -> UiText.text("A estimativa pode mudar; não é um horário garantido.")
         }
         freshness.setTextColor(if (stale) DashboardTheme.yellow else DashboardTheme.color(UiColor.QUEUE_TEXT))
         val step = when (phase) { LoadingPhase.QUEUED -> 0; LoadingPhase.PREPARING -> 1; else -> 2 }
-        val labels = listOf("FILA", "PREPARAÇÃO", "CONEXÃO")
+        val labels = listOf(UiText.text("FILA"), UiText.text("PREPARAÇÃO"), UiText.text("CONEXÃO"))
         steps.forEachIndexed { index, label ->
             label.text = "${if (index < step) "✓" else "${index+1}"}   ${labels[index]}"
             label.setTextColor(if (index <= step) Color.WHITE else DashboardTheme.color(UiColor.QUEUE_MUTED))
@@ -153,8 +155,8 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
                 if(index==step) UiColor.QUEUE_ACTIVE else UiColor.QUEUE_INACTIVE,
                 7f,if(index==step) 2 else 1,if(index==step) UiColor.ACCENT else UiColor.QUEUE_STEP_BORDER)
         }
-        note.text = if (snapshot != null) "A previsão pode mudar. Limite da tentativa: ${QueueStatus.duration(snapshot.limitMs/1000)}."
-            else "A partida será exibida assim que o vídeo estiver pronto."
+        note.text = if (snapshot != null) UiText.text("A previsão pode mudar. Limite da tentativa: {0}.",UiText.nested(QueueStatus.duration(snapshot.limitMs/1000)))
+            else UiText.text("A partida será exibida assim que o vídeo estiver pronto.")
     }
     fun cancelFromController() { cancelButton.performClick() }
     fun dismiss() {

@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.ui.dashboard
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -11,7 +13,7 @@ import kotlin.math.min
 internal class SearchButton(context: Context,search: () -> Unit): View(context) {
     private val paint=Paint(Paint.ANTI_ALIAS_FLAG)
     init {
-        id=generateViewId(); contentDescription="Pesquisar jogos"
+        id=generateViewId(); contentDescription=UiText.text("Pesquisar jogos")
         isFocusable=true; isFocusableInTouchMode=true; isClickable=true
         DashboardTheme.customFocus(this)
         setOnClickListener { search() }

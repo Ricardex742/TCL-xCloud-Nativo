@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.webrtc
 
+import com.xcloud.tclnative.i18n.UiText
+
 import com.xcloud.tclnative.settings.VideoCodecMode
 import org.webrtc.RtpCapabilities
 import java.io.IOException
@@ -30,9 +32,9 @@ object CodecPreference {
         val repair=capabilities.filter { it.name.equals("rtx",true) &&
             (it.parameters["apt"]==null || it.parameters["apt"] in payloads) }
         val description=when {
-            compatibility -> "H.264 Baseline • Compatibilidade • 720p solicitado • orçamento do perfil/partida"
-            baselineOnly -> "H.264 Baseline • 720p solicitado • orçamento do perfil/partida"
-            else -> "H.264 padrão"
+            compatibility -> UiText.text("H.264 Baseline • Compatibilidade • 720p solicitado • orçamento do perfil/partida")
+            baselineOnly -> UiText.text("H.264 Baseline • 720p solicitado • orçamento do perfil/partida")
+            else -> UiText.text("H.264 padrão")
         }
         return Offer(primary+repair,baselineOnly,description)
     }

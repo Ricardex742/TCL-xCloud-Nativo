@@ -1,11 +1,14 @@
 package com.xcloud.tclnative.webrtc
 
+import com.xcloud.tclnative.i18n.UiText
+
 /** Selectors verified in the xCloud web protocol: Android=720p, Windows=1080p, Tizen=1080p HQ. */
-enum class StreamResolution(val label: String, val width: Int, val height: Int, val osName: String,
+enum class StreamResolution(private val sourceLabel: String, val width: Int, val height: Int, val osName: String,
                             val minKbps: Int, val maxKbps: Int) {
     HD_720("720p — mais leve",1280,720,"android",5000,12000),
     HD_1080("1080p",1920,1080,"windows",10000,20000),
-    HD_1080_HQ("1080p HQ",1920,1080,"tizen",20000,30000)
+    HD_1080_HQ("1080p HQ",1920,1080,"tizen",20000,30000);
+    val label: String get()=UiText.text(sourceLabel)
 }
 
 /** The service selects the actual VBR stream; these are receive-side requests, not a bandwidth guarantee. */

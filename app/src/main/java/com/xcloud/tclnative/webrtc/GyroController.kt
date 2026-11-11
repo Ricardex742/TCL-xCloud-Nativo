@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.webrtc
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -29,17 +31,17 @@ class GyroController(context: Context,private val rotation: () -> Int,private va
     private var axes=0f to 0f
     private val handler=android.os.Handler(android.os.Looper.getMainLooper())
     private val expire=Runnable { if(mode!=GyroMode.OFF) { axes=0f to 0f;changed() } }
-    var status="Giroscópio: desligado"
+    var status=UiText.text("Giroscópio: desligado")
         private set
     fun start(mode: GyroMode,sensitivity: Int,nativeTouch: Boolean,allowNativeTouch: Boolean=false) {
         stop();this.sensitivity=sensitivity
         if(mode==GyroMode.OFF) return
-        if(nativeTouch && !allowNativeTouch) { status="Giroscópio: teste com toque nativo desativado";return }
-        if(sensor==null) { status="Giroscópio: aparelho sem sensor";return }
+        if(nativeTouch && !allowNativeTouch) { status=UiText.text("Giroscópio: teste com toque nativo desativado");return }
+        if(sensor==null) { status=UiText.text("Giroscópio: aparelho sem sensor");return }
         this.mode=mode
         val registered=manager?.registerListener(this,sensor,SensorManager.SENSOR_DELAY_GAME)==true
         if(!registered) this.mode=GyroMode.OFF
-        status=if(registered) "Giroscópio: ${mode.label}"+(if(nativeTouch) " • toque nativo experimental" else "") else "Giroscópio: registro recusado pelo Android"
+        status=if(registered) UiText.join(UiText.text("Giroscópio: {0}",UiText.nested(mode.label)),(if(nativeTouch) UiText.text(" • toque nativo experimental") else "")) else UiText.text("Giroscópio: registro recusado pelo Android")
     }
     fun apply(base: GamepadState): GamepadState = if(!GyroAim.active(mode,base)) base else base.copy(
         rightX=(base.rightX+axes.first).coerceIn(-1f,1f),rightY=(base.rightY+axes.second).coerceIn(-1f,1f))
@@ -49,5 +51,5 @@ class GyroController(context: Context,private val rotation: () -> Int,private va
         handler.removeCallbacks(expire);handler.postDelayed(expire,100)
     }
     override fun onAccuracyChanged(sensor: Sensor?,accuracy: Int) { }
-    fun stop() { manager?.unregisterListener(this);handler.removeCallbacks(expire);mode=GyroMode.OFF;axes=0f to 0f;status="Giroscópio: desligado" }
+    fun stop() { manager?.unregisterListener(this);handler.removeCallbacks(expire);mode=GyroMode.OFF;axes=0f to 0f;status=UiText.text("Giroscópio: desligado") }
 }

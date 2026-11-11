@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.signaling
 
+import com.xcloud.tclnative.i18n.UiText
+
 import com.xcloud.tclnative.auth.AuthenticationRequiredException
 import com.xcloud.tclnative.auth.XCloudSession
 import com.xcloud.tclnative.settings.SessionOptions
@@ -53,7 +55,7 @@ class XCloudSignalingClient(
 ) {
     @Volatile private var activeBaseUri=session.baseUri
     @Volatile private var activeLocale="pt-BR"
-    @Volatile private var activeRegion="Automático"
+    @Volatile private var activeRegion=UiText.text("Automático")
     private val chatLock=Mutex()
     private var sdpRequest=1
     private val activePath = AtomicReference<String?>(null)
@@ -65,7 +67,7 @@ class XCloudSignalingClient(
     private var mobileTouchSession=false
     // Quality and input are independent: NativeTouch must not replace a selected HD profile with Android/720p.
     private val activeOsName: String get()=activeResolution.osName
-    fun profileDiagnostics()="Perfil de vídeo solicitado: ${activeResolution.width}×${activeResolution.height} • $activeOsName\nRegião solicitada: $activeRegion | Idioma solicitado: $activeLocale"
+    fun profileDiagnostics()=UiText.text("Perfil de vídeo solicitado: {0}×{1} • {2}\nRegião solicitada: {3} | Idioma solicitado: {4}",UiText.nested(activeResolution.width),UiText.nested(activeResolution.height),UiText.nested(activeOsName),UiText.nested(activeRegion),UiText.nested(activeLocale))
     private fun deviceInfo() = JSONObject().put("appInfo", JSONObject().put("env", JSONObject()
         .put("clientAppId", "www.xbox.com").put("clientAppType", "browser").put("clientAppVersion", "26.1.0")))
         .put("dev", JSONObject().put("hw", JSONObject().put("make", if(mobileTouchSession) "Android" else "Microsoft")
@@ -206,7 +208,7 @@ class XCloudSignalingClient(
                     "Failed", "Error", "Ended", "Cancelled", "Closed" -> {
                         val code = state.optJSONObject("errorDetails")?.optString("code")
                             ?.takeIf { it.matches(Regex("[A-Za-z0-9_.-]{1,80}")) }
-                        throw IOException("SESSION_STATE: $name" + (code?.let { " — código $it" } ?: ""))
+                        throw IOException(UiText.join("SESSION_STATE: $name",(code?.let { UiText.text(" — código {0}",UiText.nested(it)) } ?: "")))
                     }
                     else -> throw IOException("SESSION_STATE: estado não reconhecido")
                 }
@@ -229,7 +231,7 @@ class XCloudSignalingClient(
             if (value != null && (expectedRequestId==null || value !is JSONObject || !value.has("requestId") || value.optString("requestId")==expectedRequestId)) return value
             pause(500)
         }
-        throw IOException("$stage: tempo limite aguardando resposta do Xbox")
+        throw IOException(UiText.join("$stage: ",UiText.text("tempo limite aguardando resposta do Xbox")))
     }
 
     suspend fun startAndConnectWebRtcSession(
@@ -240,7 +242,7 @@ class XCloudSignalingClient(
         stop()
         val selected=session.regions.firstOrNull { it.name==options.region && options.region.isNotEmpty() }
         activeBaseUri=selected?.baseUri ?: session.baseUri
-        activeRegion=selected?.name ?: if(options.region.isBlank()) "Automático" else "Automático — região salva não oferecida à conta"
+        activeRegion=selected?.name ?: if(options.region.isBlank()) UiText.text("Automático") else UiText.text("Automático — região salva não oferecida à conta")
         activeLocale=options.normalized().locale
         sdpRequest=1
         activeResolution = resolution
@@ -283,7 +285,7 @@ class XCloudSignalingClient(
             peer.addRemoteCandidates(remote)
             onProgress("TRANSPORT: Aguardando ICE e canais de controle...")
             peer.awaitReady()
-            Result.success("Transporte conectado. Aguardando o primeiro quadro de vídeo...")
+            Result.success(UiText.text("Transporte conectado. Aguardando o primeiro quadro de vídeo..."))
         } catch (timeout: kotlinx.coroutines.TimeoutCancellationException) {
             kotlinx.coroutines.currentCoroutineContext().ensureActive()
             stop()
@@ -322,7 +324,7 @@ class XCloudSignalingClient(
         withContext(Dispatchers.IO) {
             val path=activePath.get() ?: return@withContext
             sessionKeepAlive.run {
-                if(activePath.get()!=path) throw CancellationException("Manutenção da sessão substituída")
+                if(activePath.get()!=path) throw CancellationException(UiText.text("Manutenção da sessão substituída"))
                 request("$path/keepalive","KEEPALIVE","POST",client=keepAliveClient)
             }
         }

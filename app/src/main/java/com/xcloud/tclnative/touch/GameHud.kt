@@ -1,9 +1,11 @@
 package com.xcloud.tclnative.touch
 
+import com.xcloud.tclnative.i18n.UiText
+
 import com.xcloud.tclnative.webrtc.TouchKind
 import java.util.Locale
 
-enum class HudPreset(val label: String) {
+enum class HudPreset(private val sourceLabel: String) {
     GAMEPAD("Controle Xbox"),
     CALL_OF_DUTY("Call of Duty"), SHOOTER("Tiro — padrão"), FORZA("Forza Horizon / Motorsport"),
     RACING("Corrida — padrão"), EA_FC("EA SPORTS FC / FIFA"), FOOTBALL("Futebol — padrão"),
@@ -14,19 +16,26 @@ enum class HudPreset(val label: String) {
     }
     val football: Boolean get()=family==EA_FC || family==FOOTBALL
     val shooter: Boolean get()=family in setOf(CALL_OF_DUTY,SHOOTER)
+
+    val label: String get()=UiText.text(sourceLabel)
 }
-enum class HudBinding(val label: String,val button: Int=0) {
+enum class HudBinding(private val sourceLabel: String,val button: Int=0) {
     A("A",16),B("B",32),X("X",64),Y("Y",128),LB("LB",4096),RB("RB",8192),
     LT("LT"),RT("RT"),L3("L3",16384),R3("R3",32768),MENU("Menu",4),VIEW("View",8),
     UP("Direcional ↑",256),DOWN("Direcional ↓",512),LEFT("Direcional ←",1024),RIGHT("Direcional →",2048),
-    STEER_LEFT("Virar ←"),STEER_RIGHT("Virar →")
+    STEER_LEFT("Virar ←"),STEER_RIGHT("Virar →");
+    val label: String get()=UiText.text(sourceLabel)
 }
 enum class HudIcon { TEXT,FIRE,AIM,JUMP,CROUCH,RELOAD,SPRINT,USE,WEAPON,BUILD,WALL,STAIRS,FLOOR,ROOF,
     GRENADE,MELEE,ACCELERATE,BRAKE,LEFT,RIGHT,HANDBRAKE,REWIND,CAMERA,GEAR_UP,GEAR_DOWN,
     PASS,SHOOT,THROUGH,CROSS,SWITCH,SHIELD,DASH,ATTACK,SPECIAL,CAST,PAUSE,MAP }
 enum class HudShape { CIRCLE,PEDAL,SQUARE }
-enum class HudSwipe(val label: String) { UP("↑ Cima"),DOWN("↓ Baixo"),LEFT("← Esquerda"),RIGHT("→ Direita") }
-enum class FootballScheme(val label: String) { CLASSIC("Clássico — chute B"),ALTERNATE("Alternativo — chute X") }
+enum class HudSwipe(private val sourceLabel: String) { UP("↑ Cima"),DOWN("↓ Baixo"),LEFT("← Esquerda"),RIGHT("→ Direita") ;
+    val label: String get()=UiText.text(sourceLabel)
+}
+enum class FootballScheme(private val sourceLabel: String) { CLASSIC("Clássico — chute B"),ALTERNATE("Alternativo — chute X") ;
+    val label: String get()=UiText.text(sourceLabel)
+}
 data class HudAction(val keys: Set<HudBinding>) {
     constructor(vararg keys: HudBinding): this(keys.toSet())
     val buttons: Int get()=keys.fold(0) { result,key -> result or key.button }
@@ -87,10 +96,10 @@ object GameHud {
         fun stick(id: String,label: String,x: Float,y: Float,kind: TouchKind,radius: Float=.115f) {
             add(HudElement(id,label,x,y,radius,kind=kind))
         }
-        fun camera() { add(HudElement("look","Arraste para olhar",.68f,.55f,.34f,TouchKind.CAMERA)) }
+        fun camera() { add(HudElement("look",UiText.text("Arraste para olhar"),.68f,.55f,.34f,TouchKind.CAMERA)) }
         fun menus() {
-            button("map","Mapa",.43f,.15f,HudBinding.VIEW,HudIcon.MAP,.033f)
-            button("pause","Pausa",.57f,.15f,HudBinding.MENU,HudIcon.PAUSE,.033f)
+            button("map",UiText.text("Mapa"),.43f,.15f,HudBinding.VIEW,HudIcon.MAP,.033f)
+            button("pause",UiText.text("Pausa"),.57f,.15f,HudBinding.MENU,HudIcon.PAUSE,.033f)
         }
         when(preset) {
             HudPreset.GAMEPAD -> {
@@ -111,80 +120,80 @@ object GameHud {
                 stick("dpad","+",.35f,.75f,TouchKind.DPAD,.080f)
             }
             HudPreset.CALL_OF_DUTY,HudPreset.SHOOTER -> {
-                stick("move","Mover",.15f,.76f,TouchKind.LEFT_STICK); camera(); menus()
+                stick("move",UiText.text("Mover"),.15f,.76f,TouchKind.LEFT_STICK); camera(); menus()
                 val fireAction=if(preset==HudPreset.CALL_OF_DUTY && settings.aimAndFire) HudAction(HudBinding.LT,HudBinding.RT) else HudAction(HudBinding.RT)
-                button("fire-left","Atirar",.13f,.27f,HudBinding.RT,HudIcon.FIRE,.065f,dragLook=true,action=fireAction)
-                button("fire","Atirar",.91f,.49f,HudBinding.RT,HudIcon.FIRE,.083f,dragLook=true,action=fireAction)
-                button("aim","Mirar",.79f,.32f,HudBinding.LT,HudIcon.AIM,.055f,dragLook=true)
-                button("jump","Pular",.92f,.75f,HudBinding.A,HudIcon.JUMP,.058f)
-                button("crouch","Agachar / deslizar",.81f,.86f,HudBinding.B,HudIcon.CROUCH,.051f)
-                button("reload","Usar / recarregar",.72f,.68f,HudBinding.X,HudIcon.RELOAD,.050f)
-                button("weapon","Trocar arma",.62f,.86f,HudBinding.Y,HudIcon.WEAPON,.046f)
-                button("sprint","Correr",.15f,.43f,HudBinding.L3,HudIcon.SPRINT,.046f)
-                button("melee","Corpo a corpo",.62f,.58f,HudBinding.R3,HudIcon.MELEE,.043f)
-                button("tactical","Tática",.68f,.25f,HudBinding.LB,HudIcon.GRENADE,.040f)
-                button("grenade","Granada",.88f,.22f,HudBinding.RB,HudIcon.GRENADE,.040f)
+                button("fire-left",UiText.text("Atirar"),.13f,.27f,HudBinding.RT,HudIcon.FIRE,.065f,dragLook=true,action=fireAction)
+                button("fire",UiText.text("Atirar"),.91f,.49f,HudBinding.RT,HudIcon.FIRE,.083f,dragLook=true,action=fireAction)
+                button("aim",UiText.text("Mirar"),.79f,.32f,HudBinding.LT,HudIcon.AIM,.055f,dragLook=true)
+                button("jump",UiText.text("Pular"),.92f,.75f,HudBinding.A,HudIcon.JUMP,.058f)
+                button("crouch",UiText.text("Agachar / deslizar"),.81f,.86f,HudBinding.B,HudIcon.CROUCH,.051f)
+                button("reload",UiText.text("Usar / recarregar"),.72f,.68f,HudBinding.X,HudIcon.RELOAD,.050f)
+                button("weapon",UiText.text("Trocar arma"),.62f,.86f,HudBinding.Y,HudIcon.WEAPON,.046f)
+                button("sprint",UiText.text("Correr"),.15f,.43f,HudBinding.L3,HudIcon.SPRINT,.046f)
+                button("melee",UiText.text("Corpo a corpo"),.62f,.58f,HudBinding.R3,HudIcon.MELEE,.043f)
+                button("tactical",UiText.text("Tática"),.68f,.25f,HudBinding.LB,HudIcon.GRENADE,.040f)
+                button("grenade",UiText.text("Granada"),.88f,.22f,HudBinding.RB,HudIcon.GRENADE,.040f)
             }
             HudPreset.FORZA,HudPreset.RACING -> {
                 menus()
-                stick("dpad","Menus",.27f,.40f,TouchKind.DPAD,.065f)
-                button("steer-left","Virar",.095f,.77f,HudBinding.STEER_LEFT,HudIcon.LEFT,.092f)
-                button("steer-right","Virar",.25f,.77f,HudBinding.STEER_RIGHT,HudIcon.RIGHT,.092f)
-                button("accelerate","Acelerar",.915f,.70f,HudBinding.RT,HudIcon.ACCELERATE,.105f,HudShape.PEDAL)
-                button("brake","Frear",.77f,.78f,HudBinding.LT,HudIcon.BRAKE,.080f,HudShape.PEDAL)
-                button("handbrake","Freio de mão",.64f,.76f,HudBinding.A,HudIcon.HANDBRAKE,.055f)
-                button("rewind","Rebobinar",.11f,.37f,HudBinding.Y,HudIcon.REWIND,.048f)
-                button("gear-up","Marcha +",.88f,.34f,HudBinding.B,HudIcon.GEAR_UP,.049f)
-                button("gear-down","Marcha −",.76f,.38f,HudBinding.X,HudIcon.GEAR_DOWN,.049f)
-                button("camera","Câmera",.64f,.27f,HudBinding.RB,HudIcon.CAMERA,.043f)
-                button("clutch","Embreagem",.40f,.80f,HudBinding.LB,HudIcon.HANDBRAKE,.044f)
+                stick("dpad",UiText.text("Menus"),.27f,.40f,TouchKind.DPAD,.065f)
+                button("steer-left",UiText.text("Virar"),.095f,.77f,HudBinding.STEER_LEFT,HudIcon.LEFT,.092f)
+                button("steer-right",UiText.text("Virar"),.25f,.77f,HudBinding.STEER_RIGHT,HudIcon.RIGHT,.092f)
+                button("accelerate",UiText.text("Acelerar"),.915f,.70f,HudBinding.RT,HudIcon.ACCELERATE,.105f,HudShape.PEDAL)
+                button("brake",UiText.text("Frear"),.77f,.78f,HudBinding.LT,HudIcon.BRAKE,.080f,HudShape.PEDAL)
+                button("handbrake",UiText.text("Freio de mão"),.64f,.76f,HudBinding.A,HudIcon.HANDBRAKE,.055f)
+                button("rewind",UiText.text("Rebobinar"),.11f,.37f,HudBinding.Y,HudIcon.REWIND,.048f)
+                button("gear-up",UiText.text("Marcha +"),.88f,.34f,HudBinding.B,HudIcon.GEAR_UP,.049f)
+                button("gear-down",UiText.text("Marcha −"),.76f,.38f,HudBinding.X,HudIcon.GEAR_DOWN,.049f)
+                button("camera",UiText.text("Câmera"),.64f,.27f,HudBinding.RB,HudIcon.CAMERA,.043f)
+                button("clutch",UiText.text("Embreagem"),.40f,.80f,HudBinding.LB,HudIcon.HANDBRAKE,.044f)
             }
             HudPreset.EA_FC,HudPreset.FOOTBALL,HudPreset.EA_FC_DEFENSE,HudPreset.FOOTBALL_DEFENSE -> {
-                stick("move","Mover",.15f,.74f,TouchKind.LEFT_STICK); menus()
+                stick("move",UiText.text("Mover"),.15f,.74f,TouchKind.LEFT_STICK); menus()
                 val defense=preset!=preset.family
                 val shot=if(settings.footballScheme==FootballScheme.CLASSIC) HudBinding.B else HudBinding.X
                 val cross=if(shot==HudBinding.B) HudBinding.X else HudBinding.B
                 val target=if(defense) preset.family else if(preset==HudPreset.EA_FC) HudPreset.EA_FC_DEFENSE else HudPreset.FOOTBALL_DEFENSE
-                add(HudElement("football-mode",if(defense) "DEFESA" else "ATAQUE",.855f,.28f,.055f,
+                add(HudElement("football-mode",if(defense) "DEFESA" else UiText.text("ATAQUE"),.855f,.28f,.055f,
                     icon=HudIcon.SWITCH,shape=HudShape.SQUARE,page=target))
-                stick("right",if(defense) "Trocar" else "Fintas",.49f,.78f,TouchKind.RIGHT_STICK,.068f)
+                stick("right",if(defense) UiText.text("Trocar") else UiText.text("Fintas"),.49f,.78f,TouchKind.RIGHT_STICK,.068f)
                 if(!defense) {
-                    button("pass","Passe",.76f,.80f,HudBinding.A,HudIcon.PASS,.073f,
-                        gestures=mapOf(HudSwipe.UP to HudGesture("Tabela",HudAction(HudBinding.LB,HudBinding.A)),
-                            HudSwipe.DOWN to HudGesture("Passe forte",HudAction(HudBinding.RB,HudBinding.A))))
-                    button("shoot","Chute",.915f,.54f,shot,HudIcon.SHOOT,.087f,gestures=mapOf(
-                        HudSwipe.DOWN to HudGesture("Colocado",HudAction(HudBinding.RB,shot)),
-                        HudSwipe.UP to HudGesture("Cavadinha",HudAction(HudBinding.LB,shot)),
-                        HudSwipe.LEFT to HudGesture("Superchute",HudAction(HudBinding.LB,HudBinding.RB,shot)),
-                        HudSwipe.RIGHT to HudGesture("Superchute",HudAction(HudBinding.LB,HudBinding.RB,shot))))
-                    button("through","Enfiada",.755f,.55f,HudBinding.Y,HudIcon.THROUGH,.069f,
-                        gestures=mapOf(HudSwipe.UP to HudGesture("Lançamento",HudAction(HudBinding.LB,HudBinding.Y))))
-                    button("cross","Cruzar",.64f,.70f,cross,HudIcon.CROSS,.050f)
-                    button("sprint","Correr",.915f,.83f,HudBinding.RT,HudIcon.SPRINT,.079f)
-                    button("protect","Proteger",.11f,.43f,HudBinding.LT,HudIcon.SHIELD,.047f)
+                    button("pass",UiText.text("Passe"),.76f,.80f,HudBinding.A,HudIcon.PASS,.073f,
+                        gestures=mapOf(HudSwipe.UP to HudGesture(UiText.text("Tabela"),HudAction(HudBinding.LB,HudBinding.A)),
+                            HudSwipe.DOWN to HudGesture(UiText.text("Passe forte"),HudAction(HudBinding.RB,HudBinding.A))))
+                    button("shoot",UiText.text("Chute"),.915f,.54f,shot,HudIcon.SHOOT,.087f,gestures=mapOf(
+                        HudSwipe.DOWN to HudGesture(UiText.text("Colocado"),HudAction(HudBinding.RB,shot)),
+                        HudSwipe.UP to HudGesture(UiText.text("Cavadinha"),HudAction(HudBinding.LB,shot)),
+                        HudSwipe.LEFT to HudGesture(UiText.text("Superchute"),HudAction(HudBinding.LB,HudBinding.RB,shot)),
+                        HudSwipe.RIGHT to HudGesture(UiText.text("Superchute"),HudAction(HudBinding.LB,HudBinding.RB,shot))))
+                    button("through",UiText.text("Enfiada"),.755f,.55f,HudBinding.Y,HudIcon.THROUGH,.069f,
+                        gestures=mapOf(HudSwipe.UP to HudGesture(UiText.text("Lançamento"),HudAction(HudBinding.LB,HudBinding.Y))))
+                    button("cross",UiText.text("Cruzar"),.64f,.70f,cross,HudIcon.CROSS,.050f)
+                    button("sprint",UiText.text("Correr"),.915f,.83f,HudBinding.RT,HudIcon.SPRINT,.079f)
+                    button("protect",UiText.text("Proteger"),.11f,.43f,HudBinding.LT,HudIcon.SHIELD,.047f)
                 } else {
-                    button("defend-contain","Marcar",.915f,.83f,HudBinding.A,HudIcon.SHIELD,.079f,
+                    button("defend-contain",UiText.text("Marcar"),.915f,.83f,HudBinding.A,HudIcon.SHIELD,.079f,
                         action=HudAction(HudBinding.RT,HudBinding.A))
-                    button("defend-tackle","Bote",.915f,.54f,shot,HudIcon.SHOOT,.087f)
-                    button("defend-slide","Carrinho",.755f,.55f,cross,HudIcon.CROUCH,.069f)
-                    button("defend-switch","Trocar",.76f,.80f,HudBinding.LB,HudIcon.SWITCH,.073f)
-                    button("defend-jockey","Conter",.64f,.70f,HudBinding.LT,HudIcon.SHIELD,.050f,
+                    button("defend-tackle",UiText.text("Bote"),.915f,.54f,shot,HudIcon.SHOOT,.087f)
+                    button("defend-slide",UiText.text("Carrinho"),.755f,.55f,cross,HudIcon.CROUCH,.069f)
+                    button("defend-switch",UiText.text("Trocar"),.76f,.80f,HudBinding.LB,HudIcon.SWITCH,.073f)
+                    button("defend-jockey",UiText.text("Conter"),.64f,.70f,HudBinding.LT,HudIcon.SHIELD,.050f,
                         action=HudAction(HudBinding.LT,HudBinding.RT))
-                    button("defend-press","Pressão",.11f,.43f,HudBinding.RB,HudIcon.SPRINT,.047f)
-                    button("defend-keeper","Goleiro",.63f,.39f,HudBinding.Y,HudIcon.USE,.042f)
+                    button("defend-press",UiText.text("Pressão"),.11f,.43f,HudBinding.RB,HudIcon.SPRINT,.047f)
+                    button("defend-keeper",UiText.text("Goleiro"),.63f,.39f,HudBinding.Y,HudIcon.USE,.042f)
                 }
             }
             HudPreset.HADES,HudPreset.ACTION -> {
-                stick("move","Mover",.15f,.75f,TouchKind.LEFT_STICK); menus()
-                if(preset==HudPreset.ACTION) stick("right","Câmera",.49f,.76f,TouchKind.RIGHT_STICK,.085f)
-                button("dash","Esquiva",.88f,.82f,HudBinding.A,HudIcon.DASH,.066f)
-                button("attack","Ataque",.88f,.55f,HudBinding.X,HudIcon.ATTACK,.080f)
-                button("special","Especial",.75f,.38f,HudBinding.Y,HudIcon.SPECIAL,.058f)
-                button("cast","Feitiço",.72f,.70f,HudBinding.B,HudIcon.CAST,.061f)
-                button("interact","Interagir",.60f,.84f,HudBinding.RB,HudIcon.USE,.045f)
-                button("assist","Auxílio",.11f,.38f,HudBinding.LB,HudIcon.SHIELD,.045f)
-                button("ability","Habilidade",.89f,.24f,HudBinding.RT,HudIcon.SPECIAL,.042f)
-                button("extra","Extra",.29f,.34f,HudBinding.LT,HudIcon.CAST,.040f)
+                stick("move",UiText.text("Mover"),.15f,.75f,TouchKind.LEFT_STICK); menus()
+                if(preset==HudPreset.ACTION) stick("right",UiText.text("Câmera"),.49f,.76f,TouchKind.RIGHT_STICK,.085f)
+                button("dash",UiText.text("Esquiva"),.88f,.82f,HudBinding.A,HudIcon.DASH,.066f)
+                button("attack",UiText.text("Ataque"),.88f,.55f,HudBinding.X,HudIcon.ATTACK,.080f)
+                button("special",UiText.text("Especial"),.75f,.38f,HudBinding.Y,HudIcon.SPECIAL,.058f)
+                button("cast",UiText.text("Feitiço"),.72f,.70f,HudBinding.B,HudIcon.CAST,.061f)
+                button("interact",UiText.text("Interagir"),.60f,.84f,HudBinding.RB,HudIcon.USE,.045f)
+                button("assist",UiText.text("Auxílio"),.11f,.38f,HudBinding.LB,HudIcon.SHIELD,.045f)
+                button("ability",UiText.text("Habilidade"),.89f,.24f,HudBinding.RT,HudIcon.SPECIAL,.042f)
+                button("extra",UiText.text("Extra"),.29f,.34f,HudBinding.LT,HudIcon.CAST,.040f)
             }
         }
     }

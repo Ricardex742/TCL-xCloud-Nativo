@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.catalog
 
+import com.xcloud.tclnative.i18n.UiText
+
 import com.xcloud.tclnative.signaling.GameTitle
 import org.json.JSONArray
 import org.json.JSONObject
@@ -80,7 +82,7 @@ object StoreMetadata {
 /** Public art only. A cached product never adds a playable title or restores account entitlements. */
 class CatalogCache(private val file: File) {
     /** A visual hint before authentication; callers must validate launch access with the live catalog. */
-    fun artwork(titleId: String): GameTitle? = restore(listOf(GameTitle(titleId,"Seu jogo"))).single()
+    fun artwork(titleId: String): GameTitle? = restore(listOf(GameTitle(titleId,UiText.text("Seu jogo")))).single()
         .takeIf { it.posterUrl!=null || it.tileUrl!=null || it.heroUrl!=null }
     fun restore(games: List<GameTitle>): List<GameTitle> = try {
         if (!file.exists() || file.length() > 10*1024*1024) games else StoreMetadata.merge(games, JSONObject(file.readText()))

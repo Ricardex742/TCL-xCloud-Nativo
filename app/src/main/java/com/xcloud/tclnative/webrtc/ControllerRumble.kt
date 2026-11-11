@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.webrtc
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -55,15 +57,14 @@ class ControllerRumble(private val deviceFor: (Int) -> Int?, private val usb: Us
         running.values.forEach { runCatching { it.cancel() } }; running.clear()
         usb?.stop()
     }
-    fun diagnostics(): String = "Vibração: $commands comandos com destino associado desde a abertura do app; $androidCommands via Android; $usbCommands encaminhados para USB.\n"+
-        (usb?.status ?: "USB/XInput: desativado.")
+    fun diagnostics(): String = UiText.join(UiText.text("Vibração: {0} comandos com destino associado desde a abertura do app; {1} via Android; {2} encaminhados para USB.\n",UiText.nested(commands),UiText.nested(androidCommands),UiText.nested(usbCommands)),(usb?.status ?: "USB/XInput: desativado."))
     fun describe(): String {
         val devices=InputDevice.getDeviceIds().map { InputDevice.getDevice(it) }.filterNotNull().filter {
             it.sources and InputDevice.SOURCE_GAMEPAD==InputDevice.SOURCE_GAMEPAD ||
                 it.sources and InputDevice.SOURCE_JOYSTICK==InputDevice.SOURCE_JOYSTICK }
-        return if(devices.isEmpty()) "Nenhum controle conectado. Conecte o dongle e pressione um botão."
-        else devices.joinToString("\n\n") { "${it.name} • ${"%04x:%04x".format(it.vendorId,it.productId)}\nVibração exposta pelo Android: ${if(it.vibrator.hasVibrator()) "sim" else "não"}" } +
-            "\n\nO dongle e o driver do Android precisam oferecer vibração. Trocar o modo do controle para XInput pode mudar o suporte; o app não altera o firmware."
+        return if(devices.isEmpty()) UiText.text("Nenhum controle conectado. Conecte o dongle e pressione um botão.")
+        else devices.joinToString("\n\n") { UiText.text("{0} • {1}\nVibração exposta pelo Android: {2}",UiText.nested(it.name),UiText.nested("%04x:%04x".format(it.vendorId,it.productId)),UiText.nested(if(it.vibrator.hasVibrator()) UiText.text("sim") else UiText.text("não"))) } +
+            UiText.text("\n\nO dongle e o driver do Android precisam oferecer vibração. Trocar o modo do controle para XInput pode mudar o suporte; o app não altera o firmware.")
     }
     fun test() {
         InputDevice.getDeviceIds().map { InputDevice.getDevice(it) }.filterNotNull().filter {

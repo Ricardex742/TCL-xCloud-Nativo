@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.auth
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -46,7 +48,7 @@ data class DeviceCodeInfo(
     val verificationUriComplete: String?, val intervalSeconds: Long, val expiresAtMs: Long,
     val qrBitmap: Bitmap? = null
 )
-class AuthenticationRequiredException(message: String = "Autenticação necessária. Entre novamente pelo QR Code.") : Exception(message)
+class AuthenticationRequiredException(message: String = UiText.text("Autenticação necessária. Entre novamente pelo QR Code.")) : Exception(message)
 
 class XalAuthenticator(
     private val store: OAuthTokenStore,

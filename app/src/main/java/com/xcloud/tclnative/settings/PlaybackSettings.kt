@@ -1,25 +1,33 @@
 package com.xcloud.tclnative.settings
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import com.xcloud.tclnative.webrtc.StreamResolution
 
-enum class VideoMode(val label: String, val lowLatency: Boolean) {
+enum class VideoMode(private val sourceLabel: String, val lowLatency: Boolean) {
     LOW_LATENCY("Menor atraso", true), ADAPTIVE("Adaptativo", false),
-    COMPATIBILITY("Compatibilidade — TVs mais fracas", false)
+    COMPATIBILITY("Compatibilidade — TVs mais fracas", false);
+    val label: String get()=UiText.text(sourceLabel)
 }
-enum class VideoCodecMode(val label: String) {
-    H264("H.264 — padrão"), H264_BASELINE("H.264 leve — Baseline (720p)")
+enum class VideoCodecMode(private val sourceLabel: String) {
+    H264("H.264 — padrão"), H264_BASELINE("H.264 leve — Baseline (720p)");
+    val label: String get()=UiText.text(sourceLabel)
 }
-enum class FsrMode(val label: String) { OFF("Desativado"), FSR1("AMD FSR 1.0.2 — experimental") }
-enum class FsrOutput(val label: String) {
-    AUTO("Automático"), QHD_1440("1440p — 2560×1440"), UHD_4K("4K — 3840×2160 (experimental)")
+enum class FsrMode(private val sourceLabel: String) { OFF("Desativado"), FSR1("AMD FSR 1.0.2 — experimental") ;
+    val label: String get()=UiText.text(sourceLabel)
 }
-enum class TouchMode(val label: String) {
+enum class FsrOutput(private val sourceLabel: String) {
+    AUTO("Automático"), QHD_1440("1440p — 2560×1440"), UHD_4K("4K — 3840×2160 (experimental)");
+    val label: String get()=UiText.text(sourceLabel)
+}
+enum class TouchMode(private val sourceLabel: String) {
     AUTO("Automático — detectar dispositivo e jogo"), OFF("Desativado — controle físico"), VIRTUAL("Exclusivo — controle virtual"),
-    NATIVE("Toque nativo Xbox — experimental")
+    NATIVE("Toque nativo Xbox — experimental");
+    val label: String get()=UiText.text(sourceLabel)
 }
 
-enum class VideoAspect(val label: String, val ratio: Double? = null, val stretch: Boolean = false) {
+enum class VideoAspect(private val sourceLabel: String, val ratio: Double? = null, val stretch: Boolean = false) {
     ORIGINAL("Original — manter proporção"),
     RATIO_16_9("16:9 — padrão",16.0/9,true),
     RATIO_18_9("18:9",18.0/9,true),
@@ -27,7 +35,8 @@ enum class VideoAspect(val label: String, val ratio: Double? = null, val stretch
     RATIO_16_10("16:10",16.0/10,true),
     RATIO_4_3("4:3",4.0/3,true),
     STRETCH("Esticar — preencher a tela",stretch=true),
-    ZOOM("Zoom — preencher com corte")
+    ZOOM("Zoom — preencher com corte");
+    val label: String get()=UiText.text(sourceLabel)
 }
 
 data class PlaybackSettings(

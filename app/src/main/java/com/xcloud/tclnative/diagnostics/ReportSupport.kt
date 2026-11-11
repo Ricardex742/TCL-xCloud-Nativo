@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.diagnostics
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -10,20 +12,20 @@ import java.io.IOException
 object NetworkSnapshot {
     fun read(context: Context): String = runCatching {
         val manager=context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
-        val caps=manager?.getNetworkCapabilities(manager.activeNetwork) ?: return@runCatching "Rede não informada"
+        val caps=manager?.getNetworkCapabilities(manager.activeNetwork) ?: return@runCatching UiText.text("Rede não informada")
         when {
             caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> "VPN"
             caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> "Ethernet"
-            caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "Rede móvel"
+            caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> UiText.text("Rede móvel")
             caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> {
                 val wifi=runCatching { (context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager)?.connectionInfo }.getOrNull()
                 val band=when(wifi?.frequency ?: 0) { in 2400..2500 -> " • 2,4 GHz"; in 4900..5900 -> " • 5 GHz"; in 5925..7125 -> " • 6 GHz"; else -> "" }
                 val speed=wifi?.linkSpeed?.takeIf { it>0 }?.let { " • enlace $it Mbps" } ?: ""
                 "Wi-Fi$band$speed"
             }
-            else -> "Outra rede"
+            else -> UiText.text("Outra rede")
         }
-    }.getOrDefault("Rede não informada")
+    }.getOrDefault(UiText.text("Rede não informada"))
 }
 
 /** Only the latest aggregate is retained; no IP/SSID/token/SDP or unbounded event history. */
@@ -43,7 +45,7 @@ class SessionReportStore(context: Context) {
         r.metrics.forEach { (key,m) -> metrics.put(key.name,JSONObject().put("avg",m.average).put("min",m.minimum).put("peak",m.peak).put("samples",m.samples)) }
         data.put("metrics",metrics)
         data.put("recovery",JSONObject().apply { r.recovery.forEach { (k,v) -> put(k.name,v) } })
-        if(!prefs.edit().putString("last",data.toString()).commit()) throw IOException("Não foi possível salvar o diagnóstico neste aparelho.")
+        if(!prefs.edit().putString("last",data.toString()).commit()) throw IOException(UiText.text("Não foi possível salvar o diagnóstico neste aparelho."))
     }
     fun read(): SessionReport? { return try {
         val text=prefs.getString("last",null)
@@ -60,8 +62,8 @@ class SessionReportStore(context: Context) {
                     else key to MetricSummary(avg,low,high,m.optLong("samples").coerceAtLeast(0))
                 }.toMap()
                 val recovery=VideoRecoveryValues.read(d.optJSONObject("recovery"))
-                SessionReport(s("game",256) ?: "Jogo",s("device") ?: "Dispositivo não informado",s("network") ?: "Rede não informada",
-                    s("profile") ?: "Perfil não informado",d.optInt("presentationFps",60).coerceIn(1,250),n("duration"),n("observed"),n("samples"),n("endedAt"),
+                SessionReport(s("game",256) ?: UiText.text("Jogo"),s("device") ?: UiText.text("Dispositivo não informado"),s("network") ?: UiText.text("Rede não informada"),
+                    s("profile") ?: UiText.text("Perfil não informado"),d.optInt("presentationFps",60).coerceIn(1,250),n("duration"),n("observed"),n("samples"),n("endedAt"),
                     SessionEnd.entries.firstOrNull { it.name==d.optString("end") } ?: return null,metrics,s("resolution",48),s("codec",80),s("decoder",160),
                     if(d.has("efficient")) d.optBoolean("efficient") else null,l("videoBytes"),l("receivedBytes"),l("uploadedBytes"),n("inputBytes"),
                     l("dropped"),n("pointers"),n("waits"),n("coalesced"),n("stallMs"),n("stalls"),n("noData"),n("withData"),recovery,

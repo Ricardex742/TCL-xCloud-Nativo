@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.ui
 
+import com.xcloud.tclnative.i18n.UiText
+
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -20,7 +22,7 @@ class GameTouchView(context: Context,
     private val onPointers: (List<NativePointer>) -> Unit,
     private val coordinates: (Float,Float) -> Pair<Float,Float>?,
     private val onMenu: () -> Unit
-) : View(context) {
+) : View(context), com.xcloud.tclnative.i18n.LocaleAwareView {
     private val paint=Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface=DashboardTheme.font(context,true); textAlign=Paint.Align.CENTER }
     private val skin=HudSkin()
     private var automatic=HudPreset.GAMEPAD
@@ -39,22 +41,15 @@ class GameTouchView(context: Context,
         var samples=0L;var totalAge=0.0;var maxAge=0L;var hudUpdates=0L;var staleHudContacts=0L
     }
     /** Reset after the previous report was frozen, not when opening a menu or hiding the view. */
-    fun beginSession() { releaseInputs();nativeEvents=NativeEvents();lastHudPress="nenhum" }
-    private var lastHudPress="nenhum"
+    fun beginSession() { releaseInputs();nativeEvents=NativeEvents();lastHudPress=UiText.text("nenhum") }
+    private var lastHudPress=UiText.text("nenhum")
     fun nativeDiagnostics(): String {
         val s=nativeEvents
         val age=if(s.samples==0L) "n/d" else java.lang.String.format(java.util.Locale.US,"%.2f/%d ms",s.totalAge/s.samples,s.maxAge)
-        return "Toque Android → app: idade média/pico $age; down/up/move/cancel ${s.down}/${s.up}/${s.moves}/${s.cancel}; "+
-            "gerados D/U ${s.generatedDown}/${s.generatedUp}; solturas pelo app ${s.releases}; "+
-            "inícios fora do vídeo ${s.outside}; contatos ignorados ${s.ignored}; menu ${s.menu}; "+
-            "despacho imediato por gesto: pedidos ${s.immediate}, recusados ${s.refused}"
+        return UiText.join(UiText.text("Toque Android → app: idade média/pico {0}; down/up/move/cancel {1}/{2}/{3}/{4}; ",UiText.nested(age),UiText.nested(s.down),UiText.nested(s.up),UiText.nested(s.moves),UiText.nested(s.cancel)),"gerados D/U ${s.generatedDown}/${s.generatedUp}; solturas pelo app ${s.releases}; ",UiText.text("inícios fora do vídeo {0}; contatos ignorados {1}; menu {2}; ",UiText.nested(s.outside),UiText.nested(s.ignored),UiText.nested(s.menu)),UiText.text("despacho imediato por gesto: pedidos {0}, recusados {1}",UiText.nested(s.immediate),UiText.nested(s.refused)))
     }
-    fun hudDiagnostics(): String = "HUD: ${preset.label}; "+
-        (if(preset.football) "esquema ${configuration.footballScheme.label}; " else "")+
-        "sensibilidade ${configuration.sensitivity}%; zona morta ${configuration.lookDeadzone}%; "+
-        (if(preset.family==HudPreset.CALL_OF_DUTY) "mirar ao atirar ${if(configuration.aimAndFire) "ativado" else "desativado"}; "+
-            "corrida por arrasto ${if(configuration.sprintGesture) "ativada" else "desativada"}; " else "")+
-        "atualizações ${nativeEvents.hudUpdates}; contatos interrompidos descartados ${nativeEvents.staleHudContacts}; último controle: $lastHudPress\n${nativeDiagnostics()}"
+    fun hudDiagnostics(): String = UiText.join("HUD: ${preset.label}; ",(if(preset.football) UiText.text("esquema {0}; ",UiText.nested(configuration.footballScheme.label)) else ""),UiText.text("sensibilidade {0}%; zona morta {1}%; ",UiText.nested(configuration.sensitivity),UiText.nested(configuration.lookDeadzone)),(if(preset.family==HudPreset.CALL_OF_DUTY) UiText.text("mirar ao atirar {0}; ",UiText.nested(if(configuration.aimAndFire) UiText.text("ativado") else UiText.text("desativado")))+
+            UiText.text("corrida por arrasto {0}; ",UiText.nested(if(configuration.sprintGesture) "ativada" else "desativada")) else ""),UiText.text("atualizações {0}; contatos interrompidos descartados {1}; último controle: {2}\n{3}",UiText.nested(nativeEvents.hudUpdates),UiText.nested(nativeEvents.staleHudContacts),UiText.nested(lastHudPress),UiText.nested(nativeDiagnostics())))
     private fun emitNative(events: List<NativePointer>) {
         nativeEvents.generatedDown+=events.count { it.type==1 };nativeEvents.generatedUp+=events.count { it.type==2 }
         onPointers(events)
@@ -72,7 +67,7 @@ class GameTouchView(context: Context,
     var onBindingRequested: (String,HudAction?) -> Unit = { _,_ -> }
     var onGesturesRequested: (String,Map<HudSwipe,HudGesture>) -> Unit = { _,_ -> }
     private val lookReset=Runnable { if(mode==TouchMode.VIRTUAL && !isEditing) publish() }
-    init { visibility=GONE; isFocusable=false; contentDescription="HUD de toque e menu da partida" }
+    init { visibility=GONE; isFocusable=false; contentDescription=UiText.text("HUD de toque e menu da partida") }
     fun configure(mode: TouchMode,game: GameTitle?=null,settings: HudSettings?=null) {
         releaseInputs(); isEditing=false
         if(game!=null) automatic=GameHud.automatic(game.titleId,game.name)
@@ -91,6 +86,7 @@ class GameTouchView(context: Context,
     }
     fun showPage(page: HudPreset) { releaseInputs(); model.setPage(page); invalidate() }
     private fun rebuild(page: HudPreset=preset) { model=VirtualGamepad(width.coerceAtLeast(1),height.coerceAtLeast(1),page,configuration) }
+    override fun refreshLanguage() { releaseInputs();rebuild();invalidate() }
     fun beginEditing() {
         if(mode!=TouchMode.VIRTUAL) return
         releaseInputs(); beforeEdit=configuration; beforeEditPreset=preset; selected=null; isEditing=true; invalidate()
@@ -212,7 +208,7 @@ class GameTouchView(context: Context,
             when(action) {
                 MotionEvent.ACTION_DOWN,MotionEvent.ACTION_POINTER_DOWN -> {
                     model.down(id,event.getX(index),event.getY(index),event.eventTime,receivedAt)?.let {
-                        lastHudPress="${it.label} [${it.id}] → ${it.action?.label ?: it.kind.name}"
+                        lastHudPress=UiText.text("{0} [{1}] → {2}",UiText.nested(it.label),UiText.nested(it.id),UiText.nested(it.action?.label ?: it.kind.name))
                     }
                 }
                 MotionEvent.ACTION_UP,MotionEvent.ACTION_POINTER_UP -> {
@@ -319,15 +315,15 @@ class GameTouchView(context: Context,
             canvas.drawText(label,width*(left+right)/2,height*(top+bottom)/2-(paint.ascent()+paint.descent())/2,paint)
         }
         paint.style=Paint.Style.FILL; paint.color=Color.WHITE; paint.textSize=height*.021f
-        canvas.drawText("EDITAR HUD • ARRASTE OS BOTÕES",width*.505f,height*.025f,paint)
-        button("Cancelar",.31f,.44f,.035f,.105f)
-        button("Restaurar",.44f,.57f,.035f,.105f)
-        button("Salvar",.57f,.70f,.035f,.105f,true)
+        canvas.drawText(UiText.text("EDITAR HUD • ARRASTE OS BOTÕES"),width*.505f,height*.025f,paint)
+        button(UiText.text("Cancelar"),.31f,.44f,.035f,.105f)
+        button(UiText.text("Restaurar"),.44f,.57f,.035f,.105f)
+        button(UiText.text("Salvar"),.57f,.70f,.035f,.105f,true)
         selected?.let { id -> model.controls.firstOrNull { it.id==id }?.let { control ->
             button("−",.33f,.43f,.90f,.985f); button("+",.43f,.53f,.90f,.985f)
             if(control.action!=null) {
-                button("Ação: ${control.action.label}",.53f,.69f,.90f,.985f)
-                button("Gestos",.69f,.82f,.90f,.985f)
+                button(UiText.text("Ação: {0}",UiText.nested(control.action.label)),.53f,.69f,.90f,.985f)
+                button(UiText.text("Gestos"),.69f,.82f,.90f,.985f)
             }
         } }
     }

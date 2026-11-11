@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.diagnostics
 
+import com.xcloud.tclnative.i18n.UiText
+
 import com.xcloud.tclnative.net.CloudHttpException
 import com.xcloud.tclnative.net.CloudRequestException
 import java.io.EOFException
@@ -11,20 +13,22 @@ import java.net.UnknownHostException
 import javax.net.ssl.SSLException
 import org.json.JSONObject
 
-enum class FailureStage(val label: String) {
+enum class FailureStage(private val sourceLabel: String) {
     KEEPALIVE("Manutenção da sessão Xbox"), TRANSPORT("Conexão WebRTC"), CHANNELS("Canal de controles"),
     VIDEO_CODEC("Decodificador de vídeo"), RENDERER("Apresentação do vídeo"), VIDEO("Recebimento do vídeo"),
     SESSION_STATE("Estado da sessão Xbox"), SIGNALING("Negociação da sessão"), NETWORK("Requisição de rede"),
-    UNKNOWN("Origem não identificada")
+    UNKNOWN("Origem não identificada");
+    val label: String get()=UiText.text(sourceLabel)
 }
-enum class FailureKind(val label: String) {
+enum class FailureKind(private val sourceLabel: String) {
     HTTP("resposta HTTP de erro"), TIMEOUT("tempo limite excedido"), DNS("falha ao localizar o servidor"),
     TLS("falha na conexão segura"), CONNECTION("falha na conexão de rede"),
     ICE_FAILED("a conexão ICE falhou"), ICE_CLOSED("a conexão ICE foi fechada"),
     CHANNEL_CLOSED("o canal de controles foi fechado"), CONTROL_SEND("falha no envio de controles/configuração"),
     CODEC("erro informado pelo decoder"), RENDERER("erro na apresentação local"),
     NO_VIDEO("nenhum quadro foi apresentado no prazo"), IO("falha de comunicação"),
-    UNCLASSIFIED("erro sem classificação técnica")
+    UNCLASSIFIED("erro sem classificação técnica");
+    val label: String get()=UiText.text(sourceLabel)
 }
 
 /** A bounded description, never an arbitrary exception message, URL, SDP or HTTP body. */
@@ -34,10 +38,7 @@ data class SessionFailure(val stage: FailureStage,val kind: FailureKind,val http
     private val safeService get()=serviceCode?.takeIf { it.matches(Regex("[A-Za-z0-9_-]{1,64}")) }
     private val safeType get()=exceptionType?.takeIf { it.matches(Regex("[A-Za-z_$][A-Za-z0-9_$]{0,63}")) }
     val code get()="${stage.name}/${kind.name}"+(if(kind==FailureKind.HTTP) safeStatus?.let { "_$it" }.orEmpty() else "")
-    val description: String get()="${stage.label}: ${kind.label}"+
-        (if(kind==FailureKind.HTTP) safeStatus?.let { " $it" }.orEmpty() else "")+
-        safeService?.let { " • código do serviço: $it" }.orEmpty()+
-        "\nCódigo técnico: $code"+safeType?.let { " • $it" }.orEmpty()
+    val description: String get()=UiText.join(UiText.text("{0}: {1}",UiText.nested(stage.label),UiText.nested(kind.label)),(if(kind==FailureKind.HTTP) safeStatus?.let { " $it" }.orEmpty() else ""),safeService?.let { UiText.text(" • código do serviço: {0}",UiText.nested(it)) }.orEmpty(),UiText.text("\nCódigo técnico: {0}",UiText.nested(code)),safeType?.let { " • $it" }.orEmpty())
     fun json()=JSONObject().put("stage",stage.name).put("kind",kind.name).put("status",safeStatus)
         .put("serviceCode",safeService).put("type",safeType)
     companion object {

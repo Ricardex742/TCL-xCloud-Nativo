@@ -1,5 +1,7 @@
 package com.xcloud.tclnative.home
 
+import com.xcloud.tclnative.i18n.UiText
+
 import com.android.apksig.ApkSigner
 import com.android.apksig.ApkVerifier
 import java.io.File
@@ -58,14 +60,14 @@ object ShortcutApkBuilder {
                     target.putNextEntry(entry); target.write(bytes); target.closeEntry()
                 }
             } }
-            check(icons==1 && banners==1) { "O modelo do atalho não contém ícone e banner válidos." }
+            check(icons==1 && banners==1) { UiText.text("O modelo do atalho não contém ícone e banner válidos.") }
             ApkSigner.Builder(listOf(signer)).setInputApk(unsigned).setOutputApk(output).setMinSdkVersion(24)
                 .setV1SigningEnabled(false).setV2SigningEnabled(true).setV3SigningEnabled(false).setV4SigningEnabled(false)
                 .build().sign()
             val verified=ApkVerifier.Builder(output).setMinCheckedPlatformVersion(24).build().verify()
             check(verified.isVerified && verified.isVerifiedUsingV2Scheme &&
                 verified.signerCertificates.singleOrNull()?.encoded?.contentEquals(signer.certificates.first().encoded)==true) {
-                "Não foi possível validar a assinatura do atalho. Tente criá-lo novamente."
+                UiText.text("Não foi possível validar a assinatura do atalho. Tente criá-lo novamente.")
             }
             return output
         } catch(error: Exception) { output.delete(); throw error }

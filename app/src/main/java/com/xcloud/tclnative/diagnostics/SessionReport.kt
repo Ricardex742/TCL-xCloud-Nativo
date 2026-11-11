@@ -1,17 +1,23 @@
 package com.xcloud.tclnative.diagnostics
 
+import com.xcloud.tclnative.i18n.UiText
+
 import com.xcloud.tclnative.webrtc.*
 import java.util.Locale
 import kotlin.math.roundToInt
 
-enum class ReportMetric(val label: String,val unit: String) {
+enum class ReportMetric(private val sourceLabel: String,private val sourceUnit: String) {
     RTT("Latência RTT","ms"),LOSS("Perda de pacotes","%"),JITTER("Jitter da rede","ms"),
     FPS("FPS decodificados","FPS"),BITRATE("Bitrate de vídeo","Mbps"),DECODE("Decodificação","ms/quadro"),
     BUFFER("Buffer de vídeo observado","ms"),INPUT_DELAY("Agendador de input","ms"),
-    BUFFER_TARGET("Alvo do buffer WebRTC","ms"),BUFFER_MINIMUM("Mínimo de rede do buffer WebRTC","ms")
+    BUFFER_TARGET("Alvo do buffer WebRTC","ms"),BUFFER_MINIMUM("Mínimo de rede do buffer WebRTC","ms");
+    val label: String get()=UiText.text(sourceLabel)
+    val unit: String get()=UiText.text(sourceUnit)
 }
 data class MetricSummary(val average: Double,val minimum: Double,val peak: Double,val samples: Long)
-enum class SessionEnd(val label: String) { USER("Encerrada pelo usuário"),FAILURE("Falha na transmissão"),REPLACED("Outra partida iniciada"),APP_CLOSED("Aplicativo fechado") }
+enum class SessionEnd(private val sourceLabel: String) { USER("Encerrada pelo usuário"),FAILURE("Falha na transmissão"),REPLACED("Outra partida iniciada"),APP_CLOSED("Aplicativo fechado") ;
+    val label: String get()=UiText.text(sourceLabel)
+}
 data class SessionReport(
     val game: String,val device: String,val network: String,val requestedProfile: String,val presentationFps: Int,
     val durationMs: Long,val observedMs: Long,val samples: Long,val endedAtMs: Long,val end: SessionEnd,
@@ -21,46 +27,46 @@ data class SessionReport(
     val stalledMs: Long,val stalledEvents: Long,val stalledWithoutDataMs: Long,val stalledWithDataMs: Long,
     val recovery: Map<VideoRecoveryAction,Int>,val score: Int?,val inputDetails: String? = null,val failure: SessionFailure? = null
 ) {
-    val quality: String get()=when { score==null -> "Dados parciais"; score>=90 -> "Excelente"; score>=75 -> "Boa"; score>=60 -> "Regular"; else -> "Atenção" }
+    val quality: String get()=when { score==null -> UiText.text("Dados parciais"); score>=90 -> UiText.text("Excelente"); score>=75 -> UiText.text("Boa"); score>=60 -> UiText.text("Regular"); else -> UiText.text("Atenção") }
     fun findings(): List<String> = buildList {
-        if(end==SessionEnd.FAILURE) add("A sessão terminou com falha. O índice resume as amostras observadas e não exclui uma interrupção no fim da partida.")
+        if(end==SessionEnd.FAILURE) add(UiText.text("A sessão terminou com falha. O índice resume as amostras observadas e não exclui uma interrupção no fim da partida."))
         fun avg(k: ReportMetric)=metrics[k]?.average
         if((avg(ReportMetric.LOSS) ?: 0.0)>2 || (avg(ReportMetric.JITTER) ?: 0.0)>15)
-            add("Perdas ou jitter elevados. Compare Ethernet e Wi-Fi próximo ao roteador; o serviço também pode variar.")
-        if((avg(ReportMetric.RTT) ?: 0.0)>85) add("RTT elevado. Compare a conexão e a região do serviço. RTT não mede a latência completa do comando até a imagem.")
+            add(UiText.text("Perdas ou jitter elevados. Compare Ethernet e Wi-Fi próximo ao roteador; o serviço também pode variar."))
+        if((avg(ReportMetric.RTT) ?: 0.0)>85) add(UiText.text("RTT elevado. Compare a conexão e a região do serviço. RTT não mede a latência completa do comando até a imagem."))
         val frameBudget=1000.0/presentationFps.coerceAtLeast(1)
         if((avg(ReportMetric.BUFFER) ?: 0.0)>2*frameBudget)
-            add("O buffer observado supera dois intervalos da apresentação solicitada. Ele pode contribuir para a sensação de atraso mesmo com RTT e decode baixos. Compare Menor atraso e Adaptativo; o alvo solicitado não é um teto garantido.")
+            add(UiText.text("O buffer observado supera dois intervalos da apresentação solicitada. Ele pode contribuir para a sensação de atraso mesmo com RTT e decode baixos. Compare Menor atraso e Adaptativo; o alvo solicitado não é um teto garantido."))
         if((avg(ReportMetric.DECODE) ?: 0.0)>frameBudget)
-            add("Tempo de decodificação acima do intervalo de ${number(frameBudget)} ms a $presentationFps FPS. O pipeline pode sobrepor quadros; isso sozinho não prova sobrecarga. Compare 720p e filtros desativados no aparelho.")
-        if(stalledWithDataMs>0) add("Houve vídeo recebido sem progresso da imagem. Compare decoder, resolução, filtros e perdas de pacotes.")
-        if(stalledWithoutDataMs>0) add("Houve pausas sem recebimento de vídeo. Investigue a rede e a continuidade do envio pelo serviço.")
-        if(inputWaits>0) add("O canal de input apresentou espera por congestionamento. Compare a estabilidade da conexão.")
-        if(score==null) add("Amostras insuficientes para calcular o índice completo. Campos não medidos aparecem como n/d.")
-        if(isEmpty()) add("Os indicadores disponíveis não apresentaram um alerta importante nesta coleta.")
+            add(UiText.text("Tempo de decodificação acima do intervalo de {0} ms a {1} FPS. O pipeline pode sobrepor quadros; isso sozinho não prova sobrecarga. Compare 720p e filtros desativados no aparelho.",UiText.nested(number(frameBudget)),UiText.nested(presentationFps)))
+        if(stalledWithDataMs>0) add(UiText.text("Houve vídeo recebido sem progresso da imagem. Compare decoder, resolução, filtros e perdas de pacotes."))
+        if(stalledWithoutDataMs>0) add(UiText.text("Houve pausas sem recebimento de vídeo. Investigue a rede e a continuidade do envio pelo serviço."))
+        if(inputWaits>0) add(UiText.text("O canal de input apresentou espera por congestionamento. Compare a estabilidade da conexão."))
+        if(score==null) add(UiText.text("Amostras insuficientes para calcular o índice completo. Campos não medidos aparecem como n/d."))
+        if(isEmpty()) add(UiText.text("Os indicadores disponíveis não apresentaram um alerta importante nesta coleta."))
     }
     fun text(): String = buildString {
-        append("xCLOUD • Diagnóstico pós-partida\n$game\n$device\n$network\n")
-        append("Tempo conectado: ${duration(durationMs)} | Observado: ${duration(observedMs)} | $samples amostras\n")
-        append("${end.label} | Pedido: $requestedProfile | Apresentação solicitada: $presentationFps FPS\n")
-        if(end==SessionEnd.FAILURE) append("Motivo do encerramento: ${failure?.description ?: "não registrado nesta versão do relatório"}\n")
+        append(UiText.text("xCLOUD • Diagnóstico pós-partida\n{0}\n{1}\n{2}\n",UiText.nested(game),UiText.nested(device),UiText.nested(network)))
+        append(UiText.text("Tempo conectado: {0} | Observado: {1} | {2} amostras\n",UiText.nested(duration(durationMs)),UiText.nested(duration(observedMs)),UiText.nested(samples)))
+        append(UiText.text("{0} | Pedido: {1} | Apresentação solicitada: {2} FPS\n",UiText.nested(end.label),UiText.nested(requestedProfile),UiText.nested(presentationFps)))
+        if(end==SessionEnd.FAILURE) append(UiText.text("Motivo do encerramento: {0}\n",UiText.nested(failure?.description ?: UiText.text("não registrado nesta versão do relatório"))))
         inputDetails?.let { append("$it\n") }
-        append("Recebido: ${resolution ?: "n/d"} | ${codec ?: "n/d"} | ${decoder ?: "n/d"}\n")
-        append("Índice estimado: ${score?.toString() ?: "n/d"}/100 • $quality\n\n")
+        append(UiText.text("Recebido: {0} | {1} | {2}\n",UiText.nested(resolution ?: "n/d"),UiText.nested(codec ?: "n/d"),UiText.nested(decoder ?: "n/d")))
+        append(UiText.text("Índice estimado: {0}/100 • {1}\n\n",UiText.nested(score?.toString() ?: "n/d"),UiText.nested(quality)))
         ReportMetric.entries.forEach { key ->
             val m=metrics[key]
-            append("${key.label}: média ${number(m?.average)} | mín. ${number(m?.minimum)} | pico ${number(m?.peak)} ${key.unit}\n")
+            append(UiText.text("{0}: média {1} | mín. {2} | pico {3} {4}\n",UiText.nested(key.label),UiText.nested(number(m?.average)),UiText.nested(number(m?.minimum)),UiText.nested(number(m?.peak)),UiText.nested(key.unit)))
         }
-        append("\nRecebido WebRTC: ${bytes(receivedBytes)} | Enviado WebRTC: ${bytes(uploadedBytes)}\n")
-        append("Vídeo RTP: ${bytes(videoBytes)} | Input aceito pelo canal: ${bytes(inputBytes)}\n")
+        append(UiText.text("\nRecebido WebRTC: {0} | Enviado WebRTC: {1}\n",UiText.nested(bytes(receivedBytes)),UiText.nested(bytes(uploadedBytes))))
+        append(UiText.text("Vídeo RTP: {0} | Input aceito pelo canal: {1}\n",UiText.nested(bytes(videoBytes)),UiText.nested(bytes(inputBytes))))
         append("Quadros descartados: ${droppedFrames ?: "n/d"} | Toques enviados: $pointerEvents\n")
-        append("Sem progresso de imagem: ${duration(stalledMs)} em $stalledEvents episódio(s) observados\n")
-        append("Sem dados: ${duration(stalledWithoutDataMs)} | Com dados: ${duration(stalledWithDataMs)}\n")
-        append("Input: $inputWaits esperas | $inputCoalesced transições consolidadas\n")
-        append("Recuperações tentadas: ${recovery.entries.joinToString { "${it.key}: ${it.value}" }.ifBlank { "nenhuma" }}\n\n")
+        append(UiText.text("Sem progresso de imagem: {0} em {1} episódio(s) observados\n",UiText.nested(duration(stalledMs)),UiText.nested(stalledEvents)))
+        append(UiText.text("Sem dados: {0} | Com dados: {1}\n",UiText.nested(duration(stalledWithoutDataMs)),UiText.nested(duration(stalledWithDataMs))))
+        append(UiText.text("Input: {0} esperas | {1} transições consolidadas\n",UiText.nested(inputWaits),UiText.nested(inputCoalesced)))
+        append(UiText.text("Recuperações tentadas: {0}\n\n",UiText.nested(recovery.entries.joinToString { "${it.key}: ${it.value}" }.ifBlank { "nenhuma" })))
         append(findings().joinToString("\n"))
-        append("\n\nO agendador de input mede somente a thread de envio. A idade do evento Android é medida na Activity para joystick e no View para toque; não inclui todo o trajeto Bluetooth/USB, a detecção física do toque, a resposta do jogo ou a tela. Ping e decode baixos não demonstram baixa latência total dos comandos.")
-        append("\n\nValores das amostras disponíveis. FPS do decoder não é FPS do jogo nem da tela. Buffer observado, alvo WebRTC e mínimo de rede são medidas distintas; o pedido de playout não garante o valor observado. Decode inclui o pipeline do codec, não só processamento. Não some essas medidas para estimar input-to-photon. Contadores WebRTC podem não incluir todo o tráfego da conexão. O índice é uma estimativa local, não um teste de velocidade. Pausas são observadas pelo watchdog, não por captura de cada quadro.")
+        append(UiText.text("\n\nO agendador de input mede somente a thread de envio. A idade do evento Android é medida na Activity para joystick e no View para toque; não inclui todo o trajeto Bluetooth/USB, a detecção física do toque, a resposta do jogo ou a tela. Ping e decode baixos não demonstram baixa latência total dos comandos."))
+        append(UiText.text("\n\nValores das amostras disponíveis. FPS do decoder não é FPS do jogo nem da tela. Buffer observado, alvo WebRTC e mínimo de rede são medidas distintas; o pedido de playout não garante o valor observado. Decode inclui o pipeline do codec, não só processamento. Não some essas medidas para estimar input-to-photon. Contadores WebRTC podem não incluir todo o tráfego da conexão. O índice é uma estimativa local, não um teste de velocidade. Pausas são observadas pelo watchdog, não por captura de cada quadro."))
     }
     companion object {
         const val MAX_INPUT_DETAILS=4096
@@ -98,7 +104,7 @@ class SessionReportTracker(private val game: String,private val device: String,p
     private val values=ReportMetric.entries.associateWith { Aggregate() }
     private val video=Counter(); private val down=Counter(); private val up=Counter()
     private var start: Long?=null; private var frozen=false; private var delivered=false; private var report: SessionReport?=null
-    private var visible=true; private var network="Rede não informada"; private var resumed=false
+    private var visible=true; private var network=UiText.text("Rede não informada"); private var resumed=false
     private var samples=0L; private var observed=0.0; private var lastSample=Long.MIN_VALUE
     private var resolution: String?=null; private var codec: String?=null; private var decoder: String?=null; private var efficient: Boolean?=null
     private var dropped=0L; private var droppedKnown=false; private var input=InputMetrics()

@@ -131,6 +131,8 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
 - **AMD FSR 1.0.2 experimental**, com ampliação EASU e nitidez RCAS, RCAS adaptativo ou USM por luminância; em resolução nativa, aplica somente o realce escolhido.
 - Saída do FSR em **Automático, 1440p ou 4K experimental**, com proteção para retorno à escala padrão.
 - **SGSR 1 experimental** como alternativa de ampliação e realce numa passagem.
+- **Reconstrução adaptativa xCloud experimental**, com níveis Automático, Leve, Equilibrado e Qualidade, intensidade ajustável e realce na resolução atual. O caminho espacial próprio usa uma passagem; efeitos adicionais podem acrescentar processamento.
+- Comparação da reconstrução com imagem **original, tratada ou dividida no mesmo quadro**, sem mudar os controles ou o enquadramento. O automático aumenta o nível após cadência estável e reduz a carga quando necessário.
 - Tratamento opcional com **RCAS adaptativo ou USM na luminância**, limite de halos e proteção contra ruído.
 - **Debanding com dithering**, limpeza seletiva de compressão, reconstrução de cor nas bordas e antialiasing ajustáveis.
 - **Estabilização temporal** com busca local de movimento, descarte de histórico em mudanças de geometria e rejeição de mudanças de cena.

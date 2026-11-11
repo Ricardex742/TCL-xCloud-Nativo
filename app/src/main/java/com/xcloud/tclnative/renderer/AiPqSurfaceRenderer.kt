@@ -11,6 +11,8 @@ import com.xcloud.tclnative.settings.FsrOutput
 import com.xcloud.tclnative.settings.FsrMode
 import com.xcloud.tclnative.settings.ImageTreatmentSettings
 import com.xcloud.tclnative.settings.PresentationPacing
+import com.xcloud.tclnative.settings.ReconstructionSettings
+import com.xcloud.tclnative.settings.ImageComparison
 import com.xcloud.tclnative.webrtc.ClientDisplayDimensions
 import org.webrtc.EglBase
 import org.webrtc.RendererCommon
@@ -97,6 +99,8 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     private var contrast=100
     private var fsrRequested=false
     private var fsrMode=FsrMode.OFF
+    private var reconstructionSettings=ReconstructionSettings()
+    private val reconstructionController=ReconstructionController()
     private var requestedTreatment=ImageTreatmentSettings()
     private var treatmentBudget=TreatmentBudget(ImageTreatmentSettings(),FsrOutput.AUTO,false)
     private var treatmentCuts=mutableListOf<String>()
@@ -122,8 +126,21 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         if(requestedTreatment==value.bounded()) return
         requestedTreatment=value.bounded();treatmentFailure=null;resetTreatmentBudget();updateOutputBuffer()
     }
+    fun setReconstruction(value: ReconstructionSettings) {
+        val bounded=value.bounded()
+        if(reconstructionSettings==bounded) return
+        val qualityChanged=bounded.quality!=reconstructionSettings.quality
+        reconstructionSettings=bounded
+        if(qualityChanged) resetReconstructionController()
+        fsrPerformance.reset();applyTreatmentBudget()
+    }
+    private fun resetReconstructionController() {
+        val lowRam=(context.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager)?.isLowRamDevice ?: true
+        reconstructionController.reset(reconstructionSettings.quality,lowRam)
+    }
     private fun resetTreatmentBudget() {
         treatmentCuts.clear();treatmentBudget=TreatmentBudget(if(compatibility) ImageTreatmentSettings() else requestedTreatment,fsrOutput,fsrRequested)
+        resetReconstructionController()
         fsrPerformance.reset();applyTreatmentBudget()
     }
     private fun applyTreatmentBudget() {
@@ -131,6 +148,9 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
             drawer.treatment=if(compatibility || treatmentFailure!=null) ImageTreatmentSettings() else treatmentBudget.image
             drawer.fsrEnabled=fsrEnabled && fsrMode==FsrMode.FSR1
             drawer.sgsrEnabled=fsrEnabled && fsrMode==FsrMode.SGSR1
+            drawer.reconstructionLevel=if(fsrEnabled && fsrMode==FsrMode.RECONSTRUCTION) reconstructionController.level else 0
+            drawer.reconstructionStrength=reconstructionSettings.strength
+            drawer.imageComparison=reconstructionSettings.comparison.ordinal
         }
     }
     fun setFsrSharpness(sharpness: Int) { fsrSharpness=sharpness.coerceIn(0,100);aspectDrawer?.fsrSharpness=fsrSharpness }
@@ -187,7 +207,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         },treatmentFactory={ org.webrtc.ImageTreatmentPipeline(context) },onTreatmentFailure={ reason ->
             post { if(!released && generation==id) {
                 treatmentFailure=reason;applyTreatmentBudget()
-                if(fsrMode==FsrMode.SGSR1) fallbackFsr(reason)
+                if(fsrMode==FsrMode.SGSR1 || fsrMode==FsrMode.RECONSTRUCTION) fallbackFsr(reason)
             } }
         }).also {
             it.onFsrDraw={ if(!released && generation==id) fsrDraws.incrementAndGet();Unit }
@@ -300,12 +320,24 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     }
     /** UI thread; fed independently of HUD visibility by the existing once-per-second stats. */
     fun observeFsrPerformance(sampledAtMs: Long,metrics: StreamMetrics,foreground: Boolean) {
-        if(!requestedTreatment.autoProtect || compatibility || (!fsrEnabled && !treatmentBudget.image.active) ||
-            (fsrMode==FsrMode.FSR1 && aspectDrawer?.isFsrBypassed()==true && !treatmentBudget.image.active)) { fsrPerformance.reset();return }
         val now=android.os.SystemClock.elapsedRealtime()
         val fresh=now>=sampledAtMs && now-sampledAtMs<=500
+        if(fsrEnabled && fsrMode==FsrMode.RECONSTRUCTION) {
+            val eligible=foreground && fresh && requestedTreatment.autoProtect && reconstructionSettings.strength>0 &&
+                reconstructionSettings.comparison==ImageComparison.PROCESSED
+            if(reconstructionController.observe(now,allDraws.get(),metrics,eligible)) {
+                applyTreatmentBudget();fsrPerformance.reset()
+            }
+            if(reconstructionSettings.comparison!=ImageComparison.PROCESSED) { fsrPerformance.reset();return }
+        }
+        if(!requestedTreatment.autoProtect || compatibility || (!fsrEnabled && !treatmentBudget.image.active) ||
+            (fsrMode==FsrMode.FSR1 && aspectDrawer?.isFsrBypassed()==true && !treatmentBudget.image.active)) { fsrPerformance.reset();return }
         val slow=fsrPerformance.observe(now,allDraws.get(),metrics,foreground && fresh) ?: return
         val rate=String.format(java.util.Locale.US,"%.1f",slow.drawsPerSecond)
+        if(fsrEnabled && fsrMode==FsrMode.RECONSTRUCTION && reconstructionController.reduce()) {
+            treatmentCuts.add("reconstruction level ${reconstructionController.level} ($rate draws/s)")
+            applyTreatmentBudget();fsrPerformance.reset();return
+        }
         val cut=treatmentBudget.reduce(requestedBuffer?.let { minOf(it.width,it.height) } ?: minOf(width,height))
         if(cut!=null) {
             treatmentBudget=cut.effective;treatmentCuts.add("${cut.stage} ($rate draws/s)")
@@ -370,11 +402,13 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
     private fun imageDiagnostics(): String {
         val active=if(compatibility || treatmentFailure!=null) ImageTreatmentSettings() else treatmentBudget.image.copy(
             neural=aspectDrawer?.effectiveNeural() ?: 0,temporal=aspectDrawer?.effectiveTemporal() ?: 0)
-        fun describe(value: ImageTreatmentSettings,applied: Boolean=false)="${if(applied && fsrEnabled && fsrMode==FsrMode.SGSR1) "SGSR1" else value.sharpening.name}; deband=${value.deband}%; cleanup=${value.cleanup}%; chroma=${value.chroma}%; AA=${value.antialias}%; temporal=${value.temporal}%; neural=${value.neural}%"
+        fun describe(value: ImageTreatmentSettings,applied: Boolean=false)="${if(applied && fsrEnabled && fsrMode==FsrMode.RECONSTRUCTION) "XCLOUD_RECONSTRUCTION" else if(applied && fsrEnabled && fsrMode==FsrMode.SGSR1) "SGSR1" else value.sharpening.name}; deband=${value.deband}%; cleanup=${value.cleanup}%; chroma=${value.chroma}%; AA=${value.antialias}%; temporal=${value.temporal}%; neural=${value.neural}%"
         return UiText.join(UiText.text("Tratamento solicitado: {0}",UiText.nested(describe(requestedTreatment))),"\n",
             UiText.text("Tratamento aplicado: {0}",UiText.nested(describe(active,true))),"\n",
             "Cuts: ${treatmentCuts.joinToString()}${treatmentFailure?.let { "; $it" } ?: ""}\n",
-            aspectDrawer?.treatmentDiagnostics() ?: "Treatment: off","\n",pacedSink?.diagnostics() ?: "Pacing: immediate")
+            aspectDrawer?.treatmentDiagnostics() ?: "Treatment: off","\n",
+            if(fsrMode==FsrMode.RECONSTRUCTION) "Reconstruction requested=${reconstructionSettings.quality}; applied level=${if(fsrEnabled) reconstructionController.level else 0}; ${reconstructionController.decision}\n" else "",
+            pacedSink?.diagnostics() ?: "Pacing: immediate")
     }
     /** Android exposes surface/display geometry, but no public API reports TCL AiPQ activation. */
     fun diagnostics(): String {
@@ -387,7 +421,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         val expected=VideoScalingPolicy.viewport(width,height,videoWidth,videoHeight,aspect)
         val minimalSupport=if(android.os.Build.VERSION.SDK_INT>=30) runCatching { display?.isMinimalPostProcessingSupported }.getOrNull() else null
         val minimalLabel=when(minimalSupport) { true -> UiText.text("sim");false -> UiText.text("não");null -> "n/d" }
-        return UiText.join(UiText.text("Surface {0} → janela {1}x{2} | Saída Android: {3}\n",UiText.nested(size),UiText.nested(width),UiText.nested(height),UiText.nested(output)),UiText.text("Layout do vídeo: {0} | Área calculada: {1}x{2} | Quadro do renderer: {3}x{4}\n",UiText.nested(layout),UiText.nested(expected.width),UiText.nested(expected.height),UiText.nested(videoWidth),UiText.nested(videoHeight)),UiText.text("Escala da Surface: {0}; imagem ajustada à janela | Conteúdo {1} FPS sinalizado à Surface: {2} | Pós-processamento mínimo: {3}; suporte Android declarado: {4}\n",UiText.nested(if(fsrEnabled) UiText.text("renderer em resolução de saída para FSR") else if (nativeUpscaling) "HW solicitada" else "HW desativada"),UiText.nested(if(compatibility) 30 else 60),UiText.nested(if (frameRateHintRequested) UiText.text("sim") else UiText.text("não confirmado")),UiText.nested(if (minimalPostProcessingRequested) "solicitado" else UiText.text("padrão")),UiText.nested(minimalLabel)),UiText.text("Proporção: {0} | Nitidez padrão: {1}% | Saturação: {2}% | Brilho: {3}% | Contraste: {4}% | Apresentação: até {5} FPS | AiPQ: não verificável pelo app\n",UiText.nested(aspect.label),UiText.nested(sharpness),UiText.nested(saturation),UiText.nested(brightness),UiText.nested(contrast),UiText.nested(if(compatibility) 30 else 60)),(if(fsrRequested) UiText.text("Saída FSR solicitada: {0} | buffer solicitado: {1}\n",UiText.nested(fsrOutput.label),UiText.nested(requestedBuffer?.let { "${it.width}x${it.height}" } ?: UiText.text("escala padrão"))) else ""),(if(fsrEnabled) UiText.text("Cadência local FSR: {0} (não mede GPU nem FPS do jogo/tela)\n",UiText.nested(fsrPerformance.lastRate?.let { String.format(java.util.Locale.US,"%.1f desenhos/s",it) } ?: UiText.text("aguardando amostras"))) else ""),(if(fsrFailure!=null) UiText.text("AMD FSR 1.0.2: retorno à escala padrão — {0}",UiText.nested(fsrFailure)) else if(fsrRequested && compatibility) UiText.text("AMD FSR 1.0.2: inativo no modo Compatibilidade") else aspectDrawer?.fsrDiagnostics() ?: UiText.text("AMD FSR 1.0.2: desligado"))) + "\n" + imageDiagnostics()
+        return UiText.join(UiText.text("Surface {0} → janela {1}x{2} | Saída Android: {3}\n",UiText.nested(size),UiText.nested(width),UiText.nested(height),UiText.nested(output)),UiText.text("Layout do vídeo: {0} | Área calculada: {1}x{2} | Quadro do renderer: {3}x{4}\n",UiText.nested(layout),UiText.nested(expected.width),UiText.nested(expected.height),UiText.nested(videoWidth),UiText.nested(videoHeight)),UiText.text("Escala da Surface: {0}; imagem ajustada à janela | Conteúdo {1} FPS sinalizado à Surface: {2} | Pós-processamento mínimo: {3}; suporte Android declarado: {4}\n",UiText.nested(if(fsrEnabled) UiText.text("renderer na resolução de saída do escalador") else if (nativeUpscaling) "HW solicitada" else "HW desativada"),UiText.nested(if(compatibility) 30 else 60),UiText.nested(if (frameRateHintRequested) UiText.text("sim") else UiText.text("não confirmado")),UiText.nested(if (minimalPostProcessingRequested) "solicitado" else UiText.text("padrão")),UiText.nested(minimalLabel)),UiText.text("Proporção: {0} | Nitidez padrão: {1}% | Saturação: {2}% | Brilho: {3}% | Contraste: {4}% | Apresentação: até {5} FPS | AiPQ: não verificável pelo app\n",UiText.nested(aspect.label),UiText.nested(sharpness),UiText.nested(saturation),UiText.nested(brightness),UiText.nested(contrast),UiText.nested(if(compatibility) 30 else 60)),(if(fsrRequested) UiText.text("Saída do escalador solicitada: {0} | buffer solicitado: {1}\n",UiText.nested(fsrOutput.label),UiText.nested(requestedBuffer?.let { "${it.width}x${it.height}" } ?: UiText.text("escala padrão"))) else ""),(if(fsrEnabled) UiText.text("Cadência local do renderer: {0} (não mede GPU nem FPS do jogo/tela)\n",UiText.nested(fsrPerformance.lastRate?.let { String.format(java.util.Locale.US,"%.1f desenhos/s",it) } ?: UiText.text("aguardando amostras"))) else ""),(if(fsrFailure!=null) UiText.text("Escalador: retorno à escala padrão — {0}",UiText.nested(fsrFailure)) else if(fsrRequested && compatibility) UiText.text("AMD FSR 1.0.2: inativo no modo Compatibilidade") else aspectDrawer?.fsrDiagnostics() ?: UiText.text("AMD FSR 1.0.2: desligado"))) + "\n" + imageDiagnostics()
     }
 
     fun compactDiagnostics(): String {

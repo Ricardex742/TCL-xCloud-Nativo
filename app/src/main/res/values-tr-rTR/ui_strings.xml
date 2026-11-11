@@ -855,4 +855,29 @@
     <string name="ui_9b01d2edc42e9906" formatted="false">"Uyarlanabilir RCAS — parlaklık"</string>
     <string name="ui_8107516a4c8bc932" formatted="false">"USM — parlaklık"</string>
     <string name="ui_bb3b1f11046a95a8" formatted="false">"Pürüzsüz — deneysel"</string>
+    <string name="ui_1d8ef3b791a0d023" formatted="false">"xCloud uyarlanabilir yeniden oluşturma, mevcut çözünürlükte ayrıntıları önceliklendirir. Kaliteyi, gücü ve karşılaştırmayı Uyarlanabilir yeniden oluşturma bölümünden ayarlayın. FSR/SGSR keskinleştirmesinin yerini alır ve görüntüyü büyütmeden de çalışır."</string>
+    <string name="ui_51ebe1789bd20746" formatted="false">"Çıkış çözünürlüğü yerel olarak işlenir ve alınan yayını değiştirmez. Otomatik mod akıcılığı önceliklendirir ve TV çıkışını 1080p ile sınırlar. Bu seçeneği kullanmak için bir ölçekleyici etkinleştirin. Seçenekler en boy oranını korur ve ekranın fiziksel çıkışına uyar. İşleme gelen karelere yetişemezse koruma çıkışı düşürür. 1440p ve 4K, 60 FPS garantisi vermez."</string>
+    <string name="ui_8555935b67caf434" formatted="false">"1080p görüntüyü büyütmeden de temizleyip ayrıntıları geliştiren deneysel işleme. Xbox çözünürlüğünü veya bit hızını değiştirmez. Otomatik kalite, %50 güç ve otomatik çıkışla başlayın. Diğer isteğe bağlı filtrelerin mevcut ayarları korunur."</string>
+    <string name="ui_0eb30a3dd4158ee0" formatted="false">"Otomatik mod Hafif ile başlar ve kararlı kare aralıkları gözlendikten sonra işleme düzeyini artırır. Dengeli ve Kalite, ayrıntıları yeniden oluşturmak için daha fazla örnek kullanır. Sürekli yavaşlamada koruma düzeyi düşürür ve o oturumda yeniden denemeyi engeller. Performans koruması kapalıysa Otomatik mod Hafif düzeyinde kalır. Kare aralığı GPU süresinin ölçümü değildir. Uyumluluk modu bu özelliği kapatır."</string>
+    <string name="ui_f3dfa159a318772b" formatted="false">"%0, ayrıntı yeniden oluşturmayı kapatır. Daha yüksek değerler, gürültü ve hale sınırlarıyla keskinliği artırır. Güç ayarı çözünürlüğü değiştirmez; %50, GPU maliyetinin yarısı anlamına gelmez."</string>
+    <string name="ui_1a35a34073721a5e" formatted="false">"Orijinal, alınan kareyi uygulamanın görüntü filtreleri olmadan gösterir. Bölünmüş görünüm aynı karenin orijinalini solda, işlenmiş hâlini sağda gösterir. Yalnızca uyarlanabilir yeniden oluşturmada çalışır; dokunmatik girişi veya kadrajı değiştirmez. Karşılaştırma sırasında otomatik uyarlama duraklatılır. Yarım ekran performansı tam ekran işleme maliyetini temsil etmez."</string>
+    <string name="ui_eac0ce77eb55c8a4" formatted="false">"Uyarlanabilir yeniden oluşturma"</string>
+    <string name="ui_dd22d535719a563e" formatted="false">"Yeniden oluşturma gücü: %{0}"</string>
+    <string name="ui_86ea683c75f791e2" formatted="false">"Otomatik çıkışla etkinleştir"</string>
+    <string name="ui_3be0e1d22f89b0de" formatted="false">"İşleme kalitesi: {0}"</string>
+    <string name="ui_7c3cbeb7b60be0e2" formatted="false">"İşleme kalitesi"</string>
+    <string name="ui_902655b68adff737" formatted="false">"Yeniden oluşturma gücü"</string>
+    <string name="ui_a79e563191d05b46" formatted="false">"Karşılaştırma: {0}"</string>
+    <string name="ui_8c0915ecfa90532a" formatted="false">"Görüntü karşılaştırması"</string>
+    <string name="ui_7e5098599892e880" formatted="false">"xCloud — uyarlanabilir yeniden oluşturma (deneysel)"</string>
+    <string name="ui_ba68d32e9584a982" formatted="false">"Hafif"</string>
+    <string name="ui_9123685a0d2a98ba" formatted="false">"Dengeli"</string>
+    <string name="ui_c51403a4fdb9cd06" formatted="false">"Kalite"</string>
+    <string name="ui_7ea8983d2cfdf45c" formatted="false">"İşlenmiş görüntü"</string>
+    <string name="ui_151e56d6f8577463" formatted="false">"Orijinal görüntü"</string>
+    <string name="ui_04968d8f7889a3c7" formatted="false">"Bölünmüş — orijinal solda"</string>
+    <string name="ui_d9d33a1c38f7203c" formatted="false">"ölçekleyici çıkış çözünürlüğünde işleme"</string>
+    <string name="ui_926cde6ac928ee3f" formatted="false">"İstenen ölçekleyici çıkışı: {0} | istenen arabellek: {1}\n"</string>
+    <string name="ui_54a1a9944bd29e08" formatted="false">"Yerel işleme aralığı: {0} (GPU süresini veya oyun/ekran FPS değerini ölçmez)\n"</string>
+    <string name="ui_1e53dc3bd47bfd37" formatted="false">"Ölçekleyici: standart ölçeklemeye dönüş — {0}"</string>
 </resources>

@@ -855,4 +855,29 @@
     <string name="ui_9b01d2edc42e9906" formatted="false">"Adaptive RCAS — luminance"</string>
     <string name="ui_8107516a4c8bc932" formatted="false">"USM — luminance"</string>
     <string name="ui_bb3b1f11046a95a8" formatted="false">"Smooth — experimental"</string>
+    <string name="ui_eac0ce77eb55c8a4" formatted="false">"Adaptive reconstruction"</string>
+    <string name="ui_1d8ef3b791a0d023" formatted="false">"xCloud adaptive reconstruction prioritizes definition at the current resolution. Set quality, strength and comparison in Adaptive reconstruction. It replaces FSR/SGSR sharpening and works without enlarging the image."</string>
+    <string name="ui_51ebe1789bd20746" formatted="false">"Output resolution is local and does not change the received stream. Auto prioritizes smooth playback and limits TVs to 1080p. Enable an upscaler to use this option. Choices preserve aspect ratio and respect the physical display output. Protection reduces output if rendering falls behind incoming frames. 1440p and 4K do not guarantee 60 FPS."</string>
+    <string name="ui_dd22d535719a563e" formatted="false">"Reconstruction strength: {0}%"</string>
+    <string name="ui_8555935b67caf434" formatted="false">"Experimental processing to clean and define the video, including at 1080p without enlargement. It does not change Xbox resolution or bitrate. Start with Auto quality, 50% strength and Auto output. Other optional filters keep your existing settings."</string>
+    <string name="ui_86ea683c75f791e2" formatted="false">"Enable with Auto output"</string>
+    <string name="ui_3be0e1d22f89b0de" formatted="false">"Processing quality: {0}"</string>
+    <string name="ui_7c3cbeb7b60be0e2" formatted="false">"Processing quality"</string>
+    <string name="ui_0eb30a3dd4158ee0" formatted="false">"Auto starts with Light processing and increases after observing stable cadence. Balanced and Quality use more samples for detail reconstruction. With sustained slowdowns, protection lowers the level and prevents another attempt this session. Without performance protection, Auto stays Light. Cadence does not measure GPU duration. Compatibility disables this mode."</string>
+    <string name="ui_902655b68adff737" formatted="false">"Reconstruction strength"</string>
+    <string name="ui_f3dfa159a318772b" formatted="false">"0% disables detail reconstruction. Higher values increase sharpening with noise and halo limits. Strength does not change resolution; 50% does not mean half the GPU cost."</string>
+    <string name="ui_a79e563191d05b46" formatted="false">"Comparison: {0}"</string>
+    <string name="ui_8c0915ecfa90532a" formatted="false">"Image comparison"</string>
+    <string name="ui_1a35a34073721a5e" formatted="false">"Original shows the received frame without app image filters. Split shows that same original frame on the left and the processed frame on the right. It works only in Adaptive reconstruction and changes neither touch input nor framing. Automatic adaptation pauses during comparison. Half-screen performance does not represent full-screen processing cost."</string>
+    <string name="ui_7e5098599892e880" formatted="false">"xCloud — adaptive reconstruction (experimental)"</string>
+    <string name="ui_ba68d32e9584a982" formatted="false">"Light"</string>
+    <string name="ui_9123685a0d2a98ba" formatted="false">"Balanced"</string>
+    <string name="ui_c51403a4fdb9cd06" formatted="false">"Quality"</string>
+    <string name="ui_7ea8983d2cfdf45c" formatted="false">"Processed image"</string>
+    <string name="ui_151e56d6f8577463" formatted="false">"Original image"</string>
+    <string name="ui_04968d8f7889a3c7" formatted="false">"Split — original on the left"</string>
+    <string name="ui_d9d33a1c38f7203c" formatted="false">"renderer at upscaler output resolution"</string>
+    <string name="ui_926cde6ac928ee3f" formatted="false">"Requested upscaler output: {0} | requested buffer: {1}\n"</string>
+    <string name="ui_54a1a9944bd29e08" formatted="false">"Local render cadence: {0} (does not measure GPU or game/display FPS)\n"</string>
+    <string name="ui_1e53dc3bd47bfd37" formatted="false">"Upscaler: fallback to standard scaling — {0}"</string>
 </resources>

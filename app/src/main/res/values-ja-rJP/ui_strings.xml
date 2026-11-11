@@ -855,4 +855,29 @@
     <string name="ui_9b01d2edc42e9906" formatted="false">"アダプティブ RCAS — 輝度"</string>
     <string name="ui_8107516a4c8bc932" formatted="false">"USM — 輝度"</string>
     <string name="ui_bb3b1f11046a95a8" formatted="false">"スムーズ — 実験的"</string>
+    <string name="ui_eac0ce77eb55c8a4" formatted="false">"適応的再構成"</string>
+    <string name="ui_1d8ef3b791a0d023" formatted="false">"xCloudの適応型再構成は、現在の解像度で細部の明瞭さを優先します。「適応型再構成」で品質、強度、比較方法を設定できます。FSR/SGSRのシャープ処理に代わるもので、映像を拡大しなくても動作します。"</string>
+    <string name="ui_51ebe1789bd20746" formatted="false">"出力解像度は端末側の設定で、受信する映像は変わりません。自動は滑らかさを優先し、テレビの出力を1080pまでに制限します。この設定を使うにはアップスケーラーを有効にしてください。縦横比と実際の画面出力を尊重します。描画が受信フレームに追いつかない場合、保護機能が出力を下げます。1440pや4Kで60 FPSを保証するものではありません。"</string>
+    <string name="ui_dd22d535719a563e" formatted="false">"復元力：{0}%"</string>
+    <string name="ui_8555935b67caf434" formatted="false">"映像を整え、細部を明瞭にする実験的な処理です。拡大しない1080pでも使えます。Xboxの解像度やビットレートは変えません。まずは品質を自動、強度を50%、出力を自動にしてください。他の任意フィルターの設定は維持されます。"</string>
+    <string name="ui_86ea683c75f791e2" formatted="false">"自動出力で有効にする"</string>
+    <string name="ui_3be0e1d22f89b0de" formatted="false">"処理品質: {0}"</string>
+    <string name="ui_7c3cbeb7b60be0e2" formatted="false">"加工品質"</string>
+    <string name="ui_0eb30a3dd4158ee0" formatted="false">"自動は軽量から開始し、安定したフレーム間隔を確認すると処理を増やします。バランスと高品質は、細部の再構成により多くのサンプルを使用します。継続的な速度低下があると保護機能が段階を下げ、そのセッションでは再試行しません。性能保護が無効の場合、自動は軽量のままです。フレーム間隔はGPU処理時間の測定値ではありません。互換性モードではこの機能は無効です。"</string>
+    <string name="ui_902655b68adff737" formatted="false">"復興力"</string>
+    <string name="ui_f3dfa159a318772b" formatted="false">"0%で細部の再構成を無効にします。値を上げると、ノイズやハローを抑えながらシャープさを強めます。強度は解像度を変えません。50%はGPU負荷が半分という意味ではありません。"</string>
+    <string name="ui_a79e563191d05b46" formatted="false">"比較: {0}"</string>
+    <string name="ui_8c0915ecfa90532a" formatted="false">"画像比較"</string>
+    <string name="ui_1a35a34073721a5e" formatted="false">"元の映像は、アプリの映像フィルターを適用せずに受信フレームを表示します。分割は同じフレームの元の映像を左側、処理後の映像を右側に表示します。適応型再構成でのみ動作し、タッチ操作や表示範囲は変えません。比較中は自動調整を停止します。半画面での性能は、全画面処理の負荷を表すものではありません。"</string>
+    <string name="ui_7e5098599892e880" formatted="false">"xCloud — 適応再構成 (実験的)"</string>
+    <string name="ui_ba68d32e9584a982" formatted="false">"軽量"</string>
+    <string name="ui_9123685a0d2a98ba" formatted="false">"バランス"</string>
+    <string name="ui_c51403a4fdb9cd06" formatted="false">"高品質"</string>
+    <string name="ui_7ea8983d2cfdf45c" formatted="false">"処理後の映像"</string>
+    <string name="ui_151e56d6f8577463" formatted="false">"元の映像"</string>
+    <string name="ui_04968d8f7889a3c7" formatted="false">"分割 — 左側が元の映像"</string>
+    <string name="ui_d9d33a1c38f7203c" formatted="false">"アップスケーラーの出力解像度で描画"</string>
+    <string name="ui_926cde6ac928ee3f" formatted="false">"要求したアップスケーラー出力: {0} | 要求したバッファ: {1}\n"</string>
+    <string name="ui_54a1a9944bd29e08" formatted="false">"端末側の描画間隔: {0}（GPU時間やゲーム・画面のFPSの測定値ではありません）\n"</string>
+    <string name="ui_1e53dc3bd47bfd37" formatted="false">"アップスケーラー: 標準の拡大処理に戻りました — {0}"</string>
 </resources>

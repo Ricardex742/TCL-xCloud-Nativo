@@ -855,4 +855,29 @@
     <string name="ui_9b01d2edc42e9906" formatted="false">"RCAS adattivo: luminanza"</string>
     <string name="ui_8107516a4c8bc932" formatted="false">"USM — luminanza"</string>
     <string name="ui_bb3b1f11046a95a8" formatted="false">"Liscio: sperimentale"</string>
+    <string name="ui_1d8ef3b791a0d023" formatted="false">"La ricostruzione adattiva xCloud privilegia i dettagli alla risoluzione attuale. Imposta qualità, intensità e confronto in Ricostruzione adattiva. Sostituisce la nitidezza FSR/SGSR e funziona senza ingrandire l’immagine."</string>
+    <string name="ui_51ebe1789bd20746" formatted="false">"La risoluzione di uscita è locale e non cambia il flusso ricevuto. Automatico privilegia la fluidità e limita i televisori a 1080p. Attiva un upscaler per usare questa opzione. Le scelte mantengono le proporzioni e rispettano l’uscita fisica dello schermo. La protezione riduce l’uscita se il rendering non tiene il passo con i fotogrammi ricevuti. 1440p e 4K non garantiscono 60 FPS."</string>
+    <string name="ui_8555935b67caf434" formatted="false">"Elaborazione sperimentale per un video più pulito e definito, anche a 1080p senza ingrandimento. Non cambia la risoluzione o il bitrate di Xbox. Inizia con qualità automatica, intensità al 50% e uscita automatica. Gli altri filtri facoltativi mantengono le tue impostazioni."</string>
+    <string name="ui_0eb30a3dd4158ee0" formatted="false">"Automatico inizia con Leggera e aumenta dopo una cadenza stabile. Bilanciata e Qualità usano più campioni per ricostruire i dettagli. In caso di rallentamento prolungato, la protezione riduce il livello ed evita nuovi tentativi durante la partita. Senza protezione delle prestazioni, Automatico rimane su Leggera. La cadenza non misura il tempo della GPU. Compatibilità disattiva questa modalità."</string>
+    <string name="ui_f3dfa159a318772b" formatted="false">"Lo 0% disattiva la ricostruzione dei dettagli. Valori più alti aumentano la nitidezza con limiti contro rumore e aloni. L’intensità non cambia la risoluzione; il 50% non significa metà del costo GPU."</string>
+    <string name="ui_1a35a34073721a5e" formatted="false">"Originale mostra il fotogramma ricevuto senza i filtri immagine dell’app. Divisa mostra lo stesso fotogramma originale a sinistra ed elaborato a destra. Funziona solo con la ricostruzione adattiva e non modifica i comandi touch o l’inquadratura. L’adattamento automatico si interrompe durante il confronto. Le prestazioni su metà schermo non rappresentano il costo a schermo intero."</string>
+    <string name="ui_eac0ce77eb55c8a4" formatted="false">"Ricostruzione adattiva"</string>
+    <string name="ui_dd22d535719a563e" formatted="false">"Intensità della ricostruzione: {0}%"</string>
+    <string name="ui_86ea683c75f791e2" formatted="false">"Attiva con uscita automatica"</string>
+    <string name="ui_3be0e1d22f89b0de" formatted="false">"Qualità di elaborazione: {0}"</string>
+    <string name="ui_7c3cbeb7b60be0e2" formatted="false">"Qualità di elaborazione"</string>
+    <string name="ui_902655b68adff737" formatted="false">"Intensità della ricostruzione"</string>
+    <string name="ui_a79e563191d05b46" formatted="false">"Confronto: {0}"</string>
+    <string name="ui_8c0915ecfa90532a" formatted="false">"Confronto dell’immagine"</string>
+    <string name="ui_7e5098599892e880" formatted="false">"xCloud — ricostruzione adattiva (sperimentale)"</string>
+    <string name="ui_ba68d32e9584a982" formatted="false">"Leggera"</string>
+    <string name="ui_9123685a0d2a98ba" formatted="false">"Bilanciata"</string>
+    <string name="ui_c51403a4fdb9cd06" formatted="false">"Qualità"</string>
+    <string name="ui_7ea8983d2cfdf45c" formatted="false">"Immagine elaborata"</string>
+    <string name="ui_151e56d6f8577463" formatted="false">"Immagine originale"</string>
+    <string name="ui_04968d8f7889a3c7" formatted="false">"Divisa — originale a sinistra"</string>
+    <string name="ui_d9d33a1c38f7203c" formatted="false">"rendering alla risoluzione di uscita dell’upscaler"</string>
+    <string name="ui_926cde6ac928ee3f" formatted="false">"Uscita richiesta dell’upscaler: {0} | buffer richiesto: {1}\n"</string>
+    <string name="ui_54a1a9944bd29e08" formatted="false">"Cadenza locale del rendering: {0} (non misura GPU né FPS del gioco/schermo)\n"</string>
+    <string name="ui_1e53dc3bd47bfd37" formatted="false">"Upscaler: ritorno alla scala standard — {0}"</string>
 </resources>

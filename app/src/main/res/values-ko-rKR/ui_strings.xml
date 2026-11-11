@@ -855,4 +855,29 @@
     <string name="ui_9b01d2edc42e9906" formatted="false">"적응형 RCAS — 휘도"</string>
     <string name="ui_8107516a4c8bc932" formatted="false">"USM — 휘도"</string>
     <string name="ui_bb3b1f11046a95a8" formatted="false">"부드러움 — 실험적"</string>
+    <string name="ui_1d8ef3b791a0d023" formatted="false">"xCloud 적응형 재구성은 현재 해상도에서 세부 표현을 우선합니다. 적응형 재구성에서 품질, 강도, 비교 방식을 설정하세요. FSR/SGSR 선명도 처리를 대신하며 영상을 확대하지 않아도 작동합니다."</string>
+    <string name="ui_51ebe1789bd20746" formatted="false">"출력 해상도는 기기에서 처리하며 수신 스트림을 바꾸지 않습니다. 자동은 부드러운 재생을 우선하며 TV 출력을 1080p로 제한합니다. 이 옵션을 사용하려면 업스케일러를 활성화하세요. 화면 비율과 실제 디스플레이 출력을 유지합니다. 렌더링이 수신 프레임을 따라가지 못하면 보호 기능이 출력을 낮춥니다. 1440p와 4K에서 60 FPS를 보장하지 않습니다."</string>
+    <string name="ui_8555935b67caf434" formatted="false">"확대하지 않는 1080p에서도 영상을 정리하고 세부 표현을 개선하는 실험적 처리입니다. Xbox 해상도나 비트레이트는 바꾸지 않습니다. 자동 품질, 강도 50%, 자동 출력부터 시작하세요. 다른 선택적 필터의 기존 설정은 유지됩니다."</string>
+    <string name="ui_0eb30a3dd4158ee0" formatted="false">"자동은 가벼움으로 시작하며 안정적인 프레임 간격을 확인한 뒤 처리 수준을 높입니다. 균형과 고품질은 세부 재구성에 더 많은 샘플을 사용합니다. 지속적인 성능 저하가 발생하면 보호 기능이 수준을 낮추고 해당 세션에서 재시도하지 않습니다. 성능 보호를 끄면 자동은 가벼움을 유지합니다. 프레임 간격은 GPU 처리 시간 측정값이 아닙니다. 호환성 모드에서는 이 기능을 사용하지 않습니다."</string>
+    <string name="ui_f3dfa159a318772b" formatted="false">"0%는 세부 재구성을 끕니다. 값을 높이면 노이즈와 테두리 번짐을 제한하면서 선명도를 강화합니다. 강도는 해상도를 바꾸지 않으며, 50%가 GPU 비용의 절반을 뜻하지 않습니다."</string>
+    <string name="ui_1a35a34073721a5e" formatted="false">"원본은 앱 영상 필터 없이 수신한 프레임을 표시합니다. 분할은 같은 프레임의 원본을 왼쪽에, 처리된 영상을 오른쪽에 표시합니다. 적응형 재구성에서만 작동하며 터치 입력이나 화면 구도는 바꾸지 않습니다. 비교 중에는 자동 조정이 일시 중지됩니다. 반쪽 화면의 성능은 전체 화면 처리 비용을 나타내지 않습니다."</string>
+    <string name="ui_eac0ce77eb55c8a4" formatted="false">"적응형 재구성"</string>
+    <string name="ui_dd22d535719a563e" formatted="false">"재구성 강도: {0}%"</string>
+    <string name="ui_86ea683c75f791e2" formatted="false">"자동 출력으로 활성화"</string>
+    <string name="ui_3be0e1d22f89b0de" formatted="false">"처리 품질: {0}"</string>
+    <string name="ui_7c3cbeb7b60be0e2" formatted="false">"처리 품질"</string>
+    <string name="ui_902655b68adff737" formatted="false">"재구성 강도"</string>
+    <string name="ui_a79e563191d05b46" formatted="false">"비교: {0}"</string>
+    <string name="ui_8c0915ecfa90532a" formatted="false">"영상 비교"</string>
+    <string name="ui_7e5098599892e880" formatted="false">"xCloud — 적응형 재구성 (실험적)"</string>
+    <string name="ui_ba68d32e9584a982" formatted="false">"가벼움"</string>
+    <string name="ui_9123685a0d2a98ba" formatted="false">"균형"</string>
+    <string name="ui_c51403a4fdb9cd06" formatted="false">"고품질"</string>
+    <string name="ui_7ea8983d2cfdf45c" formatted="false">"처리된 영상"</string>
+    <string name="ui_151e56d6f8577463" formatted="false">"원본 영상"</string>
+    <string name="ui_04968d8f7889a3c7" formatted="false">"분할 — 왼쪽이 원본"</string>
+    <string name="ui_d9d33a1c38f7203c" formatted="false">"업스케일러 출력 해상도로 렌더링"</string>
+    <string name="ui_926cde6ac928ee3f" formatted="false">"요청한 업스케일러 출력: {0} | 요청한 버퍼: {1}\n"</string>
+    <string name="ui_54a1a9944bd29e08" formatted="false">"기기 렌더링 간격: {0} (GPU 시간이나 게임/화면 FPS를 측정하지 않음)\n"</string>
+    <string name="ui_1e53dc3bd47bfd37" formatted="false">"업스케일러: 기본 크기 조절로 복귀 — {0}"</string>
 </resources>

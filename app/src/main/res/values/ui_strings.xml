@@ -855,4 +855,29 @@
     <string name="ui_9b01d2edc42e9906" formatted="false">"RCAS adaptativo — luminância"</string>
     <string name="ui_8107516a4c8bc932" formatted="false">"USM — luminância"</string>
     <string name="ui_bb3b1f11046a95a8" formatted="false">"Suave — experimental"</string>
+    <string name="ui_eac0ce77eb55c8a4" formatted="false">"Reconstrução adaptativa"</string>
+    <string name="ui_1d8ef3b791a0d023" formatted="false">"A reconstrução adaptativa xCloud prioriza definição na resolução atual. Configure qualidade, intensidade e comparação em Reconstrução adaptativa. Ela substitui o realce do FSR/SGSR e funciona sem ampliar a imagem."</string>
+    <string name="ui_51ebe1789bd20746" formatted="false">"A saída é local e não altera o stream recebido. Automático prioriza a fluidez e limita TVs a 1080p. Ative um escalador para usar esta opção. As escolhas preservam a proporção e respeitam a saída física. A proteção reduz a saída se os desenhos não acompanharem os quadros recebidos. 1440p e 4K não garantem 60 FPS."</string>
+    <string name="ui_dd22d535719a563e" formatted="false">"Intensidade da reconstrução: {0}%"</string>
+    <string name="ui_8555935b67caf434" formatted="false">"Modo experimental para limpar e definir o vídeo, inclusive em 1080p sem ampliação. Não muda a resolução ou o bitrate do Xbox. Comece em Automático, intensidade 50% e saída automática. Outros filtros opcionais continuam respeitando suas escolhas."</string>
+    <string name="ui_86ea683c75f791e2" formatted="false">"Ativar com saída automática"</string>
+    <string name="ui_3be0e1d22f89b0de" formatted="false">"Qualidade do processamento: {0}"</string>
+    <string name="ui_7c3cbeb7b60be0e2" formatted="false">"Qualidade do processamento"</string>
+    <string name="ui_0eb30a3dd4158ee0" formatted="false">"Automático começa Leve e aumenta após observar cadência estável. Equilibrado e Qualidade usam mais amostras para reconstrução de detalhes. Se houver queda sustentada, a proteção reduz o nível e evita repetir a tentativa nesta partida. Sem proteção de desempenho, Automático permanece Leve. A cadência não é uma medição de tempo de GPU. Compatibilidade desativa o modo."</string>
+    <string name="ui_902655b68adff737" formatted="false">"Intensidade da reconstrução"</string>
+    <string name="ui_f3dfa159a318772b" formatted="false">"0% desativa a reconstrução de detalhes. Valores maiores aumentam o realce com limites de ruído e halos. A intensidade não altera a resolução; 50% não significa metade do custo da GPU."</string>
+    <string name="ui_a79e563191d05b46" formatted="false">"Comparação: {0}"</string>
+    <string name="ui_8c0915ecfa90532a" formatted="false">"Comparação da imagem"</string>
+    <string name="ui_1a35a34073721a5e" formatted="false">"Original mostra o quadro recebido sem os filtros do app. Dividida mostra esse mesmo quadro original à esquerda e tratado à direita. Só atua na reconstrução adaptativa; não altera o toque nem o enquadramento. A adaptação automática fica pausada durante a comparação. O desempenho em meia tela não representa o custo em tela inteira."</string>
+    <string name="ui_7e5098599892e880" formatted="false">"xCloud — reconstrução adaptativa (experimental)"</string>
+    <string name="ui_ba68d32e9584a982" formatted="false">"Leve"</string>
+    <string name="ui_9123685a0d2a98ba" formatted="false">"Equilibrado"</string>
+    <string name="ui_c51403a4fdb9cd06" formatted="false">"Qualidade"</string>
+    <string name="ui_7ea8983d2cfdf45c" formatted="false">"Imagem tratada"</string>
+    <string name="ui_151e56d6f8577463" formatted="false">"Imagem original"</string>
+    <string name="ui_04968d8f7889a3c7" formatted="false">"Dividida — original à esquerda"</string>
+    <string name="ui_d9d33a1c38f7203c" formatted="false">"renderer na resolução de saída do escalador"</string>
+    <string name="ui_926cde6ac928ee3f" formatted="false">"Saída do escalador solicitada: {0} | buffer solicitado: {1}\n"</string>
+    <string name="ui_54a1a9944bd29e08" formatted="false">"Cadência local do renderer: {0} (não mede GPU nem FPS do jogo/tela)\n"</string>
+    <string name="ui_1e53dc3bd47bfd37" formatted="false">"Escalador: retorno à escala padrão — {0}"</string>
 </resources>

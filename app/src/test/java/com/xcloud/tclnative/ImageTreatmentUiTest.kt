@@ -24,6 +24,28 @@ import java.io.File
 @Config(sdk=[28],qualifiers="w1280dp-h720dp-land-mdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ImageTreatmentUiTest {
+    @Test fun reconstructionActivationAndSameFrameComparisonPreserveStreamAndControllerSettings() {
+        val c=Robolectric.buildActivity(Activity::class.java).setup()
+        try {
+            val activity=c.get().apply { setContentView(FrameLayout(this)) }
+            activity.getSharedPreferences("stream_preferences",0).edit().clear().commit()
+            val store=PlaybackSettingsStore(activity);val original=store.read()
+            val panel=PlaybackSettingsPanel(activity,store,{},{},{},{})
+            val first=panel.showReconstruction();capture(first,"adaptive-reconstruction-options")
+            assertEquals(original,store.read())
+            click(first,"Ativar com saída automática")
+            assertEquals(FsrMode.RECONSTRUCTION,store.read().fsr);assertEquals(FsrOutput.AUTO,store.read().fsrOutput)
+            assertEquals(original.resolution,store.read().resolution);assertEquals(original.touchMode,store.read().touchMode)
+            click(ShadowDialog.getLatestDialog() as ConsoleDialog,"Qualidade do processamento")
+            click(ShadowDialog.getLatestDialog() as ConsoleDialog,"Qualidade")
+            assertEquals(ReconstructionQuality.QUALITY,store.read().reconstruction.quality)
+            click(ShadowDialog.getLatestDialog() as ConsoleDialog,"Comparação:")
+            click(ShadowDialog.getLatestDialog() as ConsoleDialog,"Dividida")
+            assertEquals(ImageComparison.SPLIT,store.read().reconstruction.comparison)
+            assertEquals(original.videoCodec,store.read().videoCodec)
+            (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
+        } finally { c.pause().stop().destroy() }
+    }
     private fun all(v: View): List<View> = listOf(v)+if(v is ViewGroup) (0 until v.childCount).flatMap { all(v.getChildAt(it)) } else emptyList()
     private fun click(dialog: ConsoleDialog,text: String) = all(dialog.body).filterIsInstance<TextView>()
         .single { it.isClickable && it.text.contains(text) }.performClick()

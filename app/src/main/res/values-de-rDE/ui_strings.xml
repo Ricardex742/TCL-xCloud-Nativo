@@ -855,4 +855,29 @@
     <string name="ui_9b01d2edc42e9906" formatted="false">"Adaptiv RCAS – Leuchtdichte"</string>
     <string name="ui_8107516a4c8bc932" formatted="false">"USM – Leuchtdichte"</string>
     <string name="ui_bb3b1f11046a95a8" formatted="false">"Sanft – experimentell"</string>
+    <string name="ui_eac0ce77eb55c8a4" formatted="false">"Adaptive Rekonstruktion"</string>
+    <string name="ui_1d8ef3b791a0d023" formatted="false">"Die adaptive xCloud-Rekonstruktion verbessert Bilddetails bei der aktuellen Auflösung. Qualität, Stärke und Vergleich lassen sich unter Adaptive Rekonstruktion einstellen. Sie ersetzt die FSR/SGSR-Schärfung und funktioniert auch ohne Vergrößerung."</string>
+    <string name="ui_51ebe1789bd20746" formatted="false">"Die Ausgabeauflösung wird lokal eingestellt und ändert den empfangenen Stream nicht. Automatisch bevorzugt eine flüssige Wiedergabe und begrenzt die Ausgabe auf Fernsehern auf 1080p. Aktivieren Sie dafür einen Skalierer. Die Optionen erhalten das Seitenverhältnis und berücksichtigen die physische Bildschirmausgabe. Der Schutz reduziert die Ausgabe, wenn das Rendering nicht mit den empfangenen Bildern Schritt hält. 1440p und 4K garantieren keine 60 FPS."</string>
+    <string name="ui_dd22d535719a563e" formatted="false">"Rekonstruktionsstärke: {0}%"</string>
+    <string name="ui_8555935b67caf434" formatted="false">"Experimentelle Verarbeitung für ein klareres Videobild, auch bei 1080p ohne Vergrößerung. Xbox-Auflösung und Bitrate bleiben unverändert. Beginnen Sie mit automatischer Qualität, 50% Stärke und automatischer Ausgabe. Andere optionale Filter behalten Ihre Einstellungen."</string>
+    <string name="ui_86ea683c75f791e2" formatted="false">"Mit automatischer Ausgabe aktivieren"</string>
+    <string name="ui_3be0e1d22f89b0de" formatted="false">"Verarbeitungsqualität: {0}"</string>
+    <string name="ui_7c3cbeb7b60be0e2" formatted="false">"Verarbeitungsqualität"</string>
+    <string name="ui_0eb30a3dd4158ee0" formatted="false">"Automatisch beginnt mit Sparsam und erhöht den Aufwand nach stabiler Bildfolge. Ausgewogen und Qualität verwenden mehr Abtastungen zur Detailrekonstruktion. Bei anhaltenden Einbrüchen senkt der Schutz die Stufe und verhindert weitere Versuche in dieser Sitzung. Ohne Leistungsschutz bleibt Automatisch auf Sparsam. Die Bildfolge misst keine GPU-Dauer. Kompatibilität deaktiviert diesen Modus."</string>
+    <string name="ui_902655b68adff737" formatted="false">"Rekonstruktionsstärke"</string>
+    <string name="ui_f3dfa159a318772b" formatted="false">"0% deaktiviert die Detailrekonstruktion. Höhere Werte verstärken die Schärfung mit Grenzen gegen Rauschen und Halos. Die Stärke ändert die Auflösung nicht; 50% bedeutet nicht die halbe GPU-Last."</string>
+    <string name="ui_a79e563191d05b46" formatted="false">"Vergleich: {0}"</string>
+    <string name="ui_8c0915ecfa90532a" formatted="false">"Bildvergleich"</string>
+    <string name="ui_1a35a34073721a5e" formatted="false">"Original zeigt das empfangene Bild ohne Bildfilter der App. Geteilt zeigt dasselbe Originalbild links und das bearbeitete Bild rechts. Dies funktioniert nur bei adaptiver Rekonstruktion und ändert weder Touch-Steuerung noch Bildausschnitt. Die automatische Anpassung pausiert während des Vergleichs. Die Leistung bei halbem Bild entspricht nicht dem Aufwand im Vollbild."</string>
+    <string name="ui_7e5098599892e880" formatted="false">"xCloud – adaptive Rekonstruktion (experimentell)"</string>
+    <string name="ui_ba68d32e9584a982" formatted="false">"Sparsam"</string>
+    <string name="ui_9123685a0d2a98ba" formatted="false">"Ausgewogen"</string>
+    <string name="ui_c51403a4fdb9cd06" formatted="false">"Qualität"</string>
+    <string name="ui_7ea8983d2cfdf45c" formatted="false">"Bearbeitetes Bild"</string>
+    <string name="ui_151e56d6f8577463" formatted="false">"Originalbild"</string>
+    <string name="ui_04968d8f7889a3c7" formatted="false">"Geteilt — Original links"</string>
+    <string name="ui_d9d33a1c38f7203c" formatted="false">"Rendering mit der Ausgabeauflösung des Skalierers"</string>
+    <string name="ui_926cde6ac928ee3f" formatted="false">"Angeforderte Skalierer-Ausgabe: {0} | angeforderter Puffer: {1}\n"</string>
+    <string name="ui_54a1a9944bd29e08" formatted="false">"Lokale Render-Bildfolge: {0} (misst weder GPU noch Spiel-/Bildschirm-FPS)\n"</string>
+    <string name="ui_1e53dc3bd47bfd37" formatted="false">"Skalierer: Rückkehr zur Standardskalierung — {0}"</string>
 </resources>

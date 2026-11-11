@@ -13,6 +13,20 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk=[28])
 class ImageTreatmentSettingsTest {
+    @Test fun reconstructionPreferencesSurviveCompatibilityWithoutChangingStreamOrTouch() {
+        val c=Robolectric.buildActivity(Activity::class.java).setup()
+        try {
+            val store=PlaybackSettingsStore(c.get());val original=store.read()
+            val requested=original.copy(fsr=FsrMode.RECONSTRUCTION,reconstruction=ReconstructionSettings(
+                ReconstructionQuality.QUALITY,500,ImageComparison.SPLIT))
+            store.save(requested)
+            val saved=store.read()
+            assertEquals(100,saved.reconstruction.strength);assertEquals(ImageComparison.SPLIT,saved.reconstruction.comparison)
+            assertEquals(original.resolution,saved.resolution);assertEquals(original.touchMode,saved.touchMode)
+            assertEquals(FsrMode.OFF,saved.copy(videoMode=VideoMode.COMPATIBILITY).forSession().fsr)
+            assertEquals(saved,store.read())
+        } finally { c.pause().stop().destroy() }
+    }
     @Test fun newStagesAreOptInAndRoundTripWithoutChangingTheStreamOrTouchPreferences() {
         val c=Robolectric.buildActivity(Activity::class.java).setup()
         try {

@@ -15,7 +15,10 @@ public final class ImageTreatmentPipeline {
   private static final String VERTEX="attribute vec2 in_pos;varying vec2 tc;void main(){gl_Position=vec4(in_pos,0.,1.);tc=in_pos*.5+.5;}";
   private static final FloatBuffer QUAD=GlUtil.createFloatBuffer(new float[]{-1,-1,1,-1,-1,1,1,1});
   private final Context context;
-  private final int[] framebuffer=new int[1],viewport=new int[4],activeTexture=new int[1];
+  private final int[] framebuffer=new int[1],viewport=new int[4],activeTexture=new int[1],scissorBox=new int[4];
+  private int reconstructionLevel,reconstructionStrength=50,comparison;
+  private int finalX,finalY,finalWidth,finalHeight;
+  private final ReconstructionDrawer[] reconstruction=new ReconstructionDrawer[3];
   private boolean scissor,blend,closed,broken,historyValid,neuralRejected;
   private TreatmentOptions options=TreatmentOptions.OFF;
   private TreatmentOptions finishingOptions=TreatmentOptions.OFF;
@@ -35,6 +38,11 @@ public final class ImageTreatmentPipeline {
   private volatile long frames,totalNs,maxNs,workingBytes;
 
   public ImageTreatmentPipeline(Context context) { this.context=context.getApplicationContext(); }
+  public void configureReconstruction(int level,int strength,int comparison) {
+    if(reconstructionLevel!=level || this.comparison!=comparison) historyValid=false;
+    reconstructionLevel=Math.max(0,Math.min(3,level));reconstructionStrength=Math.max(0,Math.min(100,strength));
+    this.comparison=reconstructionLevel==0?0:Math.max(0,Math.min(2,comparison));
+  }
   public void configure(TreatmentOptions requested,int sharpness,int fsrSharpness,int saturation,int brightness,int contrast) {
     if(options!=requested) {
       historyValid=false;finishingOptions=new TreatmentOptions(requested.sharpening,0,0,0,0,0,0);
@@ -46,7 +54,7 @@ public final class ImageTreatmentPipeline {
     if(spatial==null) spatial=new TreatmentShaderDrawer(context,false);
     return spatial;
   }
-  private static void input(GlRectDrawer drawer,Input kind,int texture,int[] textures,float[] matrix,
+  private static void input(RendererCommon.GlDrawer drawer,Input kind,int texture,int[] textures,float[] matrix,
       int fw,int fh,int x,int y,int w,int h) {
     if(kind==Input.OES) drawer.drawOes(texture,matrix,fw,fh,x,y,w,h);
     else if(kind==Input.RGB) drawer.drawRgb(texture,matrix,fw,fh,x,y,w,h);
@@ -66,7 +74,14 @@ public final class ImageTreatmentPipeline {
   private static void bind(GlTextureFrameBuffer target) { GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER,target.getFrameBufferId()); }
   private void original() {
     GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER,framebuffer[0]);
-    if(scissor) GLES20.glEnable(GLES20.GL_SCISSOR_TEST);
+    if(comparison==2) clip(finalX+finalWidth/2,finalY,finalWidth-finalWidth/2,finalHeight);
+    else if(scissor) { GLES20.glEnable(GLES20.GL_SCISSOR_TEST);GLES20.glScissor(scissorBox[0],scissorBox[1],scissorBox[2],scissorBox[3]); }
+    else GLES20.glDisable(GLES20.GL_SCISSOR_TEST);
+  }
+  private void clip(int x,int y,int w,int h) {
+    int right=x+w,top=y+h;
+    if(scissor) { x=Math.max(x,scissorBox[0]);y=Math.max(y,scissorBox[1]);right=Math.min(right,scissorBox[0]+scissorBox[2]);top=Math.min(top,scissorBox[1]+scissorBox[3]); }
+    GLES20.glEnable(GLES20.GL_SCISSOR_TEST);GLES20.glScissor(x,y,Math.max(0,right-x),Math.max(0,top-y));
   }
   public boolean draw(Input kind,int texture,int[] textures,float[] matrix,int fw,int fh,int iw,int ih,
       int x,int y,int width,int height,FsrUpscaler fsr,boolean useSgsr) {
@@ -75,9 +90,17 @@ public final class ImageTreatmentPipeline {
     GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING,framebuffer,0);
     GLES20.glGetIntegerv(GLES20.GL_VIEWPORT,viewport,0);
     GLES20.glGetIntegerv(GLES20.GL_ACTIVE_TEXTURE,activeTexture,0);
+    GLES20.glGetIntegerv(GLES20.GL_SCISSOR_BOX,scissorBox,0);
     scissor=GLES20.glIsEnabled(GLES20.GL_SCISSOR_TEST);blend=GLES20.glIsEnabled(GLES20.GL_BLEND);
+    finalX=x;finalY=y;finalWidth=width;finalHeight=height;
     try {
       passes=0;usedTemporal=false;usedNeural=false;usedScaling=false;
+      if(reconstructionLevel>0 && comparison>0) {
+        if(copy==null) copy=new GlRectDrawer();
+        if(comparison==2) clip(x,y,width/2,height);
+        input(copy,kind,texture,textures,matrix,fw,fh,x,y,width,height);passes++;
+        if(comparison==1) { historyValid=false;return true; }
+      }
       long pixels=(long)iw*ih;
       if(pixels>3840L*2160 || pixels*12>MAX_BYTES) throw new IllegalStateException("source exceeds treatment memory limit");
       boolean changed=iw!=lastW || ih!=lastH;
@@ -91,12 +114,12 @@ public final class ImageTreatmentPipeline {
       if(!wantsNeural) releaseFeatures();
       if(!wantsHistory && !wantsNeural) {
         if(b!=null) { b.release();b=null; }
-        if((!options.spatial() || fsr==null && !useSgsr) && a!=null) { a.release();a=null; }
+        if((!options.spatial() || fsr==null && !useSgsr && reconstructionLevel==0) && a!=null) { a.release();a=null; }
       }
-      if(!wantsHistory && !wantsNeural && !options.spatial() && sharpness==0 && fsr==null && !useSgsr) {
+      if(!wantsHistory && !wantsNeural && !options.spatial() && sharpness==0 && fsr==null && !useSgsr && reconstructionLevel==0) {
         workingBytes=0;return false;
       }
-      if(!wantsHistory && !wantsNeural && fsr==null && !useSgsr) {
+      if(!wantsHistory && !wantsNeural && fsr==null && !useSgsr && reconstructionLevel==0) {
         // Common 1080p case: selective cleanup + colors + sharpening in the existing input pass.
         original();spatial().configure(options,sharpness,saturation,brightness,contrast,true);
         input(spatial(),kind,texture,textures,matrix,fw,fh,x,y,width,height);passes++;
@@ -147,7 +170,12 @@ public final class ImageTreatmentPipeline {
           finalKind=Input.RGB;finalTexture=current.getTextureId();finalTextures=null;finalMatrix=IDENTITY;finalW=iw;finalH=ih;
         }
         original();
-        if(useSgsr) {
+        if(reconstructionLevel>0) {
+          ReconstructionDrawer drawer=reconstruction[reconstructionLevel-1];
+          if(drawer==null) { drawer=new ReconstructionDrawer(context,reconstructionLevel);reconstruction[reconstructionLevel-1]=drawer; }
+          drawer.configure(reconstructionStrength,saturation,brightness,contrast,options.deband>0);
+          input(drawer,finalKind,finalTexture,finalTextures,finalMatrix,finalW,finalH,x,y,width,height);passes++;usedScaling=true;
+        } else if(useSgsr) {
           if(sgsr==null) sgsr=new TreatmentShaderDrawer(context,true);
           sgsr.configure(options,fsrSharpness,saturation,brightness,contrast,true);
           input(sgsr,finalKind,finalTexture,finalTextures,finalMatrix,finalW,finalH,x,y,width,height);passes++;usedScaling=true;
@@ -171,6 +199,7 @@ public final class ImageTreatmentPipeline {
       GLES20.glActiveTexture(activeTexture[0]);GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER,framebuffer[0]);
       GLES20.glViewport(viewport[0],viewport[1],viewport[2],viewport[3]);
       if(scissor) GLES20.glEnable(GLES20.GL_SCISSOR_TEST);else GLES20.glDisable(GLES20.GL_SCISSOR_TEST);
+      GLES20.glScissor(scissorBox[0],scissorBox[1],scissorBox[2],scissorBox[3]);
       if(blend) GLES20.glEnable(GLES20.GL_BLEND);else GLES20.glDisable(GLES20.GL_BLEND);
     }
   }
@@ -209,7 +238,7 @@ public final class ImageTreatmentPipeline {
   public int effectiveTemporal() { return usedTemporal && !broken ? options.temporal : 0; }
   public int effectiveNeural() { return usedNeural && !broken ? options.neural : 0; }
   public String diagnostics() {
-    return String.format(Locale.US,"Treatment: spatial=%s | sharpen=%d | temporal=%s | neural=%s | passes=%d | storage=%.1f MiB | CPU/GL submission=%.2f/%.2f ms (not GPU/display)",
+    return (reconstructionLevel>0?"Reconstruction: level="+reconstructionLevel+" | strength="+reconstructionStrength+"% | comparison="+comparison+" | ":"")+String.format(Locale.US,"Treatment: spatial=%s | sharpen=%d | temporal=%s | neural=%s | passes=%d | storage=%.1f MiB | CPU/GL submission=%.2f/%.2f ms (not GPU/display)",
         options.spatial(),options.sharpening,usedTemporal,options.neural>0?neuralStatus:"off",passes,
         workingBytes/1048576.,frames==0?0:totalNs/1e6/frames,maxNs/1e6)+(failure==null?"":" | "+failure);
   }
@@ -217,6 +246,7 @@ public final class ImageTreatmentPipeline {
     if(closed)return;closed=true;
     if(a!=null)a.release();if(b!=null)b.release();if(history!=null)history.release();releaseFeatures();
     if(copy!=null)copy.release();if(spatial!=null)spatial.release();if(sgsr!=null)sgsr.release();
+    for(ReconstructionDrawer drawer:reconstruction) if(drawer!=null) drawer.release();
     for(Pass pass:new Pass[]{featurePassA,featurePassB,neuralApply,temporal}) if(pass!=null)pass.shader.release();
   }
   private static final class Pass {

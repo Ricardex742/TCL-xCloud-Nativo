@@ -855,4 +855,29 @@
     <string name="ui_9b01d2edc42e9906" formatted="false">"Adaptatif RCAS — luminance"</string>
     <string name="ui_8107516a4c8bc932" formatted="false">"USM — luminance"</string>
     <string name="ui_bb3b1f11046a95a8" formatted="false">"Lisse – expérimental"</string>
+    <string name="ui_eac0ce77eb55c8a4" formatted="false">"Reconstruction adaptative"</string>
+    <string name="ui_1d8ef3b791a0d023" formatted="false">"La reconstruction adaptative xCloud privilégie les détails à la résolution actuelle. Réglez la qualité, l’intensité et la comparaison dans Reconstruction adaptative. Elle remplace l’accentuation FSR/SGSR et fonctionne sans agrandir l’image."</string>
+    <string name="ui_51ebe1789bd20746" formatted="false">"La résolution de sortie est locale et ne modifie pas le flux reçu. Automatique privilégie la fluidité et limite les téléviseurs à 1080p. Activez une mise à l’échelle pour utiliser cette option. Les choix conservent le format et respectent la sortie physique de l’écran. La protection réduit la sortie si le rendu ne suit pas les images reçues. Le 1440p et la 4K ne garantissent pas 60 FPS."</string>
+    <string name="ui_dd22d535719a563e" formatted="false">"Force de reconstruction : {0} %"</string>
+    <string name="ui_8555935b67caf434" formatted="false">"Traitement expérimental pour nettoyer et préciser la vidéo, y compris en 1080p sans agrandissement. Il ne modifie ni la résolution ni le débit Xbox. Commencez avec la qualité automatique, une intensité de 50% et une sortie automatique. Les autres filtres facultatifs conservent vos réglages."</string>
+    <string name="ui_86ea683c75f791e2" formatted="false">"Activer avec sortie automatique"</string>
+    <string name="ui_3be0e1d22f89b0de" formatted="false">"Qualité de traitement: {0}"</string>
+    <string name="ui_7c3cbeb7b60be0e2" formatted="false">"Qualité de traitement"</string>
+    <string name="ui_0eb30a3dd4158ee0" formatted="false">"Automatique commence en Léger et augmente après une cadence stable. Équilibré et Qualité utilisent davantage d’échantillons pour reconstruire les détails. En cas de ralentissement durable, la protection réduit le niveau et bloque une nouvelle tentative pendant cette partie. Sans protection des performances, Automatique reste en Léger. La cadence ne mesure pas le temps GPU. Compatibilité désactive ce mode."</string>
+    <string name="ui_902655b68adff737" formatted="false">"Force de reconstruction"</string>
+    <string name="ui_f3dfa159a318772b" formatted="false">"0% désactive la reconstruction des détails. Une valeur supérieure renforce l’accentuation avec des limites contre le bruit et les halos. L’intensité ne change pas la résolution ; 50% ne signifie pas la moitié du coût GPU."</string>
+    <string name="ui_a79e563191d05b46" formatted="false">"Comparaison : {0}"</string>
+    <string name="ui_8c0915ecfa90532a" formatted="false">"Comparaison d\'images"</string>
+    <string name="ui_1a35a34073721a5e" formatted="false">"Original affiche l’image reçue sans les filtres de l’application. Divisée montre cette même image originale à gauche et traitée à droite. Cette option fonctionne uniquement avec la reconstruction adaptative et ne change ni les commandes tactiles ni le cadrage. L’adaptation automatique est suspendue pendant la comparaison. Les performances sur une demi-image ne représentent pas le coût en plein écran."</string>
+    <string name="ui_7e5098599892e880" formatted="false">"xCloud — reconstruction adaptative (expérimentale)"</string>
+    <string name="ui_ba68d32e9584a982" formatted="false">"Léger"</string>
+    <string name="ui_9123685a0d2a98ba" formatted="false">"Équilibré"</string>
+    <string name="ui_c51403a4fdb9cd06" formatted="false">"Qualité"</string>
+    <string name="ui_7ea8983d2cfdf45c" formatted="false">"Image traitée"</string>
+    <string name="ui_151e56d6f8577463" formatted="false">"Image originale"</string>
+    <string name="ui_04968d8f7889a3c7" formatted="false">"Divisée — original à gauche"</string>
+    <string name="ui_d9d33a1c38f7203c" formatted="false">"rendu à la résolution de sortie de mise à l’échelle"</string>
+    <string name="ui_926cde6ac928ee3f" formatted="false">"Sortie de mise à l’échelle demandée : {0} | tampon demandé : {1}\n"</string>
+    <string name="ui_54a1a9944bd29e08" formatted="false">"Cadence locale de rendu : {0} (ne mesure ni le GPU ni les FPS du jeu/écran)\n"</string>
+    <string name="ui_1e53dc3bd47bfd37" formatted="false">"Mise à l’échelle : retour au mode standard — {0}"</string>
 </resources>

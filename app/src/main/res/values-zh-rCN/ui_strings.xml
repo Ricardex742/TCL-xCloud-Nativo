@@ -855,4 +855,29 @@
     <string name="ui_9b01d2edc42e9906" formatted="false">"自适应 RCAS — 亮度"</string>
     <string name="ui_8107516a4c8bc932" formatted="false">"USM — 亮度"</string>
     <string name="ui_bb3b1f11046a95a8" formatted="false">"平滑——实验性的"</string>
+    <string name="ui_eac0ce77eb55c8a4" formatted="false">"自适应重建"</string>
+    <string name="ui_1d8ef3b791a0d023" formatted="false">"xCloud 自适应重建优先改善当前分辨率下的细节清晰度。请在“自适应重建”中设置画质、强度和对比方式。它取代 FSR/SGSR 的锐化，也可在不放大画面的情况下使用。"</string>
+    <string name="ui_51ebe1789bd20746" formatted="false">"输出分辨率在本地处理，不会改变收到的视频流。自动模式优先保证流畅度，并将电视输出限制为 1080p。请先启用画面缩放器再使用此选项。各选项保持宽高比并遵循屏幕的实际输出。渲染跟不上收到的帧时，保护功能会降低输出分辨率。1440p 和 4K 不保证达到 60 FPS。"</string>
+    <string name="ui_dd22d535719a563e" formatted="false">"重建强度：{0}%"</string>
+    <string name="ui_8555935b67caf434" formatted="false">"这是一项用于清理视频并改善细节的实验性处理，在不放大的 1080p 下也能使用。它不会更改 Xbox 分辨率或码率。建议从自动画质、50% 强度和自动输出开始。其他可选滤镜会保留已有设置。"</string>
+    <string name="ui_86ea683c75f791e2" formatted="false">"启用自动输出"</string>
+    <string name="ui_3be0e1d22f89b0de" formatted="false">"加工质量：{0}"</string>
+    <string name="ui_7c3cbeb7b60be0e2" formatted="false">"加工质量"</string>
+    <string name="ui_0eb30a3dd4158ee0" formatted="false">"自动模式从轻量开始，观察到帧节奏稳定后才提高处理级别。均衡和画质优先会使用更多采样来重建细节。如果持续出现性能下降，保护功能会降低级别，并在本次会话中停止重试。关闭性能保护时，自动模式保持轻量。帧节奏不是 GPU 耗时的测量值。兼容模式会禁用此功能。"</string>
+    <string name="ui_902655b68adff737" formatted="false">"重建实力"</string>
+    <string name="ui_f3dfa159a318772b" formatted="false">"0% 关闭细节重建。较高的值会在限制噪点和光晕的同时增强锐化。强度不会改变分辨率；50% 不代表 GPU 开销减半。"</string>
+    <string name="ui_a79e563191d05b46" formatted="false">"比较：{0}"</string>
+    <string name="ui_8c0915ecfa90532a" formatted="false">"图片对比"</string>
+    <string name="ui_1a35a34073721a5e" formatted="false">"原始画面显示收到的帧，不应用本应用的图像滤镜。分屏在左侧显示同一帧的原始画面，在右侧显示处理后的画面。此功能仅用于自适应重建，不改变触控或画面构图。对比期间会暂停自动调整。半屏性能不代表全屏处理的开销。"</string>
+    <string name="ui_7e5098599892e880" formatted="false">"xCloud — 自适应重建（实验性）"</string>
+    <string name="ui_ba68d32e9584a982" formatted="false">"轻量"</string>
+    <string name="ui_9123685a0d2a98ba" formatted="false">"均衡"</string>
+    <string name="ui_c51403a4fdb9cd06" formatted="false">"画质优先"</string>
+    <string name="ui_7ea8983d2cfdf45c" formatted="false">"处理后画面"</string>
+    <string name="ui_151e56d6f8577463" formatted="false">"原始画面"</string>
+    <string name="ui_04968d8f7889a3c7" formatted="false">"分屏 — 左侧为原始画面"</string>
+    <string name="ui_d9d33a1c38f7203c" formatted="false">"以缩放器输出分辨率渲染"</string>
+    <string name="ui_926cde6ac928ee3f" formatted="false">"请求的缩放器输出：{0} | 请求的缓冲区：{1}\n"</string>
+    <string name="ui_54a1a9944bd29e08" formatted="false">"本地渲染帧节奏：{0}（不测量 GPU 耗时或游戏/屏幕 FPS）\n"</string>
+    <string name="ui_1e53dc3bd47bfd37" formatted="false">"缩放器：恢复标准缩放 — {0}"</string>
 </resources>

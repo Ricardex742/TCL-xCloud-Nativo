@@ -14,7 +14,7 @@ enum class VideoCodecMode(private val sourceLabel: String) {
     H264("H.264 — padrão"), H264_BASELINE("H.264 leve — Baseline (720p)"), H264_MAIN("H.264 Main — experimental");
     val label: String get()=UiText.text(sourceLabel)
 }
-enum class FsrMode(private val sourceLabel: String) { OFF("Desativado"), FSR1("AMD FSR 1.0.2 — experimental"), SGSR1("SGSR 1 — experimental") ;
+enum class FsrMode(private val sourceLabel: String) { OFF("Desativado"), FSR1("AMD FSR 1.0.2 — experimental"), SGSR1("SGSR 1 — experimental"), RECONSTRUCTION("xCloud — reconstrução adaptativa (experimental)") ;
     val label: String get()=UiText.text(sourceLabel)
 }
 enum class FsrOutput(private val sourceLabel: String) {
@@ -61,7 +61,8 @@ data class PlaybackSettings(
     val gyroNativeTouch: Boolean = false,
     val fsrOutput: FsrOutput = FsrOutput.AUTO,
     val imageTreatment: ImageTreatmentSettings = ImageTreatmentSettings(),
-    val presentationPacing: PresentationPacing = PresentationPacing.OFF
+    val presentationPacing: PresentationPacing = PresentationPacing.OFF,
+    val reconstruction: ReconstructionSettings = ReconstructionSettings()
 ) {
     fun forSession(): PlaybackSettings {
         val selected=if(videoCodec==VideoCodecMode.H264_BASELINE || videoMode==VideoMode.COMPATIBILITY)
@@ -113,7 +114,11 @@ class PlaybackSettingsStore(context: Context) {
                 prefs.getInt("image_deband",0),prefs.getInt("image_cleanup",0),prefs.getInt("image_chroma",0),
                 prefs.getInt("image_antialias",0),prefs.getInt("image_temporal",0),prefs.getInt("image_neural",0),
                 prefs.getBoolean("image_auto_protect",true)).bounded(),
-            PresentationPacing.entries.firstOrNull { it.name==prefs.getString("presentation_pacing",null) } ?: PresentationPacing.OFF)
+            PresentationPacing.entries.firstOrNull { it.name==prefs.getString("presentation_pacing",null) } ?: PresentationPacing.OFF,
+            ReconstructionSettings(
+                ReconstructionQuality.entries.firstOrNull { it.name==prefs.getString("reconstruction_quality",null) } ?: ReconstructionQuality.AUTO,
+                prefs.getInt("reconstruction_strength",50),
+                ImageComparison.entries.firstOrNull { it.name==prefs.getString("image_comparison",null) } ?: ImageComparison.PROCESSED).bounded())
     }
     fun save(settings: PlaybackSettings) {
         prefs.edit().putString("video_mode",settings.videoMode.name).putBoolean("low_latency_video",settings.videoMode.lowLatency)
@@ -137,7 +142,10 @@ class PlaybackSettingsStore(context: Context) {
             .putInt("image_temporal",settings.imageTreatment.temporal.coerceIn(0,50))
             .putInt("image_neural",settings.imageTreatment.neural.coerceIn(0,100))
             .putBoolean("image_auto_protect",settings.imageTreatment.autoProtect)
-            .putString("presentation_pacing",settings.presentationPacing.name).apply()
+            .putString("presentation_pacing",settings.presentationPacing.name)
+            .putString("reconstruction_quality",settings.reconstruction.quality.name)
+            .putInt("reconstruction_strength",settings.reconstruction.strength.coerceIn(0,100))
+            .putString("image_comparison",settings.reconstruction.comparison.name).apply()
     }
 }
 

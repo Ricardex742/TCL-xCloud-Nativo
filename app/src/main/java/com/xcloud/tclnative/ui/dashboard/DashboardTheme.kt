@@ -90,6 +90,7 @@ internal object DashboardTheme {
         }
         view.invalidate()
         if(view is ViewGroup) repeat(view.childCount) { refreshView(view.getChildAt(it),previous,next) }
+        if(view is GameDashboardView) view.refreshAppearance()
     }
     fun customFocus(view: View) {
         if (Build.VERSION.SDK_INT >= 26) view.defaultFocusHighlightEnabled = false
@@ -131,8 +132,10 @@ internal class DashboardBackground(private val consoleArtwork: Boolean=true) : D
     override fun onBoundsChange(bounds: Rect) {
         val w = bounds.width().toFloat(); val h = bounds.height().toFloat()
         if(w<=0 || h<=0) return
-        gradient = LinearGradient(0f, 0f, w, h, intArrayOf(DashboardTheme.color(UiColor.BACKGROUND_START),
-            DashboardTheme.color(UiColor.BACKGROUND_MID),DashboardTheme.color(UiColor.BACKGROUND_END)),
+        val colors=if(!consoleArtwork && DashboardTheme.palette.theme==UiTheme.XBOX_360)
+            intArrayOf(0xffaab0a5.toInt(),0xffd5d8d0.toInt(),0xff89917f.toInt())
+            else intArrayOf(DashboardTheme.color(UiColor.BACKGROUND_START),DashboardTheme.color(UiColor.BACKGROUND_MID),DashboardTheme.color(UiColor.BACKGROUND_END))
+        gradient = LinearGradient(0f, 0f, w, h, colors,
             floatArrayOf(0f, .55f, 1f), Shader.TileMode.CLAMP)
         ribbon.reset(); ribbon.moveTo(.16f*w,h); ribbon.lineTo(.39f*w,.71f*h)
         ribbon.lineTo(.56f*w,.71f*h); ribbon.lineTo(.34f*w,h); ribbon.close()

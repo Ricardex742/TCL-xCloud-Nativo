@@ -46,7 +46,11 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
 
 - **Verde** como tema padrão, preservando a identidade original do app.
 - Seis temas opcionais: **Azul Cibernético**, **Vermelho Vulcânico**, **Dourado Prestígio**, **Laranja Industrial**, **Roxo Galáxia** e **Prata Platina**.
-- Quatro temas inspirados nos consoles: **Xbox 360**, **Xbox One**, **Xbox Series X|S** e **Xbox Original**, com fundos próprios.
+- Quatro dashboards opcionais, com composição e navegação próprias:
+  - **Xbox 360 — Blades de 2005:** lâminas metálicas curvas, faixas coloridas, painel claro, capa em destaque e lista de jogos.
+  - **Xbox One:** blocos retangulares, destaque grande para o jogo selecionado e catálogo em mosaico.
+  - **Xbox Series X|S:** arte panorâmica do jogo quando disponível, navegação por ícones, faixa horizontal de jogos e atalhos para a biblioteca.
+  - **Xbox Original:** núcleo verde luminoso, categorias em menus e biblioteca em listas. A abre a categoria; B retorna ao menu.
 - **Fundo dinâmico** opcional nesses quatro temas: Automático, Ativado ou Desativado. O movimento fica no catálogo e pausa durante partidas. Automático preserva o fundo estático em aparelhos de pouca memória e interfaces acima de 1440p; economia de energia e animações desativadas no sistema também pausam o movimento.
 - Seleção em **Configurações › Aparência e temas › Tema do aplicativo**, por controle ou toque.
 - Aplicação imediata e escolha salva no aparelho, inclusive ao reabrir o app.
@@ -66,12 +70,12 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
     <td width="50%"><img src="docs/screenshots/theme-platinum-silver.jpg" alt="Tema Prata Platina, com fundo cinza escuro e destaques prateados." /><br /><strong>Prata Platina</strong></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/theme-xbox-360.png" alt="Tema inspirado no Xbox 360, com ondas prateadas e destaques verdes." /><br /><strong>Xbox 360</strong></td>
-    <td width="50%"><img src="docs/screenshots/theme-xbox-one.png" alt="Tema inspirado no Xbox One, com mosaico verde escuro." /><br /><strong>Xbox One</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-360.png" alt="Dashboard Xbox 360 Blades, com lâminas metálicas coloridas e painel claro de jogos." /><br /><strong>Xbox 360</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-one.png" alt="Dashboard Xbox One, com destaque grande e jogos em blocos retangulares." /><br /><strong>Xbox One</strong></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/theme-xbox-series.png" alt="Tema inspirado no Xbox Series X|S, com curvas escuras e destaques verde-menta." /><br /><strong>Xbox Series X|S</strong></td>
-    <td width="50%"><img src="docs/screenshots/theme-xbox-original.png" alt="Tema inspirado no Xbox Original, com brilho verde e anéis concêntricos." /><br /><strong>Xbox Original</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-series.png" alt="Dashboard Xbox Series X|S, com arte panorâmica e jogos em faixa horizontal." /><br /><strong>Xbox Series X|S</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-original.png" alt="Dashboard Xbox Original, com núcleo luminoso e categorias em menus verdes." /><br /><strong>Xbox Original</strong></td>
   </tr>
 </table>
 

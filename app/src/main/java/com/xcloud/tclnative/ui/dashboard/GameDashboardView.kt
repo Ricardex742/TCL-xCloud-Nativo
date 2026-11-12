@@ -3,6 +3,8 @@ package com.xcloud.tclnative.ui.dashboard
 import com.xcloud.tclnative.i18n.UiText
 
 import android.content.Context
+import com.xcloud.tclnative.settings.ConsoleScene
+import android.graphics.Typeface
 import android.graphics.Color
 import android.graphics.RectF
 import android.graphics.Canvas
@@ -96,6 +98,12 @@ class GameDashboardView(
     private var positions = emptyMap<String, Int>()
     private var pendingFocus: Pair<String?, Int>? = null
     internal val isCatalogUpdating: Boolean get() = catalogJob?.isActive == true || metadataJob?.isActive == true
+    private var designScene=DashboardTheme.palette.theme.scene
+    private var originalBrowsing=false
+    private var cardColumns=COLUMNS
+    private var cardHorizontal=false
+    private var cardWidth=0
+    private var headerArtSize=ArtworkSize(128,128)
     private var coverVerticalPadding = 8f
     private var lastGeometry = 0L
     private var closed = false
@@ -122,6 +130,19 @@ class GameDashboardView(
         typeface=android.graphics.Typeface.DEFAULT
         setPadding(0,0,0,0)
     }
+    private val heroBackdrop=FixedArtworkView(context).apply { scaleType=ImageView.ScaleType.CENTER_CROP;importantForAccessibility=IMPORTANT_FOR_ACCESSIBILITY_NO }
+    private val consoleChrome=View(context).apply { background=ConsoleDashboardChrome { activeTab.ordinal };importantForAccessibility=IMPORTANT_FOR_ACCESSIBILITY_NO }
+    private val consoleBrand=label(32f)
+    private val sectionTitle=label(27f,false)
+    private val launchButton=DashboardTheme.button(context,UiText.text("JOGAR")) { selectedCard?.let(::playCard) }.apply { id=generateViewId() }
+    private val consoleBack=DashboardTheme.button(context,UiText.text("Voltar")) { showOriginalCategories() }.apply { id=generateViewId() }
+    private val shortcuts=FrameLayout(context)
+    private val quickActions=listOf(
+        DashboardTheme.button(context,LibraryTab.ALL.label) { selectTab(LibraryTab.ALL);focusFirstCover() },
+        DashboardTheme.button(context,LibraryTab.GAME_PASS.label) { selectTab(LibraryTab.GAME_PASS);focusFirstCover() },
+        DashboardTheme.button(context,LibraryTab.PURCHASED.label) { selectTab(LibraryTab.PURCHASED);focusFirstCover() },
+        DashboardTheme.button(context,UiText.text("Configurações")) { onOptions() }
+    ).onEach { it.id=generateViewId();shortcuts.addView(it) }
     private val searchButton = SearchButton(context,onSearch)
     private val connected = View(context).apply { background = rounded(0xff22b444.toInt(), 1000f) }
     private val navigation = FrameLayout(context).apply { clipChildren = false; clipToPadding = false }
@@ -130,6 +151,7 @@ class GameDashboardView(
         background = DashboardTheme.shape(UiColor.TAB_BAR, 7f)
         clipChildren = false; clipToPadding = false
     }
+    private val consoleTabRow=FrameLayout(context).apply { clipChildren=false;clipToPadding=false }
     private val lb = label(24f).apply { text = "LB"; gravity = Gravity.CENTER }
     private val rb = label(24f).apply { text = "RB"; gravity = Gravity.CENTER }
     private val grid = object : RecyclerView(context) {
@@ -162,7 +184,10 @@ class GameDashboardView(
     init {
         background = DashboardBackground(consoleArtwork=false)
         clipChildren = false; clipToPadding = false
+        addView(heroBackdrop,LayoutParams(-1,-1))
         addView(consoleBackdrop,LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.MATCH_PARENT))
+        addView(consoleChrome,LayoutParams(-1,-1))
+        addView(consoleBrand);addView(sectionTitle);addView(launchButton);addView(consoleBack);addView(shortcuts)
         headerIcon.background = DashboardTheme.shape(UiColor.HEADER_ICON, 8f); headerIcon.clipToOutline = true
         headerTitle.maxLines = 2; headerTitle.setLineSpacing(0f, .96f)
         addView(headerIcon); addView(headerTitle)
@@ -171,12 +196,13 @@ class GameDashboardView(
         profilePanel.addView(connected); profilePanel.addView(accountName); profilePanel.addView(gamertag)
         profilePanel.addView(subscription); profilePanel.addView(settingsButton)
         profilePanel.setOnFocusChangeListener { _, focused ->
-            profilePanel.background = if (focused) DashboardTheme.shape(UiColor.PROFILE_FOCUS, 9f) else null
+            profilePanel.background = if(!focused) null else if(designScene==ConsoleScene.NONE) DashboardTheme.shape(UiColor.PROFILE_FOCUS,9f)
+                else rounded(Color.TRANSPARENT,2f,if(designScene==ConsoleScene.XBOX_360) 0xff52721d.toInt() else DashboardTheme.accent)
         }
         addView(profilePanel)
         searchButton.nextFocusRightId=profilePanel.id
         profilePanel.nextFocusLeftId=searchButton.id
-        navigation.addView(tabRow); navigation.addView(lb); navigation.addView(rb)
+        navigation.addView(tabRow);navigation.addView(consoleTabRow); navigation.addView(lb); navigation.addView(rb)
         lb.background = rounded(0xff252527.toInt(), 6f, Color.LTGRAY)
         rb.background = rounded(0xff252527.toInt(), 6f, Color.LTGRAY)
         lb.isClickable = true; rb.isClickable = true
@@ -210,6 +236,7 @@ class GameDashboardView(
         hint("X", UiText.text("BUSCAR"), onSearch)
         hint("☰", UiText.text("CONFIGURAÇÕES"), onOptions)
         renderProfile()
+        refreshAppearance()
         updateTabs()
     }
 
@@ -310,10 +337,10 @@ class GameDashboardView(
         if(updated!=profile) { profile=updated; renderProfile() }
     }
     private fun renderProfile() {
-        accountName.text = profile.displayName.uppercase(Locale.getDefault())
-        gamertag.text = profile.gamertag.uppercase(Locale.getDefault())
+        accountName.text = if(designScene==ConsoleScene.NONE) profile.displayName.uppercase(Locale.getDefault()) else profile.displayName
+        gamertag.text = if(designScene==ConsoleScene.NONE) profile.gamertag.uppercase(Locale.getDefault()) else profile.gamertag
         subscription.text = profile.subscription?.let { if (it == "FREE") "FREE" else "GAME PASS $it" } ?: UiText.text("ASSINATURA NÃO INFORMADA")
-        subscription.background = DashboardTheme.shape(UiColor.SUBSCRIPTION, 3f)
+        subscription.background = if(designScene==ConsoleScene.NONE) DashboardTheme.shape(UiColor.SUBSCRIPTION,3f) else null
         avatarLetter.text = profile.displayName.take(1).uppercase(Locale.getDefault())
         connected.contentDescription = UiText.text("Conta autenticada no Xbox Cloud")
         profilePanel.contentDescription = UiText.text("{0}, {1}. Abrir configurações",UiText.nested(profile.displayName),UiText.nested(profile.gamertag))
@@ -370,7 +397,9 @@ class GameDashboardView(
         val manager=grid.layoutManager as GridLayoutManager
         val anchor=manager.findFirstVisibleItemPosition()
         val anchorKey=adapter.items.getOrNull(anchor)?.key
-        val anchorOffset=manager.findViewByPosition(anchor)?.top?.minus(grid.paddingTop) ?: 0
+        val anchorOffset=manager.findViewByPosition(anchor)?.let {
+            if(manager.orientation==RecyclerView.HORIZONTAL) it.left-grid.paddingLeft else it.top-grid.paddingTop
+        } ?: 0
         positions=presentation.positions
         gamePassProducts=presentation.gamePassProducts
         val updated=profile.copy(subscription=presentation.subscription ?: profile.subscription)
@@ -441,6 +470,17 @@ class GameDashboardView(
         updateTabs()
     }
     private fun updateTabs() {
+        sectionTitle.text=activeTab.label
+        consoleChrome.invalidate()
+        if(designScene!=ConsoleScene.NONE) {
+            tabs.forEachIndexed { i,view ->
+                view.background=ConsoleControlPlate(designScene,ConsoleControl.TAB,i==activeTab.ordinal)
+                view.setTextColor(if(designScene==ConsoleScene.XBOX_ORIGINAL) {
+                    if(i==activeTab.ordinal) 0xff183000.toInt() else 0xffc2f364.toInt()
+                } else consoleTextColor())
+            }
+            if(designScene==ConsoleScene.XBOX_360) { lastGeometry=0L;requestLayout() }
+        }
         profilePanel.nextFocusDownId = tabs[activeTab.ordinal].id
         LibraryTab.entries.forEachIndexed { index, tab ->
             tabPlates[index].highlighted = activeTab == tab
@@ -456,22 +496,27 @@ class GameDashboardView(
         focusCoverAt(0)
     }
     private fun focusCoverAt(position: Int) {
+        if(designScene==ConsoleScene.XBOX_ORIGINAL && !originalBrowsing) {
+            originalBrowsing=true;navigation.visibility=GONE;grid.visibility=VISIBLE;consoleBack.visibility=VISIBLE
+            lastGeometry=0L;requestLayout();updateConsoleTitle()
+        }
         if(isCatalogUpdating) { pendingFocus=selectedCard?.key to position; return }
         focusCoverNow(position)
     }
     private fun focusCoverNow(position: Int) {
         val request = ++focusRequest
-        if (adapter.itemCount == 0) { tabs[activeTab.ordinal].requestFocus(); return }
+        if (adapter.itemCount == 0) { if(designScene==ConsoleScene.XBOX_ORIGINAL && originalBrowsing) consoleBack.requestFocus() else tabs[activeTab.ordinal].requestFocus(); return }
         grid.doOnNextLayout {
             if (!closed && request == focusRequest) {
                 grid.findViewHolderForAdapterPosition(position)?.itemView?.requestFocus()
-                    ?: tabs[activeTab.ordinal].requestFocus()
+                    ?: if(designScene==ConsoleScene.XBOX_ORIGINAL && originalBrowsing) consoleBack.requestFocus() else tabs[activeTab.ordinal].requestFocus()
             }
         }
         grid.scrollToPosition(position)
     }
     fun restoreFocus() {
         refresh()
+        if(designScene==ConsoleScene.XBOX_ORIGINAL && !originalBrowsing) { tabs[activeTab.ordinal].requestFocus();return }
         val position = positions[selectedCard?.key] ?: 0
         focusCoverAt(position)
     }
@@ -481,7 +526,17 @@ class GameDashboardView(
         if (previous?.key==game?.key && previous?.name==game?.name && previous?.tileUrl==game?.tileUrl &&
             previous?.posterUrl==game?.posterUrl && headerTitle.text.isNotEmpty()) return
         headerArtJob?.cancel()
-        if (game == null) { headerTitle.text = UiText.text("SUA BIBLIOTECA"); posters.load(headerIcon, null); return }
+        if (game == null) {
+            headerTitle.text = UiText.text("SUA BIBLIOTECA");posters.load(headerIcon,null);posters.cancel(heroBackdrop)
+            launchButton.isEnabled=false;return
+        }
+        launchButton.isEnabled=true
+        if(designScene!=ConsoleScene.NONE) {
+            updateConsoleTitle()
+            headerIcon.contentDescription=UiText.text("Ícone de {0}",UiText.nested(game.name))
+            headerArtJob=scope.launch { delay(120);if(selectedCard?.key==game.key) loadHeaderArtwork(game) }
+            return
+        }
         val words = game.name.uppercase(Locale.getDefault()).split(Regex("\\s+"))
         val split = if (words.size <= 1) words.size else if (words[0].length >= 10) 1 else
             (1 until words.size).minByOrNull { kotlin.math.abs(words.take(it).joinToString(" ").length - game.name.length / 2) } ?: 1
@@ -496,8 +551,17 @@ class GameDashboardView(
         headerArtJob=scope.launch { delay(120); if(selectedCard?.key==game.key) loadHeaderArtwork(game) }
     }
     private fun loadHeaderArtwork(game: CatalogCard) {
-        val size=ArtworkSize.forDisplay((116*scale).roundToInt(),(116*scale).roundToInt())
-        posters.load(headerIcon,game.tileUrl ?: game.posterUrl,size.width,size.height)
+        if(designScene==ConsoleScene.XBOX_ORIGINAL && !originalBrowsing) { posters.cancel(headerIcon);return }
+        val hero=game.product?.heroUrl ?: game.game?.heroUrl
+        val art=if(designScene==ConsoleScene.XBOX_360 || designScene==ConsoleScene.XBOX_ORIGINAL) game.posterUrl ?: game.tileUrl
+            else hero ?: game.tileUrl ?: game.posterUrl
+        val size=if(designScene==ConsoleScene.NONE) ArtworkSize.forDisplay((116*scale).roundToInt(),(116*scale).roundToInt()) else headerArtSize
+        posters.load(headerIcon,if(designScene==ConsoleScene.NONE) game.tileUrl ?: game.posterUrl else art,size.width,size.height)
+        if(designScene==ConsoleScene.XBOX_SERIES) {
+            val target=if(context.getSystemService(android.app.ActivityManager::class.java)?.isLowRamDevice==true) ArtworkSize(640,360) else ArtworkSize(1024,576)
+            if(hero!=null) { posters.load(heroBackdrop,hero,target.width,target.height);headerIcon.visibility=INVISIBLE }
+            else { posters.cancel(heroBackdrop);headerIcon.visibility=VISIBLE;headerIcon.scaleType=ImageView.ScaleType.FIT_CENTER }
+        } else posters.cancel(heroBackdrop)
     }
     private fun toggleSelectedFavorite() {
         val game = selectedGame ?: run {
@@ -518,7 +582,14 @@ class GameDashboardView(
         val game=card.playableGame()
         if(game!=null) onPlay(game) else card.product?.let(onPlayProduct)
     }
+    private fun showOriginalCategories() {
+        originalBrowsing=false;navigation.visibility=VISIBLE;consoleTabRow.visibility=VISIBLE;grid.visibility=GONE;consoleBack.visibility=GONE;emptyState.visibility=GONE
+        ++focusRequest // Cancel a grid focus request still waiting for layout.
+        post { if(!closed && !originalBrowsing) tabs[activeTab.ordinal].requestFocus() }
+        lastGeometry=0L;requestLayout();updateConsoleTitle();tabs[activeTab.ordinal].requestFocus()
+    }
     fun back() {
+        if(designScene==ConsoleScene.XBOX_ORIGINAL && originalBrowsing) { showOriginalCategories();return }
         when {
             searchQuery.isNotBlank() -> setSearch("")
             grid.hasFocus() -> tabs[activeTab.ordinal].requestFocus()
@@ -559,6 +630,10 @@ class GameDashboardView(
     }
     private fun textSize(view: TextView, value: Float) = view.setTextSize(TypedValue.COMPLEX_UNIT_PX, value * scale)
     private fun layoutGeometry(w: Int, h: Int) {
+        if(designScene!=ConsoleScene.NONE) { layoutConsole(w,h);return }
+        listOf(headerIcon,headerTitle,profilePanel,searchButton,navigation,metadataNote,lb,rb,grid).forEach { it.visibility=VISIBLE }
+        settingsButton.visibility=VISIBLE;headerTitle.gravity=Gravity.START
+        cardWidth=0;cardColumns=COLUMNS;cardHorizontal=false
         val s = scale
         // Reserve the full header for the game and profile. The portrait grid scrolls below it.
         coverVerticalPadding = 7*s
@@ -614,6 +689,201 @@ class GameDashboardView(
         adapter.notifyDataSetChanged()
     }
 
+    private fun consoleTextColor()=if(designScene==ConsoleScene.XBOX_360) 0xff263024.toInt() else Color.WHITE
+    private fun updateConsoleTitle() {
+        val title=if(designScene==ConsoleScene.XBOX_ORIGINAL && !originalBrowsing) UiText.text("SUA BIBLIOTECA") else selectedCard?.name ?: UiText.text("SUA BIBLIOTECA")
+        headerTitle.text=if(designScene==ConsoleScene.XBOX_ORIGINAL) UiText.uppercase(title) else title
+    }
+    /** Recompose the existing catalog; account data, stable IDs and adapter are retained. */
+    internal fun refreshAppearance() {
+        val next=DashboardTheme.palette.theme.scene
+        val focused=grid.hasFocus();val position=positions[selectedCard?.key] ?: 0
+        val changed=designScene!=next
+        if(changed) originalBrowsing=next==ConsoleScene.XBOX_ORIGINAL && focused
+        designScene=next
+        val console=next!=ConsoleScene.NONE
+        listOf(consoleBrand,sectionTitle,launchButton,consoleChrome,consoleTabRow).forEach { it.visibility=if(console) VISIBLE else GONE }
+        consoleBack.visibility=GONE;shortcuts.visibility=GONE
+        heroBackdrop.visibility=if(next==ConsoleScene.XBOX_SERIES) VISIBLE else GONE
+        if(next!=ConsoleScene.XBOX_SERIES) posters.cancel(heroBackdrop)
+        tabRow.visibility=if(console) GONE else VISIBLE
+        val parent=if(console) consoleTabRow else tabRow
+        tabs.forEachIndexed { i,view ->
+            if(view.parent!==parent) { (view.parent as? ViewGroup)?.removeView(view);parent.addView(view) }
+            view.rotation=0f;view.gravity=Gravity.CENTER;view.setPadding(0,0,0,0);view.letterSpacing=0f
+            view.nextFocusLeftId=View.NO_ID;view.nextFocusRightId=View.NO_ID;view.nextFocusUpId=profilePanel.id;view.nextFocusDownId=grid.id
+            view.text=LibraryTab.entries[i].label
+            view.setTextColor(if(console) consoleTextColor() else Color.WHITE)
+            view.typeface=if(console) Typeface.create(if(next==ConsoleScene.XBOX_ORIGINAL) "sans-serif-condensed" else "sans-serif-light",Typeface.NORMAL) else DashboardTheme.font(context)
+            view.background=if(console) ConsoleControlPlate(next,ConsoleControl.TAB,i==activeTab.ordinal) else tabPlates[i]
+            if(!console) view.layoutParams=LinearLayout.LayoutParams(0,-1,when(LibraryTab.entries[i]) {
+                LibraryTab.RECENT -> 1.65f;LibraryTab.ADDED -> 1.35f;LibraryTab.ALL -> 1.16f;LibraryTab.PURCHASED -> 1.95f;else -> 1f
+            })
+        }
+        listOf(headerTitle,accountName,gamertag,subscription,metadataNote,catalogNote,emptyState).forEach { view ->
+            view.typeface=if(console) Typeface.create(if(next==ConsoleScene.XBOX_ORIGINAL) "sans-serif-condensed" else "sans-serif-light",Typeface.NORMAL) else DashboardTheme.font(context,view!==metadataNote && view!==catalogNote && view!==emptyState)
+            view.setTextColor(if(console) consoleTextColor() else if(view===gamertag || view===metadataNote || view===catalogNote) DashboardTheme.muted else if(view===emptyState) DashboardTheme.color(UiColor.CATALOG_NOTICE) else Color.WHITE)
+        }
+        if(android.os.Build.VERSION.SDK_INT>=26) headerTitle.setAutoSizeTextTypeWithDefaults(TextView.AUTO_SIZE_TEXT_TYPE_NONE)
+        headerTitle.maxLines=2
+        headerIcon.scaleType=if(next==ConsoleScene.XBOX_360 || next==ConsoleScene.XBOX_ORIGINAL) ImageView.ScaleType.FIT_CENTER else ImageView.ScaleType.CENTER_CROP
+        headerIcon.clipToOutline=next==ConsoleScene.NONE
+        headerIcon.background=if(console) null else DashboardTheme.shape(UiColor.HEADER_ICON,8f)
+        consoleBrand.letterSpacing=0f;footer.alpha=1f
+        consoleBrand.text=when(next) { ConsoleScene.XBOX_360 -> "XBOX 360";ConsoleScene.XBOX_ONE -> "Xbox One";ConsoleScene.XBOX_SERIES -> "Xbox Series X|S";ConsoleScene.XBOX_ORIGINAL -> "XBOX";else -> "" }
+        consoleBrand.typeface=Typeface.create(if(next==ConsoleScene.XBOX_ORIGINAL) "sans-serif-black" else "sans-serif-light",Typeface.NORMAL)
+        consoleBrand.setTextColor(if(next==ConsoleScene.XBOX_ORIGINAL) 0xffb6ef4b.toInt() else consoleTextColor())
+        sectionTitle.typeface=Typeface.create("sans-serif-light",Typeface.NORMAL);sectionTitle.setTextColor(consoleTextColor())
+        launchButton.typeface=Typeface.create("sans-serif",Typeface.NORMAL)
+        launchButton.background=ConsoleControlPlate(next,ConsoleControl.ACTION,true)
+        launchButton.setTextColor(if(next==ConsoleScene.XBOX_360) 0xff263024.toInt() else Color.WHITE)
+        consoleBack.background=ConsoleControlPlate(next,ConsoleControl.ACTION,false)
+        consoleBack.setTextColor(if(next==ConsoleScene.XBOX_ORIGINAL) 0xff142400.toInt() else Color.WHITE)
+        quickActions.forEach { it.background=ConsoleControlPlate(next,ConsoleControl.QUICK,false);it.typeface=Typeface.create("sans-serif",Typeface.NORMAL);it.setTextColor(Color.WHITE) }
+        val manager=grid.layoutManager as GridLayoutManager
+        cardHorizontal=next==ConsoleScene.XBOX_SERIES
+        cardColumns=when(next) { ConsoleScene.XBOX_360,ConsoleScene.XBOX_ORIGINAL,ConsoleScene.XBOX_SERIES -> 1;ConsoleScene.XBOX_ONE -> 3;else -> COLUMNS }
+        grid.stopScroll();manager.orientation=if(cardHorizontal) RecyclerView.HORIZONTAL else RecyclerView.VERTICAL;manager.spanCount=cardColumns
+        if(console) {
+            for(i in 0 until footer.childCount) (footer.getChildAt(i) as TextView).apply { setTextColor(consoleTextColor());typeface=Typeface.create("sans-serif",Typeface.NORMAL) }
+        } else {
+            for(i in 0 until footer.childCount) (footer.getChildAt(i) as TextView).apply {
+                setTextColor(Color.WHITE);typeface=DashboardTheme.font(context,false)
+                if(i%2==0) background=rounded(Color.TRANSPARENT,if(tag=="☰") 6f else 100f,Color.WHITE)
+            }
+        }
+        val selected=selectedCard;selectedCard=null;updateSelected(selected)
+        renderProfile();updateTabs();renderCatalogState(adapter.itemCount,isCatalogUpdating);lastGeometry=0L;requestLayout()
+        adapter.notifyItemRangeChanged(0,adapter.itemCount,"skin")
+        if(changed && focused) grid.post { if(!closed) focusCoverNow(position) }
+        consoleChrome.background?.invalidateSelf()
+    }
+    private fun layoutConsole(w: Int,h: Int) {
+        scale=minOf(w/1280f,h/720f)
+        val s=scale;val wide=w/s
+        fun pos(v: View,x: Float,y: Float,width: Float,height: Float)=place(v,x*s,y*s,width*s,height*s)
+        fun text(v: TextView,size: Float)=textSize(v,size)
+        val original=designScene==ConsoleScene.XBOX_ORIGINAL
+        listOf(headerTitle,profilePanel,searchButton,metadataNote,footer,catalogNote).forEach { it.visibility=VISIBLE }
+        grid.visibility=if(original && !originalBrowsing) GONE else VISIBLE
+        headerIcon.visibility=if(original && !originalBrowsing) GONE else if(designScene==ConsoleScene.XBOX_SERIES) INVISIBLE else VISIBLE
+        consoleBack.visibility=if(original && originalBrowsing) VISIBLE else GONE
+        consoleTabRow.visibility=if(original && originalBrowsing) GONE else VISIBLE
+        navigation.visibility=if(original && originalBrowsing) GONE else VISIBLE
+        shortcuts.visibility=if(designScene==ConsoleScene.XBOX_SERIES) VISIBLE else GONE
+        sectionTitle.text=activeTab.label
+        sectionTitle.visibility=if(designScene==ConsoleScene.XBOX_SERIES || original && originalBrowsing) VISIBLE else GONE
+        launchButton.visibility=if(original) GONE else VISIBLE
+        consoleBrand.visibility=VISIBLE
+        // Compact real account header, independent from the content panels.
+        pos(profilePanel,if(designScene==ConsoleScene.XBOX_360) wide-380 else 54f,26f,300f,66f)
+        pos(avatar,0f,0f,48f,48f);pos(avatarLetter,0f,0f,48f,48f);text(avatarLetter,25f)
+        pos(accountName,61f,0f,235f,28f);pos(gamertag,61f,28f,235f,23f)
+        pos(subscription,61f,52f,235f,16f);text(accountName,23f);text(gamertag,17f);text(subscription,12f)
+        subscription.background=null
+        pos(connected,38f,39f,10f,10f)
+        pos(settingsButton,0f,0f,1f,1f);settingsButton.visibility=GONE
+        pos(searchButton,wide-70f,24f,48f,48f)
+        pos(consoleBrand,if(designScene==ConsoleScene.XBOX_360) 34f else wide-310f,35f,225f,38f);text(consoleBrand,29f)
+        pos(footer,50f,680f,wide-310f,28f)
+        footer.alpha=if(original) .9f else 1f
+        for(i in 0 until footer.childCount step 2) {
+            val glyph=footer.getChildAt(i) as TextView;val label=footer.getChildAt(i+1) as TextView
+            text(glyph,17f);text(label,16f)
+            glyph.layoutParams=LinearLayout.LayoutParams((22*s).roundToInt(),(22*s).roundToInt()).apply { marginEnd=(5*s).roundToInt() }
+            glyph.background=rounded(Color.TRANSPARENT,22*s,consoleTextColor())
+            label.layoutParams=LinearLayout.LayoutParams(-2,-2).apply { marginEnd=(16*s).roundToInt() }
+        }
+        pos(catalogNote,wide-265f,682f,215f,22f);text(catalogNote,15f)
+        pos(metadataNote,54f,650f,wide-108f,23f);text(metadataNote,15f)
+        headerTitle.gravity=Gravity.START
+        headerTitle.setTextColor(consoleTextColor());text(headerTitle,30f)
+        lb.visibility=GONE;rb.visibility=GONE
+        coverVerticalPadding=4*s
+        when(designScene) {
+            ConsoleScene.XBOX_360 -> {
+                val left=activeTab.ordinal*44f+26f;val right=wide-(5-activeTab.ordinal)*44f-26f;val width=right-left
+                pos(navigation,0f,0f,wide,658f);pos(consoleTabRow,0f,0f,wide,658f)
+                tabs.forEachIndexed { i,v ->
+                    v.rotation=0f;v.maxLines=1;text(v,if(i==activeTab.ordinal) 31f else 20f)
+                    if(i==activeTab.ordinal) pos(v,left+28,54f,width-60,54f)
+                    else {
+                        val x=if(i<activeTab.ordinal) i*44f+4f else wide-(6-i)*44f+4f
+                        pos(v,x+22f-270f,337f-22f,540f,44f);v.rotation=if(i<activeTab.ordinal) -90f else 90f
+                    }
+                    v.nextFocusLeftId=tabs[(i+5)%6].id;v.nextFocusRightId=tabs[(i+1)%6].id
+                    v.nextFocusDownId=grid.id
+                }
+                pos(profilePanel,left+35,132f,270f,64f)
+                pos(headerIcon,left+44,215f,220f,285f);headerArtSize=ArtworkSize.forDisplay((220*s).roundToInt(),(285*s).roundToInt())
+                pos(headerTitle,left+303,137f,width-345,70f);text(headerTitle,29f)
+                pos(grid,left+302,222f,width-341,377f);coverHeight=(62*s).roundToInt()
+                pos(emptyState,left+302,222f,width-341,377f)
+                pos(launchButton,left+42,530f,226f,51f);text(launchButton,24f)
+                pos(consoleBrand,left+35,610f,240f,32f);text(consoleBrand,25f)
+                pos(metadataNote,left+303,610f,width-345,30f);text(metadataNote,13f)
+            }
+            ConsoleScene.XBOX_ONE -> {
+                pos(navigation,52f,107f,wide-104f,62f);pos(consoleTabRow,0f,0f,wide-104f,62f)
+                val weights=floatArrayOf(1.25f,.9f,.95f,1.6f,1.3f,1.2f);var x=0f
+                tabs.forEachIndexed { i,v -> val tw=(wide-104f)*weights[i]/weights.sum();pos(v,x,0f,tw,62f);v.setPadding((8*s).roundToInt(),0,(8*s).roundToInt(),0);text(v,20f);x+=tw }
+                val heroW=(wide-146f)*.46f;val gx=76f+heroW
+                pos(headerTitle,54f,183f,heroW,42f);text(headerTitle,30f);headerTitle.maxLines=1
+                pos(headerIcon,54f,239f,heroW,290f);headerArtSize=ArtworkSize.forDisplay((heroW*s).roundToInt(),(290*s).roundToInt())
+                pos(grid,gx,235f,wide-gx-50f,401f);coverHeight=(200*s).roundToInt()
+                pos(emptyState,gx,235f,wide-gx-50f,401f)
+                pos(launchButton,54f,543f,heroW,73f);text(launchButton,24f)
+            }
+            ConsoleScene.XBOX_SERIES -> {
+                pos(consoleBrand,wide-265,40f,185f,28f);text(consoleBrand,21f)
+                pos(navigation,390f,28f,wide-730f,58f);pos(consoleTabRow,0f,0f,wide-730f,58f)
+                val icons=listOf("⌂","♥","GP","▶","＋","▦");val tw=(wide-730f)/6f
+                tabs.forEachIndexed { i,v ->pos(v,i*tw,0f,tw-7f,58f);v.text=icons[i];text(v,26f) }
+                pos(headerIcon,wide-400f,140f,320f,232f);headerIcon.visibility=INVISIBLE
+                pos(headerTitle,54f,211f,wide*.60f,86f);text(headerTitle,38f)
+                pos(launchButton,54f,306f,230f,49f);text(launchButton,22f)
+                pos(sectionTitle,54f,367f,wide-108,35f);text(sectionTitle,24f)
+                pos(grid,48f,412f,wide-96f,184f);cardWidth=(181*s).roundToInt();coverHeight=(180*s).roundToInt()
+                pos(emptyState,54f,412f,wide-108f,184f)
+                headerArtSize=ArtworkSize(256,144)
+                pos(shortcuts,54f,608f,wide-108f,60f)
+                val qw=(wide-108f)/4f
+                quickActions.forEachIndexed { i,v -> pos(v,i*qw,0f,qw-12f,59f);text(v,18f) }
+                pos(metadataNote,335f,315f,wide-400f,28f);text(metadataNote,14f)
+            }
+            ConsoleScene.XBOX_ORIGINAL -> {
+                pos(consoleBrand,90f,590f,350f,68f);text(consoleBrand,68f);consoleBrand.letterSpacing=.16f
+                val left=wide*.51f;val content=wide-left-85f
+                pos(navigation,left,150f,content,414f);pos(consoleTabRow,0f,0f,content,414f)
+                tabs.forEachIndexed { i,v ->
+                    pos(v,0f,i*64f,content,53f);text(v,26f);v.gravity=Gravity.CENTER_VERTICAL or Gravity.START
+                    v.setPadding((50*s).roundToInt(),0,(18*s).roundToInt(),0);v.letterSpacing=.08f
+                    v.nextFocusUpId=if(i==0) profilePanel.id else tabs[i-1].id
+                    v.nextFocusDownId=if(i==5) tabs[0].id else tabs[i+1].id
+                }
+                pos(headerTitle,70f,550f,left-105f,38f);text(headerTitle,24f);headerTitle.maxLines=1;headerTitle.gravity=Gravity.CENTER
+                pos(headerIcon,wide*.26f-73f,248f,146f,198f);headerArtSize=ArtworkSize.forDisplay((146*s).roundToInt(),(198*s).roundToInt())
+                headerIcon.visibility=if(originalBrowsing) VISIBLE else GONE
+                pos(consoleBack,left,106f,175f,43f);text(consoleBack,22f)
+                pos(sectionTitle,left+190f,109f,content-190f,40f);text(sectionTitle,24f)
+                pos(grid,left,174f,content,416f);coverHeight=(67*s).roundToInt()
+                grid.visibility=if(originalBrowsing) VISIBLE else GONE
+                pos(emptyState,left,174f,content,416f)
+                if(!originalBrowsing) emptyState.visibility=GONE
+                pos(metadataNote,60f,650f,wide-120f,22f);text(metadataNote,13f)
+            }
+            else -> Unit
+        }
+        if(designScene==ConsoleScene.XBOX_ONE) {
+            coverArtSize=ArtworkSize.forDisplay(((grid.layoutParams.width/3f)-10*s).roundToInt(),(170*s).roundToInt())
+        } else if(cardHorizontal) coverArtSize=ArtworkSize.forDisplay((170*s).roundToInt(),(170*s).roundToInt())
+        else coverArtSize=ArtworkSize.forDisplay((58*s).roundToInt(),(58*s).roundToInt())
+        selectedCard?.let(::loadHeaderArtwork)
+        emptyState.visibility=if(adapter.itemCount==0 && (!original || originalBrowsing)) VISIBLE else GONE
+        updateConsoleTitle();consoleChrome.invalidate()
+        adapter.notifyItemRangeChanged(0,adapter.itemCount,"skin")
+    }
+
     private inner class CoversAdapter : RecyclerView.Adapter<CoverHolder>() {
         var items = emptyList<CatalogCard>()
         init { setHasStableIds(true) }
@@ -628,9 +898,16 @@ class GameDashboardView(
         override fun onBindViewHolder(holder: CoverHolder, position: Int) {
             val game = items[position]
             val card = holder.card
-            if(card.layoutParams?.height!=coverHeight) card.layoutParams = RecyclerView.LayoutParams(LayoutParams.MATCH_PARENT, coverHeight)
+            val width=if(cardHorizontal) cardWidth else LayoutParams.MATCH_PARENT
+            if(card.layoutParams?.height!=coverHeight || card.layoutParams?.width!=width) card.layoutParams = RecyclerView.LayoutParams(width,coverHeight)
             card.bind(game)
-            card.nextFocusUpId = if (position < COLUMNS) tabs[activeTab.ordinal].id else View.NO_ID
+            card.nextFocusUpId = if(cardHorizontal || position<cardColumns) {
+                if(designScene==ConsoleScene.XBOX_ORIGINAL) consoleBack.id else tabs[activeTab.ordinal].id
+            } else View.NO_ID
+            card.nextFocusDownId=if(cardHorizontal) quickActions.first().id else View.NO_ID
+            card.nextFocusLeftId=if(cardColumns==1 && !cardHorizontal) {
+                if(designScene==ConsoleScene.XBOX_ORIGINAL) consoleBack.id else tabs[activeTab.ordinal].id
+            } else View.NO_ID
             card.setOnFocusChangeListener { _, focused ->
                 card.focused = focused
                 if (focused) items.getOrNull(holder.bindingAdapterPosition)?.let(::updateSelected)
@@ -665,12 +942,25 @@ class GameDashboardView(
         private val fallback = label(29f).apply { gravity = Gravity.CENTER; maxLines = 4; setPadding(12, 12, 12, 12) }
         val image = FixedArtworkView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
         private val badges = GameBadgesView(context)
+        private val rowBadges=GameBadgesView(context)
+        private val caption=label(22f,false).apply { maxLines=1 }
+        private var cardScene=ConsoleScene.NONE
         private val favorite = label(22f).apply {
             text = "★"; gravity = Gravity.CENTER; setTextColor(DashboardTheme.yellow)
             background = DashboardTheme.shape(UiColor.FAVORITE_BACKGROUND, 6f)
         }
         var focused = false
-            set(value) { field = value; invalidate() }
+            set(value) {
+                field=value
+                if(designScene!=ConsoleScene.NONE) {
+                    caption.setTextColor(when(designScene) {
+                        ConsoleScene.XBOX_360 -> if(value) Color.WHITE else 0xff263024.toInt()
+                        ConsoleScene.XBOX_ORIGINAL -> if(value) 0xff142400.toInt() else 0xffc2f364.toInt()
+                        else -> Color.WHITE
+                    })
+                }
+                invalidate()
+            }
         private val outline = Paint(Paint.ANTI_ALIAS_FLAG)
         private var geometryScale=-1f
         init {
@@ -680,7 +970,7 @@ class GameDashboardView(
             cover.addView(fallback, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
             cover.addView(image, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
             cover.addView(badges)
-            addView(cover); addView(favorite)
+            addView(cover);addView(rowBadges);addView(caption); addView(favorite)
         }
         fun bind(game: CatalogCard) {
             bindFavorite(game)
@@ -689,6 +979,13 @@ class GameDashboardView(
             if(isAttachedToWindow) bindArtwork(game)
             val s = scale
             badges.bind(game.gamePass, game.seriesOptimized, s)
+            if(designScene!=ConsoleScene.NONE) { bindConsole(game);return }
+            rowBadges.visibility=GONE;caption.visibility=GONE;background=null
+            if(cardScene!=ConsoleScene.NONE) {
+                geometryScale=-1f
+                cover.background=DashboardTheme.gradient(GradientDrawable.Orientation.TL_BR,arrayOf(UiColor.COVER_TOP,UiColor.COVER_BOTTOM)).apply { cornerRadius=7*scale }
+            }
+            cardScene=ConsoleScene.NONE
             if(geometryScale==s) return
             geometryScale=s
             textSize(fallback,27f)
@@ -700,17 +997,45 @@ class GameDashboardView(
                 .apply { topMargin = (16*s).roundToInt(); marginEnd = (18*s).roundToInt() }
             textSize(favorite, 23f)
         }
+        private fun bindConsole(game: CatalogCard) {
+            val s=scale;val list=designScene==ConsoleScene.XBOX_360 || designScene==ConsoleScene.XBOX_ORIGINAL
+            cardScene=designScene;geometryScale=-1f
+            background=ConsoleControlPlate(designScene,ConsoleControl.CARD)
+            caption.visibility=VISIBLE;caption.text=game.name;caption.typeface=Typeface.create(if(designScene==ConsoleScene.XBOX_ORIGINAL) "sans-serif-condensed" else "sans-serif",Typeface.NORMAL)
+            caption.letterSpacing=if(designScene==ConsoleScene.XBOX_ORIGINAL) .055f else 0f
+            caption.setTextColor(if(designScene==ConsoleScene.XBOX_360) 0xff263024.toInt() else if(designScene==ConsoleScene.XBOX_ORIGINAL) 0xffc2f364.toInt() else Color.WHITE)
+            textSize(caption,if(list) 22f else 17f)
+            cover.background=rounded(0xff151915.toInt(),if(designScene==ConsoleScene.XBOX_SERIES) 5*s else 0f)
+            if(list) {
+                cover.layoutParams=LayoutParams((52*s).roundToInt(),(52*s).roundToInt()).apply { leftMargin=(8*s).roundToInt();topMargin=(6*s).roundToInt() }
+                caption.layoutParams=LayoutParams(-1,-1).apply { leftMargin=(73*s).roundToInt();rightMargin=(115*s).roundToInt() }
+                caption.gravity=Gravity.CENTER_VERTICAL
+                badges.visibility=GONE
+                rowBadges.bind(game.gamePass,game.seriesOptimized,s*.78f)
+                rowBadges.layoutParams=LayoutParams((106*s).roundToInt(),(45*s).roundToInt(),Gravity.END or Gravity.CENTER_VERTICAL).apply { marginEnd=(4*s).roundToInt() }
+            } else {
+                rowBadges.visibility=GONE
+                cover.layoutParams=LayoutParams(-1,(coverHeight-38*s).roundToInt()).apply { setMargins((7*s).roundToInt(),(6*s).roundToInt(),(7*s).roundToInt(),0) }
+                caption.layoutParams=LayoutParams(-1,(28*s).roundToInt(),Gravity.BOTTOM).apply { leftMargin=(10*s).roundToInt();rightMargin=(10*s).roundToInt() }
+                caption.gravity=Gravity.CENTER_VERTICAL
+                badges.layoutParams=LayoutParams(-1,(42*s).roundToInt(),Gravity.BOTTOM)
+            }
+            favorite.layoutParams=LayoutParams((25*s).roundToInt(),(25*s).roundToInt(),Gravity.TOP or Gravity.END).apply { topMargin=(7*s).roundToInt();marginEnd=(9*s).roundToInt() }
+            textSize(favorite,20f)
+            focused=hasFocus()
+        }
         fun bindFavorite(game: CatalogCard) {
             val starred=game.game?.let { library.isFavorite(it.titleId) } == true
             contentDescription = game.name + if(starred) UiText.text(", favorito") else ""
             favorite.visibility=if(starred) View.VISIBLE else View.GONE
         }
         fun bindArtwork(game: CatalogCard) {
-            posters.load(image,game.posterUrl ?: game.tileUrl,coverArtSize.width,coverArtSize.height)
+            val url=if(designScene==ConsoleScene.NONE) game.posterUrl ?: game.tileUrl else game.tileUrl ?: game.posterUrl
+            posters.load(image,url,coverArtSize.width,coverArtSize.height)
         }
         override fun dispatchDraw(canvas: Canvas) {
             super.dispatchDraw(canvas)
-            if (!focused) return
+            if (!focused || designScene!=ConsoleScene.NONE) return
             val s = scale
             val rect = RectF(5*s, 3*s, width-5*s, height-3*s)
             outline.style = Paint.Style.STROKE

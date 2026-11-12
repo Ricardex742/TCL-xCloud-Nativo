@@ -14,6 +14,8 @@ internal class ConsoleScenePainter {
     private var height=562.5f
     private var glow: Shader?=null
     private var silver: Shader?=null
+    private var orb: Shader?=null
+    private val cross=Path()
 
     fun configure(palette: UiPalette,width: Int,height: Int) {
         scene=palette.theme.scene
@@ -23,6 +25,11 @@ internal class ConsoleScenePainter {
         glow=RadialGradient(0f,0f,330f,intArrayOf(palette.theme.accent and 0x00ffffff or 0x55000000,
             palette.theme.accent and 0x00ffffff or 0x16000000,Color.TRANSPARENT),floatArrayOf(0f,.4f,1f),Shader.TileMode.CLAMP)
         silver=LinearGradient(0f,0f,500f,h,intArrayOf(0x0addede8,0x426e8d70,0x06ffffff),null,Shader.TileMode.CLAMP)
+        orb=RadialGradient(-35f,-40f,188f,intArrayOf(0xffd9ff53.toInt(),0xff76ba0c.toInt(),0xff163e00.toInt()),floatArrayOf(0f,.48f,1f),Shader.TileMode.CLAMP)
+        cross.reset();cross.moveTo(-105f,-107f);cross.cubicTo(-38f,-89f,-28f,-45f,0f,-19f)
+        cross.cubicTo(28f,-45f,38f,-89f,105f,-107f);cross.lineTo(22f,10f)
+        cross.lineTo(111f,108f);cross.cubicTo(45f,88f,25f,56f,0f,30f)
+        cross.cubicTo(-25f,56f,-45f,88f,-111f,108f);cross.lineTo(-22f,10f);cross.close()
         paths.forEach { it.reset() }
         when(scene) {
             ConsoleScene.XBOX_360 -> repeat(4) { i ->
@@ -79,16 +86,26 @@ internal class ConsoleScenePainter {
                 }
             }
             ConsoleScene.XBOX_ORIGINAL -> {
-                val x=740f+wave*40f;val y=height*.57f+other*20f
-                drawGlow(canvas,x,y)
-                canvas.rotate(wave*12f,x,y)
-                paint.style=Paint.Style.STROKE
-                repeat(5) { i ->
-                    paint.strokeWidth=if(i==0) 5f else 1.6f
-                    paint.color=if(i==0) 0x547aca20 else 0x2879ad39
-                    val r=85f+i*43f;tile.set(x-r*1.5f,y-r,x+r*1.5f,y+r)
-                    canvas.drawOval(tile,paint)
+                // A native vector reactor and wireframe sphere, with no software blur or video asset.
+                val x=260f;val y=height*.48f
+                paint.color=0x203e6d12;paint.strokeWidth=.7f
+                repeat(8) { i ->
+                    val py=height*(i+1)/9f;canvas.drawLine(0f,py,1000f,py-60f,paint)
+                    canvas.drawLine(i*145f,0f,i*145f+60f,height,paint)
                 }
+                drawGlow(canvas,x,y)
+                val core=canvas.save();canvas.translate(x,y);val breathe=(1f+wave*.018f)*minOf(1f,height/562.5f);canvas.scale(breathe,breathe)
+                canvas.rotate(other*4f)
+                paint.shader=orb;canvas.drawCircle(0f,0f,150f,paint);paint.shader=null
+                paint.style=Paint.Style.STROKE;paint.strokeWidth=1.5f;paint.color=0x8dcbff72.toInt()
+                repeat(3) { i ->
+                    val r=40f+i*40f;tile.set(-150f,-r,150f,r);canvas.drawOval(tile,paint)
+                    tile.set(-r,-150f,r,150f);canvas.drawOval(tile,paint)
+                }
+                paint.strokeWidth=4f;paint.color=0x8869a81d.toInt();canvas.drawCircle(0f,0f,163f+wave*3f,paint)
+                paint.style=Paint.Style.FILL;paint.color=0xb82d6300.toInt();canvas.drawPath(cross,paint)
+                paint.style=Paint.Style.STROKE;paint.strokeWidth=1.5f;paint.color=0xaae1ff86.toInt();canvas.drawPath(cross,paint)
+                paint.style=Paint.Style.FILL;canvas.restoreToCount(core)
             }
             ConsoleScene.NONE -> Unit
         }
@@ -97,7 +114,7 @@ internal class ConsoleScenePainter {
     }
     private fun drawGlow(canvas: Canvas,x: Float,y: Float) {
         val saved=canvas.save();canvas.translate(x,y)
-        paint.shader=glow;canvas.drawCircle(0f,0f,330f,paint);paint.shader=null
+        paint.alpha=255;paint.shader=glow;canvas.drawCircle(0f,0f,330f,paint);paint.shader=null
         canvas.restoreToCount(saved)
     }
 }

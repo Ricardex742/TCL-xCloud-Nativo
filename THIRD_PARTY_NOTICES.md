@@ -49,3 +49,13 @@ assets use public copies of the black artwork matching the supplied references:
 
 These marks retain their owners' rights and are not covered by the project's
 MIT license. They identify catalog capabilities and do not imply endorsement.
+
+
+## Dashboard demonstration artwork
+
+`app/src/test/resources/showcase/hero-0.jpg` is the public promotional SuperHeroArt
+for **007 First Light**, supplied by the Microsoft Store product
+[9NPF9F0DCVKS](https://www.xbox.com/games/store/007-first-light/9NPF9F0DCVKS).
+It is used only in automated interface demonstrations and generated screenshots;
+it is not bundled in the application. Rights remain with the game's respective
+owners and the artwork is not covered by the project's MIT license.

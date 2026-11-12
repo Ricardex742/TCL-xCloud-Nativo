@@ -64,7 +64,7 @@ private class ConsolePanelChrome(private val scene: ConsoleScene): Drawable() {
         }
     }
     override fun draw(c: Canvas) {
-        r.set(bounds);r.inset(2f,2f);p.style=Paint.Style.FILL;p.shader=fill
+        r.set(bounds);r.inset(2f,2f);p.style=Paint.Style.FILL;p.alpha=255;p.shader=fill // Decorative strokes must not tint the next background redraw.
         val radius=when(scene) { ConsoleScene.XBOX_360 -> 0f;ConsoleScene.XBOX_ONE,ConsoleScene.XBOX_360_METRO -> 0f;ConsoleScene.XBOX_ORIGINAL -> 28f;else -> 14f }
         if(scene==ConsoleScene.XBOX_360) c.drawPath(path,p) else c.drawRoundRect(r,radius,radius,p)
         p.shader=null

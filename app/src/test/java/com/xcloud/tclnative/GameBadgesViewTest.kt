@@ -3,7 +3,7 @@ package com.xcloud.tclnative
 import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.drawable.BitmapDrawable
+import com.xcloud.tclnative.ui.dashboard.CatalogMarkDrawable
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -29,10 +29,9 @@ class GameBadgesViewTest {
             view.bind(true,true,1f)
             assertEquals(View.VISIBLE,view.visibility)
             assertEquals(View.VISIBLE,pass.visibility);assertEquals(View.VISIBLE,series.visibility)
-            assertTrue(pass.drawable is BitmapDrawable);assertTrue(series.drawable is BitmapDrawable)
-            val passBitmap=(pass.drawable as BitmapDrawable).bitmap
-            val seriesBitmap=(series.drawable as BitmapDrawable).bitmap
-            assertTrue(passBitmap.width<=512 && seriesBitmap.width<=512)
+            assertTrue(pass.drawable is CatalogMarkDrawable);assertTrue(series.drawable is CatalogMarkDrawable)
+            val passVector=pass.drawable
+            val seriesVector=series.drawable
             assertEquals("Disponível no Game Pass",pass.contentDescription)
             assertEquals("Otimizado para Xbox Series X|S",series.contentDescription)
             val bothOffset=(series.layoutParams as FrameLayout.LayoutParams).leftMargin
@@ -44,8 +43,8 @@ class GameBadgesViewTest {
             view.bind(false,false,1f);assertEquals(View.GONE,view.visibility)
             view.bind(true,true,1f)
             assertEquals(bothOffset,(series.layoutParams as FrameLayout.LayoutParams).leftMargin)
-            assertSame(passBitmap,(pass.drawable as BitmapDrawable).bitmap)
-            assertSame(seriesBitmap,(series.drawable as BitmapDrawable).bitmap)
+            assertSame(passVector,pass.drawable)
+            assertSame(seriesVector,series.drawable)
         } finally { c.pause().stop().destroy() }
     }
     @Test fun bothBadgesFitThePosterStripWithoutCroppingAndKeepTheirAspectRatio() {
@@ -61,7 +60,7 @@ class GameBadgesViewTest {
                 assertTrue(pass.left>=0 && pass.top>=0 && pass.right<=series.left)
                 assertTrue(series.top>=0 && series.right<=width && series.bottom<=height)
                 assertTrue("Compact poster badges",series.right<=130*scale && pass.height<=30*scale && series.height<=30*scale)
-                assertEquals(ImageView.ScaleType.MATRIX,pass.scaleType)
+                assertEquals(ImageView.ScaleType.FIT_CENTER,pass.scaleType)
                 assertEquals(ImageView.ScaleType.FIT_CENTER,series.scaleType)
             }
             view.bind(true,true,1f)

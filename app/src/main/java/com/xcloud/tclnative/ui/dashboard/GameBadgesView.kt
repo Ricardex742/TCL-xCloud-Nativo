@@ -4,7 +4,6 @@ import com.xcloud.tclnative.i18n.UiText
 
 import android.content.Context
 import android.graphics.Color
-import android.graphics.Matrix
 import android.content.res.ColorStateList
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
@@ -20,26 +19,24 @@ import kotlin.math.roundToInt
 internal class GameBadgesView(context: Context) : FrameLayout(context) {
     private var geometryScale=-1f
     private var renderedTheme: UiTheme?=null
-    private val crop=Matrix()
     private fun badge(resource: Int, description: String)=ImageView(context).apply {
-        setImageResource(resource)
+        setImageDrawable(CatalogMarkDrawable(resources,resource))
         scaleType=ImageView.ScaleType.FIT_CENTER
         contentDescription=description
         isFocusable=false
         isClickable=false
     }
-    private val pass=badge(R.drawable.badge_game_pass,UiText.text("Disponível no Game Pass"))
-    private val series=badge(R.drawable.badge_series_xs,UiText.text("Otimizado para Xbox Series X|S"))
+    private val pass=badge(R.drawable.badge_game_pass_vector,UiText.text("Disponível no Game Pass"))
+    private val series=badge(R.drawable.badge_series_xs_vector,UiText.text("Otimizado para Xbox Series X|S"))
     init {
         isFocusable=false
         addView(pass);addView(series)
-        pass.scaleType=ImageView.ScaleType.MATRIX;pass.cropToPadding=true
     }
     fun bind(gamePass: Boolean, optimized: Boolean, scale: Float) {
         visibility=if(gamePass || optimized) View.VISIBLE else View.GONE
         pass.visibility=if(gamePass) View.VISIBLE else View.GONE
         series.visibility=if(optimized) View.VISIBLE else View.GONE
-        val offset=((if(gamePass) 84 else 8)*scale).roundToInt()
+        val offset=((if(gamePass) 90 else 8)*scale).roundToInt()
         (series.layoutParams as? LayoutParams)?.let { params ->
             if(geometryScale==scale && params.leftMargin!=offset) {
                 params.leftMargin=offset;series.layoutParams=params
@@ -70,20 +67,9 @@ internal class GameBadgesView(context: Context) : FrameLayout(context) {
         }
         pass.setPadding((3*scale).roundToInt(),(5*scale).roundToInt(),(3*scale).roundToInt(),(5*scale).roundToInt())
         series.setPadding((3*scale).roundToInt(),(3*scale).roundToInt(),(3*scale).roundToInt(),(3*scale).roundToInt())
-        pass.layoutParams=LayoutParams((70*scale).roundToInt(),(24*scale).roundToInt(),Gravity.BOTTOM or Gravity.START)
+        pass.layoutParams=LayoutParams((76*scale).roundToInt(),(24*scale).roundToInt(),Gravity.BOTTOM or Gravity.START)
             .apply { leftMargin=(8*scale).roundToInt();bottomMargin=(6*scale).roundToInt() }
-        series.layoutParams=LayoutParams((42*scale).roundToInt(),(24*scale).roundToInt(),Gravity.BOTTOM or Gravity.START)
+        series.layoutParams=LayoutParams((40*scale).roundToInt(),(24*scale).roundToInt(),Gravity.BOTTOM or Gravity.START)
             .apply { leftMargin=offset;bottomMargin=(6*scale).roundToInt() }
-    }
-    override fun onLayout(changed: Boolean,left: Int,top: Int,right: Int,bottom: Int) {
-        super.onLayout(changed,left,top,right,bottom)
-        // Show the original GAME PASS wordmark, without squeezing the stacked Xbox orb into a tiny badge.
-        val width=pass.width-pass.paddingLeft-pass.paddingRight
-        val height=pass.height-pass.paddingTop-pass.paddingBottom
-        if(width<=0 || height<=0) return
-        val factor=minOf(width/330f,height/48f)
-        crop.setScale(factor,factor)
-        crop.postTranslate((width-330*factor)/2f,(height-48*factor)/2f-184*factor)
-        pass.imageMatrix=crop
     }
 }

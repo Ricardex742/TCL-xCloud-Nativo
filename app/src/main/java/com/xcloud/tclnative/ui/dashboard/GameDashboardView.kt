@@ -112,6 +112,7 @@ class GameDashboardView(
     private var lastGeometry = 0L
     private var closed = false
     private var focusRequest = 0
+    private var carouselTarget: String? = null
     private val tabs = mutableListOf<TextView>()
     private val tabPlates = mutableListOf<FocusPlate>()
     private val headerIcon = FixedArtworkView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP; cropToPadding=true }
@@ -162,6 +163,14 @@ class GameDashboardView(
     private val lb = label(24f).apply { text = "LB"; gravity = Gravity.CENTER }
     private val rb = label(24f).apply { text = "RB"; gravity = Gravity.CENTER }
     private val grid = object : RecyclerView(context) {
+        override fun focusSearch(focused: View, direction: Int): View? {
+            // Spatial search can prefer the header over an off-screen, differently sized tile.
+            if(cardHorizontal && hasFocus() && direction in listOf(FOCUS_LEFT,FOCUS_RIGHT)) {
+                moveCarousel(if(direction==FOCUS_RIGHT) 1 else -1)
+                return findFocus() ?: focused
+            }
+            return super.focusSearch(focused,direction)
+        }
         override fun dispatchDraw(canvas: Canvas) {
             val saved = canvas.save()
             canvas.clipRect(-12*scale, -12*scale, width+12*scale, height.toFloat())
@@ -295,7 +304,7 @@ class GameDashboardView(
         consoleBackdrop.setArtwork(null)
         shortcutSkins.forEach { it.clear() }
         artworkPaused=true
-        catalogRevision++; pendingCatalog=null; pendingFocus=null; focusRequest++
+        catalogRevision++; pendingCatalog=null; pendingFocus=null; carouselTarget=null; focusRequest++
         metadataJob?.cancel(); metadataJob=null; pendingMetadata=null
         headerArtJob?.cancel(); posters.pause()
     }
@@ -476,7 +485,7 @@ class GameDashboardView(
     val catalogInformation: String get()=metadataNote.text.toString()
     fun selectTab(tab: LibraryTab) {
         if (activeTab != tab) {
-            pendingFocus=null; focusRequest++
+            pendingFocus=null; carouselTarget=null; focusRequest++
             activeTab = tab; selectedCard = null; refresh(); grid.scrollToPosition(0)
         }
         updateTabs()
@@ -513,20 +522,61 @@ class GameDashboardView(
             originalBrowsing=true;navigation.visibility=GONE;grid.visibility=VISIBLE;consoleBack.visibility=VISIBLE
             lastGeometry=0L;requestLayout();updateConsoleTitle()
         }
-        if(isCatalogUpdating) { pendingFocus=selectedCard?.key to position; return }
+        if(isCatalogUpdating) {
+            val target=adapter.items.getOrNull(position)?.key
+            pendingFocus=target to position
+            if(cardHorizontal) carouselTarget=target
+            return
+        }
         focusCoverNow(position)
     }
     private fun focusCoverNow(position: Int) {
-        val request = ++focusRequest
-        if (adapter.itemCount == 0) { if(designScene==ConsoleScene.XBOX_ORIGINAL && originalBrowsing) consoleBack.requestFocus() else tabs[activeTab.ordinal].requestFocus(); return }
-        grid.doOnNextLayout {
-            if (!closed && request == focusRequest) {
-                grid.findViewHolderForAdapterPosition(position)?.itemView?.requestFocus()
-                    ?: if(designScene==ConsoleScene.XBOX_ORIGINAL && originalBrowsing) consoleBack.requestFocus() else tabs[activeTab.ordinal].requestFocus()
+        val request=++focusRequest
+        if(adapter.itemCount==0) { carouselTarget=null; if(designScene==ConsoleScene.XBOX_ORIGINAL && originalBrowsing) consoleBack.requestFocus() else tabs[activeTab.ordinal].requestFocus();return }
+        val target=adapter.items[position.coerceIn(0,adapter.itemCount-1)].key
+        if(cardHorizontal) carouselTarget=target
+        fun focus(attempt: Int) {
+            if(closed || request!=focusRequest) return
+            val index=positions[target] ?: run { carouselTarget=null;return }
+            val card=grid.findViewHolderForAdapterPosition(index)?.itemView
+            if(card!=null) {
+                card.requestFocus()
+                // Selection changes the tile's width; reveal it after that layout, too.
+                grid.doOnNextLayout {
+                    if(!closed && request==focusRequest && card.hasFocus())
+                        card.requestRectangleOnScreen(Rect(0,0,card.width,card.height),true)
+                }
+                grid.requestLayout()
+                carouselTarget=null
+            } else if(attempt<3) {
+                grid.doOnNextLayout { focus(attempt+1) }
+                grid.scrollToPosition(index);grid.requestLayout()
+            } else carouselTarget=null
+        }
+        focus(0)
+    }
+    private fun moveCarousel(step: Int) {
+        val position=positions[carouselTarget ?: selectedCard?.key] ?: return
+        val next=position+step
+        if(next<0 && designScene==ConsoleScene.XBOX_360_NXE) {
+            ++focusRequest;carouselTarget=null;pendingFocus=null;tabs[activeTab.ordinal].requestFocus()
+        } else if(next in adapter.items.indices) focusCoverAt(next)
+        // Keep focus on the final game instead of falling into the header or shortcuts.
+    }
+    private fun handleCarouselKey(event: KeyEvent): Boolean {
+        if(!cardHorizontal || (!grid.hasFocus() && carouselTarget==null)) return false
+        when(event.keyCode) {
+            KeyEvent.KEYCODE_DPAD_LEFT,KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                if(event.action==KeyEvent.ACTION_DOWN) moveCarousel(if(event.keyCode==KeyEvent.KEYCODE_DPAD_RIGHT) 1 else -1)
+                return true
+            }
+            KeyEvent.KEYCODE_DPAD_UP,KeyEvent.KEYCODE_DPAD_DOWN -> if(event.action==KeyEvent.ACTION_DOWN) {
+                ++focusRequest;carouselTarget=null;pendingFocus=null
             }
         }
-        grid.scrollToPosition(position)
+        return false
     }
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean = handleCarouselKey(event) || super.dispatchKeyEvent(event)
     fun restoreFocus() {
         refresh()
         if(designScene==ConsoleScene.XBOX_ORIGINAL && !originalBrowsing) { tabs[activeTab.ordinal].requestFocus();return }
@@ -625,6 +675,7 @@ class GameDashboardView(
         lastGeometry=0L;requestLayout();updateConsoleTitle();tabs[activeTab.ordinal].requestFocus()
     }
     fun back() {
+        ++focusRequest;carouselTarget=null;pendingFocus=null
         if(designScene==ConsoleScene.XBOX_ORIGINAL && originalBrowsing) { showOriginalCategories();return }
         when {
             searchQuery.isNotBlank() -> setSearch("")
@@ -634,6 +685,7 @@ class GameDashboardView(
     }
     /** Handle gamepad keys only while the catalog is visible, before the native gameplay route. */
     fun handleKey(event: KeyEvent): Boolean {
+        if(handleCarouselKey(event)) return true
         val key = event.keyCode
         val handled = key in setOf(KeyEvent.KEYCODE_BUTTON_L1, KeyEvent.KEYCODE_BUTTON_R1,
             KeyEvent.KEYCODE_BUTTON_Y, KeyEvent.KEYCODE_BUTTON_X, KeyEvent.KEYCODE_BUTTON_START,
@@ -752,7 +804,7 @@ class GameDashboardView(
         val next=DashboardTheme.palette.theme.scene
         val focused=grid.hasFocus();val position=positions[selectedCard?.key] ?: 0
         val changed=designScene!=next
-        if(changed) originalBrowsing=next==ConsoleScene.XBOX_ORIGINAL && focused
+        if(changed) { ++focusRequest;carouselTarget=null;originalBrowsing=next==ConsoleScene.XBOX_ORIGINAL && focused }
         designScene=next
         val console=next!=ConsoleScene.NONE
         listOf(consoleBrand,sectionTitle,launchButton,consoleTabRow).forEach { it.visibility=if(console) VISIBLE else GONE }
@@ -1078,10 +1130,7 @@ class GameDashboardView(
         private val reflectionPaint=Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
         private val reflectionSrc=Rect()
         private val reflectionDst=RectF()
-        private val favorite = label(22f).apply {
-            text = "★"; gravity = Gravity.CENTER; setTextColor(DashboardTheme.yellow)
-            background = DashboardTheme.shape(UiColor.FAVORITE_BACKGROUND, 6f)
-        }
+        private val favorite = FavoriteBadgeView(context)
         var focused = false
             set(value) {
                 field=value
@@ -1110,6 +1159,12 @@ class GameDashboardView(
             if(designScene!=ConsoleScene.XBOX_360_NXE && favorite.parent!==this) {
                 (favorite.parent as? ViewGroup)?.removeView(favorite);addView(favorite)
             }
+            favorite.refresh()
+            // Every binding starts from a plain caption, including recycled holders from another scene.
+            val overlay=designScene==ConsoleScene.XBOX_SERIES || designScene==ConsoleScene.XBOX_360_METRO
+            val captionParent=if(overlay) cover else this
+            if(caption.parent!==captionParent) { (caption.parent as? ViewGroup)?.removeView(caption);captionParent.addView(caption) }
+            caption.background=null;caption.setPadding(0,0,0,0);caption.maxLines=1;caption.rotationY=0f
             bindFavorite(game)
             val name=game.name.uppercase(Locale.getDefault())
             if(fallback.text.toString()!=name) fallback.text=name
@@ -1133,7 +1188,6 @@ class GameDashboardView(
             }
             favorite.layoutParams = LayoutParams((31*s).roundToInt(), (31*s).roundToInt(), Gravity.TOP or Gravity.END)
                 .apply { topMargin = (16*s).roundToInt(); marginEnd = (18*s).roundToInt() }
-            textSize(favorite, 23f)
         }
         private fun bindConsole(game: CatalogCard) {
             val s=scale;val list=designScene==ConsoleScene.XBOX_360 || designScene==ConsoleScene.XBOX_ORIGINAL
@@ -1151,13 +1205,13 @@ class GameDashboardView(
                 cover.setBackgroundColor(0xff168d07.toInt())
                 cover.layoutParams=LayoutParams(-1,-1).apply { setMargins((5*s).roundToInt(),(5*s).roundToInt(),(5*s).roundToInt(),(5*s).roundToInt()) }
                 caption.visibility=VISIBLE;caption.gravity=Gravity.CENTER_VERTICAL
-                caption.background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,intArrayOf(0x70000000,0xdb000000.toInt()))
+                caption.background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,intArrayOf(Color.TRANSPARENT,0xe6000000.toInt()))
                 caption.setPadding((10*s).roundToInt(),0,(9*s).roundToInt(),0);textSize(caption,20f)
-                caption.layoutParams=LayoutParams(-1,(40*s).roundToInt(),Gravity.BOTTOM).apply { setMargins((5*s).roundToInt(),0,(5*s).roundToInt(),(5*s).roundToInt()) }
+                caption.layoutParams=LayoutParams(-1,(40*s).roundToInt(),Gravity.BOTTOM)
                 badges.layoutParams=LayoutParams(-1,(34*s).roundToInt(),Gravity.TOP)
                 rowBadges.visibility=GONE
                 favorite.layoutParams=LayoutParams((25*s).roundToInt(),(25*s).roundToInt(),Gravity.TOP or Gravity.END).apply { topMargin=(10*s).roundToInt();marginEnd=(10*s).roundToInt() }
-                textSize(favorite,20f);focused=hasFocus();return
+                focused=hasFocus();return
             }
             if(list) {
                 cover.layoutParams=LayoutParams((52*s).roundToInt(),(52*s).roundToInt()).apply { leftMargin=(8*s).roundToInt();topMargin=(6*s).roundToInt() }
@@ -1178,7 +1232,6 @@ class GameDashboardView(
                 }
             }
             favorite.layoutParams=LayoutParams((25*s).roundToInt(),(25*s).roundToInt(),Gravity.TOP or Gravity.END).apply { topMargin=(7*s).roundToInt();marginEnd=(9*s).roundToInt() }
-            textSize(favorite,20f)
             if(designScene==ConsoleScene.XBOX_SERIES) layoutSeriesCard()
             focused=hasFocus()
         }
@@ -1205,7 +1258,6 @@ class GameDashboardView(
             badges.layoutParams=LayoutParams(-1,(38*s).roundToInt(),Gravity.BOTTOM)
             if(favorite.parent!==cover) { (favorite.parent as? ViewGroup)?.removeView(favorite);cover.addView(favorite) }
             favorite.layoutParams=LayoutParams((25*s).roundToInt(),(25*s).roundToInt(),Gravity.TOP or Gravity.END).apply { topMargin=(6*s).roundToInt();marginEnd=(6*s).roundToInt() }
-            textSize(favorite,20f)
         }
         private fun layoutSeriesCard() {
             val s=scale;val selected=boundCard?.key==selectedCard?.key
@@ -1214,10 +1266,10 @@ class GameDashboardView(
             cover.layoutParams=LayoutParams(-1,side,Gravity.BOTTOM).apply { setMargins(margin,0,margin,(5*s).roundToInt()) }
             caption.visibility=if(selected) VISIBLE else GONE
             caption.gravity=Gravity.BOTTOM or Gravity.START;textSize(caption,20f)
-            caption.background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,intArrayOf(0x35000000,0xed080b0d.toInt()))
+            caption.background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,intArrayOf(Color.TRANSPARENT,0xed080b0d.toInt()))
             caption.setPadding((8*s).roundToInt(),(4*s).roundToInt(),(8*s).roundToInt(),(8*s).roundToInt())
-            caption.layoutParams=LayoutParams(-1,(42*s).roundToInt(),Gravity.BOTTOM).apply { leftMargin=(7*s).roundToInt();rightMargin=(7*s).roundToInt();bottomMargin=(6*s).roundToInt() }
-            badges.bind(boundCard?.gamePass==true,boundCard?.seriesOptimized==true,s*.72f)
+            caption.layoutParams=LayoutParams(-1,(46*s).roundToInt(),Gravity.BOTTOM)
+            badges.bind(boundCard?.gamePass==true,boundCard?.seriesOptimized==true,s*.85f)
             badges.layoutParams=LayoutParams(-1,(34*s).roundToInt(),Gravity.TOP)
             favorite.layoutParams=LayoutParams((25*s).roundToInt(),(25*s).roundToInt(),Gravity.TOP or Gravity.END).apply { topMargin=(coverHeight-side-1*s).roundToInt();marginEnd=(10*s).roundToInt() }
         }

@@ -27,7 +27,7 @@ internal class ConsoleBrandView(context: Context): FrameLayout(context) {
             }
             ConsoleScene.XBOX_ONE -> { mark.setImageResource(R.drawable.console_logo_one);mark.imageTintList=ColorStateList.valueOf(Color.WHITE) }
             ConsoleScene.XBOX_SERIES -> {
-                mark.setImageResource(R.drawable.console_logo_xbox_wordmark);word.setImageResource(R.drawable.badge_series_xs);word.visibility=View.VISIBLE
+                mark.setImageResource(R.drawable.console_logo_xbox_wordmark);word.setImageDrawable(CatalogMarkDrawable(resources,R.drawable.badge_series_xs_vector));word.visibility=View.VISIBLE
                 mark.imageTintList=ColorStateList.valueOf(Color.WHITE);word.imageTintList=ColorStateList.valueOf(Color.WHITE)
             }
             ConsoleScene.XBOX_ORIGINAL -> mark.setImageResource(R.drawable.console_logo_original)

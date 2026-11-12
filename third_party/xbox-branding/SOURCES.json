@@ -33,5 +33,19 @@
     "sha256": "e055cf8729421c8ead0af26734253bc435c5d23f71209304245c0cea43816c09",
     "owner": "Microsoft Corporation",
     "rendering": "Original SVG rendered with librsvg/Cairo; proportions preserved."
+  },
+  {
+    "asset": "badge_game_pass_vector",
+    "source": "https://cms-assets.xboxservices.com/assets/36/e9/36e956dc-8d8a-41d2-95be-5d347e87972b.svg?n=XGP-Logo_Image-0_350x_01.svg",
+    "sha256": "6185084bafd36392395efd8fee8903f9bf14506be6c49cd3679d513af7b5c7cd",
+    "owner": "Microsoft Corporation",
+    "rendering": "GAME PASS outlines extracted from the horizontal official lockup; native Android vector, no bitmap crop."
+  },
+  {
+    "asset": "badge_series_xs_vector",
+    "source": "https://cms-assets.xboxservices.com/assets/fc/80/fc801b4c-fd95-4a10-8f03-da193e5792df.svg?n=Xbox-Series-X_Icons_768_Optimized_96x42_01.svg",
+    "sha256": "7857f4a8d503ad97e0d1fb97a28b906c54d38be1d425cae2397ebef0130176bc",
+    "owner": "Microsoft Corporation",
+    "rendering": "Official SERIES X|S outlines converted to native Android vector; proportions preserved."
   }
 ]

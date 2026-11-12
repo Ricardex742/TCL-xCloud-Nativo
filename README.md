@@ -54,7 +54,7 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
   - **Xbox One:** blocos retangulares, destaque grande para o jogo selecionado, catálogo em mosaico e contorno branco de seleção.
   - **Xbox Series X|S:** arte panorâmica do jogo quando disponível, navegação por ícones vetoriais, relógio, jogo selecionado ampliado na faixa horizontal e atalhos ilustrados para a biblioteca.
   - **Xbox Original:** núcleo verde luminoso, categorias em menus e biblioteca em listas. A abre a categoria; B retorna ao menu.
-- Logos das gerações Xbox e selos Game Pass/Series com acabamento correspondente ao tema, mantendo a identificação informada pelo catálogo.
+- Logos das gerações Xbox, selos Game Pass/Series vetoriais e marcadores de favoritos com acabamento correspondente ao tema, mantendo a identificação informada pelo catálogo.
 - Pesquisa e configurações com painéis, fontes, campos e foco próprios para cada dashboard; One, Series e Metro organizam as categorias de configuração em blocos.
 - **Fundo dinâmico** opcional nesses seis temas: Automático, Ativado ou Desativado. Automático respeita economia de energia, animações do sistema, pouca memória e interfaces acima de 1440p. Ativado mantém um movimento leve e reduz a frequência em aparelhos modestos ou em economia de energia. O movimento pausa durante partidas e enquanto o catálogo não está visível. No Series, a própria arte panorâmica do jogo se move quando disponível.
 - Seleção em **Configurações › Aparência e temas › Tema do aplicativo**, por controle ou toque.

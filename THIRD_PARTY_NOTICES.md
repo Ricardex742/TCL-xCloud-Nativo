@@ -41,8 +41,10 @@ imply endorsement by their owners.
 
 ## Catalog badge artwork
 
-The Game Pass and Xbox Series X|S marks belong to Microsoft. The local badge
-assets use public copies of the black artwork matching the supplied references:
+The Game Pass and Xbox Series X|S marks belong to Microsoft. The catalog uses native vector outlines from official Microsoft assets. Source
+SVGs, URLs, hashes and conversion details are retained in
+[third_party/xbox-branding/SOURCES.json](third_party/xbox-branding/SOURCES.json).
+Earlier bitmap references are retained as source artwork:
 
 - [Xbox Game Pass mark](https://commons.wikimedia.org/wiki/File:Xbox_Game_Pass_new_logo_-_black_color_version.svg)
 - [Xbox Series X|S mark](https://commons.wikimedia.org/wiki/File:Xbox_Series_X_S_black.svg)
@@ -71,4 +73,4 @@ The original SVG artwork, source URLs and hashes are retained in
 [third_party/xbox-branding/SOURCES.json](third_party/xbox-branding/SOURCES.json).
 The APK uses proportion-preserving raster renderings of those SVGs, with
 monochrome display variants where needed for contrast. Game Pass and Series
-catalog symbols retain their existing source images.
+catalog symbols use scalable Android vector outlines instead of bitmap crops.

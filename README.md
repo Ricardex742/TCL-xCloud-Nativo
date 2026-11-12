@@ -10,7 +10,7 @@
 
 ## Telas do aplicativo
 
-A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Code é ilustrativo.
+A galeria reúne capturas reais dos menus, das filas e de partidas, além de telas de demonstração. O QR Code é ilustrativo.
 
 <table>
   <tr>
@@ -75,16 +75,16 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
     <td width="50%"><img src="docs/screenshots/theme-platinum-silver.jpg" alt="Tema Prata Platina, com fundo cinza escuro e destaques prateados." /><br /><strong>Prata Platina</strong></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/theme-xbox-360.png" alt="Dashboard Xbox 360 Blades, com lâminas metálicas coloridas e painel claro de jogos." /><br /><strong>Xbox 360</strong></td>
-    <td width="50%"><img src="docs/screenshots/theme-xbox-one.png" alt="Dashboard Xbox One, com destaque grande e jogos em blocos retangulares." /><br /><strong>Xbox One</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-360.png" alt="Captura real do menu Xbox 360 Blades, com lâminas laterais, perfil e lista de jogos." /><br /><strong>Xbox 360 — Blades (2005)</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-one.png" alt="Captura real do menu Xbox One, com destaque do jogo selecionado e biblioteca em blocos." /><br /><strong>Xbox One</strong></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/theme-xbox-series.png" alt="Dashboard Xbox Series X|S, com arte panorâmica e jogos em faixa horizontal." /><br /><strong>Xbox Series X|S</strong></td>
-    <td width="50%"><img src="docs/screenshots/theme-xbox-original.png" alt="Dashboard Xbox Original, com núcleo luminoso e categorias em menus verdes." /><br /><strong>Xbox Original</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-series.png" alt="Captura real do menu Xbox Series X|S, com arte panorâmica e faixa horizontal de jogos." /><br /><strong>Xbox Series X|S</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-original.png" alt="Captura real do menu Xbox Original, com biblioteca em lista, capa selecionada e núcleo verde." /><br /><strong>Xbox Original</strong></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/theme-xbox-360-nxe.png" alt="Dashboard Xbox 360 NXE, com categorias verticais, cartões em perspectiva e piso reflexivo." /><br /><strong>Xbox 360 — NXE (2008)</strong></td>
-    <td width="50%"><img src="docs/screenshots/theme-xbox-360-metro.png" alt="Dashboard Xbox 360 Metro, com mosaico assimétrico, abas de texto e atalhos verdes." /><br /><strong>Xbox 360 — Metro (2011)</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-360-nxe.png" alt="Captura real do menu Xbox 360 NXE, com categorias verticais e jogos em perspectiva." /><br /><strong>Xbox 360 — NXE (2008)</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-360-metro.png" alt="Captura real do menu Xbox 360 Metro, com mosaico de jogos e atalhos verdes." /><br /><strong>Xbox 360 — Metro (2011)</strong></td>
   </tr>
 </table>
 
@@ -175,16 +175,16 @@ Pesquisa e configurações acompanham a identidade de cada console:
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/queue-xbox-360.png" alt="Fila no tema Xbox 360, com painel claro e etapas arredondadas." /><br /><strong>Fila — Xbox 360</strong></td>
-    <td width="50%"><img src="docs/screenshots/queue-xbox-one.png" alt="Fila no tema Xbox One, com capa quadrada e painéis retangulares." /><br /><strong>Fila — Xbox One</strong></td>
+    <td width="50%"><img src="docs/screenshots/queue-xbox-360.png" alt="Captura real da preparação da partida no tema Xbox 360 — Blades." /><br /><strong>Fila — Xbox 360 — Blades</strong></td>
+    <td width="50%"><img src="docs/screenshots/queue-xbox-one.png" alt="Captura real da preparação da partida no tema Xbox One." /><br /><strong>Fila — Xbox One</strong></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/queue-xbox-series.png" alt="Fila no tema Xbox Series X|S, com arte panorâmica, informação sobreposta e etapas discretas." /><br /><strong>Fila — Xbox Series X|S</strong></td>
-    <td width="50%"><img src="docs/screenshots/queue-xbox-original.png" alt="Fila no tema Xbox Original, com núcleo verde luminoso e painel de informações." /><br /><strong>Fila — Xbox Original</strong></td>
+    <td width="50%"><img src="docs/screenshots/queue-xbox-series.png" alt="Captura real da preparação da partida no tema Xbox Series X|S." /><br /><strong>Fila — Xbox Series X|S</strong></td>
+    <td width="50%"><img src="docs/screenshots/queue-xbox-original.png" alt="Captura real da preparação da partida no tema Xbox Original." /><br /><strong>Fila — Xbox Original</strong></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/queue-xbox-360-nxe.png" alt="Fila no tema Xbox 360 NXE, com horizonte, piso reflexivo e etapas verdes." /><br /><strong>Fila — Xbox 360 NXE</strong></td>
-    <td width="50%"><img src="docs/screenshots/queue-xbox-360-metro.png" alt="Fila no tema Xbox 360 Metro, com blocos retangulares em verde e cinza." /><br /><strong>Fila — Xbox 360 Metro</strong></td>
+    <td width="50%"><img src="docs/screenshots/queue-xbox-360-nxe.png" alt="Captura real da preparação da partida no tema Xbox 360 — NXE." /><br /><strong>Fila — Xbox 360 NXE</strong></td>
+    <td width="50%"><img src="docs/screenshots/queue-xbox-360-metro.png" alt="Captura real da preparação da partida no tema Xbox 360 — Metro." /><br /><strong>Fila — Xbox 360 Metro</strong></td>
   </tr>
 </table>
 

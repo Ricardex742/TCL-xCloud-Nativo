@@ -91,6 +91,7 @@ internal object DashboardTheme {
         view.invalidate()
         if(view is ViewGroup) repeat(view.childCount) { refreshView(view.getChildAt(it),previous,next) }
         if(view is GameDashboardView) view.refreshAppearance()
+        if(view is GameLoadingView) view.refreshAppearance()
     }
     fun customFocus(view: View) {
         if (Build.VERSION.SDK_INT >= 26) view.defaultFocusHighlightEnabled = false

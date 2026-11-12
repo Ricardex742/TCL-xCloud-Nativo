@@ -47,9 +47,9 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
 - **Verde** como tema padrão, preservando a identidade original do app.
 - Seis temas opcionais: **Azul Cibernético**, **Vermelho Vulcânico**, **Dourado Prestígio**, **Laranja Industrial**, **Roxo Galáxia** e **Prata Platina**.
 - Quatro dashboards opcionais, com composição e navegação próprias:
-  - **Xbox 360 — Blades de 2005:** lâminas metálicas curvas, faixas coloridas, painel claro, capa em destaque e lista de jogos.
-  - **Xbox One:** blocos retangulares, destaque grande para o jogo selecionado e catálogo em mosaico.
-  - **Xbox Series X|S:** arte panorâmica do jogo quando disponível, navegação por ícones, faixa horizontal de jogos e atalhos para a biblioteca.
+  - **Xbox 360 — Blades de 2005:** lâminas metálicas curvas, abas com títulos destacados, painel claro, pesquisa acima do perfil e lista de jogos.
+  - **Xbox One:** blocos retangulares, destaque grande para o jogo selecionado, catálogo em mosaico e contorno branco de seleção.
+  - **Xbox Series X|S:** arte panorâmica do jogo quando disponível, navegação por ícones vetoriais, relógio, jogo selecionado ampliado na faixa horizontal e atalhos ilustrados para a biblioteca.
   - **Xbox Original:** núcleo verde luminoso, categorias em menus e biblioteca em listas. A abre a categoria; B retorna ao menu.
 - **Fundo dinâmico** opcional nesses quatro temas: Automático, Ativado ou Desativado. O movimento fica no catálogo e pausa durante partidas. Automático preserva o fundo estático em aparelhos de pouca memória e interfaces acima de 1440p; economia de energia e animações desativadas no sistema também pausam o movimento.
 - Seleção em **Configurações › Aparência e temas › Tema do aplicativo**, por controle ou toque.
@@ -117,7 +117,7 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
 - Opção **H.264 leve — Baseline (720p)**.
 - **H.264 Main experimental**, oferecido quando o decoder de hardware declara suporte ao perfil e à resolução solicitada a 60 FPS. Baseline permanece disponível na negociação; o diagnóstico informa o perfil realmente recebido.
 - **Fluidez da apresentação opcional** em Adaptativo, com fila de um quadro pendente e descarte de quadros substituídos. Pode acrescentar atraso; Menor atraso e Compatibilidade usam apresentação imediata.
-- Fila com arte do jogo, estimativa do serviço, tempo aguardado e cancelamento.
+- Fila com arte do jogo, estimativa do serviço, tempo aguardado e cancelamento. Os quatro dashboards Xbox têm telas de espera próprias, acompanhando o visual do tema escolhido.
 - Recuperação de vídeo por solicitação de quadro-chave, decoder e superfície de exibição.
 - Menu da partida com ajustes e desconexão para retornar ao catálogo.
 
@@ -132,6 +132,17 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
   </tr>
   <tr>
     <td colspan="2" align="center"><img src="docs/screenshots/game-menu.png" width="70%" alt="Menu da partida — Ajustes, estatísticas e desconexão." /><br /><strong>Menu da partida</strong> — Ajustes, estatísticas e desconexão.</td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/queue-xbox-360.png" alt="Fila no tema Xbox 360, com painel claro e etapas arredondadas." /><br /><strong>Fila — Xbox 360</strong></td>
+    <td width="50%"><img src="docs/screenshots/queue-xbox-one.png" alt="Fila no tema Xbox One, com capa quadrada e painéis retangulares." /><br /><strong>Fila — Xbox One</strong></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/queue-xbox-series.png" alt="Fila no tema Xbox Series X|S, com arte panorâmica, informação sobreposta e etapas discretas." /><br /><strong>Fila — Xbox Series X|S</strong></td>
+    <td width="50%"><img src="docs/screenshots/queue-xbox-original.png" alt="Fila no tema Xbox Original, com núcleo verde luminoso e painel de informações." /><br /><strong>Fila — Xbox Original</strong></td>
   </tr>
 </table>
 

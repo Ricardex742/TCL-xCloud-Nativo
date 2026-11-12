@@ -8,9 +8,10 @@ internal enum class ConsoleControl { TAB,CARD,ACTION,QUICK }
 
 /** Console-specific controls use their own geometry and contrast, independently from the green skin. */
 internal class ConsoleControlPlate(private val scene: ConsoleScene,private val control: ConsoleControl,
-                                   private val selected: Boolean=false): Drawable() {
+                                   private val selected: Boolean=false,private val icon: ConsoleGlyph?=null): Drawable() {
     private val paint=Paint(Paint.ANTI_ALIAS_FLAG)
     private val rect=RectF()
+    private val icons=ConsoleIcons()
     private var focused=false
     private var fill: Shader?=null
     override fun isStateful()=true
@@ -29,7 +30,7 @@ internal class ConsoleControlPlate(private val scene: ConsoleScene,private val c
     }
     override fun draw(canvas: Canvas) {
         rect.set(bounds);val h=rect.height();val inset=(h*.045f).coerceAtLeast(1f)
-        rect.inset(inset,inset);paint.style=Paint.Style.FILL;paint.shader=null
+        rect.inset(if(control==ConsoleControl.CARD) 2f else inset,if(control==ConsoleControl.CARD) 2f else inset);paint.style=Paint.Style.FILL;paint.shader=null
         when(scene) {
             ConsoleScene.XBOX_360 -> {
                 if(control==ConsoleControl.CARD) {
@@ -47,14 +48,19 @@ internal class ConsoleControlPlate(private val scene: ConsoleScene,private val c
                 canvas.drawRect(rect,paint)
                 if(control==ConsoleControl.TAB && (selected || focused)) {
                     paint.color=0xff78d342.toInt();canvas.drawRect(rect.left+12f,rect.bottom-3f,rect.right-12f,rect.bottom,paint)
-                } else if(focused) { paint.style=Paint.Style.STROKE;paint.strokeWidth=4f;paint.color=Color.WHITE;canvas.drawRect(rect,paint) }
+                } else if(focused && control!=ConsoleControl.CARD) { paint.style=Paint.Style.STROKE;paint.strokeWidth=4f;paint.color=Color.WHITE;canvas.drawRect(rect,paint) }
             }
             ConsoleScene.XBOX_SERIES -> {
-                val radius=if(control==ConsoleControl.TAB) h/2f else 6f
-                paint.color=if(control==ConsoleControl.ACTION) 0xff107c10.toInt() else if(control==ConsoleControl.TAB) 0x90000000.toInt() else 0xe0202426.toInt()
-                canvas.drawRoundRect(rect,radius,radius,paint)
-                if(focused || control==ConsoleControl.TAB && selected) {
-                    paint.style=Paint.Style.STROKE;paint.color=0xff7ee036.toInt();paint.strokeWidth=3f;canvas.drawRoundRect(rect,radius,radius,paint)
+                if(control==ConsoleControl.TAB) {
+                    val size=minOf(rect.width()-4f,rect.height()*.62f);val cx=rect.centerX();val cy=rect.top+size/2f
+                    paint.color=if(focused) 0xb0000000.toInt() else 0x65000000
+                    canvas.drawCircle(cx,cy,size/2f,paint)
+                    if(focused || selected) { paint.style=Paint.Style.STROKE;paint.color=if(focused) Color.WHITE else 0xff72d63a.toInt();paint.strokeWidth=2f;canvas.drawCircle(cx,cy,size/2f-1f,paint);paint.style=Paint.Style.FILL }
+                    icon?.let { icons.draw(canvas,it,cx-size*.28f,cy-size*.28f,size*.56f) }
+                } else {
+                    paint.color=if(control==ConsoleControl.ACTION) 0xff107c10.toInt() else 0xff171b1f.toInt()
+                    canvas.drawRoundRect(rect,6f,6f,paint)
+                    if(focused && control!=ConsoleControl.CARD) { paint.style=Paint.Style.STROKE;paint.color=Color.WHITE;paint.strokeWidth=3f;canvas.drawRoundRect(rect,6f,6f,paint) }
                 }
             }
             ConsoleScene.XBOX_ORIGINAL -> {
@@ -88,16 +94,18 @@ internal class ConsoleDashboardChrome(private val selected: () -> Int): Drawable
     private var cachedIndex=-1
     private var panelFill: Shader?=null
     private var shade: Shader?=null
+    private var sideShade: Shader?=null
     private var metal: Shader?=null
     private val bladeColors=intArrayOf(0xffd89129.toInt(),0xff8db42a.toInt(),0xff5f941f.toInt(),0xff3b85ac.toInt(),0xff82569f.toInt(),0xff85a541.toInt())
     override fun onBoundsChange(bounds: Rect) { cachedIndex=-1 }
     private fun configure(w: Float,h: Float,scene: ConsoleScene,index: Int) {
         cachedScene=scene;cachedIndex=index
         shade=LinearGradient(0f,0f,0f,h,intArrayOf(0xc9000000.toInt(),0x10000000,0x35000000,0xdd000000.toInt()),floatArrayOf(0f,.25f,.55f,1f),Shader.TileMode.CLAMP)
-        metal=LinearGradient(0f,0f,40f,0f,intArrayOf(0xff62685e.toInt(),0xfff2f3ed.toInt(),0xffa1a59b.toInt(),0xff4d534b.toInt()),null,Shader.TileMode.MIRROR)
+        sideShade=LinearGradient(0f,0f,w*.82f,0f,intArrayOf(0xd9000000.toInt(),0x35000000,0x05000000),floatArrayOf(0f,.56f,1f),Shader.TileMode.CLAMP)
+        metal=LinearGradient(0f,0f,54f,0f,intArrayOf(0xff62685e.toInt(),0xffe8e9e0.toInt(),0xfff2f3eb.toInt(),0xffb5b9af.toInt(),0xff535b4c.toInt()),floatArrayOf(0f,.2f,.57f,.82f,1f),Shader.TileMode.CLAMP)
         panel.reset()
         if(scene==ConsoleScene.XBOX_360) {
-            val left=index*44f+26f;val right=w-(5-index)*44f-26f
+            val left=index*54f+26f;val right=w-(5-index)*54f-26f
             panel.moveTo(left+23f,18f);panel.cubicTo(left-28f,170f,left+35f,430f,left,658f)
             panel.lineTo(right,658f);panel.cubicTo(right-35f,430f,right+28f,170f,right-23f,18f);panel.close()
             panelFill=LinearGradient(0f,18f,0f,658f,intArrayOf(0xdda6be5b.toInt(),0xdde8efc7.toInt(),0xddc0d29a.toInt(),0xdd8eaf4b.toInt()),floatArrayOf(0f,.18f,.78f,1f),Shader.TileMode.CLAMP)
@@ -114,18 +122,19 @@ internal class ConsoleDashboardChrome(private val selected: () -> Int): Drawable
             ConsoleScene.XBOX_360 -> {
                 paint.shader=metal
                 repeat(6) { i -> if(i!=index) {
-                    val x=if(i<index) i*44f else w-(6-i)*44f
-                    blade.reset();blade.moveTo(x,0f);blade.cubicTo(x+18,180f,x-15,430f,x+8,665f)
-                    blade.lineTo(x+44,665f);blade.cubicTo(x+22,430f,x+58,180f,x+44,0f);blade.close()
+                    val x=if(i<index) i*54f else w-(6-i)*54f
+                    val slot=canvas.save();canvas.translate(x,0f)
+                    blade.reset();blade.moveTo(0f,0f);blade.cubicTo(18f,180f,-15f,430f,8f,665f)
+                    blade.lineTo(54f,665f);blade.cubicTo(32f,430f,68f,180f,54f,0f);blade.close()
                     canvas.drawPath(blade,paint)
                     paint.shader=null;paint.color=bladeColors[i];paint.alpha=190
-                    canvas.drawRect(x+28f,23f,x+34f,638f,paint)
-                    paint.alpha=255;paint.shader=metal
+                    canvas.drawRect(40f,23f,46f,638f,paint)
+                    paint.alpha=255;paint.shader=metal;canvas.restoreToCount(slot)
                 } }
                 paint.shader=panelFill;canvas.drawPath(panel,paint);paint.shader=null
                 paint.style=Paint.Style.STROKE;paint.strokeWidth=4f;paint.color=0xfff2f3df.toInt();canvas.drawPath(panel,paint)
                 paint.style=Paint.Style.FILL;paint.color=0x50243c03
-                canvas.drawRect(index*44f+62f,117f,w-(5-index)*44f-62f,119f,paint)
+                canvas.drawRect(index*54f+62f,117f,w-(5-index)*54f-62f,119f,paint)
             }
             ConsoleScene.XBOX_ONE -> {
                 paint.color=0x99080808.toInt();canvas.drawRect(0f,0f,w,720f,paint)
@@ -133,7 +142,8 @@ internal class ConsoleDashboardChrome(private val selected: () -> Int): Drawable
                 paint.color=0xff107c10.toInt();canvas.drawRect(54f,235f,59f,616f,paint)
             }
             ConsoleScene.XBOX_SERIES -> {
-                paint.shader=shade;canvas.drawRect(0f,0f,w,720f,paint);paint.shader=null
+                paint.shader=shade;canvas.drawRect(0f,0f,w,720f,paint)
+                paint.shader=sideShade;canvas.drawRect(0f,0f,w,720f,paint);paint.shader=null
                 paint.color=0x70000000;canvas.drawRect(0f,670f,w,720f,paint)
             }
             ConsoleScene.XBOX_ORIGINAL -> {

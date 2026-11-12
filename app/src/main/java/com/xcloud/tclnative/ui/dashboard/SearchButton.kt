@@ -23,13 +23,14 @@ internal class SearchButton(context: Context,search: () -> Unit): View(context) 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val size=min(width,height).toFloat(); val cx=width/2f; val cy=height/2f
-        val radius=size*.32f
-        paint.style=Paint.Style.FILL; paint.color=if(isPressed || isFocused) DashboardTheme.color(UiColor.SEARCH_ACTIVE) else DashboardTheme.color(UiColor.SEARCH_FILL)
+        val blades=DashboardTheme.palette.theme.scene==com.xcloud.tclnative.settings.ConsoleScene.XBOX_360
+        val radius=size*(if(blades) .43f else .32f)
+        paint.style=Paint.Style.FILL; paint.color=if(blades) { if(isPressed || isFocused) 0xffd0e7a3.toInt() else 0xffeef1da.toInt() } else if(isPressed || isFocused) DashboardTheme.color(UiColor.SEARCH_ACTIVE) else DashboardTheme.color(UiColor.SEARCH_FILL)
         canvas.drawRoundRect(cx-radius,cy-radius,cx+radius,cy+radius,size*.12f,size*.12f,paint)
         paint.style=Paint.Style.STROKE; paint.strokeWidth=size*.025f
         paint.color=if(isPressed || isFocused) DashboardTheme.accent else DashboardTheme.color(UiColor.SEARCH_BORDER)
         canvas.drawRoundRect(cx-radius,cy-radius,cx+radius,cy+radius,size*.12f,size*.12f,paint)
-        paint.color=Color.WHITE; paint.strokeCap=Paint.Cap.ROUND; paint.strokeWidth=size*.036f
+        paint.color=if(blades) 0xff233413.toInt() else Color.WHITE; paint.strokeCap=Paint.Cap.ROUND; paint.strokeWidth=size*.036f
         canvas.drawCircle(cx-size*.04f,cy-size*.04f,size*.125f,paint)
         canvas.drawLine(cx+size*.05f,cy+size*.05f,cx+size*.16f,cy+size*.16f,paint)
     }

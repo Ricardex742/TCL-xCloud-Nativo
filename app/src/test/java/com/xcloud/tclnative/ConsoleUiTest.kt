@@ -191,7 +191,7 @@ class ConsoleUiTest {
         assertEquals(1,disconnected)
         controller.pause().stop().destroy()
     }
-    @Test fun lightCodecRequiresAnExplicitChoiceAndHevcAndHighChoicesRemainUnavailable() {
+    @Test fun codecChoicesRemainOptInAndHardwareExperimentsAreLabeled() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup()
         val activity=controller.get().apply { setContentView(FrameLayout(this)) }
         layout(activity.window.decorView,1280,720)
@@ -207,7 +207,12 @@ class ConsoleUiTest {
         assertEquals(original.copy(videoCodec=VideoCodecMode.H264_BASELINE),store.read())
         (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
         val standard=panel.chooseCodec()
-        assertFalse(all(standard.body).filterIsInstance<TextView>().any { it.isClickable && (it.text.contains("HEVC") || it.text.contains("High")) })
+        val choices=all(standard.body).filterIsInstance<TextView>().filter { it.isClickable }
+        for(name in listOf("H.264 High","H.265/HEVC Main","VP9","AV1")) {
+            assertTrue(choices.single { it.text.contains(name) }.text.contains("experimental"))
+        }
+        assertEquals(original.copy(videoCodec=VideoCodecMode.H264_BASELINE),store.read())
+        assertEquals(1,updates.size)
         all(standard.body).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("H.264 — padrão") }.performClick()
         assertEquals(original,store.read())
         assertEquals(2,updates.size)

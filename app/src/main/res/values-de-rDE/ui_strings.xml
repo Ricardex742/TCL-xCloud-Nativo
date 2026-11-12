@@ -918,4 +918,15 @@
     <string name="ui_45eb3bc4e261e9ee" formatted="false">"Kataloginformationen"</string>
     <string name="ui_43048ef6c3a4433a" formatted="false">"Offizielle Kataloge; die Verfügbarkeit hängt von Konto, Region und Dienstbedingungen ab."</string>
     <string name="ui_63bbb111d5ac6db1" formatted="false">"Automatisch berücksichtigt Energiesparen und Systemanimationen. Aktiviert behält sanfte Bewegung bei, reduziert auf schwächeren Geräten oder im Energiesparmodus. Der Hintergrund stoppt beim Spielen und wenn die App nicht sichtbar ist."</string>
+    <string name="ui_6167fa2ca0312f15" formatted="false">"Lokale Testfähigkeit: {0}"</string>
+    <string name="ui_c4331c844280c181" formatted="false">"{0} bevorzugt • H.264 als Alternative verfügbar"</string>
+    <string name="ui_1e1d0350d1e0fdf3" formatted="false">"{0} von WebRTC nicht angeboten • H.264 als Alternative"</string>
+    <string name="ui_6d1df819bf62900a" formatted="false">"das SDK hat kein mit dem gewählten Codec kompatibles Angebot erzeugt"</string>
+    <string name="ui_bb9d025b5c755e2d" formatted="false">"der Dienst antwortete mit einem Format außerhalb der angebotenen Codecs"</string>
+    <string name="ui_91a7a80e08acb982" formatted="false">"Tests: High, HEVC, VP9 und AV1 benötigen Hardware-Decodierung und Dienstunterstützung. Andernfalls wird H.264 verwendet. Prüfe den empfangenen Codec in der Diagnose."</string>
+    <string name="ui_48c8bf25efdb371a" formatted="false">"Verwende zum Codec-Vergleich Originalbild wiederherstellen unter Upscaling und Bildverarbeitung. Effizientere Kompression garantiert kein besseres Bild."</string>
+    <string name="ui_90ab319797841779" formatted="false">"H.264 High – experimentell"</string>
+    <string name="ui_b274e0da21e8b52f" formatted="false">"H.265/HEVC Main – experimentell"</string>
+    <string name="ui_58fcf72f6192db0b" formatted="false">"VP9 – experimentell"</string>
+    <string name="ui_38d1a1c91951cdbf" formatted="false">"AV1 – experimentell"</string>
 </resources>

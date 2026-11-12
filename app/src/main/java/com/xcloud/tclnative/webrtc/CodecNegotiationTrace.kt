@@ -25,18 +25,21 @@ class CodecNegotiationTrace(private val mode: VideoCodecMode) {
                 format.name.equals("H264",true) -> format.label
                 format.name.equals("H265",true) -> format.label+(format.parameters["level-id"]
                     ?.takeIf { it.matches(Regex("[0-9]{1,3}")) }?.let { " (level-id=$it)" } ?: "")
-                else -> UiText.text("outro formato de vídeo")
+                else -> if(format.name.uppercase(java.util.Locale.ROOT) in setOf("VP9","AV1")) format.name else UiText.text("outro formato de vídeo")
             }
         }.distinct().take(8).joinToString(", ").ifBlank { UiText.text("sem vídeo ativo") }
     }
-    private fun supported(format: VideoCodecAnswer): Boolean = format.name.equals("H264",true) &&
-        (!baselineOnly || CodecPreference.isBaseline(format.parameters))
+    private fun supported(format: VideoCodecAnswer): Boolean {
+        if(format.name.equals("H264",true)) return !baselineOnly || CodecPreference.isBaseline(format.parameters)
+        return !baselineOnly && format.name.equals(CodecPreference.experimentFamily(mode),true) &&
+            CodecPreference.basicProfile(format.name,format.parameters)
+    }
 
     @Synchronized fun localOffer(sdp: String) {
         val formats=CodecPreference.videoFormats(sdp)
         offer=formats
         if(formats.isEmpty() || formats.any { !supported(it) }) {
-            issue=UiText.text("o SDK não gerou oferta H.264 compatível com o perfil escolhido")
+            issue=UiText.text("o SDK não gerou uma oferta compatível com o codec escolhido")
             throw IOException("VIDEO_CODEC: $issue")
         }
     }
@@ -49,8 +52,8 @@ class CodecNegotiationTrace(private val mode: VideoCodecMode) {
             issue=UiText.text("o serviço respondeu sem vídeo ativo")
             throw IOException("VIDEO_CODEC: $issue")
         }
-        if(formats.any { !supported(it) }) {
-            issue=UiText.text("o serviço respondeu um formato fora do perfil H.264 escolhido")
+        if(formats.any { !supported(it) || (!it.name.equals("H264",true) && offer?.none { offered -> offered.name.equals(it.name,true) }!=false) }) {
+            issue=UiText.text("o serviço respondeu um formato fora dos codecs oferecidos")
             throw IOException("VIDEO_CODEC: $issue")
         }
         return formats.first()

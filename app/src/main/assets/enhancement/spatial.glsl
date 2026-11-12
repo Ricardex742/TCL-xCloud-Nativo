@@ -163,9 +163,7 @@ void main(){
  }
  #endif
  // On devices without float color targets, dither before this first quantization.
- #if SPATIAL_DEBAND
  if(quantize&&(deband>0.||finish_dither))result+=(fract(52.9829189*fract(dot(gl_FragCoord.xy,vec2(.06711056,.00583715))))-.5)/255.;
- #endif
  if(finish_image){
   if(sharpness>0.){float untouched=1.-smoothstep(.5/255.,2./255.,peak(result-c));result+=(adaptiveSharpen(c,west,east,north,south,sharpen_mode,sharpness)-c)*untouched;}
   float y=dot(result,vec3(.299,.587,.114));result=mix(vec3(y),result,saturation);

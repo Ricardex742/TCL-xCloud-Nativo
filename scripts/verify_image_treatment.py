@@ -128,6 +128,27 @@ flip=[-1.,0.,0.,0.,0.,1.,0.,0.,0.,0.,1.,0.,1.,0.,0.,1.]
 out=draw(sgsr,{"rgb_tex":edge_tex},16,16,{"input_w":16,"input_h":16,"sharpness":0.},matrix=flip)
 verify(all(abs(out[(y*16+x)*4]-pattern[(y*16+15-x)*4])<=1 for y in range(16) for x in range(16)),"SGSR must honor the decoder transform")
 
+# Validate the exact shader variants exported by the Java runtime's unit test.
+# Disabled effects must preserve output while disappearing from the compiled variant.
+for mask in range(16):
+    emitted=root / "app/build/reports/treatment-shaders" / f"spatial-{mask}.glsl"
+    if not emitted.exists():
+        raise AssertionError("Run TreatmentShaderSpecializationTest before validating runtime variants")
+    variant=program(emitted.read_text(),True)
+    params={"finish_image":1,"sharpen_mode":2,"sharpness":.25,"quantize":1,"selective":1,
+            "cleanup":.25 if mask&1 else 0.,"deband":.25 if mask&2 else 0.,
+            "chroma":.25 if mask&4 else 0.,"antialias":.25 if mask&8 else 0.}
+    for source_texture in (flat_tex,edge_tex):
+        reference=draw(spatial,{"rgb_tex":source_texture},16,16,params)
+        actual=draw(variant,{"rgb_tex":source_texture},16,16,params)
+        verify(max(abs(a-b) for a,b in zip(reference,actual))<=1,f"Runtime spatial variant {mask} changed enabled-filter output")
+    for kind in ("OES","YUV"):
+        program(emitted.read_text(),True,kind);checks+=1
+# Final dithering remains valid when an earlier pass did the debanding.
+no_filters=program((root/"app/build/reports/treatment-shaders/spatial-0.glsl").read_text(),True)
+params={"finish_image":1,"finish_dither":1,"quantize":1}
+verify(draw(no_filters,{"rgb_tex":flat_tex},16,16,params)==draw(spatial,{"rgb_tex":flat_tex},16,16,params),"Finishing dither lost after specializing disabled filters")
+
 # Temporal must reject a scene cut and preserve unchanged pixels.
 white=texture([230,230,230,255]*256,16,16)
 cut=draw(temporal,{"source":white,"history_tex":edge_tex},16,16,{"strength":.5})

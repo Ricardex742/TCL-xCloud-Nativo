@@ -5,8 +5,8 @@ import android.opengl.GLES20;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-/** The WebRTC OES/RGB/YUV adapters retain their original sampling/color conversion. */
-public final class TreatmentShaderDrawer extends GlGenericDrawer {
+/** Specializes disabled filters out of the shader; input sampling and color precision are preserved. */
+public final class TreatmentShaderDrawer implements RendererCommon.GlDrawer {
   public static String asset(Context context,String name) {
     try(java.io.InputStream stream=context.getAssets().open("enhancement/"+name)) {
       java.io.ByteArrayOutputStream out=new java.io.ByteArrayOutputStream();
@@ -16,38 +16,53 @@ public final class TreatmentShaderDrawer extends GlGenericDrawer {
     } catch(IOException error) { throw new IllegalStateException("Image shader unavailable: "+name,error); }
   }
   private final Parameters values;
-  private final String code;
-  private static String source(Context context,boolean sgsr) {
-    return asset(context,sgsr?"sgsr.glsl":"spatial.glsl")
-        .replace("/* ADAPTIVE_SHARPEN */",asset(context,"adaptive.glsl"));
+  private final String source;
+  private final boolean sgsr;
+  private GlGenericDrawer drawer;
+  private int features=-1;
+  public TreatmentShaderDrawer(Context context,boolean sgsr) {
+    this.sgsr=sgsr;values=new Parameters(sgsr);
+    source=asset(context,sgsr?"sgsr.glsl":"spatial.glsl").replace("/* ADAPTIVE_SHARPEN */",asset(context,"adaptive.glsl"));
   }
-  public TreatmentShaderDrawer(Context context,boolean sgsr) { this(context,sgsr,new Parameters(sgsr)); }
-  private TreatmentShaderDrawer(Context context,boolean sgsr,Parameters parameters) { this(source(context,sgsr),parameters); }
-  private TreatmentShaderDrawer(String source,Parameters parameters) {
-    super(Fsr1Drawer.copyVertexShader(),source,parameters);values=parameters;code=source;
+  static int featureMask(TreatmentOptions options) {
+    return (options.cleanup>0?1:0)|(options.deband>0?2:0)|(options.chroma>0?4:0)|(options.antialias>0?8:0);
   }
-  @Override GlShader createShader(ShaderType type) {
-    String fragment=GlGenericDrawer.createFragmentShaderString(code,type)
-        .replace("precision mediump float;","precision highp float;")
-        .replace("varying vec2 tc;","varying highp vec2 tc;");
-    return new GlShader(Fsr1Drawer.copyVertexShader(),fragment);
+  static String specialize(String source,int mask) {
+    return "\n#define SPATIAL_CLEANUP "+((mask&1)!=0?1:0)+"\n#define SPATIAL_DEBAND "+((mask&2)!=0?1:0)+
+      "\n#define SPATIAL_CHROMA "+((mask&4)!=0?1:0)+"\n#define SPATIAL_ANTIALIAS "+((mask&8)!=0?1:0)+"\n"+source;
+  }
+  private GlGenericDrawer drawer() {
+    int desired=sgsr?0:featureMask(values.options);
+    if(drawer==null || desired!=features) {
+      if(drawer!=null) drawer.release();
+      features=desired;final String code=sgsr?source:specialize(source,desired);
+      drawer=new GlGenericDrawer(Fsr1Drawer.copyVertexShader(),code,values) {
+        @Override GlShader createShader(ShaderType type) {
+          String fragment=GlGenericDrawer.createFragmentShaderString(code,type)
+              .replace("precision mediump float;","precision highp float;")
+              .replace("varying vec2 tc;","varying highp vec2 tc;");
+          return new GlShader(Fsr1Drawer.copyVertexShader(),fragment);
+        }
+      };
+    }
+    return drawer;
   }
   public void configure(TreatmentOptions options,int sharpness,int saturation,int brightness,int contrast,boolean finish) {
     values.options=options;values.sharpness=sharpness/100f;values.saturation=saturation/100f;
-    values.brightness=brightness/100f;values.contrast=contrast/100f-1f;values.finish=finish;
-    values.dither=options.deband>0;
+    values.brightness=brightness/100f;values.contrast=contrast/100f-1f;values.finish=finish;values.dither=options.deband>0;
   }
   public void setFinalDither(boolean enabled) { values.dither=enabled; }
   @Override public void drawOes(int texture,float[] matrix,int fw,int fh,int x,int y,int w,int h) {
-    values.x=x;values.y=y;super.drawOes(texture,matrix,fw,fh,x,y,w,h);
+    values.x=x;values.y=y;drawer().drawOes(texture,matrix,fw,fh,x,y,w,h);
   }
   @Override public void drawRgb(int texture,float[] matrix,int fw,int fh,int x,int y,int w,int h) {
-    values.x=x;values.y=y;super.drawRgb(texture,matrix,fw,fh,x,y,w,h);
+    values.x=x;values.y=y;drawer().drawRgb(texture,matrix,fw,fh,x,y,w,h);
   }
   @Override public void drawYuv(int[] textures,float[] matrix,int fw,int fh,int x,int y,int w,int h) {
-    values.x=x;values.y=y;super.drawYuv(textures,matrix,fw,fh,x,y,w,h);
+    values.x=x;values.y=y;drawer().drawYuv(textures,matrix,fw,fh,x,y,w,h);
   }
-  private static final class Parameters implements ShaderCallbacks {
+  @Override public void release() { if(drawer!=null) drawer.release();drawer=null;features=-1; }
+  private static final class Parameters implements GlGenericDrawer.ShaderCallbacks {
     final boolean sgsr;
     TreatmentOptions options=TreatmentOptions.OFF;
     float sharpness,saturation=1,brightness,contrast;

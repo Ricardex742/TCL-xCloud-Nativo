@@ -154,6 +154,7 @@ Pesquisa e configurações acompanham a identidade de cada console:
 - Modos **Menor atraso**, **Adaptativo** e **Compatibilidade — TVs mais fracas**.
 - Opção **H.264 leve — Baseline (720p)**.
 - **H.264 Main experimental**, oferecido quando o decoder de hardware declara suporte ao perfil e à resolução solicitada a 60 FPS. Baseline permanece disponível na negociação; o diagnóstico informa o perfil realmente recebido.
+- **Experimentos de codec:** H.264 High, H.265/HEVC Main, VP9 e AV1, oferecidos somente quando há decoder de hardware compatível com a resolução solicitada a 60 FPS. H.264 Main/Baseline continuam como alternativas. O diagnóstico separa capacidade local, oferta e resposta do serviço; selecionar uma preferência não garante recebê-la.
 - **Fluidez da apresentação opcional** em Adaptativo, com fila de um quadro pendente e descarte de quadros substituídos. Pode acrescentar atraso; Menor atraso e Compatibilidade usam apresentação imediata.
 - Fila com arte do jogo, estimativa do serviço, tempo aguardado e cancelamento. Os seis dashboards Xbox têm telas de espera próprias, acompanhando o visual do tema escolhido.
 - Recuperação de vídeo por solicitação de quadro-chave, decoder e superfície de exibição.
@@ -204,7 +205,7 @@ Pesquisa e configurações acompanham a identidade de cada console:
 - **Debanding com dithering**, limpeza seletiva de compressão, reconstrução de cor nas bordas e antialiasing ajustáveis.
 - **Estabilização temporal** com busca local de movimento, descarte de histórico em mudanças de geometria e rejeição de mudanças de cena.
 - **Reconstrução neural experimental** na luminância, com buffers half-float verificados e fonte de até 1080p; disponibilidade efetiva mostrada no diagnóstico.
-- Configuração central em **Imagem e tela › Upscaling e tratamento**: escolha do método, ajustes correspondentes e filtros adicionais compartilhados. Perfis **Leve** e **Natural** ajustam a nitidez do método escolhido; a restauração da imagem original fica na mesma tela.
+- Configuração central em **Imagem e tela › Upscaling e tratamento**: escolha do método, ajustes correspondentes e filtros adicionais compartilhados. Perfis **Leve** e **Natural** ajustam somente o realce do método escolhido, sem ativar filtros adicionais; a restauração da imagem original fica na mesma tela. Filtros desligados são retirados do shader compilado.
 - Proteção progressiva reduz efeitos e saída quando os desenhos ficam abaixo da cadência recebida, preservando as preferências salvas e registrando os cortes da partida.
 - Preferência por uma taxa de atualização compatível com a apresentação do vídeo.
 

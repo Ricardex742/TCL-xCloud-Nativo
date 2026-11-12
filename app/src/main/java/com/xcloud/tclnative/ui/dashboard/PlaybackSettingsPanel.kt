@@ -252,7 +252,7 @@ class PlaybackSettingsPanel(
         enter(SettingsPage.VIDEO)
         val current=store.read()
         return choices(UiText.text("Codec de vídeo"),UiText.join(UiText.text("Padrão mantém a negociação H.264 habitual. Leve oferece somente Baseline, solicita 720p e até 6 Mbps no Automático. O teto manual da partida pode substituir esse orçamento. É um perfil do H.264, sem garantia de ganho se o jogo já usava Baseline. A resolução e o bitrate recebidos dependem do serviço. Compatibilidade também usa Baseline. Aplica-se à próxima partida."),"\n\n",
-            UiText.text("Main é experimental: só é oferecido quando o decoder de hardware declara esse perfil e suporta a resolução a 60 FPS. Baseline continua disponível na negociação. O Xbox escolhe o perfil recebido; confirme o resultado no diagnóstico.")),
+            UiText.text("Experimentos: High, HEVC, VP9 e AV1 exigem decoder de hardware e suporte do serviço. Se indisponíveis, usamos H.264. Confira o codec recebido no diagnóstico."),"\n\n",UiText.text("Para comparar codecs, use Restaurar imagem original em Upscaling e tratamento. Mais compressão não garante imagem melhor.")),
             VideoCodecMode.entries.map { it.label to (it==current.videoCodec) }) {
             val selected=current.copy(videoCodec=VideoCodecMode.entries[it])
             save(if(selected.videoCodec==VideoCodecMode.H264_BASELINE) selected.copy(resolution=StreamResolution.HD_720) else selected)
@@ -371,7 +371,7 @@ class PlaybackSettingsPanel(
         val selectable=value.fsr==FsrMode.OFF || value.fsr==FsrMode.FSR1
         val image=ImageTreatmentSettings(sharpening=if(selectable) {
             if(natural) ImageSharpening.RCAS_LUMA else ImageSharpening.USM_LUMA
-        } else value.imageTreatment.sharpening,deband=if(natural) 25 else 0,chroma=if(natural) 50 else 25)
+        } else value.imageTreatment.sharpening)
         val next=value.copy(imageTreatment=image)
         return when(value.fsr) {
             FsrMode.OFF -> next.copy(sharpness=25)

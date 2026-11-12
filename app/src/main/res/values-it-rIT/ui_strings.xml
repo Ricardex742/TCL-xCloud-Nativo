@@ -918,4 +918,15 @@
     <string name="ui_45eb3bc4e261e9ee" formatted="false">"Informazioni sul catalogo"</string>
     <string name="ui_43048ef6c3a4433a" formatted="false">"Cataloghi ufficiali; la disponibilità dipende da account, regione e condizioni del servizio."</string>
     <string name="ui_63bbb111d5ac6db1" formatted="false">"Automatico rispetta il risparmio energetico e le animazioni di sistema. Attivato mantiene un movimento leggero, ridotto sui dispositivi meno potenti o in risparmio energetico. Lo sfondo si ferma durante la partita e quando l’app non è visibile."</string>
+    <string name="ui_6167fa2ca0312f15" formatted="false">"Capacità locale del test: {0}"</string>
+    <string name="ui_c4331c844280c181" formatted="false">"{0} preferito • H.264 disponibile come alternativa"</string>
+    <string name="ui_1e1d0350d1e0fdf3" formatted="false">"{0} non annunciato da WebRTC • alternativa H.264"</string>
+    <string name="ui_6d1df819bf62900a" formatted="false">"l’SDK non ha generato un’offerta compatibile con il codec scelto"</string>
+    <string name="ui_bb9d025b5c755e2d" formatted="false">"il servizio ha risposto con un formato diverso dai codec offerti"</string>
+    <string name="ui_91a7a80e08acb982" formatted="false">"Esperimenti: High, HEVC, VP9 e AV1 richiedono decodifica hardware e supporto del servizio. Se non disponibili, viene usato H.264. Controlla il codec ricevuto nella diagnostica."</string>
+    <string name="ui_48c8bf25efdb371a" formatted="false">"Per confrontare i codec, usa Ripristina immagine originale in Upscaling e trattamento. Una compressione più efficiente non garantisce un’immagine migliore."</string>
+    <string name="ui_90ab319797841779" formatted="false">"H.264 High — sperimentale"</string>
+    <string name="ui_b274e0da21e8b52f" formatted="false">"H.265/HEVC Main — sperimentale"</string>
+    <string name="ui_58fcf72f6192db0b" formatted="false">"VP9 — sperimentale"</string>
+    <string name="ui_38d1a1c91951cdbf" formatted="false">"AV1 — sperimentale"</string>
 </resources>

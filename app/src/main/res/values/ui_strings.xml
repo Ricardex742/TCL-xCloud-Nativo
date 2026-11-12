@@ -918,4 +918,15 @@
     <string name="ui_45eb3bc4e261e9ee" formatted="false">"Informações do catálogo"</string>
     <string name="ui_43048ef6c3a4433a" formatted="false">"Catálogos oficiais com disponibilidade sujeita à conta, à região e às condições do serviço."</string>
     <string name="ui_63bbb111d5ac6db1" formatted="false">"Automático respeita a economia de energia e as animações do sistema. Ativado mantém um movimento leve, reduzido em aparelhos modestos ou em economia de energia. O fundo para durante a partida e quando o aplicativo não está visível."</string>
+    <string name="ui_6167fa2ca0312f15" formatted="false">"Capacidade local do teste: {0}"</string>
+    <string name="ui_c4331c844280c181" formatted="false">"{0} preferido • H.264 disponível como alternativa"</string>
+    <string name="ui_1e1d0350d1e0fdf3" formatted="false">"{0} não anunciado pelo WebRTC • alternativa H.264"</string>
+    <string name="ui_6d1df819bf62900a" formatted="false">"o SDK não gerou uma oferta compatível com o codec escolhido"</string>
+    <string name="ui_bb9d025b5c755e2d" formatted="false">"o serviço respondeu um formato fora dos codecs oferecidos"</string>
+    <string name="ui_91a7a80e08acb982" formatted="false">"Experimentos: High, HEVC, VP9 e AV1 exigem decoder de hardware e suporte do serviço. Se indisponíveis, usamos H.264. Confira o codec recebido no diagnóstico."</string>
+    <string name="ui_48c8bf25efdb371a" formatted="false">"Para comparar codecs, use Restaurar imagem original em Upscaling e tratamento. Mais compressão não garante imagem melhor."</string>
+    <string name="ui_90ab319797841779" formatted="false">"H.264 High — experimental"</string>
+    <string name="ui_b274e0da21e8b52f" formatted="false">"H.265/HEVC Main — experimental"</string>
+    <string name="ui_58fcf72f6192db0b" formatted="false">"VP9 — experimental"</string>
+    <string name="ui_38d1a1c91951cdbf" formatted="false">"AV1 — experimental"</string>
 </resources>

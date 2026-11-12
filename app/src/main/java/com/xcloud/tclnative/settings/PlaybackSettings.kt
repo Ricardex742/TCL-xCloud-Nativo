@@ -11,7 +11,9 @@ enum class VideoMode(private val sourceLabel: String, val lowLatency: Boolean) {
     val label: String get()=UiText.text(sourceLabel)
 }
 enum class VideoCodecMode(private val sourceLabel: String) {
-    H264("H.264 — padrão"), H264_BASELINE("H.264 leve — Baseline (720p)"), H264_MAIN("H.264 Main — experimental");
+    H264("H.264 — padrão"), H264_BASELINE("H.264 leve — Baseline (720p)"), H264_MAIN("H.264 Main — experimental"),
+    H264_HIGH_HW("H.264 High — experimental"), H265("H.265/HEVC Main — experimental"),
+    VP9("VP9 — experimental"), AV1("AV1 — experimental");
     val label: String get()=UiText.text(sourceLabel)
 }
 enum class FsrMode(private val sourceLabel: String) { OFF("Desativado"), FSR1("AMD FSR 1.0.2 — experimental"), SGSR1("SGSR 1 — experimental"), RECONSTRUCTION("xCloud — reconstrução adaptativa (experimental)") ;

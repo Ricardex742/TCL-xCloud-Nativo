@@ -63,8 +63,8 @@ class XCloudWebRtcClient(
     private val decoderLatency = java.util.concurrent.atomic.AtomicReference(UiText.text("Codec LL: aguardando vídeo"))
     private val effectiveCodec=if(compatibility) VideoCodecMode.H264_BASELINE else videoCodec
     private val codecTrace=CodecNegotiationTrace(effectiveCodec)
-    private val decoderFactory: H264VideoDecoderFactory
-    fun codecDiagnostics(): String = codecTrace.diagnostics()+UiText.text("\nBitrate máximo solicitado: ")+(if(maxBitrateKbps==0) UiText.text("Automático") else "${maxBitrateKbps/1000.0} Mbps")
+    private val decoderFactory: ExperimentalVideoDecoderFactory
+    fun codecDiagnostics(): String = codecTrace.diagnostics()+"\n"+UiText.text("Capacidade local do teste: {0}",UiText.nested(decoderFactory.diagnostics()))+UiText.text("\nBitrate máximo solicitado: ")+(if(maxBitrateKbps==0) UiText.text("Automático") else "${maxBitrateKbps/1000.0} Mbps")
     private val networkRoutes=NetworkRouteMonitor(ipPreference)
     fun iceDiagnostics(): String = iceReports.joinToString("\n").ifBlank { UiText.text("ICE local: aguardando coleta") }+"\n"+networkRoutes.diagnostics()
     private val mainHandler=android.os.Handler(android.os.Looper.getMainLooper())
@@ -200,9 +200,8 @@ class XCloudWebRtcClient(
         PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(context.applicationContext)
             .setFieldTrials(VideoLatencyPolicy.fieldTrials(lowLatencyVideo))
             .setEnableInternalTracer(false).createInitializationOptions())
-        decoderFactory=H264VideoDecoderFactory(eglBase.eglBaseContext,lowLatencyVideo,decoderRecovery,
-            { decoderLatency.set(it) },effectiveCodec==VideoCodecMode.H264_BASELINE,
-            effectiveCodec==VideoCodecMode.H264_MAIN,streamResolution.width,streamResolution.height)
+        decoderFactory=ExperimentalVideoDecoderFactory(eglBase.eglBaseContext,lowLatencyVideo,decoderRecovery,
+            { decoderLatency.set(it) },effectiveCodec.name,streamResolution.width,streamResolution.height)
         val audio=JavaAudioDeviceModule.builder(context.applicationContext)
             .setAudioAttributes(GameAudioSession.attributes()).setUseStereoOutput(true).setEnableVolumeLogger(false)
             .setPlaybackSamplesReadyCallback { samples ->

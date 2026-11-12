@@ -918,4 +918,15 @@
     <string name="ui_45eb3bc4e261e9ee" formatted="false">"Katalog bilgileri"</string>
     <string name="ui_43048ef6c3a4433a" formatted="false">"Resmî kataloglar; kullanılabilirlik hesaba, bölgeye ve hizmet koşullarına bağlıdır."</string>
     <string name="ui_63bbb111d5ac6db1" formatted="false">"Otomatik, güç tasarrufu ve sistem animasyonu ayarlarına uyar. Açık, düşük güçlü cihazlarda veya güç tasarrufunda azaltılmış hafif hareketi korur. Oyun sırasında ve uygulama görünmüyorken arka plan durur."</string>
+    <string name="ui_6167fa2ca0312f15" formatted="false">"Yerel test desteği: {0}"</string>
+    <string name="ui_c4331c844280c181" formatted="false">"{0} tercih edilir • H.264 yedek olarak kullanılabilir"</string>
+    <string name="ui_1e1d0350d1e0fdf3" formatted="false">"WebRTC {0} sunmuyor • H.264 yedeği"</string>
+    <string name="ui_6d1df819bf62900a" formatted="false">"SDK seçilen codec ile uyumlu teklif oluşturmadı"</string>
+    <string name="ui_bb9d025b5c755e2d" formatted="false">"hizmet sunulan codec dışında bir biçimle yanıt verdi"</string>
+    <string name="ui_91a7a80e08acb982" formatted="false">"Deneyler: High, HEVC, VP9 ve AV1 donanım çözme ve hizmet desteği gerektirir. Kullanılamazsa H.264 kullanılır. Alınan codec’i tanılamadan kontrol edin."</string>
+    <string name="ui_48c8bf25efdb371a" formatted="false">"Codec karşılaştırması için Yükseltme ve işleme bölümünde Özgün görüntüyü geri yükle seçeneğini kullanın. Verimli sıkıştırma daha iyi görüntüyü garanti etmez."</string>
+    <string name="ui_90ab319797841779" formatted="false">"H.264 High — deneysel"</string>
+    <string name="ui_b274e0da21e8b52f" formatted="false">"H.265/HEVC Main — deneysel"</string>
+    <string name="ui_58fcf72f6192db0b" formatted="false">"VP9 — deneysel"</string>
+    <string name="ui_38d1a1c91951cdbf" formatted="false">"AV1 — deneysel"</string>
 </resources>

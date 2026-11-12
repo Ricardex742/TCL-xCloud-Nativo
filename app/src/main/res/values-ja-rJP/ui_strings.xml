@@ -918,4 +918,15 @@
     <string name="ui_45eb3bc4e261e9ee" formatted="false">"カタログ情報"</string>
     <string name="ui_43048ef6c3a4433a" formatted="false">"公式カタログです。利用できるゲームはアカウント、地域、サービスの条件によって異なります。"</string>
     <string name="ui_63bbb111d5ac6db1" formatted="false">"自動は省電力とシステムのアニメーション設定に従います。有効では軽い動きを維持し、低性能端末や省電力中は更新を抑えます。プレイ中やアプリが表示されていない間は背景が停止します。"</string>
+    <string name="ui_6167fa2ca0312f15" formatted="false">"端末のテスト対応状況：{0}"</string>
+    <string name="ui_c4331c844280c181" formatted="false">"{0}を優先 • 代替としてH.264を利用可能"</string>
+    <string name="ui_1e1d0350d1e0fdf3" formatted="false">"WebRTCが{0}を提示していません • H.264へフォールバック"</string>
+    <string name="ui_6d1df819bf62900a" formatted="false">"SDKが選択したコーデックに対応するオファーを生成しませんでした"</string>
+    <string name="ui_bb9d025b5c755e2d" formatted="false">"サービスが提示したコーデック以外の形式で応答しました"</string>
+    <string name="ui_91a7a80e08acb982" formatted="false">"実験：High、HEVC、VP9、AV1にはハードウェアデコードとサービス側の対応が必要です。利用できない場合はH.264を使います。受信コーデックを診断で確認してください。"</string>
+    <string name="ui_48c8bf25efdb371a" formatted="false">"コーデックの比較には「アップスケーリングと処理」で「元の画像に戻す」を使ってください。圧縮効率が高くても画質が良くなるとは限りません。"</string>
+    <string name="ui_90ab319797841779" formatted="false">"H.264 High — 実験的"</string>
+    <string name="ui_b274e0da21e8b52f" formatted="false">"H.265/HEVC Main — 実験的"</string>
+    <string name="ui_58fcf72f6192db0b" formatted="false">"VP9 — 実験的"</string>
+    <string name="ui_38d1a1c91951cdbf" formatted="false">"AV1 — 実験的"</string>
 </resources>

@@ -36,7 +36,7 @@ object StreamProfile {
             val index = if (connection >= 0) connection + 1 else 1
             video.addAll(index, listOf("b=AS:$maxKbps", "b=TIAS:${maxKbps * 1000}"))
             val videoCodecs = video.filter { it.startsWith("a=rtpmap:") &&
-                (it.substringAfter(' ').startsWith("H264/", true) || it.substringAfter(' ').startsWith("H265/",true)) }
+                (it.substringAfter(' ').startsWith("H264/", true) || it.substringAfter(' ').startsWith("H265/",true) || it.substringAfter(' ').startsWith("VP9/",true) || it.substringAfter(' ').startsWith("AV1/",true)) }
                 .map { it.substringAfter(':').substringBefore(' ') }.toSet()
             videoCodecs.forEach { payload ->
                 val fmtp = video.indexOfFirst { it.startsWith("a=fmtp:$payload ") }

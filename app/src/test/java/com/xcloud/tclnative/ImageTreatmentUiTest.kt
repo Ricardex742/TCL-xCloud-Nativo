@@ -69,7 +69,7 @@ class ImageTreatmentUiTest {
             assertEquals(original,store.read());assertTrue(updates.isEmpty())
             click(treatment,"Perfil natural")
             assertEquals(ImageSharpening.RCAS_LUMA,store.read().imageTreatment.sharpening)
-            assertEquals(25,store.read().imageTreatment.deband);assertEquals(25,store.read().sharpness)
+            assertEquals(0,store.read().imageTreatment.deband);assertFalse(store.read().imageTreatment.spatial);assertEquals(25,store.read().sharpness)
             (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
             val scale=panel.chooseFsr();click(scale,"SGSR 1")
             assertEquals(FsrMode.SGSR1,store.read().fsr)
@@ -78,7 +78,7 @@ class ImageTreatmentUiTest {
             assertEquals(VideoCodecMode.H264_MAIN,store.read().videoCodec)
             assertEquals(StreamResolution.HD_1080_HQ,store.read().resolution)
             assertEquals(original.touchMode,store.read().touchMode)
-            assertEquals(25,store.read().imageTreatment.deband)
+            assertEquals(0,store.read().imageTreatment.deband)
             (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
             val image=panel.showUpscaling();click(image,"Restaurar imagem original")
             assertFalse(store.read().imageTreatment.active);assertEquals(FsrMode.OFF,store.read().fsr)
@@ -130,6 +130,8 @@ class ImageTreatmentUiTest {
                     reconstruction=ReconstructionSettings(strength=100,comparison=ImageComparison.ORIGINAL))
                 store.save(before);click(panel.showTreatment(),"Perfil leve")
                 val after=store.read()
+                assertFalse("Light preset must not enable a pre-processing pass",after.imageTreatment.spatial)
+                assertEquals(0,after.imageTreatment.temporal);assertEquals(0,after.imageTreatment.neural)
                 assertEquals(before.fsr,after.fsr);assertEquals(before.resolution,after.resolution)
                 assertEquals(before.touchMode,after.touchMode);assertEquals(before.videoCodec,after.videoCodec)
                 assertEquals(if(mode==FsrMode.OFF) 25 else before.sharpness,after.sharpness)
@@ -140,4 +142,22 @@ class ImageTreatmentUiTest {
             }
         } finally { c.pause().stop().destroy() }
     }
+    @Test fun everyCodecChoiceIsSavedWithoutChangingImageOrControllerSettings() {
+        val c=Robolectric.buildActivity(Activity::class.java).setup()
+        try {
+            c.get().setContentView(FrameLayout(c.get()))
+            val store=PlaybackSettingsStore(c.get());val panel=PlaybackSettingsPanel(c.get(),store,{},{},{},{})
+            val original=PlaybackSettings(fsr=FsrMode.RECONSTRUCTION,fsrOutput=FsrOutput.UHD_4K,
+                imageTreatment=ImageTreatmentSettings(deband=25,chroma=50),touchMode=TouchMode.NATIVE)
+            for(mode in VideoCodecMode.entries) {
+                store.save(original);val dialog=panel.chooseCodec()
+                click(dialog,mode.label)
+                val saved=store.read()
+                assertEquals(original.copy(videoCodec=mode,resolution=if(mode==VideoCodecMode.H264_BASELINE) StreamResolution.HD_720 else original.resolution),saved)
+                assertEquals(mode,PlaybackSettingsStore(c.get()).read().videoCodec)
+                (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
+            }
+        } finally { c.pause().stop().destroy() }
+    }
+
 }

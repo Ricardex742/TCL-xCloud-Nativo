@@ -14,8 +14,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 60
-        versionName = "0.33.8-dashboard-polish"
+        versionCode = 61
+        versionName = "0.33.9-codec-lab"
     }
 
     signingConfigs {

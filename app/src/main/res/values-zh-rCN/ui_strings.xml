@@ -904,4 +904,11 @@
     <string name="ui_2dc867123a3f77a9" formatted="false">"附加滤镜 — 共用"</string>
     <string name="ui_4e539bd60654f414" formatted="false">"这些滤镜与所选的默认、FSR、SGSR 或 xCloud 重建方式共同使用。预设还会调整该方式的锐化。无需启用其他缩放器。"</string>
     <string name="ui_e823d8526c139e5f" formatted="false">"0% 仅关闭此方式的锐化。放大和附加滤镜仍然独立。建议从 25% 开始。"</string>
+    <string name="ui_75eb1f44a3b4507b" formatted="false">"动态背景：{0}"</string>
+    <string name="ui_7e366ecca899c0da" formatted="false">"动态背景"</string>
+    <string name="ui_f0c6e266f0ac4e85" formatted="false">"仅在目录中显示动画。自动模式会在内存较少的设备或高于1440p的界面上使用静态背景。省电模式、系统动画已关闭和游戏过程中始终暂停动画。"</string>
+    <string name="ui_02eaa5cf9bc84088" formatted="false">"Xbox 360"</string>
+    <string name="ui_05dc2c90bb95f45f" formatted="false">"Xbox One"</string>
+    <string name="ui_af7b3c80a4233094" formatted="false">"Xbox Series X|S"</string>
+    <string name="ui_4609f818eb698d86" formatted="false">"Xbox Original"</string>
 </resources>

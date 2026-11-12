@@ -904,4 +904,11 @@
     <string name="ui_2dc867123a3f77a9" formatted="false">"추가 필터 — 공통"</string>
     <string name="ui_4e539bd60654f414" formatted="false">"이 필터는 선택한 기본값, FSR, SGSR 또는 xCloud 재구성 방식과 함께 적용됩니다. 프리셋은 해당 방식의 선명도도 조정합니다. 다른 업스케일러를 활성화할 필요가 없습니다."</string>
     <string name="ui_e823d8526c139e5f" formatted="false">"0%는 이 방식의 선명도만 끕니다. 확대와 추가 필터는 독립적으로 유지됩니다. 25%부터 시작하세요."</string>
+    <string name="ui_75eb1f44a3b4507b" formatted="false">"동적 배경: {0}"</string>
+    <string name="ui_7e366ecca899c0da" formatted="false">"동적 배경"</string>
+    <string name="ui_f0c6e266f0ac4e85" formatted="false">"카탈로그에서만 움직입니다. 자동 모드에서는 메모리가 적은 기기나 1440p를 초과하는 화면에서 정적 배경을 사용합니다. 절전 모드, 시스템 애니메이션 비활성화 상태 및 게임 플레이 중에는 항상 움직임을 멈춥니다."</string>
+    <string name="ui_02eaa5cf9bc84088" formatted="false">"Xbox 360"</string>
+    <string name="ui_05dc2c90bb95f45f" formatted="false">"Xbox One"</string>
+    <string name="ui_af7b3c80a4233094" formatted="false">"Xbox Series X|S"</string>
+    <string name="ui_4609f818eb698d86" formatted="false">"Xbox Original"</string>
 </resources>

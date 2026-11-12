@@ -124,3 +124,4 @@ jobs:
             app/build/reports/dashboard/
             app/build/reports/huds/
             app/build/reports/reconstruction/
+            app/build/reports/themes/

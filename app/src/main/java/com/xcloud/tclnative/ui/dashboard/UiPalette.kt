@@ -23,10 +23,18 @@ internal enum class UiColor(val original: Int) {
 }
 
 internal class UiPalette(val theme: UiTheme) {
+    private val consoleColors=when(theme) {
+            UiTheme.XBOX_360 -> intArrayOf(0xff252d28.toInt(),0xff3a443c.toInt(),0xff1b3020.toInt(),0x447b995a,0xff344936.toInt(),0xff252d26.toInt(),0xff212a23.toInt(),0xff151d17.toInt())
+            UiTheme.XBOX_ONE -> intArrayOf(0xff111812.toInt(),0xff15251a.toInt(),0xff0b2113.toInt(),0x443c8d40,0xff1c3624.toInt(),0xff1c2a20.toInt(),0xff17251c.toInt(),0xff101a14.toInt())
+            UiTheme.XBOX_SERIES -> intArrayOf(0xff0a1214.toInt(),0xff112127.toInt(),0xff082b2b.toInt(),0x443a9b81,0xff173e37.toInt(),0xff1a292b.toInt(),0xff142426.toInt(),0xff0c181b.toInt())
+            UiTheme.XBOX_ORIGINAL -> intArrayOf(0xff080e05.toInt(),0xff15270b.toInt(),0xff07250a.toInt(),0x444e921a,0xff254018.toInt(),0xff1c2a13.toInt(),0xff16240f.toInt(),0xff0b1508.toInt())
+            else -> null
+    }
     private val colors=UiColor.entries.associateWith { role ->
         val base=role.original
         when {
             theme==UiTheme.GREEN -> base
+            consoleColor(role)!=null -> consoleColor(role)!!
             (base and 0xffffff) == (UiColor.ACCENT.original and 0xffffff) ->
                 (base and 0xff000000.toInt()) or (theme.accent and 0xffffff)
             else -> {
@@ -34,6 +42,15 @@ internal class UiPalette(val theme: UiTheme) {
                 hsv[0]=theme.hue;hsv[1]=(hsv[1]*theme.saturation).coerceIn(0f,1f)
                 Color.HSVToColor(Color.alpha(base),hsv)
             }
+        }
+    }
+    private fun consoleColor(role: UiColor): Int? {
+        val colors=consoleColors ?: return null
+        return when(role) {
+            UiColor.BACKGROUND_START -> colors[0];UiColor.BACKGROUND_MID -> colors[1];UiColor.BACKGROUND_END -> colors[2]
+            UiColor.BACKGROUND_GLOW -> colors[3];UiColor.BACKGROUND_RIBBON -> colors[4];UiColor.SURFACE -> colors[5]
+            UiColor.PANEL_TOP -> colors[6];UiColor.PANEL_BOTTOM -> colors[7]
+            else -> null
         }
     }
     operator fun get(role: UiColor): Int=colors.getValue(role)

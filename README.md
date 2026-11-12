@@ -46,6 +46,8 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
 
 - **Verde** como tema padrão, preservando a identidade original do app.
 - Seis temas opcionais: **Azul Cibernético**, **Vermelho Vulcânico**, **Dourado Prestígio**, **Laranja Industrial**, **Roxo Galáxia** e **Prata Platina**.
+- Quatro temas inspirados nos consoles: **Xbox 360**, **Xbox One**, **Xbox Series X|S** e **Xbox Original**, com fundos próprios.
+- **Fundo dinâmico** opcional nesses quatro temas: Automático, Ativado ou Desativado. O movimento fica no catálogo e pausa durante partidas. Automático preserva o fundo estático em aparelhos de pouca memória e interfaces acima de 1440p; economia de energia e animações desativadas no sistema também pausam o movimento.
 - Seleção em **Configurações › Aparência e temas › Tema do aplicativo**, por controle ou toque.
 - Aplicação imediata e escolha salva no aparelho, inclusive ao reabrir o app.
 - Cores dos menus, catálogo, destaques e janelas; as artes e a imagem do jogo mantêm suas cores.
@@ -62,6 +64,14 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
   <tr>
     <td width="50%"><img src="docs/screenshots/theme-galaxy-purple.jpg" alt="Tema Roxo Galáxia, com fundo roxo escuro e destaques violeta." /><br /><strong>Roxo Galáxia</strong></td>
     <td width="50%"><img src="docs/screenshots/theme-platinum-silver.jpg" alt="Tema Prata Platina, com fundo cinza escuro e destaques prateados." /><br /><strong>Prata Platina</strong></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-360.png" alt="Tema inspirado no Xbox 360, com ondas prateadas e destaques verdes." /><br /><strong>Xbox 360</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-one.png" alt="Tema inspirado no Xbox One, com mosaico verde escuro." /><br /><strong>Xbox One</strong></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-series.png" alt="Tema inspirado no Xbox Series X|S, com curvas escuras e destaques verde-menta." /><br /><strong>Xbox Series X|S</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-original.png" alt="Tema inspirado no Xbox Original, com brilho verde e anéis concêntricos." /><br /><strong>Xbox Original</strong></td>
   </tr>
 </table>
 

@@ -904,4 +904,11 @@
     <string name="ui_2dc867123a3f77a9" formatted="false">"Дополнительные фильтры — общие"</string>
     <string name="ui_4e539bd60654f414" formatted="false">"Эти фильтры работают вместе с выбранным методом: Стандарт, FSR, SGSR или Реконструкция xCloud. Профили также настраивают резкость этого метода. Включать другой масштабировщик не нужно."</string>
     <string name="ui_e823d8526c139e5f" formatted="false">"0% отключает только резкость этого метода. Увеличение и дополнительные фильтры независимы. Начните с 25%."</string>
+    <string name="ui_75eb1f44a3b4507b" formatted="false">"Динамический фон: {0}"</string>
+    <string name="ui_7e366ecca899c0da" formatted="false">"Динамический фон"</string>
+    <string name="ui_f0c6e266f0ac4e85" formatted="false">"Анимация только в каталоге. Автоматический режим оставляет фон неподвижным на устройствах с малым объёмом памяти или в интерфейсе выше 1440p. Энергосбережение, отключённая системная анимация и игра всегда приостанавливают движение."</string>
+    <string name="ui_02eaa5cf9bc84088" formatted="false">"Xbox 360"</string>
+    <string name="ui_05dc2c90bb95f45f" formatted="false">"Xbox One"</string>
+    <string name="ui_af7b3c80a4233094" formatted="false">"Xbox Series X|S"</string>
+    <string name="ui_4609f818eb698d86" formatted="false">"Xbox Original"</string>
 </resources>

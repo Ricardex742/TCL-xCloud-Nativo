@@ -87,7 +87,7 @@ class AppearanceUiTest {
         val app=RuntimeEnvironment.getApplication();val store=AppearanceSettingsStore(app)
         val playback=PlaybackSettingsStore(app);val before=playback.read()
         assertEquals(UiTheme.GREEN,store.read())
-        assertEquals(7,UiTheme.entries.size)
+        assertEquals(11,UiTheme.entries.size)
         for(theme in UiTheme.entries) {
             store.save(theme);assertEquals(theme,AppearanceSettingsStore(app).read())
             assertEquals(before,playback.read())
@@ -117,7 +117,7 @@ class AppearanceUiTest {
             choose(ShadowDialog.getLatestDialog() as ConsoleDialog,"Tema do aplicativo")
             val options=ShadowDialog.getLatestDialog() as ConsoleDialog
             capture(options,"theme-picker")
-            assertEquals(7,all(options.body).filterIsInstance<TextView>().count { it.isClickable })
+            assertEquals(11,all(options.body).filterIsInstance<TextView>().count { it.isClickable })
             assertEquals(UiTheme.GREEN,AppearanceSettingsStore(a).read())
             options.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_BUTTON_B))
             shadowOf(Looper.getMainLooper()).idle()
@@ -133,7 +133,7 @@ class AppearanceUiTest {
         } finally { controller.pause().stop().destroy() }
     }
 
-    @Test fun allSevenThemesRepaintTheRealCatalogWithoutReloadingItAndCanRestoreTheExactGreenImage() {
+    @Test fun allThemesRepaintTheRealCatalogWithoutReloadingItAndCanRestoreTheExactGreenImage() {
         val server=MockWebServer().apply {
             dispatcher=object: Dispatcher() {
                 override fun dispatch(request: RecordedRequest): MockResponse {
@@ -172,7 +172,7 @@ class AppearanceUiTest {
                 val name=theme.name.lowercase()
                 val pixels=capture(view,name);signatures.add(pixels.contentHashCode())
             }
-            assertEquals(7,signatures.size)
+            assertEquals(11,signatures.size)
             DashboardTheme.apply(a,UiTheme.GREEN,a.findViewById(android.R.id.content));layout(view)
             assertArrayEquals(original,capture(view,"green-restored"))
         } finally {

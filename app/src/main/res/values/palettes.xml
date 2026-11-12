@@ -34,4 +34,24 @@
         <item name="android:colorControlActivated">#D9E2EF</item>
         <item name="android:colorButtonNormal">#292A2A</item>
     </style>
+    <style name="PaletteXbox360" parent="PaletteGreen">
+        <item name="android:colorAccent">#A8DF55</item>
+        <item name="android:colorControlActivated">#A8DF55</item>
+        <item name="android:colorButtonNormal">#252D26</item>
+    </style>
+    <style name="PaletteXboxOne" parent="PaletteGreen">
+        <item name="android:colorAccent">#7DDD78</item>
+        <item name="android:colorControlActivated">#7DDD78</item>
+        <item name="android:colorButtonNormal">#1C2A20</item>
+    </style>
+    <style name="PaletteXboxSeries" parent="PaletteGreen">
+        <item name="android:colorAccent">#A0EFBE</item>
+        <item name="android:colorControlActivated">#A0EFBE</item>
+        <item name="android:colorButtonNormal">#1A292B</item>
+    </style>
+    <style name="PaletteXboxOriginal" parent="PaletteGreen">
+        <item name="android:colorAccent">#B6EF4B</item>
+        <item name="android:colorControlActivated">#B6EF4B</item>
+        <item name="android:colorButtonNormal">#1C2A13</item>
+    </style>
 </resources>

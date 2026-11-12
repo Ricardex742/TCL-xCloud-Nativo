@@ -23,6 +23,7 @@ import android.view.Gravity
 import com.xcloud.tclnative.R
 import com.xcloud.tclnative.settings.AppearanceSettingsStore
 import com.xcloud.tclnative.settings.UiTheme
+import com.xcloud.tclnative.settings.ConsoleScene
 
 internal object DashboardTheme {
     var palette=UiPalette(UiTheme.GREEN)
@@ -41,6 +42,10 @@ internal object DashboardTheme {
         UiTheme.INDUSTRIAL_ORANGE -> R.style.PaletteOrange
         UiTheme.GALAXY_PURPLE -> R.style.PalettePurple
         UiTheme.PLATINUM_SILVER -> R.style.PaletteSilver
+        UiTheme.XBOX_360 -> R.style.PaletteXbox360
+        UiTheme.XBOX_ONE -> R.style.PaletteXboxOne
+        UiTheme.XBOX_SERIES -> R.style.PaletteXboxSeries
+        UiTheme.XBOX_ORIGINAL -> R.style.PaletteXboxOriginal
     }
     fun install(context: Context) { apply(context,AppearanceSettingsStore(context).read()) }
     fun applyOverlay(context: Context) { context.theme.applyStyle(overlay,true) }
@@ -60,6 +65,7 @@ internal object DashboardTheme {
             }
         }
         drawable(view.background)
+        if(view is ConsoleThemeBackdrop) view.refreshAppearance()
         if(view is TextView) {
             view.setTextColor(replace(view.currentTextColor))
             view.setHintTextColor(replace(view.currentHintTextColor))
@@ -114,12 +120,13 @@ internal object DashboardTheme {
     }
 }
 
-internal class DashboardBackground : Drawable(),PaletteDrawable {
+internal class DashboardBackground(private val consoleArtwork: Boolean=true) : Drawable(),PaletteDrawable {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var gradient: Shader?=null
     private var glow: Shader?=null
     private val ribbon=Path()
     private var renderedPalette: UiPalette?=null
+    private val console=ConsoleScenePainter()
     override fun refreshPalette() { onBoundsChange(bounds);invalidateSelf() }
     override fun onBoundsChange(bounds: Rect) {
         val w = bounds.width().toFloat(); val h = bounds.height().toFloat()
@@ -131,17 +138,21 @@ internal class DashboardBackground : Drawable(),PaletteDrawable {
         ribbon.lineTo(.56f*w,.71f*h); ribbon.lineTo(.34f*w,h); ribbon.close()
         glow=RadialGradient(w,h,.82f*w,intArrayOf(DashboardTheme.color(UiColor.BACKGROUND_GLOW),Color.TRANSPARENT),null,Shader.TileMode.CLAMP)
         renderedPalette=DashboardTheme.palette
+        console.configure(renderedPalette!!,bounds.width(),bounds.height())
     }
     override fun draw(canvas: Canvas) {
         if(renderedPalette!==DashboardTheme.palette) onBoundsChange(bounds)
         paint.shader=gradient
         canvas.drawRect(bounds, paint)
         paint.shader = null
-        paint.color = DashboardTheme.color(UiColor.BACKGROUND_RIBBON)
-        canvas.drawPath(ribbon, paint)
-        paint.shader=glow
-        canvas.drawRect(bounds, paint)
-        paint.shader = null
+        if(DashboardTheme.palette.theme.scene==ConsoleScene.NONE) {
+            paint.color = DashboardTheme.color(UiColor.BACKGROUND_RIBBON)
+            canvas.drawPath(ribbon, paint)
+            paint.shader=glow
+            canvas.drawRect(bounds, paint)
+            paint.shader = null
+        }
+        if(consoleArtwork) console.draw(canvas,0f)
     }
     override fun setAlpha(alpha: Int) {}
     override fun setColorFilter(filter: ColorFilter?) {}

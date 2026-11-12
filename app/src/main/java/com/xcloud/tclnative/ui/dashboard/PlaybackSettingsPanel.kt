@@ -61,12 +61,31 @@ class PlaybackSettingsPanel(
             ConsoleAction(UiText.text("Fluidez: {0}",UiText.nested(value.forSession().presentationPacing.label))) { choosePacing() }
         ))
     }
-    fun showAppearance(): ConsoleDialog = category(SettingsPage.APPEARANCE,UiText.text("Aparência e temas"),listOf(
-        ConsoleAction(UiText.text("Tema do aplicativo: {0}",UiText.nested(AppearanceSettingsStore(context).read().label))) { chooseTheme() },
-        ConsoleAction(UiText.text("Idioma do aplicativo: {0}",UiText.nested(com.xcloud.tclnative.i18n.AppLanguageStore(context).read().nativeName))) {
+    fun showAppearance(): ConsoleDialog {
+        val appearance=AppearanceSettingsStore(context)
+        val rows=mutableListOf(
+            ConsoleAction(UiText.text("Tema do aplicativo: {0}",UiText.nested(appearance.read().label))) { chooseTheme() }
+        )
+        if(appearance.read().scene!=ConsoleScene.NONE) rows+=ConsoleAction(UiText.text("Fundo dinâmico: {0}",UiText.nested(appearance.motion().label))) { chooseBackgroundMotion() }
+        rows+=ConsoleAction(UiText.text("Idioma do aplicativo: {0}",UiText.nested(com.xcloud.tclnative.i18n.AppLanguageStore(context).read().nativeName))) {
             LanguageMenu.show(context) { showAppearance() }
         }
-    ))
+        return category(SettingsPage.APPEARANCE,UiText.text("Aparência e temas"),rows)
+    }
+    private fun chooseBackgroundMotion(): ConsoleDialog {
+        enter(SettingsPage.APPEARANCE)
+        val preferences=AppearanceSettingsStore(context)
+        return ConsoleDialog(context,UiText.text("Fundo dinâmico")).apply {
+            body.addView(text(UiText.text("Anima somente o catálogo. Automático mantém o fundo estático em aparelhos de pouca memória ou interfaces acima de 1440p. Economia de energia, animações desativadas no sistema e partidas sempre pausam o movimento."),20,color=DashboardTheme.muted))
+            BackgroundMotion.entries.forEach { mode ->
+                val row=addMenuItem(UiText.text("{0}  {1}",UiText.nested(if(mode==preferences.motion()) "✓" else "○"),UiText.nested(mode.label))) {
+                    preferences.saveMotion(mode);showAppearance()
+                }
+                if(mode==preferences.motion()) focusFirst(row)
+            }
+            addAction(UiText.text("Voltar")) { showAppearance() };setOnCancelListener { showAppearance() };show()
+        }
+    }
     fun chooseTheme(): ConsoleDialog {
         enter(SettingsPage.APPEARANCE)
         val preferences=AppearanceSettingsStore(context)

@@ -60,6 +60,7 @@ class GameDashboardView(
 ) : FrameLayout(context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val posters = PosterLoader(context, scope,frameBound=true)
+    private val consoleBackdrop = ConsoleThemeBackdrop(context)
     private var games = emptyList<GameTitle>()
     private var gamePassProducts: Set<String>? = null
     private var gamePassTitles = emptySet<String>()
@@ -159,8 +160,9 @@ class GameDashboardView(
     private val adapter = CoversAdapter()
 
     init {
-        background = DashboardBackground()
+        background = DashboardBackground(consoleArtwork=false)
         clipChildren = false; clipToPadding = false
+        addView(consoleBackdrop,LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.MATCH_PARENT))
         headerIcon.background = DashboardTheme.shape(UiColor.HEADER_ICON, 8f); headerIcon.clipToOutline = true
         headerTitle.maxLines = 2; headerTitle.setLineSpacing(0f, .96f)
         addView(headerIcon); addView(headerTitle)
@@ -255,12 +257,14 @@ class GameDashboardView(
     }
     fun gameById(id: String): GameTitle? = games.firstOrNull { it.titleId == id }
     fun pauseArtwork() {
+        consoleBackdrop.setPresentationEnabled(false)
         artworkPaused=true
         catalogRevision++; pendingCatalog=null; pendingFocus=null; focusRequest++
         metadataJob?.cancel(); metadataJob=null; pendingMetadata=null
         headerArtJob?.cancel(); posters.pause()
     }
     fun resumeArtwork() {
+        consoleBackdrop.setPresentationEnabled(true)
         artworkPaused=false
         officialGalleries.putAll(pendingGalleries); pendingGalleries.clear()
         refresh()
@@ -718,6 +722,6 @@ class GameDashboardView(
             canvas.drawRoundRect(rect, 10*s, 10*s, outline)
         }
     }
-    fun close() { if (!closed) { closed = true; scope.cancel(); posters.close(); grid.adapter = null } }
+    fun close() { if (!closed) { closed = true; consoleBackdrop.close();scope.cancel(); posters.close(); grid.adapter = null } }
     companion object { const val COLUMNS = 6 }
 }

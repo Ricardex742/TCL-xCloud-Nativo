@@ -35,9 +35,9 @@ internal class Xbox360EraArt {
     fun draw(c: Canvas,phase: Float) {
         p.style=Paint.Style.FILL;p.alpha=255;p.shader=sky;c.drawRect(0f,0f,1000f,h,p);p.shader=null
         val wave=sin(phase*2*Math.PI).toFloat()
-        val save=c.save();c.translate(wave*16f,wave*5f)
+        val save=c.save();c.translate(wave*42f,wave*12f)
         ribbons.forEach { path ->
-            p.color=if(scene==ConsoleScene.XBOX_360_NXE) 0x187ca96a else 0x0d6e8465
+            p.color=if(scene==ConsoleScene.XBOX_360_NXE) 0x287ca96a else 0x236e8465
             c.drawPath(path,p);p.style=Paint.Style.STROKE;p.strokeWidth=.8f
             p.color=if(scene==ConsoleScene.XBOX_360_NXE) 0x3588b071 else 0x208f9e87
             c.drawPath(path,p);p.style=Paint.Style.FILL

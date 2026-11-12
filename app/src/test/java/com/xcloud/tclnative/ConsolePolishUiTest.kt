@@ -197,6 +197,8 @@ class ConsolePolishUiTest {
                 if(theme==UiTheme.XBOX_SERIES) {
                     fun area(child: View)=Rect(0,0,child.width,child.height).also { v.offsetDescendantRectToMyCoords(child,it) }
                     val notice=all(v).filterIsInstance<TextView>().single { it.text.startsWith("ALGUMAS CAPAS INDISPONÍVEIS") }
+                    assertFalse("Catalog warnings belong in settings",notice.isShown)
+                    assertTrue(v.catalogInformation.startsWith("ALGUMAS CAPAS INDISPONÍVEIS"))
                     val profile=all(v).single { it.contentDescription?.contains("Abrir configurações")==true }
                     val tab=all(v).filterIsInstance<TextView>().single { it.isShown && it.isClickable && it.contentDescription?.contains(", selecionado")==true }
                     val subscription=all(profile).filterIsInstance<TextView>().single { it.text.toString()=="GAME PASS ULTIMATE" }
@@ -220,5 +222,45 @@ class ConsolePolishUiTest {
             val b=bitmap(v);val color=b.getPixel(56,535);assertTrue("No decorative stripe between art and play button",Color.green(color)<120);b.recycle()
             capture(v,"one-artwork-fallback")
         } finally { v.close();controller.pause().stop().destroy() }
+    }
+
+    @Test fun fullyComposedConsoleWallpapersReallyMoveAndStopWithoutRebindingTheCatalog() {
+        for(theme in UiTheme.entries.filter { it.scene!=ConsoleScene.NONE }) {
+            val app=RuntimeEnvironment.getApplication();val prefs=AppearanceSettingsStore(app)
+            prefs.saveMotion(BackgroundMotion.OFF);DashboardTheme.apply(app,theme)
+            val controller=Robolectric.buildActivity(Activity::class.java).setup();val a=controller.get();val v=dashboard(a)
+            try {
+                val layer=all(v).filterIsInstance<ConsoleThemeBackdrop>().single()
+                val grid=all(v).filterIsInstance<RecyclerView>().single();val adapter=grid.adapter
+                layer.onWindowFocusChanged(true);layer.onVisibilityAggregated(true)
+                fun artworkReady(): Boolean {
+                    if(theme==UiTheme.XBOX_SERIES && !layer.hasArtwork) return false
+                    val posters=(0 until grid.childCount).flatMap { all(grid.getChildAt(it)) }.filterIsInstance<FixedArtworkView>()
+                    val header=all(v).filterIsInstance<FixedArtworkView>().filter { it.isShown && it.contentDescription?.startsWith("Ícone de ")==true }
+                    return (posters+header).all { it.drawable is BitmapDrawable }
+                }
+                val deadline=System.currentTimeMillis()+5000
+                while(!artworkReady() && System.currentTimeMillis()<deadline) { Thread.sleep(5);shadowOf(Looper.getMainLooper()).idleFor(16,TimeUnit.MILLISECONDS) }
+                assertTrue("$theme artwork must settle before measuring animation",artworkReady())
+                val initial=bitmap(v);val before=IntArray(initial.width*initial.height);initial.getPixels(before,0,initial.width,0,0,initial.width,initial.height);initial.recycle()
+                prefs.saveMotion(BackgroundMotion.ON);shadowOf(Looper.getMainLooper()).idle()
+                assertTrue("$theme dynamic layer must remain visible",layer.isShown)
+                shadowOf(Looper.getMainLooper()).idleFor(4000,TimeUnit.MILLISECONDS)
+                assertTrue("$theme animation must advance",layer.renderedTicks>5)
+                val moved=bitmap(v);val after=IntArray(moved.width*moved.height);moved.getPixels(after,0,moved.width,0,0,moved.width,moved.height);moved.recycle()
+                val visibleChanges=before.indices.count { i ->
+                    val b=before[i];val c=after[i]
+                    maxOf(kotlin.math.abs(Color.red(b)-Color.red(c)),kotlin.math.abs(Color.green(b)-Color.green(c)),kotlin.math.abs(Color.blue(b)-Color.blue(c)))>=8
+                }
+                assertTrue("$theme must visibly move in the full dashboard, changed=$visibleChanges",visibleChanges>before.size/300)
+                assertSame(adapter,grid.adapter);capture(v,"moving-${theme.name.lowercase()}")
+                prefs.saveMotion(BackgroundMotion.OFF);shadowOf(Looper.getMainLooper()).idle()
+                val stopped=layer.renderedTicks;shadowOf(Looper.getMainLooper()).idleFor(500,TimeUnit.MILLISECONDS)
+                assertEquals(stopped,layer.renderedTicks);assertFalse(layer.framePending)
+                prefs.saveMotion(BackgroundMotion.ON);shadowOf(Looper.getMainLooper()).idle();v.pauseArtwork()
+                val paused=layer.renderedTicks;shadowOf(Looper.getMainLooper()).idleFor(500,TimeUnit.MILLISECONDS)
+                assertEquals(paused,layer.renderedTicks);assertFalse(layer.framePending)
+            } finally { v.close();controller.pause().stop().destroy();prefs.saveMotion(BackgroundMotion.OFF) }
+        }
     }
 }

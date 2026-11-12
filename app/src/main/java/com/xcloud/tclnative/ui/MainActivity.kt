@@ -604,7 +604,7 @@ open class MainActivity : Activity() {
             testRumble = { showRumbleDiagnostics(::back) },
             homeShortcuts = { showHomeShortcuts(::back) },lastReport={ showLatestReport(::back) },
             sessionOptions={ showSessionOptionsMenu(session,::back) },controllerProfiles={ showControllerProfiles(::back) },
-            onPageEntered={ returnPage=it }).open(startPage)
+            onPageEntered={ returnPage=it },catalogInformation={ dashboard?.catalogInformation }).open(startPage)
     }
     private fun showControllerProfiles(back: () -> Unit) {
         com.xcloud.tclnative.ui.dashboard.ControllerProfilePanel(this,controllerProfiles) { if(webrtcClient!=null) (0..3).filter { controllers.deviceFor(it)!=null }.forEach(::publishGamepad) }.show(back)

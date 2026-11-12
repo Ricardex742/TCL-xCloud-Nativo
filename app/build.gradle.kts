@@ -14,8 +14,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 58
-        versionName = "0.33.6-xbox360-dashboards"
+        versionCode = 59
+        versionName = "0.33.7-console-identity"
     }
 
     signingConfigs {

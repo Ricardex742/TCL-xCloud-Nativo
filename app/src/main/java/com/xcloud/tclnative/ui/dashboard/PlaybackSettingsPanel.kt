@@ -21,7 +21,8 @@ class PlaybackSettingsPanel(
     private val homeShortcuts: () -> Unit = {},
     private val lastReport: () -> Unit = {},
     private val sessionOptions: () -> Unit = {},private val controllerProfiles: () -> Unit = {},
-    private val onPageEntered: (SettingsPage) -> Unit = {}
+    private val onPageEntered: (SettingsPage) -> Unit = {},
+    private val catalogInformation: () -> String? = { null }
 ) {
     private var currentPage=SettingsPage.ROOT
     private var upscalingBack: () -> Unit = { showImage() }
@@ -76,7 +77,7 @@ class PlaybackSettingsPanel(
         enter(SettingsPage.APPEARANCE)
         val preferences=AppearanceSettingsStore(context)
         return ConsoleDialog(context,UiText.text("Fundo dinâmico")).apply {
-            body.addView(text(UiText.text("Anima somente o catálogo. Automático mantém o fundo estático em aparelhos de pouca memória ou interfaces acima de 1440p. Economia de energia, animações desativadas no sistema e partidas sempre pausam o movimento."),20,color=DashboardTheme.muted))
+            body.addView(text(UiText.text("Automático respeita a economia de energia e as animações do sistema. Ativado mantém um movimento leve, reduzido em aparelhos modestos ou em economia de energia. O fundo para durante a partida e quando o aplicativo não está visível."),20,color=DashboardTheme.muted))
             BackgroundMotion.entries.forEach { mode ->
                 val row=addMenuItem(UiText.text("{0}  {1}",UiText.nested(if(mode==preferences.motion()) "✓" else "○"),UiText.nested(mode.label))) {
                     preferences.saveMotion(mode);showAppearance()
@@ -213,6 +214,11 @@ class PlaybackSettingsPanel(
     }
     fun showAccount(): ConsoleDialog = category(SettingsPage.ACCOUNT,UiText.text("Biblioteca e conta"),listOf(
         ConsoleAction(UiText.text("Atalhos dos favoritos"),homeShortcuts),ConsoleAction(UiText.text("Gerenciar assinatura Microsoft"),subscription),
+        ConsoleAction(UiText.text("Informações do catálogo")) {
+            ConsoleDialogs.message(context,UiText.text("Informações do catálogo"),catalogInformation()?.takeIf { it.isNotBlank() }
+                ?: UiText.text("Catálogos oficiais com disponibilidade sujeita à conta, à região e às condições do serviço."),
+                listOf(ConsoleAction(UiText.text("Voltar")) { showAccount() }),onCancel={ showAccount() })
+        },
         ConsoleAction(UiText.text("Atualizar catálogo"),refresh),ConsoleAction(UiText.text("Trocar conta"),logout)
     ))
     private fun save(settings: PlaybackSettings, after: () -> Unit = { open(currentPage) }) { store.save(settings); changed(settings); after() }

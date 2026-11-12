@@ -70,14 +70,14 @@ internal class ConsoleScenePainter {
                 repeat(4) { canvas.drawPath(paths[it],paint) }
             }
             ConsoleScene.XBOX_ONE -> {
-                canvas.translate(wave*12f,other*7f)
+                canvas.translate(wave*32f,other*17f)
                 repeat(4) { row -> repeat(5) { col ->
                     val x=38f+col*207f;val y=15f+row*(height/3f)
                     tile.set(x,y,x+188f,y+height/3f-18f)
-                    paint.color=if((row+col)%3==0) 0x233d9f48 else 0x1232733d
+                    paint.color=if((row+col)%3==0) 0x483d9f48 else 0x2732733d
                     canvas.drawRoundRect(tile,3f,3f,paint)
                 } }
-                drawGlow(canvas,700f+wave*100f,height*.4f)
+                drawGlow(canvas,700f+wave*180f,height*.4f)
             }
             ConsoleScene.XBOX_SERIES -> {
                 canvas.translate(wave*27f,other*13f)
@@ -97,8 +97,8 @@ internal class ConsoleScenePainter {
                     canvas.drawLine(i*145f,0f,i*145f+60f,height,paint)
                 }
                 drawGlow(canvas,x,y)
-                val core=canvas.save();canvas.translate(x,y);val breathe=(1f+wave*.018f)*minOf(1f,height/562.5f);canvas.scale(breathe,breathe)
-                canvas.rotate(other*4f)
+                val core=canvas.save();canvas.translate(x,y);val breathe=(1f+wave*.04f)*minOf(1f,height/562.5f);canvas.scale(breathe,breathe)
+                canvas.rotate(other*9f)
                 paint.shader=orb;canvas.drawCircle(0f,0f,150f,paint);paint.shader=null
                 paint.style=Paint.Style.STROKE;paint.strokeWidth=1.5f;paint.color=0x8dcbff72.toInt()
                 repeat(3) { i ->

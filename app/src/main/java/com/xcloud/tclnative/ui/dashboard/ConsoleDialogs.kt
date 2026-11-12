@@ -21,20 +21,23 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.util.TypedValue
 import com.xcloud.tclnative.R
+import com.xcloud.tclnative.settings.ConsoleScene
 import java.util.Locale
 import kotlin.math.roundToInt
 
 data class ConsoleAction(val label: String, val action: () -> Unit)
+enum class ConsolePanelPurpose { GENERAL, SEARCH, SETTINGS_HOME }
 
 /** Shared native panels for search, account menus and messages. No platform alert buttons/rows. */
-class ConsoleDialog(context: Context, heading: String) : Dialog(context, R.style.ConsoleDialog) {
+class ConsoleDialog(context: Context, heading: String,private val purpose: ConsolePanelPurpose=ConsolePanelPurpose.GENERAL) : Dialog(context, R.style.ConsoleDialog) {
     init { DashboardTheme.applyOverlay(this.context) }
     private val activity = context as? Activity
+    private val skin=ConsolePanelSkin()
     private val screenWidth = activity?.window?.decorView?.width?.takeIf { it > 0 }
         ?: context.resources.displayMetrics.widthPixels
     private val screenHeight = activity?.window?.decorView?.height?.takeIf { it > 0 }
         ?: context.resources.displayMetrics.heightPixels
-    val scale = (screenWidth/1280f).coerceAtLeast(.5f)
+    val scale = (if(skin.enabled) minOf(screenWidth/1280f,screenHeight/720f) else screenWidth/1280f).coerceAtLeast(.5f)
     val panel: LinearLayout = object : LinearLayout(context) {
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
             val limit = (screenHeight*.90f).roundToInt()
@@ -44,7 +47,7 @@ class ConsoleDialog(context: Context, heading: String) : Dialog(context, R.style
         }
     }.apply {
         orientation = LinearLayout.VERTICAL
-        background = DashboardTheme.panel(16*scale)
+        background = if(skin.enabled) skin.background() else DashboardTheme.panel(16*scale)
         setPadding(px(32), px(26), px(32), px(26))
     }
     val body = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
@@ -56,11 +59,29 @@ class ConsoleDialog(context: Context, heading: String) : Dialog(context, R.style
         addView(body, ViewGroup.LayoutParams(-1, -2))
     }
     private var initialFocus: View? = null
+    private var menuItems=0
+    private var tileRow: LinearLayout?=null
     init {
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         activity?.let(::setOwnerActivity)
-        panel.addView(text("xCLOUD", 16, true, DashboardTheme.accent), LinearLayout.LayoutParams(-1, -2))
-        panel.addView(text(heading, 35, true), LinearLayout.LayoutParams(-1, -2).apply { topMargin=px(5); bottomMargin=px(23) })
+        if(skin.enabled) {
+            val header=LinearLayout(context).apply { orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL }
+            val brand=ConsoleBrandView(context)
+            header.addView(brand,LinearLayout.LayoutParams(px(if(skin.scene==ConsoleScene.XBOX_ORIGINAL) 204 else 176),px(62)))
+            val title=text(heading,35,true).apply { maxLines=2;gravity=Gravity.CENTER_VERTICAL }
+            header.addView(title,LinearLayout.LayoutParams(0,px(82),1f).apply { marginStart=px(22);marginEnd=px(14) })
+            val icon=object: View(context) {
+                private val icons=ConsoleIcons()
+                override fun onDraw(canvas: android.graphics.Canvas) {
+                    icons.draw(canvas,if(purpose==ConsolePanelPurpose.SEARCH) ConsoleGlyph.SEARCH else ConsoleGlyph.SETTINGS,0f,0f,minOf(width,height).toFloat(),skin.ink)
+                }
+            }
+            header.addView(icon,LinearLayout.LayoutParams(px(32),px(32)))
+            panel.addView(header,LinearLayout.LayoutParams(-1,px(94)).apply { bottomMargin=px(14) })
+        } else {
+            panel.addView(text("xCLOUD", 16, true, DashboardTheme.accent), LinearLayout.LayoutParams(-1, -2))
+            panel.addView(text(heading, 35, true), LinearLayout.LayoutParams(-1, -2).apply { topMargin=px(5); bottomMargin=px(23) })
+        }
         panel.addView(scroll, LinearLayout.LayoutParams(-1, -2, 1f))
         panel.addView(actions, LinearLayout.LayoutParams(-1, -2).apply { topMargin=px(22) })
         setContentView(panel)
@@ -80,12 +101,13 @@ class ConsoleDialog(context: Context, heading: String) : Dialog(context, R.style
     }
     fun px(value: Int) = (value*scale).roundToInt()
     fun text(value: String, size: Int = 22, heavy: Boolean = false, color: Int = Color.WHITE) = com.xcloud.tclnative.i18n.LocalizedTextView(context).apply {
-        text=value; typeface=DashboardTheme.font(context, heavy); includeFontPadding=false
-        setTextColor(color); setTextSize(TypedValue.COMPLEX_UNIT_PX, size*scale)
+        text=value; typeface=if(skin.enabled) skin.font(heavy) else DashboardTheme.font(context, heavy); includeFontPadding=false
+        setTextColor(if(skin.enabled) skin.textColor(color) else color); setTextSize(TypedValue.COMPLEX_UNIT_PX, size*scale)
     }
     fun focusFirst(view: View) { initialFocus = view }
     fun addAction(label: String, action: () -> Unit): TextView {
         val button = DashboardTheme.button(context, UiText.uppercase(label), scale) { dismiss(); action() }
+        if(skin.enabled) button.apply { background=skin.row();setTextColor(skin.textColors());typeface=skin.font(true) }
         actions.addView(button, LinearLayout.LayoutParams(0, px(58), 1f).apply {
             if (actions.childCount > 1) marginStart = px(10)
         })
@@ -93,13 +115,26 @@ class ConsoleDialog(context: Context, heading: String) : Dialog(context, R.style
         return button
     }
     fun addMenuItem(label: String, action: () -> Unit): TextView {
+        val tile=skin.enabled && purpose==ConsolePanelPurpose.SETTINGS_HOME && skin.columns>1
         val item = DashboardTheme.button(context, label, scale) { dismiss(); action() }.apply {
             gravity = Gravity.CENTER_VERTICAL or Gravity.START
             setPadding(px(20), px(10), px(20), px(10))
             if(android.os.Build.VERSION.SDK_INT>=26) setAutoSizeTextTypeUniformWithConfiguration(
                 px(13).coerceAtLeast(1),px(23).coerceAtLeast(2),1,TypedValue.COMPLEX_UNIT_PX)
+            if(skin.enabled) {
+                background=skin.row(tile,menuItems);typeface=skin.font();setTextColor(skin.textColors(tile))
+                if(skin.scene==ConsoleScene.XBOX_ORIGINAL) { setPadding(px(38),px(10),px(20),px(10));letterSpacing=.04f }
+                if(tile) { gravity=Gravity.BOTTOM or Gravity.START;setPadding(px(20),px(46),px(15),px(13)) }
+            }
         }
-        body.addView(item, LinearLayout.LayoutParams(-1, px(62)).apply { bottomMargin = px(7) })
+        if(tile) {
+            if(menuItems%skin.columns==0) {
+                tileRow=LinearLayout(context).apply { orientation=LinearLayout.HORIZONTAL }
+                body.addView(tileRow,LinearLayout.LayoutParams(-1,px(88)).apply { bottomMargin=px(7) })
+            }
+            tileRow!!.addView(item,LinearLayout.LayoutParams(0,-1,1f).apply { if(menuItems%skin.columns!=0) marginStart=px(10) })
+        } else body.addView(item, LinearLayout.LayoutParams(-1, px(62)).apply { bottomMargin = px(7) })
+        menuItems++
         if (initialFocus == null) initialFocus = item
         return item
     }
@@ -109,9 +144,9 @@ class ConsoleDialog(context: Context, heading: String) : Dialog(context, R.style
             setBackgroundDrawableResource(android.R.color.transparent)
             decorView.setPadding(0,0,0,0)
             addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            setDimAmount(.72f)
+            setDimAmount(if(skin.enabled) .48f else .72f)
             setGravity(Gravity.CENTER)
-            setLayout((screenWidth*.82f).roundToInt(), WindowManager.LayoutParams.WRAP_CONTENT)
+            setLayout((screenWidth*(if(skin.enabled) .90f else .82f)).roundToInt(), WindowManager.LayoutParams.WRAP_CONTENT)
             setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
         }
         initialFocus?.requestFocus()
@@ -120,11 +155,12 @@ class ConsoleDialog(context: Context, heading: String) : Dialog(context, R.style
 
 object ConsoleDialogs {
     fun search(context: Context, query: String, onSearch: (String) -> Unit): ConsoleDialog {
-        val dialog = ConsoleDialog(context, UiText.text("Pesquisar jogos"))
+        val dialog = ConsoleDialog(context, UiText.text("Pesquisar jogos"),ConsolePanelPurpose.SEARCH)
+        val skin=ConsolePanelSkin()
         val field = EditText(dialog.context).apply {
             setText(query); hint=UiText.text("Nome do jogo"); isSingleLine=true
-            typeface=DashboardTheme.font(context, false)
-            setTextColor(Color.WHITE); setHintTextColor(DashboardTheme.muted)
+            typeface=if(skin.enabled) skin.font() else DashboardTheme.font(context, false)
+            setTextColor(if(skin.enabled) skin.ink else Color.WHITE); setHintTextColor(if(skin.enabled) skin.muted else DashboardTheme.muted)
             setTextSize(TypedValue.COMPLEX_UNIT_PX, 28*dialog.scale)
             setPadding(dialog.px(20), dialog.px(12), dialog.px(20), dialog.px(12))
             highlightColor=DashboardTheme.color(UiColor.EDIT_SELECTION)
@@ -134,6 +170,7 @@ object ConsoleDialogs {
                 addState(intArrayOf(android.R.attr.state_focused), outline(UiColor.ACCENT))
                 addState(intArrayOf(), outline(UiColor.BORDER))
             }
+            if(skin.enabled) background=skin.input(dialog.scale)
             imeOptions=EditorInfo.IME_ACTION_SEARCH
             setOnEditorActionListener { _, action, _ ->
                 if (action == EditorInfo.IME_ACTION_SEARCH) { dialog.dismiss(); onSearch(text.toString()); true } else false
@@ -157,7 +194,8 @@ object ConsoleDialogs {
         }
         return dialog
     }
-    fun menu(context: Context, title: String, items: List<ConsoleAction>, onBack: () -> Unit = {}): ConsoleDialog = ConsoleDialog(context,title).apply {
+    fun menu(context: Context, title: String, items: List<ConsoleAction>, onBack: () -> Unit = {}): ConsoleDialog = ConsoleDialog(context,title,
+        if(title==UiText.text("Configurações")) ConsolePanelPurpose.SETTINGS_HOME else ConsolePanelPurpose.GENERAL).apply {
         items.forEach { addMenuItem(it.label, it.action) }
         addAction(UiText.text("Voltar"),onBack)
         setOnCancelListener { onBack() }

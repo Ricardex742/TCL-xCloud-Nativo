@@ -32,6 +32,7 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
     private val shade = View(context).apply { background = DashboardTheme.gradient(GradientDrawable.Orientation.LEFT_RIGHT,
         arrayOf(UiColor.QUEUE_SHADE_TOP, UiColor.QUEUE_SHADE_MID, UiColor.QUEUE_SHADE_END)) }
     private val eyebrow = text(19f).apply { text = "xCLOUD"; setTextColor(DashboardTheme.accent) }
+    private val consoleLogo=ConsoleBrandView(context).apply { visibility=GONE }
     private val title = text(44f).apply { maxLines = 2 }
     private val poster = FixedArtworkView(context).apply {
         scaleType = ImageView.ScaleType.CENTER_CROP
@@ -73,7 +74,7 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
     init {
         background = DashboardBackground()
         addView(backdrop, LayoutParams(-1, -1)); addView(shade, LayoutParams(-1, -1))
-        addView(eyebrow); addView(title); addView(poster); addView(posterFallback); addView(badges)
+        addView(eyebrow);addView(consoleLogo); addView(title); addView(poster); addView(posterFallback); addView(badges)
         listOf(status, estimateLabel, estimate, elapsedLabel, elapsed, explanation, heartbeat, freshness, spinner).forEach(panel::addView)
         addView(panel); steps.forEach(::addView); addView(note); addView(cancelButton)
         visibility = View.GONE
@@ -188,6 +189,7 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
     internal fun refreshAppearance() {
         val next=DashboardTheme.palette.theme.scene;val changed=scene!=next;scene=next
         if(scene==ConsoleScene.NONE) {
+            consoleLogo.visibility=GONE;eyebrow.visibility=VISIBLE
             if(!changed) return
             background=DashboardBackground()
             shade.background=DashboardTheme.gradient(GradientDrawable.Orientation.LEFT_RIGHT,arrayOf(UiColor.QUEUE_SHADE_TOP,UiColor.QUEUE_SHADE_MID,UiColor.QUEUE_SHADE_END))
@@ -206,6 +208,7 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
             return
         }
         steps.forEach { it.gravity=Gravity.CENTER;it.setPadding(0,0,0,0) }
+        consoleLogo.refresh();consoleLogo.visibility=VISIBLE;eyebrow.visibility=GONE
         background=DashboardBackground(consoleArtwork=scene!=ConsoleScene.XBOX_360)
         shade.background=ConsoleQueueChrome(scene)
         backdrop.visibility=if(scene==ConsoleScene.XBOX_ONE || scene==ConsoleScene.XBOX_SERIES) VISIBLE else GONE
@@ -321,6 +324,7 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
             else -> Unit
         }
         val narrow=scene==ConsoleScene.XBOX_ORIGINAL
+        if(narrow) root(consoleLogo,112,590,442,68) else root(consoleLogo,65,24,230,59)
         val panelWidth=panel.layoutParams.width/s
         item(status,24,20,(panelWidth-84).roundToInt(),36);item(spinner,(panelWidth-54).roundToInt(),24,28,28)
         if(narrow) {

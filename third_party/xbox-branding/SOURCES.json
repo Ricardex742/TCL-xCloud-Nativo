@@ -1,0 +1,37 @@
+[
+  {
+    "asset": "console_logo_360_sphere",
+    "source": "https://raw.githubusercontent.com/detain/svg-logos/b02ee1ac30c7ff4757278337c95588b01ed0954b/svg/x/xbox.svg",
+    "sha256": "da3af84dcd52af696cb406110d9394b7e6abe4103968c8f8f8beee89b281142b",
+    "owner": "Microsoft Corporation",
+    "rendering": "Original SVG rendered with librsvg/Cairo; proportions preserved."
+  },
+  {
+    "asset": "console_logo_360_wordmark",
+    "source": "https://raw.githubusercontent.com/detain/svg-logos/b02ee1ac30c7ff4757278337c95588b01ed0954b/svg/x/xbox-360-2.svg",
+    "sha256": "1a219f724e30417fa139c47de1bff66d2992d13104a78e0f86566b84f4b7c226",
+    "owner": "Microsoft Corporation",
+    "rendering": "Original SVG rendered with librsvg/Cairo; proportions preserved."
+  },
+  {
+    "asset": "console_logo_one",
+    "source": "https://raw.githubusercontent.com/detain/svg-logos/b02ee1ac30c7ff4757278337c95588b01ed0954b/svg/x/xbox-one-3.svg",
+    "sha256": "abee6c1e89ac8252cbbe9566ab8af2612162168c8b807dd338706fc36160a467",
+    "owner": "Microsoft Corporation",
+    "rendering": "Original SVG rendered with librsvg/Cairo; proportions preserved."
+  },
+  {
+    "asset": "console_logo_original",
+    "source": "https://raw.githubusercontent.com/YourFaceNA/vgf-website/170b1df525a43763e9696a6fd0a8b7ec15539d64/images/systems/XBox_Logo_copy.svg",
+    "sha256": "cac6d5a2680b00cbae965d70f0137e4323ec1a61d31c0c96f7fd63bd1eab5a5b",
+    "owner": "Microsoft Corporation",
+    "rendering": "Original SVG rendered with librsvg/Cairo; proportions preserved."
+  },
+  {
+    "asset": "console_logo_xbox_wordmark",
+    "source": "https://raw.githubusercontent.com/detain/svg-logos/b02ee1ac30c7ff4757278337c95588b01ed0954b/svg/x/xbox-12.svg",
+    "sha256": "e055cf8729421c8ead0af26734253bc435c5d23f71209304245c0cea43816c09",
+    "owner": "Microsoft Corporation",
+    "rendering": "Original SVG rendered with librsvg/Cairo; proportions preserved."
+  }
+]

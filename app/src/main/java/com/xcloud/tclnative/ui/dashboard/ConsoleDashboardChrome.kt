@@ -102,6 +102,8 @@ internal class ConsoleControlPlate(private val scene: ConsoleScene,private val c
 
 /** Static structural layers. Wallpaper animation is isolated in ConsoleThemeBackdrop. */
 internal class ConsoleDashboardChrome(private val selected: () -> Int): Drawable() {
+    var motionPhase=0f
+    private val motionMatrix=Matrix()
     private val paint=Paint(Paint.ANTI_ALIAS_FLAG)
     private val panel=Path()
     private val blade=Path()
@@ -132,6 +134,9 @@ internal class ConsoleDashboardChrome(private val selected: () -> Int): Drawable
         val s=minOf(bounds.width()/1280f,bounds.height()/720f);val w=bounds.width()/s
         val index=selected()
         if(scene!=cachedScene || index!=cachedIndex) configure(w,bounds.height()/s,scene,index)
+        val wave=kotlin.math.sin(motionPhase*2*Math.PI).toFloat()
+        motionMatrix.setTranslate(0f,wave*105f);panelFill?.setLocalMatrix(motionMatrix)
+        motionMatrix.setTranslate(wave*9f,0f);metal?.setLocalMatrix(motionMatrix)
         val save=canvas.save();canvas.scale(s,s);paint.shader=null;paint.style=Paint.Style.FILL;paint.alpha=255
         when(scene) {
             ConsoleScene.XBOX_360 -> {
@@ -152,7 +157,7 @@ internal class ConsoleDashboardChrome(private val selected: () -> Int): Drawable
                 canvas.drawRect(index*54f+62f,117f,w-(5-index)*54f-62f,119f,paint)
             }
             ConsoleScene.XBOX_ONE -> {
-                paint.color=0x99080808.toInt();canvas.drawRect(0f,0f,w,720f,paint)
+                paint.color=0x65080808;canvas.drawRect(0f,0f,w,720f,paint)
                 paint.color=0xff181818.toInt();canvas.drawRect(0f,95f,w,169f,paint)
             }
             ConsoleScene.XBOX_SERIES -> {

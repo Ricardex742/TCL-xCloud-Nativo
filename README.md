@@ -29,6 +29,7 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
 - Catálogos oficiais com nomes, capas e identificação das edições.
 - Selos de Game Pass e Xbox Series X|S conforme a inclusão e otimização informadas pelo catálogo.
 - Pesquisa por nome, tolerando diferenças de acentos, pontuação e marcas.
+- Informações detalhadas e avisos do catálogo em **Configurações › Biblioteca e conta › Informações do catálogo**.
 - Navegação por controle ou toque e cache de imagens do catálogo.
 
 <table>
@@ -53,7 +54,9 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
   - **Xbox One:** blocos retangulares, destaque grande para o jogo selecionado, catálogo em mosaico e contorno branco de seleção.
   - **Xbox Series X|S:** arte panorâmica do jogo quando disponível, navegação por ícones vetoriais, relógio, jogo selecionado ampliado na faixa horizontal e atalhos ilustrados para a biblioteca.
   - **Xbox Original:** núcleo verde luminoso, categorias em menus e biblioteca em listas. A abre a categoria; B retorna ao menu.
-- **Fundo dinâmico** opcional nesses seis temas: Automático, Ativado ou Desativado. O movimento fica no catálogo e pausa durante partidas. Automático preserva o fundo estático em aparelhos de pouca memória e interfaces acima de 1440p; economia de energia e animações desativadas no sistema também pausam o movimento.
+- Logos das gerações Xbox e selos Game Pass/Series com acabamento correspondente ao tema, mantendo a identificação informada pelo catálogo.
+- Pesquisa e configurações com painéis, fontes, campos e foco próprios para cada dashboard; One, Series e Metro organizam as categorias de configuração em blocos.
+- **Fundo dinâmico** opcional nesses seis temas: Automático, Ativado ou Desativado. Automático respeita economia de energia, animações do sistema, pouca memória e interfaces acima de 1440p. Ativado mantém um movimento leve e reduz a frequência em aparelhos modestos ou em economia de energia. O movimento pausa durante partidas e enquanto o catálogo não está visível. No Series, a própria arte panorâmica do jogo se move quando disponível.
 - Seleção em **Configurações › Aparência e temas › Tema do aplicativo**, por controle ou toque.
 - Aplicação imediata e escolha salva no aparelho, inclusive ao reabrir o app.
 - Cores dos menus, catálogo, destaques e janelas; as artes e a imagem do jogo mantêm suas cores.
@@ -82,6 +85,35 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
   <tr>
     <td width="50%"><img src="docs/screenshots/theme-xbox-360-nxe.png" alt="Dashboard Xbox 360 NXE, com categorias verticais, cartões em perspectiva e piso reflexivo." /><br /><strong>Xbox 360 — NXE (2008)</strong></td>
     <td width="50%"><img src="docs/screenshots/theme-xbox-360-metro.png" alt="Dashboard Xbox 360 Metro, com mosaico assimétrico, abas de texto e atalhos verdes." /><br /><strong>Xbox 360 — Metro (2011)</strong></td>
+  </tr>
+</table>
+
+Pesquisa e configurações acompanham a identidade de cada console:
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-360-search.png" alt="Pesquisa no tema Xbox 360 — Blades." /><br /><strong>Pesquisa — Xbox 360 — Blades</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-360-settings.png" alt="Configurações no tema Xbox 360 — Blades." /><br /><strong>Configurações — Xbox 360 — Blades</strong></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-360-nxe-search.png" alt="Pesquisa no tema Xbox 360 — NXE." /><br /><strong>Pesquisa — Xbox 360 — NXE</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-360-nxe-settings.png" alt="Configurações no tema Xbox 360 — NXE." /><br /><strong>Configurações — Xbox 360 — NXE</strong></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-360-metro-search.png" alt="Pesquisa no tema Xbox 360 — Metro." /><br /><strong>Pesquisa — Xbox 360 — Metro</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-360-metro-settings.png" alt="Configurações no tema Xbox 360 — Metro." /><br /><strong>Configurações — Xbox 360 — Metro</strong></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-one-search.png" alt="Pesquisa no tema Xbox One." /><br /><strong>Pesquisa — Xbox One</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-one-settings.png" alt="Configurações no tema Xbox One." /><br /><strong>Configurações — Xbox One</strong></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-series-search.png" alt="Pesquisa no tema Xbox Series X|S." /><br /><strong>Pesquisa — Xbox Series X|S</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-series-settings.png" alt="Configurações no tema Xbox Series X|S." /><br /><strong>Configurações — Xbox Series X|S</strong></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-original-search.png" alt="Pesquisa no tema Xbox Original." /><br /><strong>Pesquisa — Xbox Original</strong></td>
+    <td width="50%"><img src="docs/screenshots/theme-xbox-original-settings.png" alt="Configurações no tema Xbox Original." /><br /><strong>Configurações — Xbox Original</strong></td>
   </tr>
 </table>
 

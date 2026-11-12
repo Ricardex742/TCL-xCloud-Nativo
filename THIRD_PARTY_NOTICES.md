@@ -59,3 +59,16 @@ for **007 First Light**, supplied by the Microsoft Store product
 It is used only in automated interface demonstrations and generated screenshots;
 it is not bundled in the application. Rights remain with the game's respective
 owners and the artwork is not covered by the project's MIT license.
+
+## Xbox console marks
+
+Xbox, Xbox 360, Xbox One, Xbox Series X|S and Xbox Game Pass marks belong to
+Microsoft Corporation. The console artwork is retained as brand identification
+for the optional interface themes. These marks are not part of the project's
+MIT license and do not imply endorsement by Microsoft.
+
+The original SVG artwork, source URLs and hashes are retained in
+[third_party/xbox-branding/SOURCES.json](third_party/xbox-branding/SOURCES.json).
+The APK uses proportion-preserving raster renderings of those SVGs, with
+monochrome display variants where needed for contrast. Game Pass and Series
+catalog symbols retain their existing source images.

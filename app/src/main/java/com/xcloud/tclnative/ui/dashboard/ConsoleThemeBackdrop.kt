@@ -4,6 +4,11 @@ import android.animation.ValueAnimator
 import android.app.ActivityManager
 import android.content.*
 import android.graphics.Canvas
+import android.graphics.Bitmap
+import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.PowerManager
 import android.os.SystemClock
@@ -15,15 +20,21 @@ import com.xcloud.tclnative.settings.*
 internal object BackgroundMotionPolicy {
     fun interval(mode: BackgroundMotion,scene: ConsoleScene,lowRam: Boolean,largeUi: Boolean,
                  powerSave: Boolean,animations: Boolean,presented: Boolean): Long? {
-        if(!presented || scene==ConsoleScene.NONE || mode==BackgroundMotion.OFF || powerSave || !animations) return null
-        if(mode==BackgroundMotion.AUTO && (lowRam || largeUi)) return null
-        return if(lowRam || largeUi) 167L else 84L
+        if(!presented || scene==ConsoleScene.NONE || mode==BackgroundMotion.OFF) return null
+        if(mode==BackgroundMotion.AUTO && (powerSave || !animations || lowRam || largeUi)) return null
+        return if(powerSave) 250L else if(lowRam || largeUi) 167L else 84L
     }
 }
 
 /** A separate render node avoids invalidating/rebinding catalogue cards for background motion. */
 internal class ConsoleThemeBackdrop(context: Context): View(context) {
     private val painter=ConsoleScenePainter()
+    private var chrome: ConsoleDashboardChrome?=null
+    private var artwork: Bitmap?=null
+    internal val hasArtwork: Boolean get()=artwork?.isRecycled==false
+    private val artworkPaint=Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+    private val artworkRect=RectF()
+    private var explicitMotion=false
     private val prefs=context.getSharedPreferences("app_appearance",Context.MODE_PRIVATE)
     private var attached=false
     private var receiverRegistered=false
@@ -44,11 +55,11 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
     private val tick=object: Runnable {
         override fun run() {
             framePending=false
-            if(Build.VERSION.SDK_INT>=26 && !ValueAnimator.areAnimatorsEnabled()) { refreshScheduling();return }
+            if(!explicitMotion && Build.VERSION.SDK_INT>=26 && !ValueAnimator.areAnimatorsEnabled()) { refreshScheduling();return }
             if(!canPresent()) { refreshScheduling();return }
             val step=interval ?: return
             val now=SystemClock.uptimeMillis()
-            phase=(phase+(now-lastTick).coerceIn(0L,250L)/24000f)%1f;lastTick=now
+            phase=(phase+(now-lastTick).coerceIn(0L,500L)/16000f)%1f;lastTick=now
             renderedTicks++;invalidate()
             framePending=postDelayed(this,step)
         }
@@ -68,8 +79,24 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
         phase=0f;invalidate();refreshScheduling()
     }
     fun setPresentationEnabled(value: Boolean) { presented=value;refreshScheduling() }
+    fun setChrome(value: ConsoleDashboardChrome) { chrome=value;invalidate() }
+    fun setArtwork(value: Drawable?) { artwork=(value as? BitmapDrawable)?.bitmap;invalidate() }
+    fun refreshStructure() { chrome?.invalidateSelf();invalidate() }
     override fun onSizeChanged(w: Int,h: Int,oldw: Int,oldh: Int) { super.onSizeChanged(w,h,oldw,oldh);refreshAppearance() }
-    override fun onDraw(canvas: Canvas) { super.onDraw(canvas);painter.draw(canvas,phase) }
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        val picture=artwork
+        if(picture!=null && !picture.isRecycled && DashboardTheme.palette.theme.scene==ConsoleScene.XBOX_SERIES) {
+            val wave=kotlin.math.sin(phase*2*Math.PI).toFloat()
+            val moving=interval!=null || phase!=0f
+            val fit=maxOf(width.toFloat()/picture.width,height.toFloat()/picture.height)*(if(moving) 1.05f else 1f)
+            val w=picture.width*fit;val h=picture.height*fit
+            val dx=if(moving) wave*(w-width)*.43f else 0f
+            artworkRect.set((width-w)/2f+dx,(height-h)/2f,(width+w)/2f+dx,(height+h)/2f)
+            canvas.drawBitmap(picture,null,artworkRect,artworkPaint)
+        } else painter.draw(canvas,phase)
+        chrome?.let { it.motionPhase=phase;it.setBounds(0,0,width,height);it.draw(canvas) }
+    }
     override fun onAttachedToWindow() {
         super.onAttachedToWindow();attached=true;focused=hasWindowFocus()
         prefs.registerOnSharedPreferenceChangeListener(listener)
@@ -97,12 +124,14 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
         powerSave=context.getSystemService(PowerManager::class.java)?.isPowerSaveMode ?: false
         animations=if(Build.VERSION.SDK_INT>=26) ValueAnimator.areAnimatorsEnabled()
             else Settings.Global.getFloat(context.contentResolver,Settings.Global.ANIMATOR_DURATION_SCALE,1f)>0f
-        val next=BackgroundMotionPolicy.interval(AppearanceSettingsStore(context).motion(),DashboardTheme.palette.theme.scene,
+        val mode=AppearanceSettingsStore(context).motion();explicitMotion=mode==BackgroundMotion.ON
+        val next=BackgroundMotionPolicy.interval(mode,DashboardTheme.palette.theme.scene,
             lowRam,width.toLong()*height>2560L*1440L,powerSave,animations,canPresent())
         if(next==interval && framePending) return
         stop();interval=next
+        if(mode==BackgroundMotion.OFF) { phase=0f;invalidate() }
         if(next!=null) { lastTick=SystemClock.uptimeMillis();framePending=postDelayed(tick,next) }
     }
     private fun stop() { removeCallbacks(tick);framePending=false;interval=null }
-    fun close() { closed=true;stop() }
+    fun close() { closed=true;artwork=null;chrome=null;stop() }
 }

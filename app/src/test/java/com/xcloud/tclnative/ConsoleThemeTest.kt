@@ -48,15 +48,17 @@ class ConsoleThemeTest {
     private fun all(view: View): List<View> = listOf(view)+if(view is ViewGroup)
         (0 until view.childCount).flatMap { all(view.getChildAt(it)) } else emptyList()
 
-    @Test fun automaticIsConservativeAndExplicitMotionStillHonorsPowerAndAccessibility() {
+    @Test fun automaticHonorsSystemPreferencesAndExplicitMotionUsesAReducedBudget() {
         fun interval(mode: BackgroundMotion=BackgroundMotion.AUTO,scene: ConsoleScene=ConsoleScene.XBOX_360,
                      low: Boolean=false,large: Boolean=false,power: Boolean=false,animations: Boolean=true,shown: Boolean=true)=
             BackgroundMotionPolicy.interval(mode,scene,low,large,power,animations,shown)
         assertEquals(84L,interval())
         assertNull(interval(low=true));assertNull(interval(large=true))
         assertEquals(167L,interval(BackgroundMotion.ON,low=true))
+        assertNull(interval(power=true));assertNull(interval(animations=false))
+        assertEquals(250L,interval(BackgroundMotion.ON,power=true))
+        assertEquals(84L,interval(BackgroundMotion.ON,animations=false))
         for(mode in BackgroundMotion.entries) {
-            assertNull(interval(mode,power=true));assertNull(interval(mode,animations=false))
             assertNull(interval(mode,shown=false));assertNull(interval(mode,ConsoleScene.NONE))
         }
         assertNull(interval(BackgroundMotion.OFF))
@@ -152,8 +154,12 @@ class ConsoleThemeTest {
             advance(500);assertFalse(view.framePending);assertEquals(0L,view.renderedTicks)
             store.saveMotion(BackgroundMotion.ON);advance(1000);assertTrue(view.renderedTicks in 3..6)
             power.setIsPowerSaveMode(true);a.sendBroadcast(Intent(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED));advance(10)
-            val before=view.renderedTicks;advance(500);assertFalse(view.framePending);assertEquals(before,view.renderedTicks)
+            val before=view.renderedTicks;advance(500);assertTrue(view.framePending);assertTrue(view.renderedTicks-before in 1..3)
+            store.saveMotion(BackgroundMotion.AUTO);advance(10)
+            val automatic=view.renderedTicks;advance(500);assertFalse(view.framePending);assertEquals(automatic,view.renderedTicks)
             power.setIsPowerSaveMode(false);a.sendBroadcast(Intent(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED));advance(10)
+            assertFalse(view.framePending) // Low-memory AUTO remains static.
+            store.saveMotion(BackgroundMotion.ON);advance(10)
             assertTrue(view.framePending)
         } finally { view.close();memory.setIsLowRamDevice(false);power.setIsPowerSaveMode(false);controller.pause().stop().destroy() }
     }

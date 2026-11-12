@@ -32,6 +32,21 @@ internal class ConsoleControlPlate(private val scene: ConsoleScene,private val c
         rect.set(bounds);val h=rect.height();val inset=(h*.045f).coerceAtLeast(1f)
         rect.inset(if(control==ConsoleControl.CARD) 2f else inset,if(control==ConsoleControl.CARD) 2f else inset);paint.style=Paint.Style.FILL;paint.shader=null
         when(scene) {
+            ConsoleScene.XBOX_360_NXE -> {
+                if(control==ConsoleControl.TAB && (selected || focused) || control==ConsoleControl.ACTION) {
+                    paint.shader=fill;canvas.drawRoundRect(rect,5f,5f,paint);paint.shader=null
+                    paint.style=Paint.Style.STROKE;paint.strokeWidth=1f;paint.color=0xffc8e59f.toInt();canvas.drawRoundRect(rect,5f,5f,paint)
+                    if(focused) { paint.strokeWidth=3f;paint.color=Color.WHITE;canvas.drawRoundRect(rect,5f,5f,paint) }
+                }
+            }
+            ConsoleScene.XBOX_360_METRO -> {
+                if(control!=ConsoleControl.TAB) {
+                    paint.color=0xff168c06.toInt();canvas.drawRect(rect,paint)
+                    if(focused) { paint.style=Paint.Style.STROKE;paint.color=Color.WHITE;paint.strokeWidth=4f;canvas.drawRect(rect,paint) }
+                } else if(focused) {
+                    paint.color=0xff218509.toInt();canvas.drawRect(rect.left+8,rect.bottom-3,rect.right-8,rect.bottom,paint)
+                }
+            }
             ConsoleScene.XBOX_360 -> {
                 if(control==ConsoleControl.CARD) {
                     paint.color=if(focused) 0xff487811.toInt() else 0x15ffffff
@@ -139,7 +154,6 @@ internal class ConsoleDashboardChrome(private val selected: () -> Int): Drawable
             ConsoleScene.XBOX_ONE -> {
                 paint.color=0x99080808.toInt();canvas.drawRect(0f,0f,w,720f,paint)
                 paint.color=0xff181818.toInt();canvas.drawRect(0f,95f,w,169f,paint)
-                paint.color=0xff107c10.toInt();canvas.drawRect(54f,235f,59f,616f,paint)
             }
             ConsoleScene.XBOX_SERIES -> {
                 paint.shader=shade;canvas.drawRect(0f,0f,w,720f,paint)

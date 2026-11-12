@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit
 @LooperMode(LooperMode.Mode.PAUSED)
 class ConsoleDashboardUiTest {
     private lateinit var server: MockWebServer
-    private val themes=listOf(UiTheme.XBOX_360,UiTheme.XBOX_ONE,UiTheme.XBOX_SERIES,UiTheme.XBOX_ORIGINAL)
+    private val themes=listOf(UiTheme.XBOX_360,UiTheme.XBOX_ONE,UiTheme.XBOX_SERIES,UiTheme.XBOX_ORIGINAL,UiTheme.XBOX_360_NXE,UiTheme.XBOX_360_METRO)
     @Before fun setup() {
         val app=RuntimeEnvironment.getApplication()
         app.getSharedPreferences("app_appearance",0).edit().clear().commit()
@@ -98,8 +98,8 @@ class ConsoleDashboardUiTest {
                 val grid=all(view).filterIsInstance<RecyclerView>().single();val adapter=grid.adapter
                 val manager=grid.layoutManager as GridLayoutManager
                 assertEquals(6,adapter!!.itemCount)
-                assertEquals(if(theme==UiTheme.XBOX_ONE) 3 else 1,manager.spanCount)
-                assertEquals(if(theme==UiTheme.XBOX_SERIES) RecyclerView.HORIZONTAL else RecyclerView.VERTICAL,manager.orientation)
+                assertEquals(if(theme==UiTheme.XBOX_ONE || theme==UiTheme.XBOX_360_METRO) 3 else 1,manager.spanCount)
+                assertEquals(if(theme==UiTheme.XBOX_SERIES || theme==UiTheme.XBOX_360_NXE) RecyclerView.HORIZONTAL else RecyclerView.VERTICAL,manager.orientation)
                 if(theme==UiTheme.XBOX_ORIGINAL) {
                     assertEquals(View.GONE,grid.visibility);capture(view,"xbox_original-home")
                     click(view,LibraryTab.ALL.label);layout(view)

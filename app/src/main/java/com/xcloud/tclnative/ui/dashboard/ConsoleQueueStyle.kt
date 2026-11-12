@@ -55,10 +55,12 @@ internal class ConsoleQueueStep(private val scene: ConsoleScene,private val inde
         } else {
             p.color=when(scene) {
                 ConsoleScene.XBOX_360 -> if(active) 0xff6b8d24.toInt() else 0xffe4ead0.toInt()
+                ConsoleScene.XBOX_360_NXE -> if(active) 0xff388514.toInt() else 0xffdae0d6.toInt()
+                ConsoleScene.XBOX_360_METRO -> if(active) 0xff168d07.toInt() else 0xffc4cdc0.toInt()
                 ConsoleScene.XBOX_ONE -> if(active) 0xff107c10.toInt() else 0xff242424.toInt()
                 else -> if(active) 0xff9dce32.toInt() else 0xff142a08.toInt()
             }
-            val radius=if(scene==ConsoleScene.XBOX_ONE) 0f else r.height()*.3f;c.drawRoundRect(r,radius,radius,p)
+            val radius=if(scene==ConsoleScene.XBOX_ONE || scene==ConsoleScene.XBOX_360_METRO) 0f else if(scene==ConsoleScene.XBOX_360_NXE) 4f else r.height()*.3f;c.drawRoundRect(r,radius,radius,p)
             if(active) { p.style=Paint.Style.STROKE;p.strokeWidth=2f;p.color=if(scene==ConsoleScene.XBOX_360) 0xff446016.toInt() else 0xffa9df59.toInt();c.drawRoundRect(r,radius,radius,p) }
         }
         p.style=Paint.Style.FILL

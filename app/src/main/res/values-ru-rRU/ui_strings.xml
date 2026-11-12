@@ -912,4 +912,7 @@
     <string name="ui_af7b3c80a4233094" formatted="false">"Xbox Series X|S"</string>
     <string name="ui_4609f818eb698d86" formatted="false">"Xbox Original"</string>
     <string name="ui_4d735d77ed98756f" formatted="false">"ИГРАТЬ"</string>
+    <string name="ui_429fcd7d07f4a1de" formatted="false">"Xbox 360 — Blades (2005)"</string>
+    <string name="ui_3c50df3036968d65" formatted="false">"Xbox 360 — NXE (2008)"</string>
+    <string name="ui_6bdf0ad82ca7a27d" formatted="false">"Xbox 360 — Metro (2011)"</string>
 </resources>

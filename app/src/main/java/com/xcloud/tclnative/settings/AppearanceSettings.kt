@@ -4,7 +4,7 @@ import com.xcloud.tclnative.i18n.UiText
 
 import android.content.Context
 
-enum class ConsoleScene { NONE, XBOX_360, XBOX_ONE, XBOX_SERIES, XBOX_ORIGINAL }
+enum class ConsoleScene { NONE, XBOX_360, XBOX_ONE, XBOX_SERIES, XBOX_ORIGINAL, XBOX_360_NXE, XBOX_360_METRO }
 enum class BackgroundMotion(private val sourceLabel: String) {
     AUTO("Automático"), ON("Ativado"), OFF("Desativado");
     val label get()=UiText.text(sourceLabel)
@@ -18,7 +18,9 @@ enum class UiTheme(private val sourceLabel: String,val accent: Int,val hue: Floa
     INDUSTRIAL_ORANGE("Laranja Industrial",0xffffa052.toInt(),27f,.25f),
     GALAXY_PURPLE("Roxo Galáxia",0xffc58aff.toInt(),275f,1.1f),
     PLATINUM_SILVER("Prata Platina",0xffd9e2ef.toInt(),216f,.08f),
-    XBOX_360("Xbox 360",0xffa8df55.toInt(),95f,.40f,ConsoleScene.XBOX_360),
+    XBOX_360("Xbox 360 — Blades (2005)",0xffa8df55.toInt(),95f,.40f,ConsoleScene.XBOX_360),
+    XBOX_360_NXE("Xbox 360 — NXE (2008)",0xffb0df74.toInt(),91f,.35f,ConsoleScene.XBOX_360_NXE),
+    XBOX_360_METRO("Xbox 360 — Metro (2011)",0xff9fdb64.toInt(),95f,.45f,ConsoleScene.XBOX_360_METRO),
     XBOX_ONE("Xbox One",0xff7ddd78.toInt(),118f,.70f,ConsoleScene.XBOX_ONE),
     XBOX_SERIES("Xbox Series X|S",0xffa0efbe.toInt(),154f,.58f,ConsoleScene.XBOX_SERIES),
     XBOX_ORIGINAL("Xbox Original",0xffb6ef4b.toInt(),88f,1.10f,ConsoleScene.XBOX_ORIGINAL);

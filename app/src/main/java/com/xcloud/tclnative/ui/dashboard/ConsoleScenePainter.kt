@@ -16,12 +16,14 @@ internal class ConsoleScenePainter {
     private var silver: Shader?=null
     private var orb: Shader?=null
     private val cross=Path()
+    private val era=Xbox360EraArt()
 
     fun configure(palette: UiPalette,width: Int,height: Int) {
         scene=palette.theme.scene
         if(width<=0 || height<=0 || scene==ConsoleScene.NONE) return
         scale=width/1000f;this.height=height/scale
         val h=this.height
+        era.configure(scene,h)
         glow=RadialGradient(0f,0f,330f,intArrayOf(palette.theme.accent and 0x00ffffff or 0x55000000,
             palette.theme.accent and 0x00ffffff or 0x16000000,Color.TRANSPARENT),floatArrayOf(0f,.4f,1f),Shader.TileMode.CLAMP)
         silver=LinearGradient(0f,0f,500f,h,intArrayOf(0x0addede8,0x426e8d70,0x06ffffff),null,Shader.TileMode.CLAMP)
@@ -58,6 +60,7 @@ internal class ConsoleScenePainter {
         val saved=canvas.save();canvas.scale(scale,scale)
         paint.style=Paint.Style.FILL;paint.shader=null;paint.alpha=255
         when(scene) {
+            ConsoleScene.XBOX_360_NXE,ConsoleScene.XBOX_360_METRO -> era.draw(canvas,phase)
             ConsoleScene.XBOX_360 -> {
                 canvas.translate(wave*23f,other*9f)
                 paint.shader=silver

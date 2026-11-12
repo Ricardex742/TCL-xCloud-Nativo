@@ -43,6 +43,8 @@ internal object DashboardTheme {
         UiTheme.GALAXY_PURPLE -> R.style.PalettePurple
         UiTheme.PLATINUM_SILVER -> R.style.PaletteSilver
         UiTheme.XBOX_360 -> R.style.PaletteXbox360
+        UiTheme.XBOX_360_NXE -> R.style.PaletteXboxNxe
+        UiTheme.XBOX_360_METRO -> R.style.PaletteXboxMetro
         UiTheme.XBOX_ONE -> R.style.PaletteXboxOne
         UiTheme.XBOX_SERIES -> R.style.PaletteXboxSeries
         UiTheme.XBOX_ORIGINAL -> R.style.PaletteXboxOriginal

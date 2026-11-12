@@ -105,7 +105,7 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
                 art.load(backdrop,hero,if(modest) 640 else 1024,if(modest) 360 else 576)
             } else art.cancel(backdrop)
         }
-        val portrait = if(scene==ConsoleScene.XBOX_ONE || scene==ConsoleScene.XBOX_SERIES) value.tileUrl ?: value.posterUrl else value.posterUrl ?: value.tileUrl
+        val portrait = if(scene==ConsoleScene.XBOX_ONE || scene==ConsoleScene.XBOX_SERIES || scene==ConsoleScene.XBOX_360_NXE || scene==ConsoleScene.XBOX_360_METRO) value.tileUrl ?: value.posterUrl else value.posterUrl ?: value.tileUrl
         if (portrait != lastPoster) {
             lastPoster = portrait
             art.load(poster, portrait) { ready -> posterFallback.visibility = if (ready) View.GONE else View.VISIBLE }
@@ -158,7 +158,7 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
             age != null -> UiText.text("Estimativa atualizada há {0}. O tempo pode variar.",UiText.nested(QueueStatus.duration(age)))
             else -> UiText.text("A estimativa pode mudar; não é um horário garantido.")
         }
-        freshness.setTextColor(if(stale) { if(scene==ConsoleScene.XBOX_360) 0xff765100.toInt() else DashboardTheme.yellow } else if(scene==ConsoleScene.NONE) DashboardTheme.color(UiColor.QUEUE_TEXT) else secondaryColor())
+        freshness.setTextColor(if(stale) { if(scene==ConsoleScene.XBOX_360 || scene==ConsoleScene.XBOX_360_METRO) 0xff765100.toInt() else DashboardTheme.yellow } else if(scene==ConsoleScene.NONE) DashboardTheme.color(UiColor.QUEUE_TEXT) else secondaryColor())
         val step = when (phase) { LoadingPhase.QUEUED -> 0; LoadingPhase.PREPARING -> 1; else -> 2 }
         val labels = listOf(UiText.text("FILA"), UiText.text("PREPARAÇÃO"), UiText.text("CONEXÃO"))
         steps.forEachIndexed { index, label ->
@@ -169,7 +169,7 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
                     7f,if(index==step) 2 else 1,if(index==step) UiColor.ACCENT else UiColor.QUEUE_STEP_BORDER)
             } else {
                 label.setTextColor(when(scene) {
-                    ConsoleScene.XBOX_360 -> if(index==step) Color.WHITE else 0xff31431b.toInt()
+                    ConsoleScene.XBOX_360,ConsoleScene.XBOX_360_NXE,ConsoleScene.XBOX_360_METRO -> if(index==step) Color.WHITE else 0xff31431b.toInt()
                     ConsoleScene.XBOX_ORIGINAL -> if(index==step) 0xff132900.toInt() else 0xffb5dc75.toInt()
                     else -> if(index<=step) Color.WHITE else 0xffb0b7bd.toInt()
                 })
@@ -184,7 +184,7 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
         visibility = View.GONE; queue = null
         art.pause(); lastBackdrop=null; lastPoster=null
     }
-    private fun secondaryColor()=if(scene==ConsoleScene.XBOX_360) 0xff42532d.toInt() else if(scene==ConsoleScene.XBOX_ORIGINAL) 0xffb9df85.toInt() else 0xffd0d5d9.toInt()
+    private fun secondaryColor()=if(scene==ConsoleScene.XBOX_360 || scene==ConsoleScene.XBOX_360_METRO) 0xff42532d.toInt() else if(scene==ConsoleScene.XBOX_ORIGINAL) 0xffb9df85.toInt() else 0xffd0d5d9.toInt()
     internal fun refreshAppearance() {
         val next=DashboardTheme.palette.theme.scene;val changed=scene!=next;scene=next
         if(scene==ConsoleScene.NONE) {
@@ -209,17 +209,19 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
         background=DashboardBackground(consoleArtwork=scene!=ConsoleScene.XBOX_360)
         shade.background=ConsoleQueueChrome(scene)
         backdrop.visibility=if(scene==ConsoleScene.XBOX_ONE || scene==ConsoleScene.XBOX_SERIES) VISIBLE else GONE
-        val ink=if(scene==ConsoleScene.XBOX_360) 0xff233415.toInt() else Color.WHITE
+        val ink=if(scene==ConsoleScene.XBOX_360 || scene==ConsoleScene.XBOX_360_METRO) 0xff233415.toInt() else Color.WHITE
         listOf(eyebrow,title,posterFallback,status,estimateLabel,estimate,elapsedLabel,elapsed,explanation,heartbeat,freshness,note,cancelButton).forEach { v ->
             v.typeface=Typeface.create(if(scene==ConsoleScene.XBOX_ORIGINAL) "sans-serif-condensed" else "sans-serif-medium",Typeface.NORMAL)
             v.setTextColor(ink)
         }
         listOf(estimateLabel,elapsedLabel,explanation,heartbeat,freshness,note).forEach { it.typeface=Typeface.create("sans-serif",Typeface.NORMAL);it.setTextColor(secondaryColor()) }
-        eyebrow.text=when(scene) { ConsoleScene.XBOX_360 -> "XBOX 360";ConsoleScene.XBOX_ONE -> "Xbox One";ConsoleScene.XBOX_SERIES -> "Xbox Series X|S";else -> "XBOX" }
+        eyebrow.text=when(scene) { ConsoleScene.XBOX_360,ConsoleScene.XBOX_360_NXE,ConsoleScene.XBOX_360_METRO -> "XBOX 360";ConsoleScene.XBOX_ONE -> "Xbox One";ConsoleScene.XBOX_SERIES -> "Xbox Series X|S";else -> "XBOX" }
         eyebrow.setTextColor(if(scene==ConsoleScene.XBOX_ORIGINAL) 0xffb8ee4c.toInt() else ink)
         panel.background=when(scene) {
             ConsoleScene.XBOX_360 -> GradientDrawable().apply { setColor(0x70f6f8e9);cornerRadius=5f;setStroke(1,0xff8da469.toInt()) }
             ConsoleScene.XBOX_ONE -> GradientDrawable().apply { setColor(0xff161616.toInt()) }
+            ConsoleScene.XBOX_360_NXE -> GradientDrawable().apply { setColor(0xdf263324.toInt());cornerRadius=5f;setStroke(1,0xffa3b39b.toInt()) }
+            ConsoleScene.XBOX_360_METRO -> GradientDrawable().apply { setColor(0xffeff1ec.toInt()) }
             ConsoleScene.XBOX_SERIES -> null
             else -> GradientDrawable().apply { setColor(0xc60b1d03.toInt());cornerRadius=12f;setStroke(1,0xff6d952c.toInt()) }
         }
@@ -227,6 +229,7 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
         cancelButton.setTextColor(if(scene==ConsoleScene.XBOX_360 || scene==ConsoleScene.XBOX_ORIGINAL) 0xff142700.toInt() else Color.WHITE)
         steps.forEach { it.typeface=Typeface.create("sans-serif-medium",Typeface.NORMAL) }
         spinner.indeterminateTintList=ColorStateList.valueOf(if(scene==ConsoleScene.XBOX_360) 0xff4d761e.toInt() else 0xff8bdc42.toInt())
+        if(scene==ConsoleScene.XBOX_360_NXE) note.setTextColor(0xff263024.toInt())
         geometry=0L;requestLayout()
         if(changed) { lastBackdrop=null;lastPoster=null;game?.let(::setGame) }
         if(game!=null) render(lastRenderedAt)
@@ -273,6 +276,20 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
         title.maxLines=2;title.typeface=Typeface.create("sans-serif-medium",Typeface.NORMAL)
         if(android.os.Build.VERSION.SDK_INT>=26) title.setAutoSizeTextTypeUniformWithConfiguration((25*s).roundToInt().coerceAtLeast(1),(38*s).roundToInt().coerceAtLeast(2),1,TypedValue.COMPLEX_UNIT_PX)
         when(scene) {
+            ConsoleScene.XBOX_360_NXE -> {
+                root(eyebrow,64,38,1100,35);root(title,64,88,1100,79)
+                root(poster,76,207,294,294);root(posterFallback,88,219,270,270);root(badges,76,449,294,52)
+                root(panel,414,197,790,338)
+                steps.forEachIndexed { i,v -> root(v,414+i*269,565,253,54) }
+                root(cancelButton,76,565,294,54);root(note,414,641,790,39)
+            }
+            ConsoleScene.XBOX_360_METRO -> {
+                root(eyebrow,64,38,1100,35);root(title,64,88,1100,79)
+                root(poster,64,204,306,306);root(posterFallback,76,216,282,282);root(badges,64,458,306,52)
+                root(panel,406,204,798,330)
+                steps.forEachIndexed { i,v -> root(v,406+i*271,555,255,57) }
+                root(cancelButton,64,555,306,57);root(note,406,636,798,39)
+            }
             ConsoleScene.XBOX_360 -> {
                 root(eyebrow,98,47,1080,33);root(title,98,93,1080,67)
                 root(poster,102,202,218,322);root(posterFallback,110,211,202,298);root(badges,102,472,218,52)

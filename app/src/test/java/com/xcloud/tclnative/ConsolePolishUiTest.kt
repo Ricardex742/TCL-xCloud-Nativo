@@ -41,6 +41,7 @@ class ConsolePolishUiTest {
             dispatcher=object: Dispatcher() {
                 override fun dispatch(request: RecordedRequest): MockResponse {
                     val path=request.path!!
+                    if(path.startsWith("/missing")) return MockResponse().setResponseCode(404)
                     val data=when { path.startsWith("/white") -> white
                         path.startsWith("/hero") -> javaClass.getResourceAsStream("/showcase/hero-0.jpg")!!.use { it.readBytes() }
                         else -> javaClass.getResourceAsStream("/showcase/poster-${path.substringAfter("poster-").substringBefore('.')}.png")!!.use { it.readBytes() } }
@@ -141,7 +142,7 @@ class ConsolePolishUiTest {
         val view=GameLoadingView(a) { cancelled++ }
         try {
             a.setContentView(view);view.begin(data()[0],0);view.updateQueue(QueueStatus(0,7000,QueueEstimate(787),0),8000)
-            for(theme in listOf(UiTheme.XBOX_360,UiTheme.XBOX_ONE,UiTheme.XBOX_SERIES,UiTheme.XBOX_ORIGINAL,UiTheme.GREEN)) {
+            for(theme in listOf(UiTheme.XBOX_360,UiTheme.XBOX_ONE,UiTheme.XBOX_SERIES,UiTheme.XBOX_ORIGINAL,UiTheme.XBOX_360_NXE,UiTheme.XBOX_360_METRO,UiTheme.GREEN)) {
                 DashboardTheme.apply(a,theme,a.findViewById(android.R.id.content));layout(view);settled(view)
                 val labels=all(view).filterIsInstance<TextView>().map { it.text.toString() }
                 assertTrue(labels.contains("Cerca de 13 min 7s"));assertTrue(labels.contains("8s"));assertEquals(LoadingPhase.QUEUED,view.phase)
@@ -155,5 +156,69 @@ class ConsolePolishUiTest {
             view.updateProgress("VIDEO: first packet");assertEquals(LoadingPhase.VIDEO,view.phase)
             view.cancelFromController();assertEquals(1,cancelled)
         } finally { view.close();controller.pause().stop().destroy() }
+    }
+
+    @Test fun nxeHasPerspectiveCardsAndMetroHasAnAsymmetricMosaicWithWorkingSelection() {
+        for(theme in listOf(UiTheme.XBOX_360_NXE,UiTheme.XBOX_360_METRO)) {
+            DashboardTheme.apply(RuntimeEnvironment.getApplication(),theme)
+            val controller=Robolectric.buildActivity(Activity::class.java).setup();val a=controller.get()
+            val played=mutableListOf<String>();val v=dashboard(a,play={played+=it.titleId})
+            try {
+                val grid=all(v).filterIsInstance<RecyclerView>().single()
+                val manager=grid.layoutManager as androidx.recyclerview.widget.GridLayoutManager
+                val first=grid.findViewHolderForAdapterPosition(0)!!.itemView
+                val second=grid.findViewHolderForAdapterPosition(1)!!.itemView
+                if(theme==UiTheme.XBOX_360_NXE) {
+                    assertEquals(RecyclerView.HORIZONTAL,manager.orientation);assertTrue(first.width>second.width)
+                    val cover=all(second).filterIsInstance<FixedArtworkView>().single().parent as View
+                    assertTrue("NXE neighbor must recede in perspective",cover.rotationY < -10)
+                } else {
+                    assertEquals(3,manager.spanCount);assertEquals(2,manager.spanSizeLookup.getSpanSize(0));assertEquals(1,manager.spanSizeLookup.getSpanSize(1))
+                    assertTrue("Metro lead tile spans two columns",first.width>second.width*1.8f)
+                    assertFalse("Loaded artwork must hide the placeholder behind it",all(first).filterIsInstance<TextView>().any { it.isShown && it.text.toString()=="007 FIRST LIGHT" })
+                }
+                capture(v,"era-${theme.name.lowercase()}")
+                second.requestFocus();layout(v)
+                assertSame(second,v.findFocus());assertEquals("POLISH-1",v.selectedGame!!.titleId)
+                v.handleKey(KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_BUTTON_Y));layout(v);assertTrue(second.contentDescription.contains("favorito"))
+                v.handleKey(KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_BUTTON_A));assertEquals(listOf("POLISH-1"),played)
+            } finally { v.close();controller.pause().stop().destroy() }
+        }
+    }
+
+    @Test fun phoneSearchIsLargerAndTheSeriesNoticeCannotCoverNavigationOrSubscription() {
+        for(theme in UiTheme.entries) {
+            DashboardTheme.apply(RuntimeEnvironment.getApplication(),theme)
+            val controller=Robolectric.buildActivity(Activity::class.java).setup();val a=controller.get();val v=dashboard(a)
+            try {
+                v.setMetadataProgress(CatalogService.Progress(2,8,true,false));layout(v,1452,689)
+                val search=all(v).single { it.contentDescription=="Pesquisar jogos" }
+                assertTrue("$theme phone search must have a larger target",search.width>=72 && search.height>=72)
+                if(theme==UiTheme.XBOX_SERIES) {
+                    fun area(child: View)=Rect(0,0,child.width,child.height).also { v.offsetDescendantRectToMyCoords(child,it) }
+                    val notice=all(v).filterIsInstance<TextView>().single { it.text.startsWith("ALGUMAS CAPAS INDISPONÍVEIS") }
+                    val profile=all(v).single { it.contentDescription?.contains("Abrir configurações")==true }
+                    val tab=all(v).filterIsInstance<TextView>().single { it.isShown && it.isClickable && it.contentDescription?.contains(", selecionado")==true }
+                    val subscription=all(profile).filterIsInstance<TextView>().single { it.text.toString()=="GAME PASS ULTIMATE" }
+                    assertFalse(Rect.intersects(area(notice),area(profile)));assertFalse(Rect.intersects(area(notice),area(tab.parent as View)))
+                    assertTrue(area(profile).contains(area(subscription)))
+                    assertTrue(subscription.layout.getLineBottom(0)<=subscription.height)
+                    capture(v,"series-notice-phone")
+                }
+            } finally { v.close();controller.pause().stop().destroy() }
+        }
+    }
+
+    @Test fun oneFallsBackFromMissingPanoramicArtworkAndHasNoLooseGreenStripe() {
+        DashboardTheme.apply(RuntimeEnvironment.getApplication(),UiTheme.XBOX_ONE)
+        val controller=Robolectric.buildActivity(Activity::class.java).setup();val a=controller.get();val v=dashboard(a)
+        try {
+            v.setGames(data().mapIndexed { i,g -> if(i==0) g.copy(heroUrl=server.url("/missing.jpg").toString()) else g });layout(v);v.restoreFocus();settled(v)
+            val hero=all(v).filterIsInstance<FixedArtworkView>().single { it.contentDescription=="Ícone de 007 First Light" }
+            assertTrue("Missing panorama must use the existing cover",hero.drawable is BitmapDrawable)
+            assertEquals(android.widget.ImageView.ScaleType.FIT_CENTER,hero.scaleType)
+            val b=bitmap(v);val color=b.getPixel(56,535);assertTrue("No decorative stripe between art and play button",Color.green(color)<120);b.recycle()
+            capture(v,"one-artwork-fallback")
+        } finally { v.close();controller.pause().stop().destroy() }
     }
 }

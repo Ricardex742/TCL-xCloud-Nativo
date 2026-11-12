@@ -75,7 +75,7 @@ class ConsoleThemeTest {
         assertEquals(BackgroundMotion.AUTO,store.motion())
     }
 
-    @Test fun allFourScenesReallyMoveWithoutChangingTheBasePaletteOrAllocatingImageAssets() {
+    @Test fun allSixScenesReallyMoveWithoutChangingTheBasePaletteOrAllocatingImageAssets() {
         val app=RuntimeEnvironment.getApplication()
         val signatures=mutableSetOf<Int>()
         for(theme in UiTheme.entries.filter { it.scene!=ConsoleScene.NONE }) {
@@ -96,7 +96,7 @@ class ConsoleThemeTest {
             assertArrayEquals("$theme cycle must be deterministic",still,capture(0f))
             signatures.add(still.contentHashCode())
         }
-        assertEquals(4,signatures.size)
+        assertEquals(6,signatures.size)
     }
 
     @Test @Config(sdk=[24,28,34]) @GraphicsMode(GraphicsMode.Mode.LEGACY)

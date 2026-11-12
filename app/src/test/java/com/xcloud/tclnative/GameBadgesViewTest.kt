@@ -68,6 +68,7 @@ class GameBadgesViewTest {
             view.measure(View.MeasureSpec.makeMeasureSpec(202,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(52,View.MeasureSpec.EXACTLY));view.layout(0,0,202,52)
             val b=Bitmap.createBitmap(202,52,Bitmap.Config.ARGB_8888)
             view.draw(Canvas(b))
+            assertEquals("Artwork remains visible outside each white logo",0,android.graphics.Color.alpha(b.getPixel(201,51)))
             File("build/reports/dashboard/catalog-badges.png").apply { parentFile?.mkdirs() }.outputStream().use { b.compress(Bitmap.CompressFormat.PNG,100,it) };b.recycle()
         } finally { c.pause().stop().destroy() }
     }

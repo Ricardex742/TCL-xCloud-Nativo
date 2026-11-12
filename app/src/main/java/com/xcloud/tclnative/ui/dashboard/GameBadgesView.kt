@@ -27,7 +27,6 @@ internal class GameBadgesView(context: Context) : FrameLayout(context) {
     private val series=badge(R.drawable.badge_series_xs,UiText.text("Otimizado para Xbox Series X|S"))
     init {
         isFocusable=false
-        background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,intArrayOf(Color.TRANSPARENT,0xcf000000.toInt()))
         addView(pass);addView(series)
     }
     fun bind(gamePass: Boolean, optimized: Boolean, scale: Float) {

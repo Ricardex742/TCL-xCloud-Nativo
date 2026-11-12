@@ -8,6 +8,26 @@ import kotlin.math.sin
 
 internal enum class ConsoleGlyph { HOME,FAVORITE,GAME_PASS,PURCHASED,RECENT,LIBRARY,SEARCH,SETTINGS }
 
+/** The solid green utility column is part of the Metro layout, distinct from Series shortcuts. */
+internal class MetroShortcutPlate(private val kind: Int): Drawable() {
+    private val p=Paint(Paint.ANTI_ALIAS_FLAG)
+    private val icons=ConsoleIcons()
+    override fun isStateful()=true
+    override fun onStateChange(state: IntArray): Boolean { invalidateSelf();return true }
+    override fun draw(c: Canvas) {
+        p.style=Paint.Style.FILL;p.color=0xff168d07.toInt();c.drawRect(bounds,p)
+        val size=bounds.height()*.36f
+        icons.draw(c,when(kind) { 0 -> ConsoleGlyph.LIBRARY;1 -> ConsoleGlyph.GAME_PASS;else -> ConsoleGlyph.PURCHASED },bounds.centerX()-size/2,bounds.top+14f,size)
+        if(android.R.attr.state_focused in state || android.R.attr.state_pressed in state) {
+            p.style=Paint.Style.STROKE;p.strokeWidth=4f;p.color=Color.WHITE
+            c.drawRect(bounds.left+2f,bounds.top+2f,bounds.right-2f,bounds.bottom-2f,p)
+        }
+    }
+    override fun setAlpha(alpha: Int) {}
+    override fun setColorFilter(filter: ColorFilter?) {}
+    @Deprecated("Deprecated in Java") override fun getOpacity()=PixelFormat.TRANSLUCENT
+}
+
 /** Resolution-independent navigation marks, rather than device-dependent Unicode glyphs. */
 internal class ConsoleIcons {
     private val p=Paint(Paint.ANTI_ALIAS_FLAG)

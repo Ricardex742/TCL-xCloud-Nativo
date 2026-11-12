@@ -880,4 +880,28 @@
     <string name="ui_926cde6ac928ee3f" formatted="false">"Sortie de mise à l’échelle demandée : {0} | tampon demandé : {1}\n"</string>
     <string name="ui_54a1a9944bd29e08" formatted="false">"Cadence locale de rendu : {0} (ne mesure ni le GPU ni les FPS du jeu/écran)\n"</string>
     <string name="ui_1e53dc3bd47bfd37" formatted="false">"Mise à l’échelle : retour au mode standard — {0}"</string>
+    <string name="ui_ab80b661abb4d819" formatted="false">"Mise à l’échelle et traitement : {0}"</string>
+    <string name="ui_421fc3b80d653c41" formatted="false">"Réglage standard de l’appareil"</string>
+    <string name="ui_19641a71ea37bded" formatted="false">"Reconstruction xCloud"</string>
+    <string name="ui_1915d14ae05fb304" formatted="false">"Utilise la mise à l’échelle standard de l’appareil. La netteté et les filtres supplémentaires ci-dessous sont facultatifs."</string>
+    <string name="ui_c50e172c261d8c7e" formatted="false">"FSR agrandit l’image avec EASU et applique la netteté choisie ci-dessous. À la taille native, seule la netteté est appliquée. Méthode expérimentale."</string>
+    <string name="ui_bd256736c94b60c2" formatted="false">"SGSR combine agrandissement et accentuation propre. La netteté ci-dessous concerne SGSR ; RCAS et USM ne s’y appliquent pas. Méthode expérimentale."</string>
+    <string name="ui_a1a502f6cbd61c13" formatted="false">"La reconstruction xCloud privilégie les détails, même sans agrandissement. Qualité, intensité et comparaison ci-dessous concernent cette méthode. Méthode expérimentale."</string>
+    <string name="ui_c75da833acbd4f43" formatted="false">"Mise à l’échelle et traitement"</string>
+    <string name="ui_38b562e06a2e6f8a" formatted="false">"Compatibilité est actif et désactive les méthodes et filtres expérimentaux. Changez le mode dans Vidéo et diffusion pour les utiliser."</string>
+    <string name="ui_57dcc836395931d8" formatted="false">"Méthode : {0}"</string>
+    <string name="ui_8a4b6093d87902de" formatted="false">"Filtres supplémentaires : {0}"</string>
+    <string name="ui_dcb5d6a4ed215b52" formatted="false">"Activés"</string>
+    <string name="ui_78f59d802c8dfa66" formatted="false">"Désactivés"</string>
+    <string name="ui_8862905aba7cac02" formatted="false">"Couleurs de l’image"</string>
+    <string name="ui_5c4fc77e76b3e821" formatted="false">"RCAS original"</string>
+    <string name="ui_bc2a6c1d3e1068bf" formatted="false">"Netteté simple"</string>
+    <string name="ui_f87888746e40f335" formatted="false">"{0} — Netteté"</string>
+    <string name="ui_8a16e0aa4971e729" formatted="false">"Ce réglage concerne la méthode sélectionnée. RCAS adaptatif et USM agissent sur la luminance pour limiter le bruit et les halos."</string>
+    <string name="ui_c559eea667737d74" formatted="false">"Choisir une méthode d’image"</string>
+    <string name="ui_726dd1ebf97968ef" formatted="false">"Choisissez une seule méthode. Standard utilise la mise à l’échelle de l’appareil. FSR et SGSR agrandissent et accentuent l’image. Reconstruction xCloud privilégie les détails. Ces trois alternatives sont expérimentales. Après sélection, les réglages correspondants apparaissent sur le même écran."</string>
+    <string name="ui_604124660b08c782" formatted="false">"Luminosité, contraste et saturation sont des réglages de couleur partagés. La netteté se trouve dans Mise à l’échelle et traitement, avec la méthode choisie."</string>
+    <string name="ui_2dc867123a3f77a9" formatted="false">"Filtres supplémentaires — partagés"</string>
+    <string name="ui_4e539bd60654f414" formatted="false">"Ces filtres fonctionnent avec la méthode choisie : Standard, FSR, SGSR ou Reconstruction xCloud. Les profils règlent aussi la netteté de cette méthode. Inutile d’activer une autre mise à l’échelle."</string>
+    <string name="ui_e823d8526c139e5f" formatted="false">"0% désactive uniquement la netteté de cette méthode. L’agrandissement et les filtres supplémentaires restent indépendants. Commencez à 25%."</string>
 </resources>

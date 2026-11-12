@@ -880,4 +880,28 @@
     <string name="ui_926cde6ac928ee3f" formatted="false">"Salida solicitada del escalador: {0} | búfer solicitado: {1}\n"</string>
     <string name="ui_54a1a9944bd29e08" formatted="false">"Cadencia local del renderizado: {0} (no mide GPU ni FPS del juego/pantalla)\n"</string>
     <string name="ui_1e53dc3bd47bfd37" formatted="false">"Escalador: regreso al escalado estándar — {0}"</string>
+    <string name="ui_ab80b661abb4d819" formatted="false">"Escalado y tratamiento: {0}"</string>
+    <string name="ui_421fc3b80d653c41" formatted="false">"Predeterminado del dispositivo"</string>
+    <string name="ui_19641a71ea37bded" formatted="false">"Reconstrucción xCloud"</string>
+    <string name="ui_1915d14ae05fb304" formatted="false">"Usa el escalado estándar del dispositivo. La nitidez y los filtros adicionales de abajo son opcionales."</string>
+    <string name="ui_c50e172c261d8c7e" formatted="false">"FSR amplía la imagen con EASU y aplica la nitidez elegida abajo. A tamaño nativo, solo aplica nitidez. Método experimental."</string>
+    <string name="ui_bd256736c94b60c2" formatted="false">"SGSR combina ampliación y realce propio. La nitidez de abajo pertenece a SGSR; RCAS y USM no se le aplican. Método experimental."</string>
+    <string name="ui_a1a502f6cbd61c13" formatted="false">"La reconstrucción xCloud prioriza la definición, incluso sin ampliar. La calidad, la intensidad y la comparación de abajo pertenecen a este método. Método experimental."</string>
+    <string name="ui_c75da833acbd4f43" formatted="false">"Escalado y tratamiento"</string>
+    <string name="ui_38b562e06a2e6f8a" formatted="false">"Compatibilidad está activa y desactiva los métodos y filtros experimentales. Cambia el modo en Vídeo y transmisión para usarlos."</string>
+    <string name="ui_57dcc836395931d8" formatted="false">"Método: {0}"</string>
+    <string name="ui_8a4b6093d87902de" formatted="false">"Filtros adicionales: {0}"</string>
+    <string name="ui_dcb5d6a4ed215b52" formatted="false">"Activados"</string>
+    <string name="ui_78f59d802c8dfa66" formatted="false">"Desactivados"</string>
+    <string name="ui_8862905aba7cac02" formatted="false">"Colores de la imagen"</string>
+    <string name="ui_5c4fc77e76b3e821" formatted="false">"RCAS original"</string>
+    <string name="ui_bc2a6c1d3e1068bf" formatted="false">"Nitidez simple"</string>
+    <string name="ui_f87888746e40f335" formatted="false">"{0} — Nitidez"</string>
+    <string name="ui_8a16e0aa4971e729" formatted="false">"Este ajuste pertenece al método seleccionado. RCAS adaptativo y USM actúan sobre la luminancia para limitar ruido y halos."</string>
+    <string name="ui_c559eea667737d74" formatted="false">"Elegir método de imagen"</string>
+    <string name="ui_726dd1ebf97968ef" formatted="false">"Elige un solo método. Predeterminado usa el escalado del dispositivo. FSR y SGSR amplían y realzan la imagen. Reconstrucción xCloud prioriza la definición. Las tres alternativas son experimentales. Al elegir, los ajustes correspondientes aparecen en la misma pantalla."</string>
+    <string name="ui_604124660b08c782" formatted="false">"Brillo, contraste y saturación son ajustes de color compartidos. La nitidez está en Escalado y tratamiento, junto al método elegido."</string>
+    <string name="ui_2dc867123a3f77a9" formatted="false">"Filtros adicionales — compartidos"</string>
+    <string name="ui_4e539bd60654f414" formatted="false">"Estos filtros se aplican junto al método elegido: Predeterminado, FSR, SGSR o Reconstrucción xCloud. Los perfiles también ajustan la nitidez de ese método. No hace falta activar otro escalador."</string>
+    <string name="ui_e823d8526c139e5f" formatted="false">"El 0% desactiva solo la nitidez de este método. La ampliación y los filtros adicionales son independientes. Empieza con el 25%."</string>
 </resources>

@@ -880,4 +880,28 @@
     <string name="ui_926cde6ac928ee3f" formatted="false">"Requested upscaler output: {0} | requested buffer: {1}\n"</string>
     <string name="ui_54a1a9944bd29e08" formatted="false">"Local render cadence: {0} (does not measure GPU or game/display FPS)\n"</string>
     <string name="ui_1e53dc3bd47bfd37" formatted="false">"Upscaler: fallback to standard scaling — {0}"</string>
+    <string name="ui_ab80b661abb4d819" formatted="false">"Upscaling and processing: {0}"</string>
+    <string name="ui_421fc3b80d653c41" formatted="false">"Device default"</string>
+    <string name="ui_19641a71ea37bded" formatted="false">"xCloud reconstruction"</string>
+    <string name="ui_1915d14ae05fb304" formatted="false">"Uses the device’s standard scaling. Sharpening and the additional filters below are optional."</string>
+    <string name="ui_c50e172c261d8c7e" formatted="false">"FSR enlarges the image with EASU and applies the sharpening selected below. At native size, it applies sharpening only. Experimental method."</string>
+    <string name="ui_bd256736c94b60c2" formatted="false">"SGSR combines enlargement with its own sharpening. The strength below belongs to SGSR; RCAS and USM do not apply to it. Experimental method."</string>
+    <string name="ui_a1a502f6cbd61c13" formatted="false">"xCloud reconstruction prioritizes definition, including without enlargement. Quality, strength and comparison below belong to this method. Experimental method."</string>
+    <string name="ui_c75da833acbd4f43" formatted="false">"Upscaling and processing"</string>
+    <string name="ui_38b562e06a2e6f8a" formatted="false">"Compatibility is active and disables experimental methods and filters. Change the mode in Video and streaming to use them."</string>
+    <string name="ui_57dcc836395931d8" formatted="false">"Method: {0}"</string>
+    <string name="ui_8a4b6093d87902de" formatted="false">"Additional filters: {0}"</string>
+    <string name="ui_dcb5d6a4ed215b52" formatted="false">"Enabled"</string>
+    <string name="ui_78f59d802c8dfa66" formatted="false">"Disabled"</string>
+    <string name="ui_8862905aba7cac02" formatted="false">"Image colors"</string>
+    <string name="ui_5c4fc77e76b3e821" formatted="false">"Original RCAS"</string>
+    <string name="ui_bc2a6c1d3e1068bf" formatted="false">"Basic sharpening"</string>
+    <string name="ui_f87888746e40f335" formatted="false">"{0} — Sharpening"</string>
+    <string name="ui_8a16e0aa4971e729" formatted="false">"This setting belongs to the selected method. Adaptive RCAS and USM work on luminance to limit noise and halos."</string>
+    <string name="ui_c559eea667737d74" formatted="false">"Choose image method"</string>
+    <string name="ui_726dd1ebf97968ef" formatted="false">"Choose one method. Default uses device scaling. FSR and SGSR enlarge and sharpen the image. xCloud reconstruction prioritizes definition. The three alternatives are experimental. After selection, the corresponding settings appear on the same screen."</string>
+    <string name="ui_604124660b08c782" formatted="false">"Brightness, contrast and saturation are shared color settings. Sharpening is in Upscaling and processing, alongside the selected method."</string>
+    <string name="ui_2dc867123a3f77a9" formatted="false">"Additional filters — shared"</string>
+    <string name="ui_4e539bd60654f414" formatted="false">"These filters work alongside the chosen method: Default, FSR, SGSR or xCloud reconstruction. Presets also adjust that method’s sharpening. You do not need to enable another upscaler."</string>
+    <string name="ui_e823d8526c139e5f" formatted="false">"0% disables only this method’s sharpening. Enlargement and additional filters remain independent. Start with 25%."</string>
 </resources>

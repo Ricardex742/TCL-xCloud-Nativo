@@ -137,7 +137,7 @@ A galeria reúne capturas reais de uso e telas de demonstração do app. O QR Co
 - **Debanding com dithering**, limpeza seletiva de compressão, reconstrução de cor nas bordas e antialiasing ajustáveis.
 - **Estabilização temporal** com busca local de movimento, descarte de histórico em mudanças de geometria e rejeição de mudanças de cena.
 - **Reconstrução neural experimental** na luminância, com buffers half-float verificados e fonte de até 1080p; disponibilidade efetiva mostrada no diagnóstico.
-- Perfis **Leve**, **Natural** e restauração da imagem original em **Imagem e tela › Tratamento da imagem**.
+- Configuração central em **Imagem e tela › Upscaling e tratamento**: escolha do método, ajustes correspondentes e filtros adicionais compartilhados. Perfis **Leve** e **Natural** ajustam a nitidez do método escolhido; a restauração da imagem original fica na mesma tela.
 - Proteção progressiva reduz efeitos e saída quando os desenhos ficam abaixo da cadência recebida, preservando as preferências salvas e registrando os cortes da partida.
 - Preferência por uma taxa de atualização compatível com a apresentação do vídeo.
 

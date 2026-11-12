@@ -12,7 +12,7 @@ object GameMenuPanel {
              aspect: (() -> Unit)? = null,language: (() -> Unit)? = null): ConsoleDialog {
         val actions=mutableListOf<ConsoleAction>()
         if(aspect!=null) actions+=ConsoleAction(UiText.text("Proporção da imagem"),aspect)
-        actions+=ConsoleAction(UiText.text("Ajustes da imagem"),image)
+        actions+=ConsoleAction(UiText.text("Upscaling e tratamento"),image)
         if(virtualTouch!=null) actions+=ConsoleAction(UiText.text("Usar controle virtual nesta partida"),virtualTouch)
         if(hud!=null) actions+=ConsoleAction(UiText.text("HUD e controles deste jogo"),hud)
         if(sessionOptions!=null) actions+=ConsoleAction(UiText.text("Bitrate, região e idioma deste jogo"),sessionOptions)

@@ -880,4 +880,28 @@
     <string name="ui_926cde6ac928ee3f" formatted="false">"İstenen ölçekleyici çıkışı: {0} | istenen arabellek: {1}\n"</string>
     <string name="ui_54a1a9944bd29e08" formatted="false">"Yerel işleme aralığı: {0} (GPU süresini veya oyun/ekran FPS değerini ölçmez)\n"</string>
     <string name="ui_1e53dc3bd47bfd37" formatted="false">"Ölçekleyici: standart ölçeklemeye dönüş — {0}"</string>
+    <string name="ui_ab80b661abb4d819" formatted="false">"Ölçekleme ve görüntü işleme: {0}"</string>
+    <string name="ui_421fc3b80d653c41" formatted="false">"Cihaz varsayılanı"</string>
+    <string name="ui_19641a71ea37bded" formatted="false">"xCloud yeniden oluşturma"</string>
+    <string name="ui_1915d14ae05fb304" formatted="false">"Cihazın standart ölçeklemesini kullanır. Aşağıdaki keskinlik ve ek filtreler isteğe bağlıdır."</string>
+    <string name="ui_c50e172c261d8c7e" formatted="false">"FSR görüntüyü EASU ile büyütür ve aşağıda seçilen keskinliği uygular. Yerel boyutta yalnızca keskinlik uygular. Deneysel yöntem."</string>
+    <string name="ui_bd256736c94b60c2" formatted="false">"SGSR, büyütmeyi kendi keskinleştirmesiyle birleştirir. Aşağıdaki keskinlik SGSR içindir; RCAS ve USM buna uygulanmaz. Deneysel yöntem."</string>
+    <string name="ui_a1a502f6cbd61c13" formatted="false">"xCloud yeniden oluşturma, büyütmeden de ayrıntıları önceliklendirir. Aşağıdaki kalite, güç ve karşılaştırma bu yönteme aittir. Deneysel yöntem."</string>
+    <string name="ui_c75da833acbd4f43" formatted="false">"Ölçekleme ve görüntü işleme"</string>
+    <string name="ui_38b562e06a2e6f8a" formatted="false">"Uyumluluk modu etkin olduğundan deneysel yöntem ve filtreler kapalıdır. Kullanmak için Video ve yayın bölümünden modu değiştirin."</string>
+    <string name="ui_57dcc836395931d8" formatted="false">"Yöntem: {0}"</string>
+    <string name="ui_8a4b6093d87902de" formatted="false">"Ek filtreler: {0}"</string>
+    <string name="ui_dcb5d6a4ed215b52" formatted="false">"Etkin"</string>
+    <string name="ui_78f59d802c8dfa66" formatted="false">"Devre dışı"</string>
+    <string name="ui_8862905aba7cac02" formatted="false">"Görüntü renkleri"</string>
+    <string name="ui_5c4fc77e76b3e821" formatted="false">"Orijinal RCAS"</string>
+    <string name="ui_bc2a6c1d3e1068bf" formatted="false">"Basit keskinlik"</string>
+    <string name="ui_f87888746e40f335" formatted="false">"{0} — Keskinlik"</string>
+    <string name="ui_8a16e0aa4971e729" formatted="false">"Bu ayar seçilen yönteme aittir. Uyarlanabilir RCAS ve USM, gürültü ve haleleri sınırlamak için parlaklık üzerinde çalışır."</string>
+    <string name="ui_c559eea667737d74" formatted="false">"Görüntü yöntemi seç"</string>
+    <string name="ui_726dd1ebf97968ef" formatted="false">"Tek bir yöntem seçin. Varsayılan, cihaz ölçeklemesini kullanır. FSR ve SGSR görüntüyü büyütüp keskinleştirir. xCloud yeniden oluşturma ayrıntıları önceliklendirir. Üç alternatif yöntem deneyseldir. Seçimden sonra ilgili ayarlar aynı ekranda görünür."</string>
+    <string name="ui_604124660b08c782" formatted="false">"Parlaklık, kontrast ve doygunluk ortak renk ayarlarıdır. Keskinlik, Ölçekleme ve görüntü işleme bölümünde seçilen yöntemin yanındadır."</string>
+    <string name="ui_2dc867123a3f77a9" formatted="false">"Ek filtreler — ortak"</string>
+    <string name="ui_4e539bd60654f414" formatted="false">"Bu filtreler seçilen Varsayılan, FSR, SGSR veya xCloud yeniden oluşturma yöntemiyle birlikte uygulanır. Profiller o yöntemin keskinliğini de ayarlar. Başka bir ölçekleyici açmanız gerekmez."</string>
+    <string name="ui_e823d8526c139e5f" formatted="false">"%0 yalnızca bu yöntemin keskinliğini kapatır. Büyütme ve ek filtreler bağımsızdır. %25 ile başlayın."</string>
 </resources>

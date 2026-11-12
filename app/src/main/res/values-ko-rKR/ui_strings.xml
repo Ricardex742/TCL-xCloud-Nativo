@@ -880,4 +880,28 @@
     <string name="ui_926cde6ac928ee3f" formatted="false">"요청한 업스케일러 출력: {0} | 요청한 버퍼: {1}\n"</string>
     <string name="ui_54a1a9944bd29e08" formatted="false">"기기 렌더링 간격: {0} (GPU 시간이나 게임/화면 FPS를 측정하지 않음)\n"</string>
     <string name="ui_1e53dc3bd47bfd37" formatted="false">"업스케일러: 기본 크기 조절로 복귀 — {0}"</string>
+    <string name="ui_ab80b661abb4d819" formatted="false">"확대 및 영상 처리: {0}"</string>
+    <string name="ui_421fc3b80d653c41" formatted="false">"기기 기본값"</string>
+    <string name="ui_19641a71ea37bded" formatted="false">"xCloud 재구성"</string>
+    <string name="ui_1915d14ae05fb304" formatted="false">"기기의 기본 크기 조절을 사용합니다. 아래의 선명도와 추가 필터는 선택 사항입니다."</string>
+    <string name="ui_c50e172c261d8c7e" formatted="false">"FSR은 EASU로 영상을 확대하고 아래에서 선택한 선명도를 적용합니다. 원본 크기에서는 선명도만 적용합니다. 실험적 방식입니다."</string>
+    <string name="ui_bd256736c94b60c2" formatted="false">"SGSR은 확대와 자체 선명도 처리를 결합합니다. 아래 선명도는 SGSR용이며 RCAS와 USM은 적용되지 않습니다. 실험적 방식입니다."</string>
+    <string name="ui_a1a502f6cbd61c13" formatted="false">"xCloud 재구성은 확대하지 않아도 세부 표현을 우선합니다. 아래 품질, 강도, 비교는 이 방식의 설정입니다. 실험적 방식입니다."</string>
+    <string name="ui_c75da833acbd4f43" formatted="false">"확대 및 영상 처리"</string>
+    <string name="ui_38b562e06a2e6f8a" formatted="false">"호환성 모드가 활성화되어 실험적 방식과 필터를 사용할 수 없습니다. 사용하려면 영상 및 스트리밍에서 모드를 변경하세요."</string>
+    <string name="ui_57dcc836395931d8" formatted="false">"방식: {0}"</string>
+    <string name="ui_8a4b6093d87902de" formatted="false">"추가 필터: {0}"</string>
+    <string name="ui_dcb5d6a4ed215b52" formatted="false">"켜짐"</string>
+    <string name="ui_78f59d802c8dfa66" formatted="false">"꺼짐"</string>
+    <string name="ui_8862905aba7cac02" formatted="false">"영상 색상"</string>
+    <string name="ui_5c4fc77e76b3e821" formatted="false">"기본 RCAS"</string>
+    <string name="ui_bc2a6c1d3e1068bf" formatted="false">"기본 선명도"</string>
+    <string name="ui_f87888746e40f335" formatted="false">"{0} — 선명도"</string>
+    <string name="ui_8a16e0aa4971e729" formatted="false">"선택한 방식의 설정입니다. 적응형 RCAS와 USM은 휘도를 처리하여 노이즈와 테두리 번짐을 제한합니다."</string>
+    <string name="ui_c559eea667737d74" formatted="false">"영상 처리 방식 선택"</string>
+    <string name="ui_726dd1ebf97968ef" formatted="false">"하나의 방식을 선택하세요. 기본값은 기기 크기 조절을 사용합니다. FSR과 SGSR은 영상을 확대하고 선명하게 합니다. xCloud 재구성은 세부 표현을 우선합니다. 세 가지 대체 방식은 실험적입니다. 선택하면 해당 설정이 같은 화면에 표시됩니다."</string>
+    <string name="ui_604124660b08c782" formatted="false">"밝기, 대비, 채도는 공통 색상 설정입니다. 선명도는 확대 및 영상 처리에서 선택한 방식 옆에 있습니다."</string>
+    <string name="ui_2dc867123a3f77a9" formatted="false">"추가 필터 — 공통"</string>
+    <string name="ui_4e539bd60654f414" formatted="false">"이 필터는 선택한 기본값, FSR, SGSR 또는 xCloud 재구성 방식과 함께 적용됩니다. 프리셋은 해당 방식의 선명도도 조정합니다. 다른 업스케일러를 활성화할 필요가 없습니다."</string>
+    <string name="ui_e823d8526c139e5f" formatted="false">"0%는 이 방식의 선명도만 끕니다. 확대와 추가 필터는 독립적으로 유지됩니다. 25%부터 시작하세요."</string>
 </resources>

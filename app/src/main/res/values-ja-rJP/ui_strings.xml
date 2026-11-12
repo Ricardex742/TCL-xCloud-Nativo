@@ -880,4 +880,28 @@
     <string name="ui_926cde6ac928ee3f" formatted="false">"要求したアップスケーラー出力: {0} | 要求したバッファ: {1}\n"</string>
     <string name="ui_54a1a9944bd29e08" formatted="false">"端末側の描画間隔: {0}（GPU時間やゲーム・画面のFPSの測定値ではありません）\n"</string>
     <string name="ui_1e53dc3bd47bfd37" formatted="false">"アップスケーラー: 標準の拡大処理に戻りました — {0}"</string>
+    <string name="ui_ab80b661abb4d819" formatted="false">"拡大・映像処理: {0}"</string>
+    <string name="ui_421fc3b80d653c41" formatted="false">"端末の標準設定"</string>
+    <string name="ui_19641a71ea37bded" formatted="false">"xCloud再構成"</string>
+    <string name="ui_1915d14ae05fb304" formatted="false">"端末の標準の拡大処理を使います。以下のシャープネスと追加フィルターは任意です。"</string>
+    <string name="ui_c50e172c261d8c7e" formatted="false">"FSRはEASUで映像を拡大し、以下で選んだシャープ処理を適用します。等倍ではシャープ処理のみを行います。実験的な方式です。"</string>
+    <string name="ui_bd256736c94b60c2" formatted="false">"SGSRは拡大と独自のシャープ処理を組み合わせます。以下のシャープネスはSGSR用で、RCASやUSMは適用されません。実験的な方式です。"</string>
+    <string name="ui_a1a502f6cbd61c13" formatted="false">"xCloud再構成は、拡大しない場合も細部の明瞭さを優先します。以下の品質、強度、比較はこの方式の設定です。実験的な方式です。"</string>
+    <string name="ui_c75da833acbd4f43" formatted="false">"拡大・映像処理"</string>
+    <string name="ui_38b562e06a2e6f8a" formatted="false">"互換性モードが有効なため、実験的な方式とフィルターは無効です。使用するには「映像とストリーミング」でモードを変更してください。"</string>
+    <string name="ui_57dcc836395931d8" formatted="false">"方式: {0}"</string>
+    <string name="ui_8a4b6093d87902de" formatted="false">"追加フィルター: {0}"</string>
+    <string name="ui_dcb5d6a4ed215b52" formatted="false">"有効"</string>
+    <string name="ui_78f59d802c8dfa66" formatted="false">"無効"</string>
+    <string name="ui_8862905aba7cac02" formatted="false">"映像の色"</string>
+    <string name="ui_5c4fc77e76b3e821" formatted="false">"標準RCAS"</string>
+    <string name="ui_bc2a6c1d3e1068bf" formatted="false">"シンプルなシャープ処理"</string>
+    <string name="ui_f87888746e40f335" formatted="false">"{0} — シャープネス"</string>
+    <string name="ui_8a16e0aa4971e729" formatted="false">"選択した方式の設定です。適応型RCASとUSMは輝度を処理し、ノイズやハローを抑えます。"</string>
+    <string name="ui_c559eea667737d74" formatted="false">"映像処理方式を選択"</string>
+    <string name="ui_726dd1ebf97968ef" formatted="false">"方式を1つ選んでください。標準は端末の拡大処理を使います。FSRとSGSRは映像を拡大してシャープにします。xCloud再構成は細部の明瞭さを優先します。この3つは実験的な方式です。選択すると、対応する設定が同じ画面に表示されます。"</string>
+    <string name="ui_604124660b08c782" formatted="false">"明るさ、コントラスト、彩度は共通の色設定です。シャープネスは「拡大・映像処理」の選択した方式の項目にあります。"</string>
+    <string name="ui_2dc867123a3f77a9" formatted="false">"追加フィルター — 共通"</string>
+    <string name="ui_4e539bd60654f414" formatted="false">"これらのフィルターは、標準、FSR、SGSR、xCloud再構成の選択した方式と併用されます。プリセットはその方式のシャープネスも調整します。別のアップスケーラーを有効にする必要はありません。"</string>
+    <string name="ui_e823d8526c139e5f" formatted="false">"0%はこの方式のシャープ処理だけを無効にします。拡大と追加フィルターは独立しています。まずは25%から試してください。"</string>
 </resources>

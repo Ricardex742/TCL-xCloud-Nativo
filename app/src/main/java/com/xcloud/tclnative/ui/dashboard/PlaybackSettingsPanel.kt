@@ -7,7 +7,7 @@ import android.widget.LinearLayout
 import com.xcloud.tclnative.settings.*
 import com.xcloud.tclnative.webrtc.StreamResolution
 
-enum class SettingsPage { ROOT, VIDEO, IMAGE, APPEARANCE, NETWORK, CONTROLS, PHYSICAL, MOUSE, GYRO, RUMBLE, AUDIO, DIAGNOSTICS, ACCOUNT, TREATMENT, RECONSTRUCTION }
+enum class SettingsPage { ROOT, VIDEO, IMAGE, APPEARANCE, NETWORK, CONTROLS, PHYSICAL, MOUSE, GYRO, RUMBLE, AUDIO, DIAGNOSTICS, ACCOUNT, TREATMENT, RECONSTRUCTION, UPSCALING }
 
 /** Explicit single-choice menus: opening a row does not change the selected value. */
 class PlaybackSettingsPanel(
@@ -24,6 +24,7 @@ class PlaybackSettingsPanel(
     private val onPageEntered: (SettingsPage) -> Unit = {}
 ) {
     private var currentPage=SettingsPage.ROOT
+    private var upscalingBack: () -> Unit = { showImage() }
     private fun enter(page: SettingsPage) { currentPage=page;onPageEntered(page) }
     fun open(page: SettingsPage): ConsoleDialog = when(page) {
         SettingsPage.ROOT -> show();SettingsPage.VIDEO -> showVideo();SettingsPage.IMAGE -> showImage();SettingsPage.APPEARANCE -> showAppearance()
@@ -32,6 +33,7 @@ class PlaybackSettingsPanel(
         SettingsPage.AUDIO -> showAudio();SettingsPage.DIAGNOSTICS -> showDiagnostics();SettingsPage.ACCOUNT -> showAccount()
         SettingsPage.TREATMENT -> showTreatment()
         SettingsPage.RECONSTRUCTION -> showReconstruction()
+        SettingsPage.UPSCALING -> showUpscaling()
     }
     private fun category(page: SettingsPage,title: String,rows: List<ConsoleAction>,parent: SettingsPage=SettingsPage.ROOT): ConsoleDialog {
         enter(page)
@@ -94,13 +96,85 @@ class PlaybackSettingsPanel(
         val value=store.read()
         return category(SettingsPage.IMAGE,UiText.text("Imagem e tela"),listOf(
             ConsoleAction(UiText.text("Proporção: {0}",UiText.nested(value.aspect.label))) { chooseAspect() },
-            ConsoleAction(UiText.text("Upscaling nativo: {0}",UiText.nested(if(value.nativeUpscaling) UiText.text("Ativado") else UiText.text("Desativado")))) { chooseUpscaling() },
-            ConsoleAction(UiText.text("Escalador: {0}",UiText.nested(if(value.videoMode==VideoMode.COMPATIBILITY) UiText.text("Desativado (Compatibilidade)") else value.fsr.label))) { chooseFsr() },
-            ConsoleAction(UiText.text("Saída do escalador: {0}",UiText.nested(value.fsrOutput.label))) { chooseFsrOutput() },
-            ConsoleAction(UiText.text("Reconstrução adaptativa")) { showReconstruction() },
-            ConsoleAction(UiText.text("Ajustes da imagem — nitidez, saturação, brilho e contraste")) { showImageAdjustments() },
-            ConsoleAction(UiText.text("Tratamento da imagem")) { showTreatment() }
+            ConsoleAction(UiText.text("Upscaling e tratamento: {0}",UiText.nested(methodName(value.forSession().fsr)))) { showUpscaling(onBack={ showImage() }) }
         ))
+    }
+    private fun methodName(mode: FsrMode): String = when(mode) {
+        FsrMode.OFF -> UiText.text("Padrão do aparelho")
+        FsrMode.FSR1 -> "AMD FSR 1.0.2"
+        FsrMode.SGSR1 -> "SGSR 1"
+        FsrMode.RECONSTRUCTION -> UiText.text("Reconstrução xCloud")
+    }
+    private fun methodDescription(mode: FsrMode): String = when(mode) {
+        FsrMode.OFF -> UiText.text("Usa a escala padrão do aparelho. A nitidez e os filtros adicionais abaixo são opcionais.")
+        FsrMode.FSR1 -> UiText.text("FSR amplia a imagem com EASU e aplica a nitidez escolhida abaixo. Em tamanho nativo, aplica somente a nitidez. Método experimental.")
+        FsrMode.SGSR1 -> UiText.text("SGSR combina ampliação e realce próprio. A nitidez abaixo é do SGSR; os métodos RCAS e USM não se aplicam a ele. Método experimental.")
+        FsrMode.RECONSTRUCTION -> UiText.text("A reconstrução xCloud prioriza definição, inclusive sem ampliar. Qualidade, intensidade e comparação abaixo pertencem a este método. Método experimental.")
+    }
+    /** One entry point; only controls consumed by the selected method are presented. */
+    fun showUpscaling(onBack: (() -> Unit)? = null): ConsoleDialog {
+        if(onBack!=null) upscalingBack=onBack
+        val returnToParent=upscalingBack
+        enter(SettingsPage.UPSCALING)
+        val value=store.read();val mode=value.fsr
+        fun back() { showUpscaling() }
+        return ConsoleDialog(context,UiText.text("Upscaling e tratamento")).apply {
+            if(value.videoMode==VideoMode.COMPATIBILITY) {
+                body.addView(text(UiText.text("Compatibilidade está ativa e desativa os métodos e filtros experimentais. Mude o modo em Vídeo e transmissão para usá-los."),20,color=DashboardTheme.muted))
+                addMenuItem(UiText.text("Modo de vídeo: {0}",UiText.nested(value.videoMode.label))) { chooseVideo() }
+            } else {
+                body.addView(text(methodDescription(mode),20,color=DashboardTheme.muted))
+                addMenuItem(UiText.text("Método: {0}",UiText.nested(methodName(mode)))) { chooseFsr() }
+                if(mode==FsrMode.OFF) {
+                    addMenuItem(UiText.text("Upscaling nativo: {0}",UiText.nested(if(value.nativeUpscaling) UiText.text("Ativado") else UiText.text("Desativado")))) { chooseUpscaling() }
+                } else addMenuItem(UiText.text("Saída do escalador: {0}",UiText.nested(value.fsrOutput.label))) { chooseFsrOutput() }
+                when(mode) {
+                    FsrMode.OFF,FsrMode.FSR1,FsrMode.SGSR1 -> {
+                        val amount=if(mode==FsrMode.OFF) value.sharpness else value.fsrSharpness
+                        addMenuItem(UiText.text("Nitidez: {0}%",UiText.nested(amount))) { chooseSharpeningStrength() }
+                        if(mode!=FsrMode.SGSR1) addMenuItem(UiText.text("Método de nitidez: {0}",UiText.nested(sharpeningName(value)))) { chooseSharpeningMethod() }
+                    }
+                    FsrMode.RECONSTRUCTION -> {
+                        addMenuItem(UiText.text("Qualidade do processamento: {0}",UiText.nested(value.reconstruction.quality.label))) { chooseReconstructionQuality() }
+                        addMenuItem(UiText.text("Intensidade da reconstrução: {0}%",UiText.nested(value.reconstruction.strength))) { chooseReconstructionStrength() }
+                        addMenuItem(UiText.text("Comparação: {0}",UiText.nested(value.reconstruction.comparison.label))) { chooseImageComparison() }
+                    }
+                }
+                val filters=value.imageTreatment.let { it.spatial || it.temporal>0 || it.neural>0 }
+                addMenuItem(UiText.text("Filtros adicionais: {0}",UiText.nested(if(filters) UiText.text("Ativados") else UiText.text("Desativados")))) { showTreatment() }
+                addMenuItem(UiText.text("Cores da imagem")) { showImageAdjustments(onBack=::back) }
+                addMenuItem(UiText.text("Proteção de desempenho: {0}",UiText.nested(if(value.imageTreatment.autoProtect) UiText.text("Ativada") else UiText.text("Desativada")))) { choosePerformanceProtection() }
+                addMenuItem(UiText.text("Restaurar imagem original")) {
+                    save(value.copy(nativeUpscaling=true,fsr=FsrMode.OFF,fsrOutput=FsrOutput.AUTO,fsrSharpness=50,
+                        reconstruction=ReconstructionSettings(),imageTreatment=ImageTreatmentSettings(),sharpness=0,saturation=100,brightness=0,contrast=100),::back)
+                }
+            }
+            addAction(UiText.text("Voltar"),returnToParent);setOnCancelListener { returnToParent() };show()
+        }
+    }
+    private fun sharpeningName(value: PlaybackSettings): String = when(value.imageTreatment.sharpening) {
+        ImageSharpening.LEGACY -> if(value.fsr==FsrMode.FSR1) UiText.text("RCAS original") else UiText.text("Nitidez simples")
+        else -> value.imageTreatment.sharpening.label
+    }
+    private fun chooseSharpeningStrength(): ConsoleDialog {
+        enter(SettingsPage.UPSCALING);val value=store.read();val levels=listOf(0,25,50,75,100)
+        val amount=if(value.fsr==FsrMode.OFF) value.sharpness else value.fsrSharpness
+        return choices(UiText.text("{0} — Nitidez",UiText.nested(methodName(value.fsr))),UiText.text("0% desativa somente a nitidez deste método. A ampliação e os filtros adicionais continuam independentes. Comece com 25%."),
+            levels.map { "$it%" to (it==amount) }) {
+            save(if(value.fsr==FsrMode.OFF) value.copy(sharpness=levels[it]) else value.copy(fsrSharpness=levels[it]))
+        }
+    }
+    private fun chooseSharpeningMethod(): ConsoleDialog {
+        enter(SettingsPage.UPSCALING);val value=store.read()
+        return choices(UiText.text("Método de nitidez"),UiText.text("Este ajuste pertence ao método selecionado. RCAS adaptativo e USM trabalham na luminância para limitar ruído e halos."),
+            ImageSharpening.entries.map { sharpeningName(value.copy(imageTreatment=value.imageTreatment.copy(sharpening=it))) to (it==value.imageTreatment.sharpening) }) {
+            save(value.copy(imageTreatment=value.imageTreatment.copy(sharpening=ImageSharpening.entries[it])))
+        }
+    }
+    private fun choosePerformanceProtection(): ConsoleDialog {
+        enter(SettingsPage.UPSCALING);val value=store.read();val image=value.imageTreatment
+        return choices(UiText.text("Proteção de desempenho"),UiText.text("Reduz temporal, saída, antialiasing, neural e filtros quando a cadência desenhada fica abaixo da recebida. As escolhas salvas são preservadas. Os cortes valem nesta partida e aparecem no diagnóstico."),
+            listOf(UiText.text("Ativada") to image.autoProtect,UiText.text("Desativada") to !image.autoProtect)) { save(value.copy(imageTreatment=image.copy(autoProtect=it==0))) }
     }
     fun showNetwork(): ConsoleDialog = category(SettingsPage.NETWORK,UiText.text("Rede e sessão"),listOf(
         ConsoleAction(UiText.text("IPv4 / IPv6: {0}",UiText.nested(store.read().ipPreference.label))) { chooseNetwork() },
@@ -173,7 +247,7 @@ class PlaybackSettingsPanel(
             StreamResolution.entries.map { it.label to (it==current.resolution) }) { save(current.copy(resolution=StreamResolution.entries[it])) }
     }
     fun chooseUpscaling(): ConsoleDialog {
-        enter(SettingsPage.IMAGE)
+        enter(SettingsPage.UPSCALING)
         val current=store.read()
         return choices(UiText.text("Upscaling nativo"),UiText.text("A imagem se ajusta à janela nos dois modos, respeitando a proporção escolhida. Ativado solicita a escala da Surface Android; desativado usa a escala do renderer. Quando o FSR está ativo, ele usa o renderer na resolução de saída. O processamento da TV é ajustado na própria TV. Aplica-se à próxima partida."),
             listOf(UiText.text("Ativado — escala da Surface") to current.nativeUpscaling,UiText.text("Desativado — escala do renderer") to !current.nativeUpscaling)) {
@@ -181,14 +255,13 @@ class PlaybackSettingsPanel(
         }
     }
     fun chooseFsr(): ConsoleDialog {
-        enter(SettingsPage.IMAGE)
+        enter(SettingsPage.UPSCALING)
         val current=store.read()
-        return choices(UiText.text("Escalador da imagem"),UiText.join(UiText.text("FSR 1 usa EASU e uma etapa de nitidez. SGSR 1 combina ampliação e realce numa passagem, com resultado diferente. Comece em Automático e nitidez 50%. Em tamanho nativo, há somente tratamento, sem ampliação. 1440p e 4K exigem mais GPU. A proteção pode reduzir a saída e os efeitos durante a partida. Compatibilidade desativa os escaladores."),"\n\n",
-            UiText.text("A reconstrução adaptativa xCloud prioriza definição na resolução atual. Configure qualidade, intensidade e comparação em Reconstrução adaptativa. Ela substitui o realce do FSR/SGSR e funciona sem ampliar a imagem.")),
-            FsrMode.entries.map { it.label to (it==current.fsr) }) { save(current.copy(fsr=FsrMode.entries[it])) }
+        return choices(UiText.text("Escolher método de imagem"),UiText.text("Escolha apenas um método. Padrão usa a escala do aparelho. FSR e SGSR ampliam e realçam a imagem. Reconstrução xCloud prioriza definição. Os três métodos alternativos são experimentais. Ao escolher, os ajustes correspondentes aparecem na mesma tela."),
+            FsrMode.entries.map { methodName(it) to (it==current.fsr) }) { save(current.copy(fsr=FsrMode.entries[it])) }
     }
     fun chooseFsrOutput(): ConsoleDialog {
-        enter(SettingsPage.IMAGE)
+        enter(SettingsPage.UPSCALING)
         val current=store.read()
         return choices(UiText.text("Saída do escalador"),UiText.text("A saída é local e não altera o stream recebido. Automático prioriza a fluidez e limita TVs a 1080p. Ative um escalador para usar esta opção. As escolhas preservam a proporção e respeitam a saída física. A proteção reduz a saída se os desenhos não acompanharem os quadros recebidos. 1440p e 4K não garantem 60 FPS."),
             FsrOutput.entries.map { it.label to (it==current.fsrOutput) }) { save(current.copy(fsrOutput=FsrOutput.entries[it])) }
@@ -205,23 +278,8 @@ class PlaybackSettingsPanel(
         enter(SettingsPage.IMAGE)
         val settings=store.read()
         fun backToImage() { showImageAdjustments(onBack) }
-        return ConsoleDialog(context,UiText.text("Ajustes da imagem")).apply {
-            body.addView(text(UiText.text("Ajustes opcionais da imagem. Nitidez pode realçar ruído e exigir mais GPU. Durante uma partida, as mudanças são imediatas."),20,color=DashboardTheme.muted))
-            if(settings.fsr==FsrMode.RECONSTRUCTION) addMenuItem(UiText.text("Intensidade da reconstrução: {0}%",UiText.nested(settings.reconstruction.strength))) { showReconstruction() }
-            if(settings.fsr!=FsrMode.OFF && settings.fsr!=FsrMode.RECONSTRUCTION) addMenuItem(UiText.text("Nitidez do escalador: {0}%",UiText.nested(settings.fsrSharpness))) {
-                val levels=listOf(0,25,50,75,100)
-                choices(UiText.text("Nitidez do escalador"),UiText.text("0% desativa o realce; 50% não significa metade do custo de GPU. O método de nitidez do FSR pode ser escolhido em Tratamento da imagem. SGSR usa seu próprio realce. A nitidez padrão é usada quando não há escalador ativo."),
-                    levels.map { "$it%" to (it==settings.fsrSharpness) },::backToImage) {
-                    save(settings.copy(fsrSharpness=levels[it]),::backToImage)
-                }
-            }
-            if(settings.fsr!=FsrMode.RECONSTRUCTION) addMenuItem(UiText.text("Nitidez: {0}%",UiText.nested(settings.sharpness))) {
-                val levels=listOf(0,25,50,75,100)
-                choices(UiText.text("Nitidez"),UiText.text("0% mantém a imagem original. Comece com 25% e compare o tempo de renderização."),
-                    levels.map { "${it}%${if(it==0) UiText.text(" — desativada") else ""}" to (it==settings.sharpness) },::backToImage) {
-                    save(settings.copy(sharpness=levels[it]),::backToImage)
-                }
-            }
+        return ConsoleDialog(context,UiText.text("Cores da imagem")).apply {
+            body.addView(text(UiText.text("Brilho, contraste e saturação são ajustes de cor compartilhados. A nitidez fica em Upscaling e tratamento, junto ao método escolhido."),20,color=DashboardTheme.muted))
             addMenuItem(UiText.text("Brilho: {0}%",UiText.nested(settings.brightness))) {
                 val levels=listOf(-50,-25,-10,0,10,25,50)
                 choices(UiText.text("Brilho"),UiText.text("0% preserva a imagem original. Aplicado junto aos filtros existentes, inclusive no FSR."),
@@ -242,31 +300,25 @@ class PlaybackSettingsPanel(
             addAction(UiText.text("Voltar"),onBack); setOnCancelListener { onBack() }; show()
         }
     }
-    fun showReconstruction(): ConsoleDialog {
-        enter(SettingsPage.RECONSTRUCTION)
-        val value=store.read();val options=value.reconstruction
-        fun back() { showReconstruction() }
-        return ConsoleDialog(context,UiText.text("Reconstrução adaptativa")).apply {
-            body.addView(text(UiText.text("Modo experimental para limpar e definir o vídeo, inclusive em 1080p sem ampliação. Não muda a resolução ou o bitrate do Xbox. Comece em Automático, intensidade 50% e saída automática. Outros filtros opcionais continuam respeitando suas escolhas."),20,color=DashboardTheme.muted))
-            body.addView(text(UiText.text("Escalador: {0}",UiText.nested(if(value.videoMode==VideoMode.COMPATIBILITY) UiText.text("Desativado (Compatibilidade)") else value.fsr.label)),20,color=DashboardTheme.muted))
-            addMenuItem(UiText.text("Ativar com saída automática")) { save(value.copy(fsr=FsrMode.RECONSTRUCTION,fsrOutput=FsrOutput.AUTO),::back) }
-            addMenuItem(UiText.text("Qualidade do processamento: {0}",UiText.nested(options.quality.label))) {
-                choices(UiText.text("Qualidade do processamento"),UiText.text("Automático começa Leve e aumenta após observar cadência estável. Equilibrado e Qualidade usam mais amostras para reconstrução de detalhes. Se houver queda sustentada, a proteção reduz o nível e evita repetir a tentativa nesta partida. Sem proteção de desempenho, Automático permanece Leve. A cadência não é uma medição de tempo de GPU. Compatibilidade desativa o modo."),
-                    ReconstructionQuality.entries.map { it.label to (it==options.quality) },::back) { save(value.copy(reconstruction=options.copy(quality=ReconstructionQuality.entries[it])),::back) }
-            }
-            addMenuItem(UiText.text("Intensidade da reconstrução: {0}%",UiText.nested(options.strength))) {
-                val levels=listOf(0,25,50,75,100)
-                choices(UiText.text("Intensidade da reconstrução"),UiText.text("0% desativa a reconstrução de detalhes. Valores maiores aumentam o realce com limites de ruído e halos. A intensidade não altera a resolução; 50% não significa metade do custo da GPU."),
-                    levels.map { "$it%" to (it==options.strength) },::back) { save(value.copy(reconstruction=options.copy(strength=levels[it])),::back) }
-            }
-            addMenuItem(UiText.text("Comparação: {0}",UiText.nested(options.comparison.label))) {
-                choices(UiText.text("Comparação da imagem"),UiText.text("Original mostra o quadro recebido sem os filtros do app. Dividida mostra esse mesmo quadro original à esquerda e tratado à direita. Só atua na reconstrução adaptativa; não altera o toque nem o enquadramento. A adaptação automática fica pausada durante a comparação. O desempenho em meia tela não representa o custo em tela inteira."),
-                    ImageComparison.entries.map { it.label to (it==options.comparison) },::back) { save(value.copy(reconstruction=options.copy(comparison=ImageComparison.entries[it])),::back) }
-            }
-            addAction(UiText.text("Voltar")) { showImage() };setOnCancelListener { showImage() };show()
-        }
+    // Legacy page IDs and entry points reopen the single image-processing hub.
+    fun showReconstruction(): ConsoleDialog = showUpscaling()
+    private fun chooseReconstructionQuality(): ConsoleDialog {
+        enter(SettingsPage.UPSCALING);val value=store.read();val options=value.reconstruction
+        return choices(UiText.text("Qualidade do processamento"),UiText.text("Automático começa Leve e aumenta após observar cadência estável. Equilibrado e Qualidade usam mais amostras para reconstrução de detalhes. Se houver queda sustentada, a proteção reduz o nível e evita repetir a tentativa nesta partida. Sem proteção de desempenho, Automático permanece Leve. A cadência não é uma medição de tempo de GPU. Compatibilidade desativa o modo."),
+            ReconstructionQuality.entries.map { it.label to (it==options.quality) }) { save(value.copy(reconstruction=options.copy(quality=ReconstructionQuality.entries[it]))) }
+    }
+    private fun chooseReconstructionStrength(): ConsoleDialog {
+        enter(SettingsPage.UPSCALING);val value=store.read();val options=value.reconstruction;val levels=listOf(0,25,50,75,100)
+        return choices(UiText.text("Intensidade da reconstrução"),UiText.text("0% desativa a reconstrução de detalhes. Valores maiores aumentam o realce com limites de ruído e halos. A intensidade não altera a resolução; 50% não significa metade do custo da GPU."),
+            levels.map { "$it%" to (it==options.strength) }) { save(value.copy(reconstruction=options.copy(strength=levels[it]))) }
+    }
+    private fun chooseImageComparison(): ConsoleDialog {
+        enter(SettingsPage.UPSCALING);val value=store.read();val options=value.reconstruction
+        return choices(UiText.text("Comparação da imagem"),UiText.text("Original mostra o quadro recebido sem os filtros do app. Dividida mostra esse mesmo quadro original à esquerda e tratado à direita. Só atua na reconstrução adaptativa; não altera o toque nem o enquadramento. A adaptação automática fica pausada durante a comparação. O desempenho em meia tela não representa o custo em tela inteira."),
+            ImageComparison.entries.map { it.label to (it==options.comparison) }) { save(value.copy(reconstruction=options.copy(comparison=ImageComparison.entries[it]))) }
     }
     fun showTreatment(): ConsoleDialog {
+        if(store.read().videoMode==VideoMode.COMPATIBILITY) return showUpscaling()
         enter(SettingsPage.TREATMENT)
         val value=store.read();val image=value.imageTreatment
         fun level(title: String,current: Int,max: Int=100,change: (ImageTreatmentSettings,Int)->ImageTreatmentSettings) {
@@ -276,27 +328,31 @@ class PlaybackSettingsPanel(
                 val now=store.read();save(now.copy(imageTreatment=change(now.imageTreatment,levels[index])))
             }
         }
-        return category(SettingsPage.TREATMENT,UiText.text("Tratamento da imagem"),listOf(
-            ConsoleAction(UiText.text("Restaurar imagem original")) { save(value.copy(imageTreatment=ImageTreatmentSettings(),fsr=FsrMode.OFF,sharpness=0,saturation=100,brightness=0,contrast=100)) },
-            ConsoleAction(UiText.text("Perfil leve")) { save(value.copy(imageTreatment=ImageTreatmentSettings(sharpening=ImageSharpening.USM_LUMA,chroma=25),sharpness=25)) },
-            ConsoleAction(UiText.text("Perfil natural")) { save(value.copy(imageTreatment=ImageTreatmentSettings(sharpening=ImageSharpening.RCAS_LUMA,deband=25,chroma=50),sharpness=25)) },
-            ConsoleAction(UiText.text("Método de nitidez: {0}",UiText.nested(image.sharpening.label))) {
-                choices(UiText.text("Método de nitidez"),UiText.text("RCAS adaptativo e USM atuam na luminância, com proteção contra ruído e halos. A intensidade fica em Ajustes da imagem. O FSR usa esse método na etapa final; SGSR tem seu próprio realce."),
-                    ImageSharpening.entries.map { it.label to (it==image.sharpening) },{ showTreatment() }) {
-                    save(value.copy(imageTreatment=image.copy(sharpening=ImageSharpening.entries[it])))
-                }
-            },
-            ConsoleAction(UiText.text("Degradês: {0}%",UiText.nested(image.deband))) { level(UiText.text("Degradês"),image.deband) { s,n -> s.copy(deband=n) } },
-            ConsoleAction(UiText.text("Limpeza de compressão: {0}%",UiText.nested(image.cleanup))) { level(UiText.text("Limpeza de compressão"),image.cleanup) { s,n -> s.copy(cleanup=n) } },
-            ConsoleAction(UiText.text("Cor nas bordas: {0}%",UiText.nested(image.chroma))) { level(UiText.text("Cor nas bordas"),image.chroma) { s,n -> s.copy(chroma=n) } },
-            ConsoleAction(UiText.text("Antialiasing: {0}%",UiText.nested(image.antialias))) { level("Antialiasing",image.antialias) { s,n -> s.copy(antialias=n) } },
-            ConsoleAction(UiText.text("Estabilidade temporal: {0}%",UiText.nested(image.temporal))) { level(UiText.text("Estabilidade temporal"),image.temporal,50) { s,n -> s.copy(temporal=n) } },
-            ConsoleAction(UiText.text("Reconstrução neural: {0}%",UiText.nested(image.neural))) { level(UiText.text("Reconstrução neural"),image.neural) { s,n -> s.copy(neural=n) } },
-            ConsoleAction(UiText.text("Proteção de desempenho: {0}",UiText.nested(if(image.autoProtect) UiText.text("Ativada") else UiText.text("Desativada")))) {
-                choices(UiText.text("Proteção de desempenho"),UiText.text("Reduz temporal, saída, antialiasing, neural e filtros quando a cadência desenhada fica abaixo da recebida. As escolhas salvas são preservadas. Os cortes valem nesta partida e aparecem no diagnóstico."),
-                    listOf(UiText.text("Ativada") to image.autoProtect,UiText.text("Desativada") to !image.autoProtect),{ showTreatment() }) { save(value.copy(imageTreatment=image.copy(autoProtect=it==0))) }
-            }
-        ),SettingsPage.IMAGE)
+        return ConsoleDialog(context,UiText.text("Filtros adicionais — compartilhados")).apply {
+            body.addView(text(UiText.text("Método: {0}",UiText.nested(methodName(value.fsr))),20,color=DashboardTheme.muted))
+            body.addView(text(UiText.text("Estes filtros são aplicados junto ao método escolhido, seja Padrão, FSR, SGSR ou Reconstrução xCloud. Os perfis também ajustam a nitidez desse método. Não é necessário ativar outro escalador."),20,color=DashboardTheme.muted))
+            addMenuItem(UiText.text("Perfil leve")) { save(filterPreset(value,natural=false)) }
+            addMenuItem(UiText.text("Perfil natural")) { save(filterPreset(value,natural=true)) }
+            addMenuItem(UiText.text("Degradês: {0}%",UiText.nested(image.deband))) { level(UiText.text("Degradês"),image.deband) { s,n -> s.copy(deband=n) } }
+            addMenuItem(UiText.text("Limpeza de compressão: {0}%",UiText.nested(image.cleanup))) { level(UiText.text("Limpeza de compressão"),image.cleanup) { s,n -> s.copy(cleanup=n) } }
+            addMenuItem(UiText.text("Cor nas bordas: {0}%",UiText.nested(image.chroma))) { level(UiText.text("Cor nas bordas"),image.chroma) { s,n -> s.copy(chroma=n) } }
+            addMenuItem(UiText.text("Antialiasing: {0}%",UiText.nested(image.antialias))) { level("Antialiasing",image.antialias) { s,n -> s.copy(antialias=n) } }
+            addMenuItem(UiText.text("Estabilidade temporal: {0}%",UiText.nested(image.temporal))) { level(UiText.text("Estabilidade temporal"),image.temporal,50) { s,n -> s.copy(temporal=n) } }
+            addMenuItem(UiText.text("Reconstrução neural: {0}%",UiText.nested(image.neural))) { level(UiText.text("Reconstrução neural"),image.neural) { s,n -> s.copy(neural=n) } }
+            addAction(UiText.text("Voltar")) { showUpscaling() };setOnCancelListener { showUpscaling() };show()
+        }
+    }
+    private fun filterPreset(value: PlaybackSettings,natural: Boolean): PlaybackSettings {
+        val selectable=value.fsr==FsrMode.OFF || value.fsr==FsrMode.FSR1
+        val image=ImageTreatmentSettings(sharpening=if(selectable) {
+            if(natural) ImageSharpening.RCAS_LUMA else ImageSharpening.USM_LUMA
+        } else value.imageTreatment.sharpening,deband=if(natural) 25 else 0,chroma=if(natural) 50 else 25)
+        val next=value.copy(imageTreatment=image)
+        return when(value.fsr) {
+            FsrMode.OFF -> next.copy(sharpness=25)
+            FsrMode.FSR1,FsrMode.SGSR1 -> next.copy(fsrSharpness=25)
+            FsrMode.RECONSTRUCTION -> next.copy(reconstruction=value.reconstruction.copy(strength=if(natural) 50 else 25,comparison=ImageComparison.PROCESSED))
+        }
     }
     fun showControls(): ConsoleDialog = category(SettingsPage.CONTROLS,UiText.text("Controles e toque"),listOf(
         ConsoleAction(UiText.text("Controle físico e coop local")) { showPhysical() },

@@ -880,4 +880,28 @@
     <string name="ui_926cde6ac928ee3f" formatted="false">"请求的缩放器输出：{0} | 请求的缓冲区：{1}\n"</string>
     <string name="ui_54a1a9944bd29e08" formatted="false">"本地渲染帧节奏：{0}（不测量 GPU 耗时或游戏/屏幕 FPS）\n"</string>
     <string name="ui_1e53dc3bd47bfd37" formatted="false">"缩放器：恢复标准缩放 — {0}"</string>
+    <string name="ui_ab80b661abb4d819" formatted="false">"缩放与图像处理：{0}"</string>
+    <string name="ui_421fc3b80d653c41" formatted="false">"设备默认"</string>
+    <string name="ui_19641a71ea37bded" formatted="false">"xCloud 重建"</string>
+    <string name="ui_1915d14ae05fb304" formatted="false">"使用设备的标准缩放。下面的锐化和附加滤镜均为可选项。"</string>
+    <string name="ui_c50e172c261d8c7e" formatted="false">"FSR 使用 EASU 放大画面，并应用下方选择的锐化。在原生尺寸下仅进行锐化。这是实验性方式。"</string>
+    <string name="ui_bd256736c94b60c2" formatted="false">"SGSR 将放大与自身的锐化结合。下方锐化属于 SGSR，RCAS 和 USM 不适用于它。这是实验性方式。"</string>
+    <string name="ui_a1a502f6cbd61c13" formatted="false">"xCloud 重建优先改善细节清晰度，即使不放大也能使用。下方的画质、强度和对比属于此方式。这是实验性方式。"</string>
+    <string name="ui_c75da833acbd4f43" formatted="false">"缩放与图像处理"</string>
+    <string name="ui_38b562e06a2e6f8a" formatted="false">"兼容模式已启用，实验性方式和滤镜已禁用。请在视频与串流中更改模式后使用。"</string>
+    <string name="ui_57dcc836395931d8" formatted="false">"方式：{0}"</string>
+    <string name="ui_8a4b6093d87902de" formatted="false">"附加滤镜：{0}"</string>
+    <string name="ui_dcb5d6a4ed215b52" formatted="false">"已启用"</string>
+    <string name="ui_78f59d802c8dfa66" formatted="false">"已禁用"</string>
+    <string name="ui_8862905aba7cac02" formatted="false">"画面颜色"</string>
+    <string name="ui_5c4fc77e76b3e821" formatted="false">"原版 RCAS"</string>
+    <string name="ui_bc2a6c1d3e1068bf" formatted="false">"简单锐化"</string>
+    <string name="ui_f87888746e40f335" formatted="false">"{0} — 锐化"</string>
+    <string name="ui_8a16e0aa4971e729" formatted="false">"此设置属于所选方式。自适应 RCAS 和 USM 处理亮度，以限制噪点和光晕。"</string>
+    <string name="ui_c559eea667737d74" formatted="false">"选择图像处理方式"</string>
+    <string name="ui_726dd1ebf97968ef" formatted="false">"请选择一种方式。默认使用设备缩放。FSR 和 SGSR 放大并锐化画面。xCloud 重建优先改善细节清晰度。这三种替代方式均为实验性。选择后，相应设置将显示在同一页面。"</string>
+    <string name="ui_604124660b08c782" formatted="false">"亮度、对比度和饱和度是共用的颜色设置。锐化位于缩放与图像处理中，与所选方式放在一起。"</string>
+    <string name="ui_2dc867123a3f77a9" formatted="false">"附加滤镜 — 共用"</string>
+    <string name="ui_4e539bd60654f414" formatted="false">"这些滤镜与所选的默认、FSR、SGSR 或 xCloud 重建方式共同使用。预设还会调整该方式的锐化。无需启用其他缩放器。"</string>
+    <string name="ui_e823d8526c139e5f" formatted="false">"0% 仅关闭此方式的锐化。放大和附加滤镜仍然独立。建议从 25% 开始。"</string>
 </resources>

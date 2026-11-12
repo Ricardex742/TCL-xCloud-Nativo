@@ -789,7 +789,7 @@ open class MainActivity : Activity() {
         if (transitionPanel.visibility==View.VISIBLE || gameMenuDialog?.isShowing == true || webrtcClient == null || queuePanel.visibility == View.VISIBLE) return
         resetController()
         gameMenuDialog = com.xcloud.tclnative.ui.dashboard.GameMenuPanel.show(this,
-            image={ PlaybackSettingsPanel(this,settingsStore,::applyPlaybackSettings,{}, {}, {}).showImageAdjustments(onBack={ showGameMenu() }) },
+            image={ PlaybackSettingsPanel(this,settingsStore,::applyPlaybackSettings,{}, {}, {}).showUpscaling(onBack={ showGameMenu() }) },
             aspect={ PlaybackSettingsPanel(this,settingsStore,::applyPlaybackSettings,{}, {}, {}).chooseAspect(onBack={ showGameMenu() }) },
             statistics={ cycleStatistics() },
             diagnostics={ showCopyableErrorDialog(UiText.text("Áudio e vídeo"),UiText.text("{0} {1} | Android {2} | {3}\n{4}\n{5}\n{6}\n{7}",UiText.nested(Build.MANUFACTURER),UiText.nested(Build.MODEL),UiText.nested(Build.VERSION.RELEASE),UiText.nested(Build.HARDWARE),UiText.nested(surfaceRenderer.diagnostics()),UiText.nested(currentSignaling?.profileDiagnostics() ?: ""),UiText.nested(webrtcClient?.audioDiagnostics() ?: ""),UiText.nested(streamHistory.report()))) },

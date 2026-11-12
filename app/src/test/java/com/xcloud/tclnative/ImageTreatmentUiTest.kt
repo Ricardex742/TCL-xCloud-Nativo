@@ -31,9 +31,10 @@ class ImageTreatmentUiTest {
             activity.getSharedPreferences("stream_preferences",0).edit().clear().commit()
             val store=PlaybackSettingsStore(activity);val original=store.read()
             val panel=PlaybackSettingsPanel(activity,store,{},{},{},{})
-            val first=panel.showReconstruction();capture(first,"adaptive-reconstruction-options")
+            val first=panel.showUpscaling();capture(first,"adaptive-reconstruction-options")
             assertEquals(original,store.read())
-            click(first,"Ativar com saída automática")
+            click(first,"Método:")
+            click(ShadowDialog.getLatestDialog() as ConsoleDialog,"Reconstrução xCloud")
             assertEquals(FsrMode.RECONSTRUCTION,store.read().fsr);assertEquals(FsrOutput.AUTO,store.read().fsrOutput)
             assertEquals(original.resolution,store.read().resolution);assertEquals(original.touchMode,store.read().touchMode)
             click(ShadowDialog.getLatestDialog() as ConsoleDialog,"Qualidade do processamento")
@@ -79,10 +80,64 @@ class ImageTreatmentUiTest {
             assertEquals(original.touchMode,store.read().touchMode)
             assertEquals(25,store.read().imageTreatment.deband)
             (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
-            val image=panel.showTreatment();click(image,"Restaurar imagem original")
+            val image=panel.showUpscaling();click(image,"Restaurar imagem original")
             assertFalse(store.read().imageTreatment.active);assertEquals(FsrMode.OFF,store.read().fsr)
             assertEquals(VideoCodecMode.H264_MAIN,store.read().videoCodec)
             (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
+        } finally { c.pause().stop().destroy() }
+    }
+    @Test fun eachMethodShowsOnlyItsOwnControlsAndChildMenusReturnToTheSessionCaller() {
+        val c=Robolectric.buildActivity(Activity::class.java).setup()
+        try {
+            val activity=c.get().apply { setContentView(FrameLayout(this)) }
+            val store=PlaybackSettingsStore(activity);val original=store.read()
+            val panel=PlaybackSettingsPanel(activity,store,{},{},{},{})
+            val image=panel.showImage()
+            val rows=all(image.body).filterIsInstance<TextView>().filter { it.isClickable }
+            assertEquals(2,rows.size);assertTrue(rows.any { it.text.contains("Upscaling e tratamento:") })
+            image.dismiss()
+            for(mode in FsrMode.entries) {
+                val settings=original.copy(fsr=mode,videoMode=VideoMode.LOW_LATENCY);store.save(settings)
+                val dialog=panel.showUpscaling();capture(dialog,"organized-image-${mode.name.lowercase()}")
+                val names=all(dialog.body).filterIsInstance<TextView>().filter { it.isClickable }.map { it.text.toString() }
+                assertEquals(settings,store.read())
+                assertEquals(mode!=FsrMode.OFF,names.any { it.contains("Saída do escalador:") })
+                assertEquals(mode==FsrMode.OFF,names.any { it.contains("Upscaling nativo:") })
+                assertEquals(mode==FsrMode.OFF || mode==FsrMode.FSR1,names.any { it.contains("Método de nitidez:") })
+                assertEquals(mode==FsrMode.RECONSTRUCTION,names.any { it.contains("Comparação:") })
+                assertEquals(mode!=FsrMode.RECONSTRUCTION,names.any { it.startsWith("Nitidez:") })
+                assertTrue(names.any { it.contains("Filtros adicionais:") });dialog.dismiss()
+            }
+            store.save(original)
+            var back=0
+            val session=panel.showUpscaling(onBack={back++});click(session,"Método:")
+            click(ShadowDialog.getLatestDialog() as ConsoleDialog,"SGSR 1")
+            (ShadowDialog.getLatestDialog() as ConsoleDialog).cancel()
+            org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+            assertEquals(1,back)
+            store.save(original.copy(videoMode=VideoMode.COMPATIBILITY,fsr=FsrMode.RECONSTRUCTION))
+            val compatibility=panel.showUpscaling()
+            assertFalse(all(compatibility.body).filterIsInstance<TextView>().any { it.isClickable && it.text.contains("Intensidade") })
+            compatibility.dismiss()
+        } finally { c.pause().stop().destroy() }
+    }
+    @Test fun filterPresetsAdjustTheActiveMethodsIntensityWithoutChangingInactiveControls() {
+        val c=Robolectric.buildActivity(Activity::class.java).setup()
+        try {
+            val store=PlaybackSettingsStore(c.get());val panel=PlaybackSettingsPanel(c.get(),store,{},{},{},{})
+            for(mode in FsrMode.entries) {
+                val before=PlaybackSettings(fsr=mode,sharpness=0,fsrSharpness=75,
+                    reconstruction=ReconstructionSettings(strength=100,comparison=ImageComparison.ORIGINAL))
+                store.save(before);click(panel.showTreatment(),"Perfil leve")
+                val after=store.read()
+                assertEquals(before.fsr,after.fsr);assertEquals(before.resolution,after.resolution)
+                assertEquals(before.touchMode,after.touchMode);assertEquals(before.videoCodec,after.videoCodec)
+                assertEquals(if(mode==FsrMode.OFF) 25 else before.sharpness,after.sharpness)
+                assertEquals(if(mode==FsrMode.FSR1 || mode==FsrMode.SGSR1) 25 else before.fsrSharpness,after.fsrSharpness)
+                assertEquals(if(mode==FsrMode.RECONSTRUCTION) 25 else before.reconstruction.strength,after.reconstruction.strength)
+                if(mode==FsrMode.SGSR1 || mode==FsrMode.RECONSTRUCTION) assertEquals(before.imageTreatment.sharpening,after.imageTreatment.sharpening)
+                (ShadowDialog.getLatestDialog() as ConsoleDialog).dismiss()
+            }
         } finally { c.pause().stop().destroy() }
     }
 }

@@ -880,4 +880,28 @@
     <string name="ui_926cde6ac928ee3f" formatted="false">"Angeforderte Skalierer-Ausgabe: {0} | angeforderter Puffer: {1}\n"</string>
     <string name="ui_54a1a9944bd29e08" formatted="false">"Lokale Render-Bildfolge: {0} (misst weder GPU noch Spiel-/Bildschirm-FPS)\n"</string>
     <string name="ui_1e53dc3bd47bfd37" formatted="false">"Skalierer: Rückkehr zur Standardskalierung — {0}"</string>
+    <string name="ui_ab80b661abb4d819" formatted="false">"Skalierung und Bildverarbeitung: {0}"</string>
+    <string name="ui_421fc3b80d653c41" formatted="false">"Gerätestandard"</string>
+    <string name="ui_19641a71ea37bded" formatted="false">"xCloud-Rekonstruktion"</string>
+    <string name="ui_1915d14ae05fb304" formatted="false">"Verwendet die Standardskalierung des Geräts. Schärfung und zusätzliche Filter unten sind optional."</string>
+    <string name="ui_c50e172c261d8c7e" formatted="false">"FSR vergrößert das Bild mit EASU und verwendet die unten gewählte Schärfung. Bei nativer Größe wird nur geschärft. Experimentelle Methode."</string>
+    <string name="ui_bd256736c94b60c2" formatted="false">"SGSR kombiniert Vergrößerung mit eigener Schärfung. Die Stärke unten gehört zu SGSR; RCAS und USM gelten dafür nicht. Experimentelle Methode."</string>
+    <string name="ui_a1a502f6cbd61c13" formatted="false">"Die xCloud-Rekonstruktion bevorzugt Bilddetails, auch ohne Vergrößerung. Qualität, Stärke und Vergleich unten gehören zu dieser Methode. Experimentelle Methode."</string>
+    <string name="ui_c75da833acbd4f43" formatted="false">"Skalierung und Bildverarbeitung"</string>
+    <string name="ui_38b562e06a2e6f8a" formatted="false">"Kompatibilität ist aktiv und deaktiviert experimentelle Methoden und Filter. Ändern Sie den Modus unter Video und Streaming, um sie zu verwenden."</string>
+    <string name="ui_57dcc836395931d8" formatted="false">"Methode: {0}"</string>
+    <string name="ui_8a4b6093d87902de" formatted="false">"Zusätzliche Filter: {0}"</string>
+    <string name="ui_dcb5d6a4ed215b52" formatted="false">"Aktiviert"</string>
+    <string name="ui_78f59d802c8dfa66" formatted="false">"Deaktiviert"</string>
+    <string name="ui_8862905aba7cac02" formatted="false">"Bildfarben"</string>
+    <string name="ui_5c4fc77e76b3e821" formatted="false">"Original-RCAS"</string>
+    <string name="ui_bc2a6c1d3e1068bf" formatted="false">"Einfache Schärfung"</string>
+    <string name="ui_f87888746e40f335" formatted="false">"{0} — Schärfung"</string>
+    <string name="ui_8a16e0aa4971e729" formatted="false">"Diese Einstellung gehört zur ausgewählten Methode. Adaptives RCAS und USM bearbeiten die Helligkeit, um Rauschen und Halos zu begrenzen."</string>
+    <string name="ui_c559eea667737d74" formatted="false">"Bildmethode auswählen"</string>
+    <string name="ui_726dd1ebf97968ef" formatted="false">"Wählen Sie eine Methode. Standard verwendet die Geräteskalierung. FSR und SGSR vergrößern und schärfen das Bild. Die xCloud-Rekonstruktion bevorzugt Bilddetails. Die drei Alternativen sind experimentell. Nach der Auswahl erscheinen die passenden Einstellungen auf demselben Bildschirm."</string>
+    <string name="ui_604124660b08c782" formatted="false">"Helligkeit, Kontrast und Sättigung sind gemeinsame Farbeinstellungen. Die Schärfung befindet sich unter Skalierung und Bildverarbeitung bei der gewählten Methode."</string>
+    <string name="ui_2dc867123a3f77a9" formatted="false">"Zusätzliche Filter — gemeinsam"</string>
+    <string name="ui_4e539bd60654f414" formatted="false">"Diese Filter ergänzen die gewählte Methode: Standard, FSR, SGSR oder xCloud-Rekonstruktion. Die Profile passen auch deren Schärfung an. Ein weiterer Skalierer muss nicht aktiviert werden."</string>
+    <string name="ui_e823d8526c139e5f" formatted="false">"0% deaktiviert nur die Schärfung dieser Methode. Vergrößerung und zusätzliche Filter bleiben unabhängig. Beginnen Sie mit 25%."</string>
 </resources>

@@ -417,7 +417,8 @@ class GameDashboardView(
     private fun renderCatalogState(count: Int, preparing: Boolean = false) {
         val kind=when(activeTab) { LibraryTab.GAME_PASS -> OfficialGalleryKind.GAME_PASS; LibraryTab.PURCHASED -> OfficialGalleryKind.PURCHASED; else -> null }
         val gallery=kind?.let { officialGalleries[it] }
-        emptyState.visibility = if (count==0) View.VISIBLE else View.GONE
+        val originalHome=designScene==ConsoleScene.XBOX_ORIGINAL && !originalBrowsing
+        emptyState.visibility = if (count==0 && !originalHome) View.VISIBLE else View.GONE
         emptyState.text = when {
             preparing -> UiText.text("Carregando catálogo…")
             searchQuery.isNotBlank() -> UiText.text("Nenhum jogo encontrado para “{0}”.\nX para pesquisar novamente.",UiText.nested(searchQuery))

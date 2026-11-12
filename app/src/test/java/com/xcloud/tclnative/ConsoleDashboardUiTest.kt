@@ -140,6 +140,22 @@ class ConsoleDashboardUiTest {
             assertNotNull("Empty Original return: "+all(view).filter { it.isFocusable }.joinToString { "${(it as? TextView)?.text} shown=${it.isShown} visible=${it.visibility} focused=${it.hasFocus()} size=${it.width}x${it.height}" },view.findFocus());assertTrue(view.findFocus()!!.isShown)
         } finally { view.close();controller.pause().stop().destroy() }
     }
+    @Test fun delayedEmptyHistoryDoesNotCoverTheOriginalHomeCategories() {
+        DashboardTheme.apply(RuntimeEnvironment.getApplication(),UiTheme.XBOX_ORIGINAL)
+        val controller=Robolectric.buildActivity(Activity::class.java).setup();val a=controller.get()
+        val view=GameDashboardView(a,GameLibrary(a,"original-delayed-history"),{},{},{},{})
+        try {
+            a.setContentView(view);layout(view)
+            view.setGames(games());view.awaitCatalog()
+            view.setRecentHistory(emptyList());view.awaitCatalog()
+            val message=all(view).filterIsInstance<TextView>().single { it.text.toString()=="Seus jogos recentes do Xbox Cloud Gaming aparecerão aqui." }
+            assertFalse("An asynchronous empty response must leave categories clear",message.isShown)
+            val category=all(view).filterIsInstance<TextView>().single { it.isShown && it.isClickable && it.text.toString()==LibraryTab.RECENT.label }
+            category.performClick();layout(view)
+            assertTrue("The explanation belongs inside the empty category",message.isShown)
+            view.back();layout(view);assertFalse(message.isShown)
+        } finally { view.close();controller.pause().stop().destroy() }
+    }
     @Test fun allConsoleCompositionsFitWidePhoneAndTvWithoutCroppingInteractiveContent() {
         for(theme in themes) {
             DashboardTheme.apply(RuntimeEnvironment.getApplication(),theme)

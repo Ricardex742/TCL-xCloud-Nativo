@@ -929,4 +929,51 @@
     <string name="ui_b274e0da21e8b52f" formatted="false">"H.265/HEVC Main — expérimental"</string>
     <string name="ui_58fcf72f6192db0b" formatted="false">"VP9 — expérimental"</string>
     <string name="ui_38d1a1c91951cdbf" formatted="false">"AV1 — expérimental"</string>
+    <string name="ui_eaf8a9350ab6d3e2">"Toutes les heures"</string>
+    <string name="ui_6f5d471e66730ec2">"A : choisir le fond · X : favori · B : retour"</string>
+    <string name="ui_b617239d4365e3e8">"Abstraits"</string>
+    <string name="ui_1e5b10ff5d161f80">"À l’ouverture de l’application"</string>
+    <string name="ui_8892e90f96495890">"Illustration du jeu sélectionné"</string>
+    <string name="ui_e9de098c7733b1b9">"Aurore"</string>
+    <string name="ui_f17c0eb2db763e0e">"Bibliothèque complète"</string>
+    <string name="ui_4c6eb949881d5f0c">"Bibliothèque complète : {0}"</string>
+    <string name="ui_cebb0a638c23b061">"Collection à faire défiler"</string>
+    <string name="ui_b05928ebf2440347">"Chaque jour"</string>
+    <string name="ui_74c6975ad62fb387">"Droite"</string>
+    <string name="ui_7a09dc9ca120bb97">"Choisissez une collection avec au moins deux fonds. Le changement est suspendu en jeu et reprend au retour au menu."</string>
+    <string name="ui_ed928968d2db5b71">"Gauche"</string>
+    <string name="ui_f6b8caded6733ba1">"Rangée horizontale — par défaut"</string>
+    <string name="ui_48bfabd124cb7d3b">"Ajouter le fond aux favoris"</string>
+    <string name="ui_ad2c8ba9ac94925f">"Favoris"</string>
+    <string name="ui_2a98b18258fb0764">"Flux Xbox"</string>
+    <string name="ui_f0ed3a84b15cd219">"Arrière-plan"</string>
+    <string name="ui_599282f774a57933">"Arrière-plan : {0}"</string>
+    <string name="ui_3c0bdf306a0cd3a1">"Galerie de fonds"</string>
+    <string name="ui_3dca483f77f21561">"Game Pass : {0}"</string>
+    <string name="ui_839e20fb3599fc74">"Grille"</string>
+    <string name="ui_60b5e690b9376666">"Guide"</string>
+    <string name="ui_2b2c050dc5321e96">"Guide de la partie"</string>
+    <string name="ui_e57a540b0513c883">"Guide : {0}"</string>
+    <string name="ui_48ac1063cf6cfd62">"Horizon Xbox"</string>
+    <string name="ui_48c695b58c063d66">"Jeux"</string>
+    <string name="ui_4745eed9dab8b5f3">"Menu centré — par défaut"</string>
+    <string name="ui_1ff0c54e9da461d1">"Aucun fond dans cette catégorie."</string>
+    <string name="ui_550cca05a9e6c971">"Personnaliser Series X|S"</string>
+    <string name="ui_44389449ac8fc223">"Platine"</string>
+    <string name="ui_f3f4c6ec71423b62">"Position du Guide"</string>
+    <string name="ui_5f6e07f1da2ccbd6">"Coucher de soleil"</string>
+    <string name="ui_44ce653f168e3541">"Retirer des fonds favoris"</string>
+    <string name="ui_97555a3796904adf">"Reprendre la partie"</string>
+    <string name="ui_39b785a6cd8767d9">"Badges sur les jaquettes"</string>
+    <string name="ui_ebbee5976e110692">"Sans changement automatique"</string>
+    <string name="ui_57f5715f8ee59fcc">"Chaque semaine"</string>
+    <string name="ui_e523605777e52f2d">"Series X|S : {0}"</string>
+    <string name="ui_e863541b3663de23">"Tous les fonds"</string>
+    <string name="ui_3eb62c9c87437ffb">"Changement automatique des fonds"</string>
+    <string name="ui_c8898e71b77b76fd">"Changement automatique : {0}"</string>
+    <string name="ui_59881ea4c51e9e63">"Utiliser ce fond"</string>
+    <string name="ui_449b321e81007dfc">"Xbox"</string>
+    <string name="ui_cd55a9d95751fb9b">"{0} · {1}"</string>
+    <string name="ui_d6b58ac9653741d8">"{0}, {1}. Ouvrir le Guide"</string>
+    <string name="ui_7bbaef08782fd177">"Orbite"</string>
 </resources>

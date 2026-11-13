@@ -929,4 +929,51 @@
     <string name="ui_b274e0da21e8b52f" formatted="false">"H.265/HEVC Main — 実験的"</string>
     <string name="ui_58fcf72f6192db0b" formatted="false">"VP9 — 実験的"</string>
     <string name="ui_38d1a1c91951cdbf" formatted="false">"AV1 — 実験的"</string>
+    <string name="ui_eaf8a9350ab6d3e2">"1時間ごと"</string>
+    <string name="ui_6f5d471e66730ec2">"A: 背景を選択 · X: お気に入り · B: 戻る"</string>
+    <string name="ui_b617239d4365e3e8">"抽象"</string>
+    <string name="ui_1e5b10ff5d161f80">"アプリ起動時"</string>
+    <string name="ui_8892e90f96495890">"選択したゲームのアート"</string>
+    <string name="ui_e9de098c7733b1b9">"オーロラ"</string>
+    <string name="ui_f17c0eb2db763e0e">"すべてのライブラリ"</string>
+    <string name="ui_4c6eb949881d5f0c">"すべてのライブラリ: {0}"</string>
+    <string name="ui_cebb0a638c23b061">"自動切り替えするコレクション"</string>
+    <string name="ui_b05928ebf2440347">"毎日"</string>
+    <string name="ui_74c6975ad62fb387">"右"</string>
+    <string name="ui_7a09dc9ca120bb97">"背景が2つ以上あるコレクションを選択してください。プレイ中は切り替えを停止し、メニューに戻ると更新します。"</string>
+    <string name="ui_ed928968d2db5b71">"左"</string>
+    <string name="ui_f6b8caded6733ba1">"横一列 — 既定"</string>
+    <string name="ui_48bfabd124cb7d3b">"背景をお気に入りに追加"</string>
+    <string name="ui_ad2c8ba9ac94925f">"お気に入り"</string>
+    <string name="ui_2a98b18258fb0764">"Xbox フロー"</string>
+    <string name="ui_f0ed3a84b15cd219">"背景"</string>
+    <string name="ui_599282f774a57933">"背景: {0}"</string>
+    <string name="ui_3c0bdf306a0cd3a1">"背景ギャラリー"</string>
+    <string name="ui_3dca483f77f21561">"Game Pass: {0}"</string>
+    <string name="ui_839e20fb3599fc74">"グリッド"</string>
+    <string name="ui_60b5e690b9376666">"ガイド"</string>
+    <string name="ui_2b2c050dc5321e96">"ゲームガイド"</string>
+    <string name="ui_e57a540b0513c883">"ガイド: {0}"</string>
+    <string name="ui_48ac1063cf6cfd62">"Xbox ホライゾン"</string>
+    <string name="ui_48c695b58c063d66">"ゲーム"</string>
+    <string name="ui_4745eed9dab8b5f3">"中央メニュー — 既定"</string>
+    <string name="ui_1ff0c54e9da461d1">"このカテゴリに背景はありません。"</string>
+    <string name="ui_550cca05a9e6c971">"Series X|S をカスタマイズ"</string>
+    <string name="ui_44389449ac8fc223">"プラチナ"</string>
+    <string name="ui_f3f4c6ec71423b62">"ガイドの位置"</string>
+    <string name="ui_5f6e07f1da2ccbd6">"夕焼け"</string>
+    <string name="ui_44ce653f168e3541">"お気に入りの背景から削除"</string>
+    <string name="ui_97555a3796904adf">"ゲームに戻る"</string>
+    <string name="ui_39b785a6cd8767d9">"カバーのバッジ"</string>
+    <string name="ui_ebbee5976e110692">"自動切り替えなし"</string>
+    <string name="ui_57f5715f8ee59fcc">"毎週"</string>
+    <string name="ui_e523605777e52f2d">"Series X|S: {0}"</string>
+    <string name="ui_e863541b3663de23">"すべての背景"</string>
+    <string name="ui_3eb62c9c87437ffb">"背景の自動切り替え"</string>
+    <string name="ui_c8898e71b77b76fd">"自動切り替え: {0}"</string>
+    <string name="ui_59881ea4c51e9e63">"背景を使用"</string>
+    <string name="ui_449b321e81007dfc">"Xbox"</string>
+    <string name="ui_cd55a9d95751fb9b">"{0} · {1}"</string>
+    <string name="ui_d6b58ac9653741d8">"{0}、{1}。ガイドを開く"</string>
+    <string name="ui_7bbaef08782fd177">"軌道"</string>
 </resources>

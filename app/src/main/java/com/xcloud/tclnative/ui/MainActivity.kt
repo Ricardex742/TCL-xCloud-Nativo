@@ -604,7 +604,8 @@ open class MainActivity : Activity() {
             testRumble = { showRumbleDiagnostics(::back) },
             homeShortcuts = { showHomeShortcuts(::back) },lastReport={ showLatestReport(::back) },
             sessionOptions={ showSessionOptionsMenu(session,::back) },controllerProfiles={ showControllerProfiles(::back) },
-            onPageEntered={ returnPage=it },catalogInformation={ dashboard?.catalogInformation }).open(startPage)
+            onPageEntered={ returnPage=it },catalogInformation={ dashboard?.catalogInformation },
+            backgrounds={ dashboard?.wallpaperChoices() ?: com.xcloud.tclnative.ui.dashboard.SeriesWallpaperGallery.fromGames(currentGames,listOfNotNull(activeGame)) }).open(startPage)
     }
     private fun showControllerProfiles(back: () -> Unit) {
         com.xcloud.tclnative.ui.dashboard.ControllerProfilePanel(this,controllerProfiles) { if(webrtcClient!=null) (0..3).filter { controllers.deviceFor(it)!=null }.forEach(::publishGamepad) }.show(back)
@@ -798,6 +799,9 @@ open class MainActivity : Activity() {
             sessionOptions={ currentSession?.let(::showSessionOptionsMenu) },
             audio={ PlaybackSettingsPanel(this,settingsStore,::applyPlaybackSettings,{}, {}, {}).showAudio { showGameMenu() } },
             language={ com.xcloud.tclnative.ui.dashboard.LanguageMenu.show(this) { showGameMenu() } },
+            appearance={ PlaybackSettingsPanel(this,settingsStore,::applyPlaybackSettings,{}, {}, {},
+                backgrounds={ dashboard?.wallpaperChoices() ?: com.xcloud.tclnative.ui.dashboard.SeriesWallpaperGallery.fromGames(currentGames,listOfNotNull(activeGame)) }).showAppearance(onBack={ showGameMenu() }) },
+            profile=dashboard?.profileSnapshot(),
             microphone=::toggleMicrophone,microphoneLabel=webrtcClient?.microphoneLabel() ?: UiText.text("Ativar microfone"),
             controllerProfiles={ showControllerProfiles { showGameMenu() } },
             mouse=if(sessionDesktopMode==DesktopInputMode.OFF) null else ({ auxiliaryHandler.post { setDesktopCapture(!desktopCaptured) } })).also { dialog ->

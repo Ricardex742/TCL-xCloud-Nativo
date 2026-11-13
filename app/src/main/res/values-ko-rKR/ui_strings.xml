@@ -929,4 +929,51 @@
     <string name="ui_b274e0da21e8b52f" formatted="false">"H.265/HEVC Main — 실험적"</string>
     <string name="ui_58fcf72f6192db0b" formatted="false">"VP9 — 실험적"</string>
     <string name="ui_38d1a1c91951cdbf" formatted="false">"AV1 — 실험적"</string>
+    <string name="ui_eaf8a9350ab6d3e2">"매시간"</string>
+    <string name="ui_6f5d471e66730ec2">"A: 배경 선택 · X: 즐겨찾기 · B: 뒤로"</string>
+    <string name="ui_b617239d4365e3e8">"추상"</string>
+    <string name="ui_1e5b10ff5d161f80">"앱을 열 때"</string>
+    <string name="ui_8892e90f96495890">"선택한 게임 아트"</string>
+    <string name="ui_e9de098c7733b1b9">"오로라"</string>
+    <string name="ui_f17c0eb2db763e0e">"전체 라이브러리"</string>
+    <string name="ui_4c6eb949881d5f0c">"전체 라이브러리: {0}"</string>
+    <string name="ui_cebb0a638c23b061">"자동 변경할 컬렉션"</string>
+    <string name="ui_b05928ebf2440347">"매일"</string>
+    <string name="ui_74c6975ad62fb387">"오른쪽"</string>
+    <string name="ui_7a09dc9ca120bb97">"배경이 두 개 이상인 컬렉션을 선택하세요. 게임 중에는 변경을 멈추고 메뉴로 돌아오면 갱신합니다."</string>
+    <string name="ui_ed928968d2db5b71">"왼쪽"</string>
+    <string name="ui_f6b8caded6733ba1">"가로줄 — 기본값"</string>
+    <string name="ui_48bfabd124cb7d3b">"배경 즐겨찾기"</string>
+    <string name="ui_ad2c8ba9ac94925f">"즐겨찾기"</string>
+    <string name="ui_2a98b18258fb0764">"Xbox 흐름"</string>
+    <string name="ui_f0ed3a84b15cd219">"배경"</string>
+    <string name="ui_599282f774a57933">"배경: {0}"</string>
+    <string name="ui_3c0bdf306a0cd3a1">"배경 갤러리"</string>
+    <string name="ui_3dca483f77f21561">"Game Pass: {0}"</string>
+    <string name="ui_839e20fb3599fc74">"격자"</string>
+    <string name="ui_60b5e690b9376666">"가이드"</string>
+    <string name="ui_2b2c050dc5321e96">"게임 가이드"</string>
+    <string name="ui_e57a540b0513c883">"가이드: {0}"</string>
+    <string name="ui_48ac1063cf6cfd62">"Xbox 지평선"</string>
+    <string name="ui_48c695b58c063d66">"게임"</string>
+    <string name="ui_4745eed9dab8b5f3">"중앙 메뉴 — 기본값"</string>
+    <string name="ui_1ff0c54e9da461d1">"이 카테고리에 배경이 없습니다."</string>
+    <string name="ui_550cca05a9e6c971">"Series X|S 사용자 지정"</string>
+    <string name="ui_44389449ac8fc223">"플래티넘"</string>
+    <string name="ui_f3f4c6ec71423b62">"가이드 위치"</string>
+    <string name="ui_5f6e07f1da2ccbd6">"노을"</string>
+    <string name="ui_44ce653f168e3541">"즐겨찾는 배경에서 제거"</string>
+    <string name="ui_97555a3796904adf">"게임 계속"</string>
+    <string name="ui_39b785a6cd8767d9">"표지 배지"</string>
+    <string name="ui_ebbee5976e110692">"자동 변경 안 함"</string>
+    <string name="ui_57f5715f8ee59fcc">"매주"</string>
+    <string name="ui_e523605777e52f2d">"Series X|S: {0}"</string>
+    <string name="ui_e863541b3663de23">"모든 배경"</string>
+    <string name="ui_3eb62c9c87437ffb">"자동 배경 변경"</string>
+    <string name="ui_c8898e71b77b76fd">"자동 변경: {0}"</string>
+    <string name="ui_59881ea4c51e9e63">"배경 사용"</string>
+    <string name="ui_449b321e81007dfc">"Xbox"</string>
+    <string name="ui_cd55a9d95751fb9b">"{0} · {1}"</string>
+    <string name="ui_d6b58ac9653741d8">"{0}, {1}. 가이드 열기"</string>
+    <string name="ui_7bbaef08782fd177">"궤도"</string>
 </resources>

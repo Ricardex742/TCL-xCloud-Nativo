@@ -929,4 +929,51 @@
     <string name="ui_b274e0da21e8b52f" formatted="false">"H.265/HEVC Main — experimental"</string>
     <string name="ui_58fcf72f6192db0b" formatted="false">"VP9 — experimental"</string>
     <string name="ui_38d1a1c91951cdbf" formatted="false">"AV1 — experimental"</string>
+    <string name="ui_eaf8a9350ab6d3e2">"Every hour"</string>
+    <string name="ui_6f5d471e66730ec2">"A: choose background · X: favorite · B: back"</string>
+    <string name="ui_b617239d4365e3e8">"Abstract"</string>
+    <string name="ui_1e5b10ff5d161f80">"When opening the app"</string>
+    <string name="ui_8892e90f96495890">"Selected game artwork"</string>
+    <string name="ui_e9de098c7733b1b9">"Aurora"</string>
+    <string name="ui_f17c0eb2db763e0e">"Full library"</string>
+    <string name="ui_4c6eb949881d5f0c">"Full library: {0}"</string>
+    <string name="ui_cebb0a638c23b061">"Collection to shuffle"</string>
+    <string name="ui_b05928ebf2440347">"Daily"</string>
+    <string name="ui_74c6975ad62fb387">"Right"</string>
+    <string name="ui_7a09dc9ca120bb97">"Choose a collection with at least two backgrounds. Switching pauses during gameplay and updates when you return to the menu."</string>
+    <string name="ui_ed928968d2db5b71">"Left"</string>
+    <string name="ui_f6b8caded6733ba1">"Horizontal row — default"</string>
+    <string name="ui_48bfabd124cb7d3b">"Favorite background"</string>
+    <string name="ui_ad2c8ba9ac94925f">"Favorites"</string>
+    <string name="ui_2a98b18258fb0764">"Xbox Flow"</string>
+    <string name="ui_f0ed3a84b15cd219">"Background"</string>
+    <string name="ui_599282f774a57933">"Background: {0}"</string>
+    <string name="ui_3c0bdf306a0cd3a1">"Background gallery"</string>
+    <string name="ui_3dca483f77f21561">"Game Pass: {0}"</string>
+    <string name="ui_839e20fb3599fc74">"Grid"</string>
+    <string name="ui_60b5e690b9376666">"Guide"</string>
+    <string name="ui_2b2c050dc5321e96">"Game guide"</string>
+    <string name="ui_e57a540b0513c883">"Guide: {0}"</string>
+    <string name="ui_48ac1063cf6cfd62">"Xbox Horizon"</string>
+    <string name="ui_48c695b58c063d66">"Games"</string>
+    <string name="ui_4745eed9dab8b5f3">"Centered menu — default"</string>
+    <string name="ui_1ff0c54e9da461d1">"No backgrounds in this category."</string>
+    <string name="ui_550cca05a9e6c971">"Customize Series X|S"</string>
+    <string name="ui_44389449ac8fc223">"Platinum"</string>
+    <string name="ui_f3f4c6ec71423b62">"Guide position"</string>
+    <string name="ui_5f6e07f1da2ccbd6">"Sunset"</string>
+    <string name="ui_44ce653f168e3541">"Remove from favorite backgrounds"</string>
+    <string name="ui_97555a3796904adf">"Resume game"</string>
+    <string name="ui_39b785a6cd8767d9">"Cover badges"</string>
+    <string name="ui_ebbee5976e110692">"No automatic switching"</string>
+    <string name="ui_57f5715f8ee59fcc">"Weekly"</string>
+    <string name="ui_e523605777e52f2d">"Series X|S: {0}"</string>
+    <string name="ui_e863541b3663de23">"All backgrounds"</string>
+    <string name="ui_3eb62c9c87437ffb">"Automatic background switching"</string>
+    <string name="ui_c8898e71b77b76fd">"Automatic switching: {0}"</string>
+    <string name="ui_59881ea4c51e9e63">"Use background"</string>
+    <string name="ui_449b321e81007dfc">"Xbox"</string>
+    <string name="ui_cd55a9d95751fb9b">"{0} · {1}"</string>
+    <string name="ui_d6b58ac9653741d8">"{0}, {1}. Open guide"</string>
+    <string name="ui_7bbaef08782fd177">"Orbit"</string>
 </resources>

@@ -929,4 +929,51 @@
     <string name="ui_b274e0da21e8b52f" formatted="false">"H.265/HEVC Main – experimentell"</string>
     <string name="ui_58fcf72f6192db0b" formatted="false">"VP9 – experimentell"</string>
     <string name="ui_38d1a1c91951cdbf" formatted="false">"AV1 – experimentell"</string>
+    <string name="ui_eaf8a9350ab6d3e2">"Stündlich"</string>
+    <string name="ui_6f5d471e66730ec2">"A: Hintergrund wählen · X: Favorit · B: zurück"</string>
+    <string name="ui_b617239d4365e3e8">"Abstrakt"</string>
+    <string name="ui_1e5b10ff5d161f80">"Beim Öffnen der App"</string>
+    <string name="ui_8892e90f96495890">"Grafik des ausgewählten Spiels"</string>
+    <string name="ui_e9de098c7733b1b9">"Polarlicht"</string>
+    <string name="ui_f17c0eb2db763e0e">"Vollständige Bibliothek"</string>
+    <string name="ui_4c6eb949881d5f0c">"Vollständige Bibliothek: {0}"</string>
+    <string name="ui_cebb0a638c23b061">"Sammlung für den Wechsel"</string>
+    <string name="ui_b05928ebf2440347">"Täglich"</string>
+    <string name="ui_74c6975ad62fb387">"Rechts"</string>
+    <string name="ui_7a09dc9ca120bb97">"Wähle eine Sammlung mit mindestens zwei Hintergründen. Der Wechsel pausiert beim Spielen und wird bei der Rückkehr ins Menü aktualisiert."</string>
+    <string name="ui_ed928968d2db5b71">"Links"</string>
+    <string name="ui_f6b8caded6733ba1">"Horizontale Reihe — Standard"</string>
+    <string name="ui_48bfabd124cb7d3b">"Hintergrund als Favorit"</string>
+    <string name="ui_ad2c8ba9ac94925f">"Favoriten"</string>
+    <string name="ui_2a98b18258fb0764">"Xbox-Fluss"</string>
+    <string name="ui_f0ed3a84b15cd219">"Hintergrund"</string>
+    <string name="ui_599282f774a57933">"Hintergrund: {0}"</string>
+    <string name="ui_3c0bdf306a0cd3a1">"Hintergrundgalerie"</string>
+    <string name="ui_3dca483f77f21561">"Game Pass: {0}"</string>
+    <string name="ui_839e20fb3599fc74">"Raster"</string>
+    <string name="ui_60b5e690b9376666">"Guide"</string>
+    <string name="ui_2b2c050dc5321e96">"Spiel-Guide"</string>
+    <string name="ui_e57a540b0513c883">"Guide: {0}"</string>
+    <string name="ui_48ac1063cf6cfd62">"Xbox-Horizont"</string>
+    <string name="ui_48c695b58c063d66">"Spiele"</string>
+    <string name="ui_4745eed9dab8b5f3">"Zentriertes Menü — Standard"</string>
+    <string name="ui_1ff0c54e9da461d1">"Keine Hintergründe in dieser Kategorie."</string>
+    <string name="ui_550cca05a9e6c971">"Series X|S personalisieren"</string>
+    <string name="ui_44389449ac8fc223">"Platin"</string>
+    <string name="ui_f3f4c6ec71423b62">"Position des Guides"</string>
+    <string name="ui_5f6e07f1da2ccbd6">"Sonnenuntergang"</string>
+    <string name="ui_44ce653f168e3541">"Aus Hintergrundfavoriten entfernen"</string>
+    <string name="ui_97555a3796904adf">"Spiel fortsetzen"</string>
+    <string name="ui_39b785a6cd8767d9">"Abzeichen auf Covern"</string>
+    <string name="ui_ebbee5976e110692">"Kein automatischer Wechsel"</string>
+    <string name="ui_57f5715f8ee59fcc">"Wöchentlich"</string>
+    <string name="ui_e523605777e52f2d">"Series X|S: {0}"</string>
+    <string name="ui_e863541b3663de23">"Alle Hintergründe"</string>
+    <string name="ui_3eb62c9c87437ffb">"Automatischer Hintergrundwechsel"</string>
+    <string name="ui_c8898e71b77b76fd">"Automatischer Wechsel: {0}"</string>
+    <string name="ui_59881ea4c51e9e63">"Hintergrund verwenden"</string>
+    <string name="ui_449b321e81007dfc">"Xbox"</string>
+    <string name="ui_cd55a9d95751fb9b">"{0} · {1}"</string>
+    <string name="ui_d6b58ac9653741d8">"{0}, {1}. Guide öffnen"</string>
+    <string name="ui_7bbaef08782fd177">"Umlaufbahn"</string>
 </resources>

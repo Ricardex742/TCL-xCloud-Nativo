@@ -22,11 +22,13 @@ import android.widget.TextView
 import android.util.TypedValue
 import com.xcloud.tclnative.R
 import com.xcloud.tclnative.settings.ConsoleScene
+import com.xcloud.tclnative.settings.SeriesGuideSide
+import com.xcloud.tclnative.settings.SeriesPersonalizationStore
 import java.util.Locale
 import kotlin.math.roundToInt
 
 data class ConsoleAction(val label: String, val action: () -> Unit)
-enum class ConsolePanelPurpose { GENERAL, SEARCH, SETTINGS_HOME }
+enum class ConsolePanelPurpose { GENERAL, SEARCH, SETTINGS_HOME, GUIDE }
 
 /** Shared native panels for search, account menus and messages. No platform alert buttons/rows. */
 class ConsoleDialog(context: Context, heading: String,private val purpose: ConsolePanelPurpose=ConsolePanelPurpose.GENERAL) : Dialog(context, R.style.ConsoleDialog) {
@@ -61,10 +63,22 @@ class ConsoleDialog(context: Context, heading: String,private val purpose: Conso
     private var initialFocus: View? = null
     private var menuItems=0
     private var tileRow: LinearLayout?=null
+    var shortcut: ((KeyEvent) -> Boolean)?=null
+    private val cleanups=mutableListOf<() -> Unit>()
+    fun addCleanup(action: () -> Unit) { cleanups+=action }
+    override fun onStop() {
+        val pending=cleanups.toList();cleanups.clear();pending.forEach { it() }
+        super.onStop()
+    }
     init {
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         activity?.let(::setOwnerActivity)
-        if(skin.enabled) {
+        if(purpose==ConsolePanelPurpose.GUIDE) {
+            val brand=ConsoleBrandView(context)
+            panel.addView(brand,LinearLayout.LayoutParams(px(176),px(42)))
+            panel.addView(text(heading,27,true),LinearLayout.LayoutParams(-1,-2).apply { topMargin=px(16);bottomMargin=px(16) })
+            panel.minimumHeight=(screenHeight*.88f).roundToInt()
+        } else if(skin.enabled) {
             val header=LinearLayout(context).apply { orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL }
             val brand=ConsoleBrandView(context)
             header.addView(brand,LinearLayout.LayoutParams(px(if(skin.scene==ConsoleScene.XBOX_ORIGINAL) 204 else 176),px(62)))
@@ -86,7 +100,7 @@ class ConsoleDialog(context: Context, heading: String,private val purpose: Conso
         panel.addView(actions, LinearLayout.LayoutParams(-1, -2).apply { topMargin=px(22) })
         setContentView(panel)
         setOnKeyListener { _, key, event ->
-            when (key) {
+            if(shortcut?.invoke(event)==true) true else when (key) {
                 KeyEvent.KEYCODE_BUTTON_B, KeyEvent.KEYCODE_BACK -> {
                     if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) cancel()
                     true
@@ -105,8 +119,10 @@ class ConsoleDialog(context: Context, heading: String,private val purpose: Conso
         setTextColor(if(skin.enabled) skin.textColor(color) else color); setTextSize(TypedValue.COMPLEX_UNIT_PX, size*scale)
     }
     fun focusFirst(view: View) { initialFocus = view }
-    fun addAction(label: String, action: () -> Unit): TextView {
-        val button = DashboardTheme.button(context, UiText.uppercase(label), scale) { dismiss(); action() }
+    fun addAction(label: String, action: () -> Unit): TextView = actionButton(label,true,action)
+    fun addPersistentAction(label: String, action: () -> Unit): TextView = actionButton(label,false,action)
+    private fun actionButton(label: String,dismissOnClick: Boolean,action: () -> Unit): TextView {
+        val button = DashboardTheme.button(context, UiText.uppercase(label), scale) { if(dismissOnClick) dismiss(); action() }
         if(skin.enabled) button.apply { background=skin.row();setTextColor(skin.textColors());typeface=skin.font(true) }
         actions.addView(button, LinearLayout.LayoutParams(0, px(58), 1f).apply {
             if (actions.childCount > 1) marginStart = px(10)
@@ -145,8 +161,15 @@ class ConsoleDialog(context: Context, heading: String,private val purpose: Conso
             decorView.setPadding(0,0,0,0)
             addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
             setDimAmount(if(skin.enabled) .48f else .72f)
-            setGravity(Gravity.CENTER)
-            setLayout((screenWidth*(if(skin.enabled) .90f else .82f)).roundToInt(), WindowManager.LayoutParams.WRAP_CONTENT)
+            if(purpose==ConsolePanelPurpose.GUIDE) {
+                val side=SeriesPersonalizationStore(context).read().guide
+                setGravity(Gravity.CENTER_VERTICAL or if(side==SeriesGuideSide.RIGHT) Gravity.RIGHT else Gravity.LEFT)
+                attributes=attributes.apply { x=px(12) }
+                setLayout(minOf(px(410),(screenWidth*.90f).roundToInt()),(screenHeight*.90f).roundToInt())
+            } else {
+                setGravity(Gravity.CENTER)
+                setLayout((screenWidth*(if(skin.enabled) .90f else .82f)).roundToInt(), WindowManager.LayoutParams.WRAP_CONTENT)
+            }
             setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
         }
         initialFocus?.requestFocus()

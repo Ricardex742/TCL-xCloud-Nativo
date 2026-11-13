@@ -929,4 +929,51 @@
     <string name="ui_b274e0da21e8b52f" formatted="false">"H.265/HEVC Main — sperimentale"</string>
     <string name="ui_58fcf72f6192db0b" formatted="false">"VP9 — sperimentale"</string>
     <string name="ui_38d1a1c91951cdbf" formatted="false">"AV1 — sperimentale"</string>
+    <string name="ui_eaf8a9350ab6d3e2">"Ogni ora"</string>
+    <string name="ui_6f5d471e66730ec2">"A: scegli sfondo · X: preferito · B: indietro"</string>
+    <string name="ui_b617239d4365e3e8">"Astratti"</string>
+    <string name="ui_1e5b10ff5d161f80">"All’apertura dell’app"</string>
+    <string name="ui_8892e90f96495890">"Immagine del gioco selezionato"</string>
+    <string name="ui_e9de098c7733b1b9">"Aurora"</string>
+    <string name="ui_f17c0eb2db763e0e">"Raccolta completa"</string>
+    <string name="ui_4c6eb949881d5f0c">"Raccolta completa: {0}"</string>
+    <string name="ui_cebb0a638c23b061">"Raccolta da alternare"</string>
+    <string name="ui_b05928ebf2440347">"Ogni giorno"</string>
+    <string name="ui_74c6975ad62fb387">"Destra"</string>
+    <string name="ui_7a09dc9ca120bb97">"Scegli una raccolta con almeno due sfondi. Il cambio si interrompe durante il gioco e si aggiorna tornando al menu."</string>
+    <string name="ui_ed928968d2db5b71">"Sinistra"</string>
+    <string name="ui_f6b8caded6733ba1">"Riga orizzontale — predefinita"</string>
+    <string name="ui_48bfabd124cb7d3b">"Aggiungi sfondo ai preferiti"</string>
+    <string name="ui_ad2c8ba9ac94925f">"Preferiti"</string>
+    <string name="ui_2a98b18258fb0764">"Flusso Xbox"</string>
+    <string name="ui_f0ed3a84b15cd219">"Sfondo"</string>
+    <string name="ui_599282f774a57933">"Sfondo: {0}"</string>
+    <string name="ui_3c0bdf306a0cd3a1">"Galleria sfondi"</string>
+    <string name="ui_3dca483f77f21561">"Game Pass: {0}"</string>
+    <string name="ui_839e20fb3599fc74">"Griglia"</string>
+    <string name="ui_60b5e690b9376666">"Guida"</string>
+    <string name="ui_2b2c050dc5321e96">"Guida della partita"</string>
+    <string name="ui_e57a540b0513c883">"Guida: {0}"</string>
+    <string name="ui_48ac1063cf6cfd62">"Orizzonte Xbox"</string>
+    <string name="ui_48c695b58c063d66">"Giochi"</string>
+    <string name="ui_4745eed9dab8b5f3">"Menu centrale — predefinito"</string>
+    <string name="ui_1ff0c54e9da461d1">"Nessuno sfondo in questa categoria."</string>
+    <string name="ui_550cca05a9e6c971">"Personalizza Series X|S"</string>
+    <string name="ui_44389449ac8fc223">"Platino"</string>
+    <string name="ui_f3f4c6ec71423b62">"Posizione della Guida"</string>
+    <string name="ui_5f6e07f1da2ccbd6">"Tramonto"</string>
+    <string name="ui_44ce653f168e3541">"Rimuovi dagli sfondi preferiti"</string>
+    <string name="ui_97555a3796904adf">"Riprendi partita"</string>
+    <string name="ui_39b785a6cd8767d9">"Badge sulle copertine"</string>
+    <string name="ui_ebbee5976e110692">"Nessun cambio automatico"</string>
+    <string name="ui_57f5715f8ee59fcc">"Ogni settimana"</string>
+    <string name="ui_e523605777e52f2d">"Series X|S: {0}"</string>
+    <string name="ui_e863541b3663de23">"Tutti gli sfondi"</string>
+    <string name="ui_3eb62c9c87437ffb">"Cambio automatico degli sfondi"</string>
+    <string name="ui_c8898e71b77b76fd">"Cambio automatico: {0}"</string>
+    <string name="ui_59881ea4c51e9e63">"Usa sfondo"</string>
+    <string name="ui_449b321e81007dfc">"Xbox"</string>
+    <string name="ui_cd55a9d95751fb9b">"{0} · {1}"</string>
+    <string name="ui_d6b58ac9653741d8">"{0}, {1}. Apri Guida"</string>
+    <string name="ui_7bbaef08782fd177">"Orbita"</string>
 </resources>

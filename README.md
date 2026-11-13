@@ -57,6 +57,10 @@ A galeria reúne capturas reais dos menus, das filas e de partidas, além de tel
 - Logos das gerações Xbox, selos Game Pass/Series vetoriais e marcadores de favoritos com acabamento correspondente ao tema, mantendo a identificação informada pelo catálogo.
 - Pesquisa e configurações com painéis, fontes, campos e foco próprios para cada dashboard; One, Series e Metro organizam as categorias de configuração em blocos.
 - **Fundo dinâmico** opcional nesses seis temas: Automático, Ativado ou Desativado. Automático respeita economia de energia, animações do sistema, pouca memória e interfaces acima de 1440p. Ativado mantém um movimento leve e reduz a frequência em aparelhos modestos ou em economia de energia. O movimento pausa durante partidas e enquanto o catálogo não está visível. No Series, a própria arte panorâmica do jogo se move quando disponível.
+- **Personalização do Series X|S** em Aparência e temas: galeria com seis fundos vetoriais próprios, artes panorâmicas disponíveis no catálogo, categorias, prévia e favoritos de fundos independentes dos jogos favoritos.
+- **Troca automática de fundos** ao abrir o aplicativo, a cada hora, diariamente ou semanalmente, usando favoritos ou uma coleção. A escolha permanece salva; a troca pausa durante a partida e é atualizada no retorno ao menu.
+- **Guia lateral opcional** à esquerda ou à direita, com perfil e atalhos do aplicativo. Na partida, reúne os ajustes e diagnósticos disponíveis. O menu central continua como padrão.
+- **Biblioteca completa em grade**, opcional no Series X|S, mantendo a Home em faixa horizontal. Os selos Game Pass e Series podem ser exibidos ou ocultados separadamente nesse tema.
 - Seleção em **Configurações › Aparência e temas › Tema do aplicativo**, por controle ou toque.
 - Aplicação imediata e escolha salva no aparelho, inclusive ao reabrir o app.
 - Cores dos menus, catálogo, destaques e janelas; as artes e a imagem do jogo mantêm suas cores.

@@ -15,6 +15,8 @@ import android.os.SystemClock
 import android.provider.Settings
 import android.view.View
 import com.xcloud.tclnative.settings.*
+import kotlinx.coroutines.*
+import java.util.UUID
 
 /** No timer for the seven color palettes, hidden screens or gameplay. AUTO is conservative. */
 internal object BackgroundMotionPolicy {
@@ -31,7 +33,20 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
     private val painter=ConsoleScenePainter()
     private var chrome: ConsoleDashboardChrome?=null
     private var artwork: Bitmap?=null
+    private val series=SeriesPersonalizationStore(context)
+    private val opening=processOpening
+    private val wallpaperScope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
+    private val wallpaperLoader=lazy { PosterLoader(context,wallpaperScope) }
+    private val wallpaperTarget=FixedArtworkView(context)
+    private var wallpaper: SeriesWallpaper?=null
+    private var wallpaperArt: SeriesWallpaperArt?=null
+    private var galleryBitmap: Bitmap?=null
+    private var wallpaperRefreshPending=false
+    internal var rotationPending=false
+        private set
+    private val rotate=Runnable { refreshWallpaper() }
     internal val hasArtwork: Boolean get()=artwork?.isRecycled==false
+    internal val hasGalleryArtwork: Boolean get()=galleryBitmap?.isRecycled==false
     private val artworkPaint=Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val artworkRect=RectF()
     private var explicitMotion=false
@@ -66,6 +81,10 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
     }
     private val listener=android.content.SharedPreferences.OnSharedPreferenceChangeListener { _,key ->
         if(key=="background_motion") refreshScheduling()
+        if(key?.startsWith("series_")==true && !key.startsWith("series_rotation_") && !wallpaperRefreshPending) {
+            wallpaperRefreshPending=true
+            post { wallpaperRefreshPending=false;if(!closed) refreshWallpaper() }
+        }
     }
     private val powerReceiver=object: BroadcastReceiver() {
         override fun onReceive(context: Context?,intent: Intent?) { refreshScheduling() }
@@ -85,7 +104,7 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
     override fun onSizeChanged(w: Int,h: Int,oldw: Int,oldh: Int) { super.onSizeChanged(w,h,oldw,oldh);refreshAppearance() }
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val picture=artwork
+        val picture=if(wallpaper!=null) galleryBitmap else artwork
         if(picture!=null && !picture.isRecycled && DashboardTheme.palette.theme.scene==ConsoleScene.XBOX_SERIES) {
             val wave=kotlin.math.sin(phase*2*Math.PI).toFloat()
             val moving=interval!=null || phase!=0f
@@ -94,6 +113,8 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
             val dx=if(moving) wave*(w-width)*.43f else 0f
             artworkRect.set((width-w)/2f+dx,(height-h)/2f,(width+w)/2f+dx,(height+h)/2f)
             canvas.drawBitmap(picture,null,artworkRect,artworkPaint)
+        } else if(wallpaperArt!=null && DashboardTheme.palette.theme.scene==ConsoleScene.XBOX_SERIES) {
+            wallpaperArt!!.phase=phase;wallpaperArt!!.draw(canvas)
         } else painter.draw(canvas,phase)
         chrome?.let { it.motionPhase=phase;it.setBounds(0,0,width,height);it.draw(canvas) }
     }
@@ -108,7 +129,7 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
         refreshAppearance()
     }
     override fun onDetachedFromWindow() {
-        attached=false;stop()
+        attached=false;stop();refreshWallpaper()
         prefs.unregisterOnSharedPreferenceChangeListener(listener)
         if(receiverRegistered) { context.unregisterReceiver(powerReceiver);receiverRegistered=false }
         super.onDetachedFromWindow()
@@ -127,11 +148,48 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
         val mode=AppearanceSettingsStore(context).motion();explicitMotion=mode==BackgroundMotion.ON
         val next=BackgroundMotionPolicy.interval(mode,DashboardTheme.palette.theme.scene,
             lowRam,width.toLong()*height>2560L*1440L,powerSave,animations,canPresent())
-        if(next==interval && framePending) return
+        if(next==interval && framePending) { refreshWallpaper();return }
         stop();interval=next
         if(mode==BackgroundMotion.OFF) { phase=0f;invalidate() }
         if(next!=null) { lastTick=SystemClock.uptimeMillis();framePending=postDelayed(tick,next) }
+        refreshWallpaper()
+    }
+    private fun refreshWallpaper() {
+        removeCallbacks(rotate);rotationPending=false
+        val visible=attached && !closed && presented && aggregated && isShown && windowVisibility==VISIBLE && width>0 && height>0
+        // Keep the last frame behind modal panels; stop work while their window owns focus.
+        if(visible && !focused) {
+            if(wallpaperLoader.isInitialized()) wallpaperLoader.value.cancel(wallpaperTarget)
+            return
+        }
+        val active=visible && DashboardTheme.palette.theme.scene==ConsoleScene.XBOX_SERIES
+        val next=if(active) series.resolve(System.currentTimeMillis(),opening) else null
+        if(next==null) {
+            if(wallpaperLoader.isInitialized()) wallpaperLoader.value.cancel(wallpaperTarget)
+            galleryBitmap=null;wallpaper=null;wallpaperArt=null;invalidate();return
+        }
+        if(wallpaper?.id!=next.id || wallpaper?.artUrl!=next.artUrl) {
+            if(wallpaperLoader.isInitialized()) wallpaperLoader.value.cancel(wallpaperTarget)
+            galleryBitmap=null;wallpaper=next;wallpaperArt=SeriesWallpaperArt(next.style)
+        }
+        wallpaperArt?.setBounds(0,0,width,height)
+        if(next.artUrl!=null) {
+            val low=context.getSystemService(ActivityManager::class.java)?.isLowRamDevice==true
+            wallpaperLoader.value.load(wallpaperTarget,next.artUrl,if(low) 640 else 1024,if(low) 360 else 576,notifyPlaceholder=false) { ready ->
+                if(wallpaper?.id==next.id) {
+                    galleryBitmap=if(ready) (wallpaperTarget.drawable as? BitmapDrawable)?.bitmap else null
+                    invalidate()
+                }
+            }
+        }
+        series.nextChange(System.currentTimeMillis())?.let { rotationPending=postDelayed(rotate,it) }
+        invalidate()
     }
     private fun stop() { removeCallbacks(tick);framePending=false;interval=null }
-    fun close() { closed=true;artwork=null;chrome=null;stop() }
+    fun close() {
+        closed=true;artwork=null;galleryBitmap=null;wallpaper=null;wallpaperArt=null;chrome=null;stop();removeCallbacks(rotate);rotationPending=false
+        if(wallpaperLoader.isInitialized()) wallpaperLoader.value.close()
+        wallpaperScope.cancel()
+    }
+    companion object { private val processOpening=UUID.randomUUID().toString() }
 }

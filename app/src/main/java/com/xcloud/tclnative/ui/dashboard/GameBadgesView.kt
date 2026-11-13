@@ -13,6 +13,7 @@ import android.widget.ImageView
 import com.xcloud.tclnative.R
 import com.xcloud.tclnative.settings.ConsoleScene
 import com.xcloud.tclnative.settings.UiTheme
+import com.xcloud.tclnative.settings.SeriesPersonalizationStore
 import kotlin.math.roundToInt
 
 /** Badges describe the selected Store product, never inferred from the user's subscription. */
@@ -32,7 +33,10 @@ internal class GameBadgesView(context: Context) : FrameLayout(context) {
         isFocusable=false
         addView(pass);addView(series)
     }
-    fun bind(gamePass: Boolean, optimized: Boolean, scale: Float) {
+    fun bind(inGamePass: Boolean, inOptimized: Boolean, scale: Float) {
+        val preferences=if(DashboardTheme.palette.theme.scene==ConsoleScene.XBOX_SERIES) SeriesPersonalizationStore(context).read() else null
+        val gamePass=inGamePass && preferences?.gamePassBadge!=false
+        val optimized=inOptimized && preferences?.seriesBadge!=false
         visibility=if(gamePass || optimized) View.VISIBLE else View.GONE
         pass.visibility=if(gamePass) View.VISIBLE else View.GONE
         series.visibility=if(optimized) View.VISIBLE else View.GONE

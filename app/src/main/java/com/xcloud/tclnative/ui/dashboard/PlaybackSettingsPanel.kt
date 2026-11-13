@@ -22,10 +22,12 @@ class PlaybackSettingsPanel(
     private val lastReport: () -> Unit = {},
     private val sessionOptions: () -> Unit = {},private val controllerProfiles: () -> Unit = {},
     private val onPageEntered: (SettingsPage) -> Unit = {},
-    private val catalogInformation: () -> String? = { null }
+    private val catalogInformation: () -> String? = { null },
+    private val backgrounds: () -> List<SeriesWallpaper> = { emptyList() }
 ) {
     private var currentPage=SettingsPage.ROOT
     private var upscalingBack: () -> Unit = { showImage() }
+    private var appearanceBack: (() -> Unit)?=null
     private fun enter(page: SettingsPage) { currentPage=page;onPageEntered(page) }
     fun open(page: SettingsPage): ConsoleDialog = when(page) {
         SettingsPage.ROOT -> show();SettingsPage.VIDEO -> showVideo();SettingsPage.IMAGE -> showImage();SettingsPage.APPEARANCE -> showAppearance()
@@ -62,16 +64,22 @@ class PlaybackSettingsPanel(
             ConsoleAction(UiText.text("Fluidez: {0}",UiText.nested(value.forSession().presentationPacing.label))) { choosePacing() }
         ))
     }
-    fun showAppearance(): ConsoleDialog {
+    fun showAppearance(onBack: (() -> Unit)?=null): ConsoleDialog {
+        if(onBack!=null) appearanceBack=onBack
         val appearance=AppearanceSettingsStore(context)
         val rows=mutableListOf(
             ConsoleAction(UiText.text("Tema do aplicativo: {0}",UiText.nested(appearance.read().label))) { chooseTheme() }
         )
         if(appearance.read().scene!=ConsoleScene.NONE) rows+=ConsoleAction(UiText.text("Fundo dinâmico: {0}",UiText.nested(appearance.motion().label))) { chooseBackgroundMotion() }
+        if(appearance.read().scene==ConsoleScene.XBOX_SERIES) rows+=ConsoleAction(UiText.text("Personalizar Series X|S")) {
+            SeriesPersonalizationPanel(context,backgrounds) { showAppearance() }.show()
+        }
         rows+=ConsoleAction(UiText.text("Idioma do aplicativo: {0}",UiText.nested(com.xcloud.tclnative.i18n.AppLanguageStore(context).read().nativeName))) {
             LanguageMenu.show(context) { showAppearance() }
         }
-        return category(SettingsPage.APPEARANCE,UiText.text("Aparência e temas"),rows)
+        enter(SettingsPage.APPEARANCE)
+        return ConsoleDialogs.menu(context,UiText.text("Configurações › {0}",UiText.nested(UiText.text("Aparência e temas"))),rows,
+            onBack={ appearanceBack?.invoke() ?: open(SettingsPage.ROOT) })
     }
     private fun chooseBackgroundMotion(): ConsoleDialog {
         enter(SettingsPage.APPEARANCE)

@@ -84,8 +84,13 @@ data class PlaybackSettings(
     }
 }
 
-class PlaybackSettingsStore(context: Context) {
+class PlaybackSettingsStore(context: Context,
+                            device: DevicePerformancePolicy = DevicePerformancePolicy.read(context)) {
     private val prefs = context.getSharedPreferences("stream_preferences",Context.MODE_PRIVATE)
+    // Older installs may have only legacy keys. Never replace any existing playback choices.
+    private val defaults = if(device.constrainedMemory && prefs.all.keys.all { it=="game_hud_migrated" })
+        PlaybackSettings(resolution=StreamResolution.HD_720,videoCodec=VideoCodecMode.H264_BASELINE)
+        else PlaybackSettings()
     init {
         if(prefs.getString("video_codec",null) in setOf("H264_HIGH","HEVC"))
             prefs.edit().putString("video_codec",VideoCodecMode.H264.name).apply()
@@ -100,13 +105,13 @@ class PlaybackSettingsStore(context: Context) {
         val legacy = if (prefs.getBoolean("low_latency_video",true)) VideoMode.LOW_LATENCY else VideoMode.ADAPTIVE
         return PlaybackSettings(
             VideoMode.entries.firstOrNull { it.name == prefs.getString("video_mode",null) } ?: legacy,
-            StreamResolution.entries.firstOrNull { it.name == prefs.getString("resolution",null) } ?: StreamResolution.HD_1080_HQ,
+            StreamResolution.entries.firstOrNull { it.name == prefs.getString("resolution",null) } ?: defaults.resolution,
             prefs.getBoolean("native_upscaling",true),
             VideoAspect.entries.firstOrNull { it.name == prefs.getString("aspect",null) } ?: VideoAspect.RATIO_16_9,
             prefs.getBoolean("local_coop",false),prefs.getBoolean("rumble",true),
             TouchMode.entries.firstOrNull { it.name==prefs.getString("touch_mode",null) } ?: TouchMode.AUTO,
             prefs.getInt("sharpness",0).coerceIn(0,100),prefs.getInt("saturation",100).coerceIn(0,200),prefs.getBoolean("session_report",true),
-            VideoCodecMode.entries.firstOrNull { it.name==prefs.getString("video_codec",null) } ?: VideoCodecMode.H264,
+            VideoCodecMode.entries.firstOrNull { it.name==prefs.getString("video_codec",null) } ?: defaults.videoCodec,
             FsrMode.entries.firstOrNull { it.name==prefs.getString("fsr_mode",null) } ?: FsrMode.OFF,
             prefs.getInt("fsr_sharpness",50).coerceIn(0,100),
             prefs.getInt("brightness",0).coerceIn(-50,50),prefs.getInt("contrast",100).coerceIn(50,150),

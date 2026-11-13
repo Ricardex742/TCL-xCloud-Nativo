@@ -7,6 +7,7 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import com.xcloud.tclnative.settings.ConsoleScene
+import com.xcloud.tclnative.settings.DevicePerformancePolicy
 import android.graphics.drawable.GradientDrawable
 import android.util.TypedValue
 import android.view.Gravity
@@ -24,6 +25,7 @@ enum class LoadingPhase { QUEUED, PREPARING, CONNECTING, VIDEO }
 
 /** Real queue/connection state, with game artwork. No fictitious percentage or countdown. */
 class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameLayout(context) {
+    private val devicePolicy=DevicePerformancePolicy.read(context)
     private var scene=DashboardTheme.palette.theme.scene
     private var lastRenderedAt=0L
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -100,9 +102,10 @@ class GameLoadingView(context: Context, private val cancel: () -> Unit) : FrameL
         val hero = value.heroUrl ?: value.tileUrl ?: value.posterUrl
         if (hero != lastBackdrop) {
             lastBackdrop = hero
-            if(scene==ConsoleScene.NONE) art.load(backdrop,hero,1920,1080)
+            if(scene==ConsoleScene.NONE) art.load(backdrop,hero,
+                if(devicePolicy.constrainedMemory) 640 else 1920,if(devicePolicy.constrainedMemory) 360 else 1080)
             else if(scene==ConsoleScene.XBOX_ONE || scene==ConsoleScene.XBOX_SERIES) {
-                val modest=context.getSystemService(android.app.ActivityManager::class.java)?.isLowRamDevice==true
+                val modest=devicePolicy.constrainedMemory
                 art.load(backdrop,hero,if(modest) 640 else 1024,if(modest) 360 else 576)
             } else art.cancel(backdrop)
         }

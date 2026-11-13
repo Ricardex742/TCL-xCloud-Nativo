@@ -32,9 +32,20 @@ internal data class ArtworkRequest(val url: String, val size: ArtworkSize) {
     }
 }
 
-internal data class ArtworkPolicy(val memoryCacheBytes: Int, val parallelism: Int) {
+internal data class ArtworkPolicy(val memoryCacheBytes: Int, val parallelism: Int,
+                                  val constrainedMemory: Boolean = false) {
+    fun sizeFor(width: Int,height: Int): ArtworkSize {
+        val size=ArtworkSize(width.coerceIn(1,2048),height.coerceIn(1,2048))
+        if(!constrainedMemory) return size
+        val factor=minOf(1.0,640.0/maxOf(size.width,size.height),
+            kotlin.math.sqrt(230400.0/(size.width.toDouble()*size.height)))
+        return ArtworkSize((size.width*factor).toInt().coerceAtLeast(1),
+            (size.height*factor).toInt().coerceAtLeast(1))
+    }
     companion object {
-        fun forDevice(memoryMb: Int, lowRam: Boolean, processors: Int): ArtworkPolicy {
+        fun forDevice(memoryMb: Int, lowRam: Boolean, processors: Int,
+                      constrainedMemory: Boolean = lowRam || memoryMb in 1..128): ArtworkPolicy {
+            if(constrainedMemory) return ArtworkPolicy(4*1024*1024,1,true)
             val modest=lowRam || memoryMb<=192 || processors<=4
             return ArtworkPolicy((memoryMb/16).coerceIn(4,if(modest) 12 else 20)*1024*1024,if(modest) 2 else 3)
         }

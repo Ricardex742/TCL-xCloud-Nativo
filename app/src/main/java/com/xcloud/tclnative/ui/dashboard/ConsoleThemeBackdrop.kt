@@ -1,7 +1,6 @@
 package com.xcloud.tclnative.ui.dashboard
 
 import android.animation.ValueAnimator
-import android.app.ActivityManager
 import android.content.*
 import android.graphics.Canvas
 import android.graphics.Bitmap
@@ -142,7 +141,7 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
     private fun canPresent()=attached && !closed && presented && focused && aggregated && isShown && windowVisibility==VISIBLE && width>0 && height>0
     private fun refreshScheduling() {
         // Services/settings are sampled on lifecycle/preference changes, never on each frame.
-        lowRam=context.getSystemService(ActivityManager::class.java)?.isLowRamDevice ?: true
+        lowRam=DevicePerformancePolicy.read(context).constrainedMemory
         powerSave=context.getSystemService(PowerManager::class.java)?.isPowerSaveMode ?: false
         animations=if(Build.VERSION.SDK_INT>=26) ValueAnimator.areAnimatorsEnabled()
             else Settings.Global.getFloat(context.contentResolver,Settings.Global.ANIMATOR_DURATION_SCALE,1f)>0f
@@ -175,7 +174,7 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
         }
         wallpaperArt?.setBounds(0,0,width,height)
         if(next.artUrl!=null) {
-            val low=context.getSystemService(ActivityManager::class.java)?.isLowRamDevice==true
+            val low=lowRam
             wallpaperLoader.value.load(wallpaperTarget,next.artUrl,if(low) 640 else 1024,if(low) 360 else 576,notifyPlaceholder=false) { ready ->
                 if(wallpaper?.id==next.id) {
                     galleryBitmap=if(ready) (wallpaperTarget.drawable as? BitmapDrawable)?.bitmap else null

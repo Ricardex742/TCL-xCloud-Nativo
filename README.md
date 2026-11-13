@@ -381,6 +381,7 @@ As posições, tamanhos, ações e gestos podem ser ajustados por jogo. No futeb
 ## Compatibilidade
 
 - Android 7.0 ou superior, incluindo Android TV, Google TV e celulares compatíveis.
+- **Ajuste para pouca memória:** novas instalações em aparelhos com cerca de 1 GB de RAM ou heap limitado começam em 720p com H.264 leve. Capas, fundos e carregamentos usam um orçamento menor; o fundo dinâmico em Automático fica estático. As configurações de vídeo já salvas são preservadas e continuam editáveis.
 - Interface adaptada para navegação pelo controle e por toque.
 - Recursos experimentais e suporte a periféricos dependem do aparelho, do driver, do jogo e do serviço.
 - A disponibilidade dos jogos depende da conta, região, assinatura ou licença exigida pelo Xbox Cloud Gaming.

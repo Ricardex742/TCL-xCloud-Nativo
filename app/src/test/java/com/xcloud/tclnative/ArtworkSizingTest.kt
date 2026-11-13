@@ -6,6 +6,21 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ArtworkSizingTest {
+    @Test fun oneGbBudgetCapsLargeImagesBeforeDownloadingButKeepsThumbnailDetail() {
+        val policy=ArtworkPolicy.forDevice(256,false,4,constrainedMemory=true)
+        assertEquals(1,policy.parallelism)
+        assertEquals(4*1024*1024,policy.memoryCacheBytes)
+        for((w,h) in listOf(3840 to 2160,720 to 1080,1024 to 1024,1 to 2048)) {
+            val size=policy.sizeFor(w,h)
+            assertTrue(size.width*size.height<=230400)
+            assertTrue(maxOf(size.width,size.height)<=640)
+            val request=ArtworkRequest.create("https://store-images.s-microsoft.com/art",size.width,size.height)
+            assertEquals(size.width.toString(),request.url.toHttpUrl().queryParameter("w"))
+            assertEquals(size.height.toString(),request.url.toHttpUrl().queryParameter("h"))
+        }
+        assertEquals(ArtworkSize(192,320),policy.sizeFor(192,320))
+        assertEquals(ArtworkSize(1920,1080),ArtworkPolicy.forDevice(512,false,8).sizeFor(1920,1080))
+    }
     @Test fun phoneCoversRequestSmallStableSizesAndRetainThePublicImageParameters() {
         val size=ArtworkSize.forDisplay(191,290)
         assertEquals(size,ArtworkSize.forDisplay(190,289))

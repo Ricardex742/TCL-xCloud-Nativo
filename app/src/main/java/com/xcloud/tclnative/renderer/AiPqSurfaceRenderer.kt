@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.view.Gravity
 import android.widget.FrameLayout
 import com.xcloud.tclnative.settings.VideoAspect
+import com.xcloud.tclnative.settings.DevicePerformancePolicy
 import com.xcloud.tclnative.settings.FsrOutput
 import com.xcloud.tclnative.settings.FsrMode
 import com.xcloud.tclnative.settings.ImageTreatmentSettings
@@ -23,6 +24,7 @@ import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicBoolean
 
 class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
+    private val devicePolicy=DevicePerformancePolicy.read(context)
     private val egl = lazy { EglBase.create() }
     val eglBase: EglBase get()=egl.value
     var onFirstFrameRendered: (() -> Unit)? = null
@@ -135,8 +137,7 @@ class AiPqSurfaceRenderer(context: Context) : FrameLayout(context) {
         fsrPerformance.reset();applyTreatmentBudget()
     }
     private fun resetReconstructionController() {
-        val lowRam=(context.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager)?.isLowRamDevice ?: true
-        reconstructionController.reset(reconstructionSettings.quality,lowRam)
+        reconstructionController.reset(reconstructionSettings.quality,devicePolicy.constrainedMemory)
     }
     private fun resetTreatmentBudget() {
         treatmentCuts.clear();treatmentBudget=TreatmentBudget(if(compatibility) ImageTreatmentSettings() else requestedTreatment,fsrOutput,fsrRequested)

@@ -34,6 +34,30 @@ import java.util.concurrent.CountDownLatch
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @LooperMode(LooperMode.Mode.PAUSED)
 class ArtworkLoadingTest {
+    @Test fun memoryPressureReleasesTheCacheWithoutRecyclingDisplayedArtAndLowEndDecodesStayBounded() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup();val activity=controller.get()
+        val server=MockWebServer().apply { start() }
+        server.enqueue(MockResponse().setBody(Buffer().write(png(Color.BLUE,1920,1080))))
+        val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
+        val backend=ArtworkBackend(activity,ArtworkPolicy.forDevice(256,false,4,true),OkHttpClient())
+        val loader=PosterLoader(activity,scope,backend)
+        try {
+            val image=ImageView(activity)
+            loader.load(image,server.url("/hero.png").toString(),1920,1080)
+            await { image.drawable is BitmapDrawable }
+            val bitmap=(image.drawable as BitmapDrawable).bitmap
+            assertTrue(bitmap.width*bitmap.height<=230400)
+            assertEquals(16.0/9,bitmap.width.toDouble()/bitmap.height,.01)
+            assertTrue(backend.cache.size()>0)
+            activity.application.onTrimMemory(android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+            assertEquals(0,backend.cache.size())
+            assertFalse(bitmap.isRecycled)
+            assertEquals(Color.BLUE,bitmap.getPixel(0,0))
+            loader.load(image,server.url("/hero.png").toString(),1920,1080)
+            assertSame(bitmap,(image.drawable as BitmapDrawable).bitmap)
+            assertEquals(1,server.requestCount)
+        } finally { loader.close();scope.cancel();backend.close();server.shutdown();controller.pause().stop().destroy() }
+    }
     @Test fun recyclingTheLastConsumerInterruptsASlowBodyAndLetsTheNextCoverStart() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup(); val activity=controller.get()
         val server=MockWebServer().apply { start() }

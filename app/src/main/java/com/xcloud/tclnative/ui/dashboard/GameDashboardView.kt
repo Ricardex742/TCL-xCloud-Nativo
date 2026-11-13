@@ -4,6 +4,7 @@ import com.xcloud.tclnative.i18n.UiText
 
 import android.content.Context
 import com.xcloud.tclnative.settings.ConsoleScene
+import com.xcloud.tclnative.settings.DevicePerformancePolicy
 import com.xcloud.tclnative.settings.SeriesPersonalizationStore
 import android.graphics.Typeface
 import android.graphics.Color
@@ -63,6 +64,7 @@ class GameDashboardView(
     private val onFavoritesChanged: () -> Unit = {},
     private val onPlayProduct: (GalleryProduct) -> Unit = {}
 ) : FrameLayout(context) {
+    private val devicePolicy=DevicePerformancePolicy.read(context)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val posters = PosterLoader(context, scope,frameBound=true)
     private val consoleBackdrop = ConsoleThemeBackdrop(context)
@@ -204,7 +206,7 @@ class GameDashboardView(
         itemAnimator = null
         overScrollMode = View.OVER_SCROLL_NEVER
         isVerticalScrollBarEnabled = false
-        setItemViewCacheSize(12)
+        setItemViewCacheSize(if(devicePolicy.constrainedMemory) 2 else 12)
         descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
     }
     private val emptyState = label(25f, false).apply {
@@ -680,7 +682,7 @@ class GameDashboardView(
         } else posters.load(headerIcon,if(designScene==ConsoleScene.NONE) game.tileUrl ?: game.posterUrl else art,size.width,size.height)
         if(designScene==ConsoleScene.XBOX_SERIES) {
             if(seriesPreferences.gallery) { posters.cancel(heroBackdrop);consoleBackdrop.setArtwork(null);headerIcon.visibility=INVISIBLE;return }
-            val target=if(context.getSystemService(android.app.ActivityManager::class.java)?.isLowRamDevice==true) ArtworkSize(640,360) else ArtworkSize(1024,576)
+            val target=if(devicePolicy.constrainedMemory) ArtworkSize(640,360) else ArtworkSize(1024,576)
             if(hero!=null) {
                 posters.load(heroBackdrop,hero,target.width,target.height) { ready ->
                     if(selectedCard?.key==game.key && designScene==ConsoleScene.XBOX_SERIES)

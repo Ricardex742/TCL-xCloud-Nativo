@@ -1,11 +1,14 @@
 package com.xcloud.tclnative.ui.dashboard
 
 import android.content.Context
+import android.content.ComponentCallbacks2
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.LruCache
 import android.widget.ImageView
 import com.xcloud.tclnative.net.awaitResponse
+import com.xcloud.tclnative.settings.DevicePerformancePolicy
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -39,7 +42,8 @@ internal class PosterLoader(context: Context, private val scope: CoroutineScope,
     fun load(view: ImageView, originalUrl: String?, maxWidth: Int = 720, maxHeight: Int = 1080,
              notifyPlaceholder: Boolean = true, onReady: (Boolean) -> Unit = {}) {
         if(paused || originalUrl==null) { cancel(view); onReady(false); return }
-        val request=ArtworkRequest.create(originalUrl,maxWidth,maxHeight)
+        val size=backend.policy.sizeFor(maxWidth,maxHeight)
+        val request=ArtworkRequest.create(originalUrl,size.width,size.height)
         val previous=bindings[view]
         if(previous?.request==request) {
             previous.onReady=onReady
@@ -85,9 +89,20 @@ internal class ArtworkBackend(context: Context,
                               val policy: ArtworkPolicy = devicePolicy(context),
                               private val client: OkHttpClient = OkHttpClient.Builder()
                                   .cache(Cache(File(context.cacheDir,"game_art"),64L*1024*1024))
-                                  .callTimeout(12,TimeUnit.SECONDS).build()) {
+                                  .callTimeout(12,TimeUnit.SECONDS).build()) : ComponentCallbacks2 {
+    private val application=context.applicationContext
     val cache=object : LruCache<ArtworkRequest,Bitmap>(policy.memoryCacheBytes) {
         override fun sizeOf(key: ArtworkRequest,value: Bitmap)=value.allocationByteCount
+    }
+    init { application.registerComponentCallbacks(this) }
+    override fun onConfigurationChanged(newConfig: Configuration) = Unit
+    override fun onLowMemory() { cache.evictAll() }
+    override fun onTrimMemory(level: Int) {
+        // Evict references only: a displayed/shared bitmap must never be recycled here.
+        when {
+            level>=ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL -> cache.evictAll()
+            level>=ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW -> cache.trimToSize(cache.size()/2)
+        }
     }
     private val workerId=AtomicInteger()
     private val dispatcher=Executors.newFixedThreadPool(policy.parallelism) { runnable ->
@@ -151,6 +166,7 @@ internal class ArtworkBackend(context: Context,
       finally { shared.call?.cancel(); shared.call=null }
 
     @Synchronized internal fun close() {
+        application.unregisterComponentCallbacks(this)
         inFlight.values.forEach { it.call?.cancel() }
         work.cancel(); dispatcher.close(); client.cache?.close()
     }
@@ -158,7 +174,8 @@ internal class ArtworkBackend(context: Context,
         private const val MAX_IMAGE_BYTES=8L*1024*1024
         private fun devicePolicy(context: Context): ArtworkPolicy {
             val manager=context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
-            return ArtworkPolicy.forDevice(manager.memoryClass,manager.isLowRamDevice,Runtime.getRuntime().availableProcessors())
+            return ArtworkPolicy.forDevice(manager.memoryClass,manager.isLowRamDevice,Runtime.getRuntime().availableProcessors(),
+                DevicePerformancePolicy.read(context).constrainedMemory)
         }
         @Volatile private var instance: ArtworkBackend?=null
         fun get(context: Context)=instance ?: synchronized(this) {

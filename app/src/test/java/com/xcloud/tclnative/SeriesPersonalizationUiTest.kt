@@ -72,6 +72,10 @@ class SeriesPersonalizationUiTest {
             assertEquals(before,PlaybackSettingsStore(a).read())
             val favorites=SeriesWallpaperGallery(a,emptyList()) {}.show()
             click(favorites,"Favoritos");capture(favorites,"wallpaper-favorites")
+            val remove=all(favorites.panel).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("REMOVER DOS FUNDOS") }
+            assertEquals("Favorite action must fit a single visible line",1,remove.layout.lineCount)
+            assertTrue(remove.layout.getLineWidth(0)<=remove.width-remove.paddingLeft-remove.paddingRight)
+            assertEquals(0,remove.layout.getEllipsisCount(0))
             favorites.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_BUTTON_X))
             assertTrue(store.favorites().isEmpty());assertNotNull(favorites.window!!.currentFocus)
             favorites.dismiss()

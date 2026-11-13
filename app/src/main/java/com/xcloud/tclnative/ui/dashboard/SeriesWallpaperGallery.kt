@@ -63,7 +63,12 @@ internal class SeriesWallpaperGallery(private val context: Context,items: List<S
         dialog.body.addView(categories,LinearLayout.LayoutParams(-1,dialog.px(42)).apply { topMargin=dialog.px(10);bottomMargin=dialog.px(7) })
         dialog.body.addView(scroll,LinearLayout.LayoutParams(-1,dialog.px(119)))
         dialog.body.addView(dialog.text(UiText.text("A: escolher fundo · X: favoritar · B: voltar"),17,color=DashboardTheme.muted),LinearLayout.LayoutParams(-1,-2))
-        favoriteButton=dialog.addPersistentAction(UiText.text("Favoritar fundo")) { toggleFavorite() }
+        favoriteButton=dialog.addPersistentAction(UiText.text("Favoritar fundo")) { toggleFavorite() }.apply {
+            maxLines=1
+            if(android.os.Build.VERSION.SDK_INT>=26) setAutoSizeTextTypeUniformWithConfiguration(
+                dialog.px(13).coerceAtLeast(1),dialog.px(22).coerceAtLeast(2),1,android.util.TypedValue.COMPLEX_UNIT_PX)
+            else setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,dialog.px(16).toFloat())
+        }
         applyButton=dialog.addAction(UiText.text("Usar fundo")) { store.select(previewed);back() }.apply { id=View.generateViewId() }
         dialog.addAction(UiText.text("Voltar"),back)
         dialog.shortcut={ event ->

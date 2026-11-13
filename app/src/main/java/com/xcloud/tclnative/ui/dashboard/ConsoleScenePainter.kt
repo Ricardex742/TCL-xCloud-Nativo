@@ -2,6 +2,7 @@ package com.xcloud.tclnative.ui.dashboard
 
 import android.graphics.*
 import com.xcloud.tclnative.settings.ConsoleScene
+import com.xcloud.tclnative.settings.RecreatedXboxBackgrounds
 import kotlin.math.sin
 
 /** Procedural console-inspired artwork. Geometry/shaders are cached; drawing allocates no assets. */
@@ -17,6 +18,8 @@ internal class ConsoleScenePainter {
     private var orb: Shader?=null
     private val cross=Path()
     private val era=Xbox360EraArt()
+    private val original by lazy { RecreatedWallpaperArt(RecreatedXboxBackgrounds.entries.first { it.family==com.xcloud.tclnative.settings.RecreationFamily.CORE }).apply { anchorX=.26f } }
+    var lowDetail=false
 
     fun configure(palette: UiPalette,width: Int,height: Int) {
         scene=palette.theme.scene
@@ -58,6 +61,10 @@ internal class ConsoleScenePainter {
         val wave=sin(phase*2f*Math.PI).toFloat()
         val other=sin(phase*2f*Math.PI+1.5f).toFloat()
         val saved=canvas.save();canvas.scale(scale,scale)
+        if(scene==ConsoleScene.XBOX_ORIGINAL) {
+            original.setBounds(0,0,1000,height.toInt());original.phase=phase;original.lowDetail=lowDetail;original.draw(canvas)
+            canvas.restoreToCount(saved);return
+        }
         paint.style=Paint.Style.FILL;paint.shader=null;paint.alpha=255
         when(scene) {
             ConsoleScene.XBOX_360_NXE,ConsoleScene.XBOX_360_METRO -> era.draw(canvas,phase)

@@ -21,10 +21,11 @@ import java.util.WeakHashMap
 /** No timer for the seven color palettes, hidden screens or gameplay. AUTO is conservative. */
 internal object BackgroundMotionPolicy {
     fun interval(mode: BackgroundMotion,scene: ConsoleScene,lowRam: Boolean,largeUi: Boolean,
-                 powerSave: Boolean,animations: Boolean,presented: Boolean): Long? {
+                 powerSave: Boolean,animations: Boolean,presented: Boolean,independentAnimation: Boolean=false): Long? {
         if(!presented || scene==ConsoleScene.NONE || mode==BackgroundMotion.OFF) return null
         if(mode==BackgroundMotion.AUTO && (powerSave || !animations || lowRam || largeUi)) return null
-        return if(powerSave) 250L else if(lowRam || largeUi) 167L else 84L
+        return if(powerSave) 250L else if(independentAnimation) { if(lowRam || largeUi) 100L else 33L }
+            else if(lowRam || largeUi) 167L else 84L
     }
 }
 
@@ -39,12 +40,12 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
     private val wallpaperLoader=lazy { PosterLoader(context,wallpaperScope) }
     private val wallpaperTarget=FixedArtworkView(context)
     private var wallpaper: SeriesWallpaper?=null
-    private var wallpaperArt: SeriesWallpaperArt?=null
+    private var wallpaperArt: MotionWallpaperArt?=null
     private var galleryBitmap: Bitmap?=null
     private var wallpaperRefreshPending=false
     internal var rotationPending=false
         private set
-    private val rotate=Runnable { refreshWallpaper() }
+    private val rotate=Runnable { refreshScheduling() }
     internal val hasArtwork: Boolean get()=artwork?.isRecycled==false
     internal val hasGalleryArtwork: Boolean get()=galleryBitmap?.isRecycled==false
     private val artworkPaint=Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
@@ -83,7 +84,7 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
         if(key=="background_motion") refreshScheduling()
         if(key?.startsWith("series_")==true && !key.startsWith("series_rotation_") && !wallpaperRefreshPending) {
             wallpaperRefreshPending=true
-            post { wallpaperRefreshPending=false;if(!closed) refreshWallpaper() }
+            post { wallpaperRefreshPending=false;if(!closed) refreshScheduling() }
         }
     }
     private val powerReceiver=object: BroadcastReceiver() {
@@ -105,7 +106,13 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val picture=if(wallpaper!=null) galleryBitmap else artwork
-        if(picture!=null && !picture.isRecycled && DashboardTheme.palette.theme.scene==ConsoleScene.XBOX_SERIES) {
+        val recreation=wallpaper?.recreation!=null && DashboardTheme.palette.theme.scene==ConsoleScene.XBOX_SERIES
+        if(recreation) {
+            if(picture!=null && !picture.isRecycled) {
+                wallpaperArt?.let { it.phase=phase;it.lowDetail=lowRam;it.drawArtwork(canvas,picture,width,height) }
+            }
+            wallpaperArt?.let { it.hasArtwork=picture?.isRecycled==false;it.lowDetail=lowRam;it.phase=phase;it.draw(canvas) }
+        } else if(picture!=null && !picture.isRecycled && DashboardTheme.palette.theme.scene==ConsoleScene.XBOX_SERIES) {
             val wave=kotlin.math.sin(phase*2*Math.PI).toFloat()
             val moving=interval!=null || phase!=0f
             val fit=maxOf(width.toFloat()/picture.width,height.toFloat()/picture.height)*(if(moving) 1.05f else 1f)
@@ -142,17 +149,20 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
     private fun refreshScheduling() {
         // Services/settings are sampled on lifecycle/preference changes, never on each frame.
         lowRam=DevicePerformancePolicy.read(context).constrainedMemory
+        painter.lowDetail=lowRam
         powerSave=context.getSystemService(PowerManager::class.java)?.isPowerSaveMode ?: false
         animations=if(Build.VERSION.SDK_INT>=26) ValueAnimator.areAnimatorsEnabled()
             else Settings.Global.getFloat(context.contentResolver,Settings.Global.ANIMATOR_DURATION_SCALE,1f)>0f
         val mode=AppearanceSettingsStore(context).motion();explicitMotion=mode==BackgroundMotion.ON
+        refreshWallpaper()
+        wallpaperArt?.animationEnabled=BackgroundMotionPolicy.interval(mode,DashboardTheme.palette.theme.scene,
+            lowRam,width.toLong()*height>2560L*1440L,powerSave,animations,true,true)!=null
         val next=BackgroundMotionPolicy.interval(mode,DashboardTheme.palette.theme.scene,
-            lowRam,width.toLong()*height>2560L*1440L,powerSave,animations,canPresent())
-        if(next==interval && framePending) { refreshWallpaper();return }
+            lowRam,width.toLong()*height>2560L*1440L,powerSave,animations,canPresent(),wallpaper?.recreation!=null || DashboardTheme.palette.theme.scene==ConsoleScene.XBOX_ORIGINAL)
+        if(next==interval && framePending) return
         stop();interval=next
         if(mode==BackgroundMotion.OFF) { phase=0f;invalidate() }
         if(next!=null) { lastTick=SystemClock.uptimeMillis();framePending=postDelayed(tick,next) }
-        refreshWallpaper()
     }
     private fun refreshWallpaper() {
         removeCallbacks(rotate);rotationPending=false
@@ -170,7 +180,7 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
         }
         if(wallpaper?.id!=next.id || wallpaper?.artUrl!=next.artUrl) {
             if(wallpaperLoader.isInitialized()) wallpaperLoader.value.cancel(wallpaperTarget)
-            galleryBitmap=null;wallpaper=next;wallpaperArt=SeriesWallpaperArt(next.style)
+            galleryBitmap=null;wallpaper=next;wallpaperArt=MotionWallpaperArt.create(next)
         }
         wallpaperArt?.setBounds(0,0,width,height)
         if(next.artUrl!=null) {

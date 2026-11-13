@@ -16,7 +16,9 @@ import kotlinx.coroutines.*
 /** A bounded page of views and visible-only thumbnail requests, including large official collections. */
 internal class SeriesWallpaperGallery(private val context: Context,items: List<SeriesWallpaper>,
     private val officialItems: List<SeriesWallpaper> = OfficialXboxWallpapers.read(context),
-    backend: ArtworkBackend?=null,private val back: () -> Unit) {
+    backend: ArtworkBackend?=null,
+    private val recreatedItems: List<SeriesWallpaper> = RecreatedXboxBackgrounds.wallpapers(context),
+    private val back: () -> Unit) {
     private val store=SeriesPersonalizationStore(context)
     private val entries=items.take(SeriesPersonalizationStore.MAX_ITEMS)
     private val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
@@ -32,7 +34,8 @@ internal class SeriesWallpaperGallery(private val context: Context,items: List<S
     private var focusGeneration=0
     private var previewed=store.selected()
     private var previewReady=false
-    private val preview=FixedArtworkView(context).apply { scaleType=ImageView.ScaleType.CENTER_CROP }
+    private val preview=MotionArtworkView(context).apply { scaleType=ImageView.ScaleType.CENTER_CROP }
+    private val previewArt=FixedArtworkView(context)
     private val previewNotice=dialog.text("",19).apply { gravity=Gravity.CENTER;maxLines=2 }
     private val previewLabel=dialog.text("",21,true).apply {
         gravity=Gravity.BOTTOM or Gravity.START;maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END
@@ -55,6 +58,8 @@ internal class SeriesWallpaperGallery(private val context: Context,items: List<S
     private val categoryButtons=mutableMapOf<WallpaperCategory,TextView>()
     private lateinit var favoriteButton: TextView
     private lateinit var applyButton: TextView
+    private lateinit var animateButton: TextView
+    private val animatedArts by lazy { officialItems.mapNotNull { RecreatedXboxBackgrounds.animatedArtwork(it) } }
     private data class Tile(val entry: SeriesWallpaper,val view: FrameLayout,val image: ImageView,val label: TextView)
 
     fun show(): ConsoleDialog {
@@ -62,6 +67,13 @@ internal class SeriesWallpaperGallery(private val context: Context,items: List<S
             setBackgroundColor(0xff10191e.toInt())
             addView(preview,FrameLayout.LayoutParams(-1,-1));addView(previewNotice,FrameLayout.LayoutParams(-1,-1))
             addView(previewLabel,FrameLayout.LayoutParams(-1,dialog.px(43),Gravity.BOTTOM))
+            animateButton=DashboardTheme.button(context,UiText.text("Animar esta arte"),dialog.scale) { chooseEffect() }.apply {
+                id=View.generateViewId();setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,dialog.px(16).toFloat())
+                setPadding(dialog.px(6),0,dialog.px(6),0)
+            }
+            addView(animateButton,FrameLayout.LayoutParams(dialog.px(232),dialog.px(36),Gravity.TOP or Gravity.END).apply {
+                topMargin=dialog.px(8);marginEnd=dialog.px(8)
+            })
         }
         dialog.body.addView(previewFrame,LinearLayout.LayoutParams(-1,dialog.px(170)))
         WallpaperCategory.entries.forEach { value ->
@@ -111,7 +123,7 @@ internal class SeriesWallpaperGallery(private val context: Context,items: List<S
             } else false
         }
         scroll.setOnScrollChangeListener { _,_,_,_,_ -> loadVisible() }
-        dialog.addCleanup { posters.close();scope.cancel() };dialog.setOnCancelListener { back() }
+        dialog.addCleanup { preview.close();posters.close();scope.cancel() };dialog.setOnCancelListener { back() }
         page=(all().indexOfFirst { it.id==previewed.id }.coerceAtLeast(0))/PAGE_SIZE
         renderPage();showPreview(previewed)
         dialog.focusFirst(tiles.firstOrNull { it.entry.id==previewed.id }?.view ?: categoryButtons.getValue(category))
@@ -123,7 +135,7 @@ internal class SeriesWallpaperGallery(private val context: Context,items: List<S
         typeface=android.graphics.Typeface.create("sans-serif-medium",android.graphics.Typeface.NORMAL)
         setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,dialog.px(17).toFloat())
     }
-    private fun all()=(SeriesWallpaper.builtIns+officialItems+entries+store.favorites()+store.selected()).distinctBy { it.id }
+    private fun all()=(SeriesWallpaper.builtIns+recreatedItems+animatedArts+officialItems+entries+store.favorites()+store.selected()).distinctBy { it.id }
     private fun collection()=when(category) {
         WallpaperCategory.ALL -> all();WallpaperCategory.FAVORITES -> store.favorites()
         else -> all().filter { it.category==category }
@@ -183,12 +195,15 @@ internal class SeriesWallpaperGallery(private val context: Context,items: List<S
         if(items.isEmpty()) strip.addView(dialog.text(UiText.text("Nenhum fundo nesta categoria."),20),LinearLayout.LayoutParams(-2,-2))
         items.forEach { entry ->
             val image=FixedArtworkView(context).apply { scaleType=ImageView.ScaleType.CENTER_CROP;setBackgroundColor(0xff10191e.toInt()) }
-            if(entry.artUrl==null) image.setImageDrawable(SeriesWallpaperArt(entry.style))
+            if(entry.artUrl==null || entry.recreation!=null) image.setImageDrawable(MotionWallpaperArt.create(entry))
             val label=dialog.text(entry.label,16).apply { maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END;gravity=Gravity.CENTER_VERTICAL;setPadding(dialog.px(5),0,dialog.px(5),0) }
             val tile=FrameLayout(context).apply {
                 id=View.generateViewId();isFocusable=true;isFocusableInTouchMode=true;isClickable=true
                 DashboardTheme.customFocus(this);setPadding(dialog.px(3),dialog.px(3),dialog.px(3),dialog.px(3))
                 addView(image,FrameLayout.LayoutParams(-1,dialog.px(78)))
+                if(entry.recreation!=null) addView(dialog.text(UiText.text("Recriação"),13,true).apply {
+                    setPadding(dialog.px(4),dialog.px(2),dialog.px(4),dialog.px(2));setBackgroundColor(0xc0111715.toInt())
+                },FrameLayout.LayoutParams(-2,-2,Gravity.TOP or Gravity.START))
                 addView(label,FrameLayout.LayoutParams(-1,dialog.px(28),Gravity.BOTTOM))
                 setOnFocusChangeListener { _,focused ->
                     background=tilePlate(focused)
@@ -221,21 +236,51 @@ internal class SeriesWallpaperGallery(private val context: Context,items: List<S
         store.select(entry);dialog.dismiss();back()
     }
     private fun showPreview(entry: SeriesWallpaper) {
+        posters.cancel(previewArt);preview.setBackdrop(null)
         previewed=entry;previewReady=entry.artUrl==null
+        val original=if(entry.official) entry else RecreatedXboxBackgrounds.originalArtwork(entry)
+        animateButton.visibility=if(original!=null) View.VISIBLE else View.GONE
+        animateButton.text=if(entry.official) UiText.text("Animar esta arte") else UiText.text("Trocar efeito")
+        animateButton.nextFocusDownId=categoryButtons.getValue(category).id
         preview.setBackgroundColor(0xff10191e.toInt());previewNotice.visibility=if(previewReady) View.GONE else View.VISIBLE
         previewNotice.text=UiText.text("Carregando imagem…")
         applyButton.isEnabled=previewReady;applyButton.alpha=if(previewReady) 1f else .45f
-        if(entry.artUrl!=null) posters.load(preview,entry.artUrl,768,432,notifyPlaceholder=false) { ready ->
+        if(entry.recreation!=null) {
+            posters.cancel(preview);preview.showArt(MotionWallpaperArt.create(entry))
+            entry.artUrl?.let { url -> posters.load(previewArt,url,768,432,notifyPlaceholder=false) { ready ->
+                if(previewed.id==entry.id) {
+                    previewReady=ready;previewNotice.visibility=if(ready) View.GONE else View.VISIBLE
+                    if(ready) preview.setBackdrop(previewArt.drawable) else previewNotice.text=UiText.text("Imagem indisponível. Tente novamente.")
+                    applyButton.isEnabled=ready;applyButton.alpha=if(ready) 1f else .45f
+                }
+            } }
+        } else if(entry.artUrl!=null) posters.load(preview,entry.artUrl,768,432,notifyPlaceholder=false) { ready ->
             if(previewed.id==entry.id) {
                 previewReady=ready;previewNotice.visibility=if(ready) View.GONE else View.VISIBLE
                 if(!ready) previewNotice.text=UiText.text("Imagem indisponível. Tente novamente.")
                 applyButton.isEnabled=ready;applyButton.alpha=if(ready) 1f else .45f
             }
-        } else { posters.cancel(preview);preview.setImageDrawable(SeriesWallpaperArt(entry.style)) }
+        } else { posters.cancel(preview);preview.showArt(MotionWallpaperArt.create(entry)) }
         previewLabel.text=entry.label
-        help.text=if(entry.official) UiText.text("Oficiais Xbox: imagens estáticas. A: escolher · X: favoritar · B: voltar")
+        help.text=if(RecreatedXboxBackgrounds.originalArtwork(entry)!=null) UiText.text("Arte original com animação própria do app. Não é a animação original do console.")
+            else if(entry.recreation!=null) UiText.text("Recriação própria: elementos animados pelo app; não é o arquivo original do console. A: escolher · X: favoritar · B: voltar")
+            else if(entry.official) UiText.text("Oficiais Xbox: imagens estáticas. A: escolher · X: favoritar · B: voltar")
             else UiText.text("A: escolher fundo · X: favoritar · B: voltar")
         updateFavoriteButton()
+    }
+    private fun chooseEffect() {
+        val original=if(previewed.official) previewed else RecreatedXboxBackgrounds.originalArtwork(previewed) ?: return
+        val effectDialog=ConsoleDialog(context,UiText.text("Efeito da recriação"))
+        ArtAnimationEffect.entries.forEach { effect ->
+            effectDialog.addMenuItem(effect.label) {
+                RecreatedXboxBackgrounds.animatedArtwork(original,effect)?.let(::showPreview)
+                animateButton.requestFocus()
+            }
+        }
+        effectDialog.addAction(UiText.text("Voltar")) { animateButton.requestFocus() }
+        effectDialog.setOnCancelListener { animateButton.requestFocus() }
+        dialog.addCleanup { effectDialog.dismiss() }
+        effectDialog.show()
     }
     private fun toggleFavorite() {
         store.toggleFavorite(previewed)
@@ -249,7 +294,7 @@ internal class SeriesWallpaperGallery(private val context: Context,items: List<S
         updateFavoriteButton();val favorites=store.favorites().map { it.id }.toSet()
         tiles.forEach { tile ->
             val favorite=tile.entry.id in favorites
-            tile.label.text=UiText.text("{0}{1}",UiText.nested(if(favorite) "★ " else ""),UiText.nested(tile.entry.label))
+            tile.label.text=UiText.text("{0}{1}",UiText.nested(if(favorite) "★ " else ""),UiText.nested(if(tile.entry.recreation!=null) tile.entry.name else tile.entry.label))
             tile.view.contentDescription=UiText.text("{0}{1}",UiText.nested(tile.entry.label),UiText.nested(if(favorite) UiText.text(", favorito") else ""))
         }
     }

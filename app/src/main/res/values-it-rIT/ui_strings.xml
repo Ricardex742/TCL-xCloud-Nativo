@@ -1007,4 +1007,26 @@
     <string name="ui_38d375dfc7df0844">"Profilo audio"</string>
     <string name="ui_2197cdc9c936bdca">"Richiede un’uscita audio a bassa latenza su Android 8 o successivo. Il sistema può ignorare la richiesta. Standard mantiene il comportamento attuale. Vale dalla prossima partita; torna a Standard in caso di crepitii o interruzioni."</string>
     <string name="ui_174ac251a8802c41">"Rilevamento touch: TV {0} | dichiarato {1} | configurato {2} | input rilevato {3}"</string>
+    <string name="ui_85d186019ffc923e">"Ricreazioni"</string>
+    <string name="ui_1ecefcb09872be5c">"Ricreazione"</string>
+    <string name="ui_cb96feb3fd4683e9">"Ricreazione • {0}"</string>
+    <string name="ui_0b080f80f2c5f53b">"Particelle e luce"</string>
+    <string name="ui_83989f5480374461">"Nebbia e bagliore"</string>
+    <string name="ui_8e316ca9e54cacb2">"Acqua e onde"</string>
+    <string name="ui_2959fda6b68b27d1">"Fuoco e scintille"</string>
+    <string name="ui_e23292547150875a">"Deformazione localizzata"</string>
+    <string name="ui_99744522ac56609e">"Anima questa immagine"</string>
+    <string name="ui_e798be81d813bb74">"Cambia effetto"</string>
+    <string name="ui_af8b8e11fc02b256">"Effetto della ricreazione"</string>
+    <string name="ui_187006c97ce4c96e">"Immagine originale con animazione creata dall’app. Non è l’animazione originale della console."</string>
+    <string name="ui_b2ea065e15417925">"Ricreazione: elementi animati dall’app, non il file originale della console. A: scegli · X: preferito · B: indietro"</string>
+    <string name="ui_b9468fe4dd8946f4">"ACCEDI CON MICROSOFT"</string>
+    <string name="ui_ebbde28d382d76af">"Apertura dell’accesso Microsoft…"</string>
+    <string name="ui_be6a66eb4a39d0b0">"Accedi sulla pagina ufficiale Microsoft senza scansionare codici."</string>
+    <string name="ui_8381a1c58341129f">"Accedi di nuovo per connetterti ai giochi."</string>
+    <string name="ui_0354ebab5ce134d9">"Autenticazione necessaria. Accedi di nuovo al tuo account."</string>
+    <string name="ui_a119018c0d50b23a">"La sessione deve essere rinnovata. Accedi di nuovo al tuo account."</string>
+    <string name="ui_a91c238e7813616f">"Impossibile aprire l’accesso Microsoft. Riprova o usa il codice QR."</string>
+    <string name="ui_5db502c20af69da9">"Impossibile completare l’accesso. Riprova o usa il codice QR."</string>
+    <string name="ui_a236429ae2c5a26d">"L’accesso è scaduto o non è stato verificato. Riprova."</string>
 </resources>

@@ -44,14 +44,15 @@ data class AuthEndpoints(
     val xstsAuthorizeUrl: String = "https://xsts.auth.xboxlive.com/xsts/authorize",
     val xcloudLoginUrl: String = "https://xgpuweb.gssv-play-prod.xboxlive.com/v2/login/user",
     val transferTokenUrl: String = "https://login.live.com/oauth20_token.srf",
-    val profileUrl: String = "https://profile.xboxlive.com/users/me/profile/settings?settings=GameDisplayName,GameDisplayPicRaw,Gamertag"
+    val profileUrl: String = "https://profile.xboxlive.com/users/me/profile/settings?settings=GameDisplayName,GameDisplayPicRaw,Gamertag",
+    val authorizeUrl: String = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize"
 )
 data class DeviceCodeInfo(
     val userCode: String, val deviceCode: String, val verificationUri: String,
     val verificationUriComplete: String?, val intervalSeconds: Long, val expiresAtMs: Long,
     val qrBitmap: Bitmap? = null
 )
-class AuthenticationRequiredException(message: String = UiText.text("Autenticação necessária. Entre novamente pelo QR Code.")) : Exception(message)
+class AuthenticationRequiredException(message: String = UiText.text("Autenticação necessária. Entre novamente na sua conta.")) : Exception(message)
 
 class XalAuthenticator(
     private val store: OAuthTokenStore,
@@ -107,6 +108,19 @@ class XalAuthenticator(
         it.clientId == XCLOUD_CLIENT_ID && !it.refreshToken.isNullOrBlank()
     } == true
 
+    fun beginBrowserLogin()=BrowserAuthorization.create(clockMs(),endpoints.authorizeUrl)
+    suspend fun completeBrowserLogin(request: BrowserAuthorization,code: String): Result<String> = result {
+        val data=JSONObject(post(endpoints.tokenUrl,"AUTH_BROWSER",request.exchangeForm(code,clockMs())))
+        val access=data.getString("access_token").takeIf { it.isNotBlank() }
+            ?: throw AuthenticationRequiredException("AUTH_BROWSER: access token missing")
+        val refresh=data.optString("refresh_token").takeIf { it.isNotBlank() }
+            ?: throw AuthenticationRequiredException("AUTH_BROWSER: refresh token missing")
+        val expires=data.getLong("expires_in").takeIf { it in 1..86_400 }
+            ?: throw AuthenticationRequiredException("AUTH_BROWSER: invalid token lifetime")
+        saveTokens(access,refresh,expires,XCLOUD_CLIENT_ID)
+        store.read()!!.ticket
+    }
+
     suspend fun requestDeviceCodeQr(): Result<DeviceCodeInfo> = result {
         val data = JSONObject(post(endpoints.deviceCodeUrl, "AUTH_DEVICE_CODE", FormBody.Builder()
             .add("client_id", XCLOUD_CLIENT_ID).add("scope", MSAL_SCOPE).build()))
@@ -151,7 +165,7 @@ class XalAuthenticator(
                 FormBody.Builder().add("grant_type", "refresh_token").add("client_id", token.clientId)
                     .add("refresh_token", refreshToken).add("scope", if (msal) MSAL_SCOPE else LIVE_SCOPE).build()))
         } catch (error: CloudHttpException) {
-            if (error.serviceCode == "invalid_grant") throw AuthenticationRequiredException("AUTH_REFRESH: login expirado ou revogado. Entre pelo QR Code.")
+            if (error.serviceCode == "invalid_grant") throw AuthenticationRequiredException(UiText.text("Sua sessão precisa ser renovada. Entre novamente na sua conta."))
             throw error
         }
         return OAuthToken(normalizeRpsTicket(data.getString("access_token")),

@@ -1,18 +1,17 @@
 package com.xcloud.tclnative.ui.dashboard
 
 import android.graphics.*
-import android.graphics.drawable.Drawable
 import com.xcloud.tclnative.settings.WallpaperStyle
 import kotlin.math.sin
 
 /** Original vector backgrounds. Paths/shaders are cached; motion uses canvas transforms, no blur or video. */
-internal class SeriesWallpaperArt(private val style: WallpaperStyle): Drawable() {
+internal class SeriesWallpaperArt(private val style: WallpaperStyle): MotionWallpaperArt() {
     private val paint=Paint(Paint.ANTI_ALIAS_FLAG)
     private val paths=List(4) { Path() }
     private var wash: Shader?=null
     private var ribbon: Shader?=null
     private var w=0f;private var h=0f
-    var phase=0f
+    override var phase=0f
     private val colors=when(style) {
         WallpaperStyle.FLOW -> intArrayOf(0xff03110d.toInt(),0xff15783b.toInt(),0xff82ed92.toInt())
         WallpaperStyle.HORIZON -> intArrayOf(0xff061c1d.toInt(),0xff186e70.toInt(),0xff78e9bb.toInt())
@@ -35,13 +34,19 @@ internal class SeriesWallpaperArt(private val style: WallpaperStyle): Drawable()
         if(w<=0 || h<=0) return
         val save=canvas.save();canvas.translate(bounds.left.toFloat(),bounds.top.toFloat());canvas.clipRect(0f,0f,w,h)
         paint.style=Paint.Style.FILL;paint.alpha=255;paint.shader=wash;canvas.drawRect(0f,0f,w,h,paint)
-        val wave=sin(phase*2*Math.PI).toFloat();canvas.translate(wave*w*.018f,wave*h*.012f)
+        val wave=sin(phase*2*Math.PI).toFloat()
+        // Rebuild the curves: their shape changes, rather than translating a flat picture.
+        paths.forEachIndexed { i,p ->
+            val offset=i*h*.17f;p.rewind();p.moveTo(-w*.15f,h*.75f+offset)
+            p.cubicTo(w*(.25f+wave*.08f),-h*.25f+offset,
+                w*.7f,h*(1.25f+sin(phase*2*Math.PI+i).toFloat()*.12f)-offset,w*1.2f,h*.15f+offset)
+        }
         paint.shader=ribbon
         when(style) {
             WallpaperStyle.ORBIT -> {
                 paint.style=Paint.Style.STROKE
                 repeat(5) { i -> paint.strokeWidth=w*(.008f+i*.004f);paint.alpha=130-i*20
-                    canvas.drawCircle(w*.68f,h*.5f,h*(.24f+i*.17f),paint) }
+                    canvas.drawCircle(w*.68f,h*.5f,h*(.24f+i*.17f+sin(phase*2*Math.PI+i).toFloat()*.035f),paint) }
             }
             WallpaperStyle.HORIZON,WallpaperStyle.SUNSET -> {
                 paint.alpha=220;canvas.drawCircle(w*.72f,h*.41f,h*.22f,paint)

@@ -24,7 +24,8 @@ import kotlin.math.roundToInt
 
 /** Login and device-code screens share the catalog's native typography, green palette and focus. */
 class ConsoleLoginView(context: Context, private val signIn: () -> Unit, private val back: () -> Unit,
-                       private val openApproval: (String) -> Unit) : FrameLayout(context) {
+                       private val openApproval: (String) -> Unit,private val browserSignIn: (() -> Unit)?=null,
+                       private val preferBrowser: Boolean=com.xcloud.tclnative.settings.InputDeviceProfile.read(context).touchDevice) : FrameLayout(context) {
     private val scope = CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
     private var ticker: Job? = null
     var isQr = false
@@ -59,8 +60,12 @@ class ConsoleLoginView(context: Context, private val signIn: () -> Unit, private
     private val primary = DashboardTheme.button(context,UiText.text("ENTRAR COM QR CODE")) {
         if (!connecting) {
             val current = info
-            if (current != null && !failed) openApproval(current.verificationUriComplete ?: current.verificationUri) else signIn()
+            if (current != null && !failed) openApproval(current.verificationUriComplete ?: current.verificationUri)
+            else if(!isQr && preferBrowser && browserSignIn!=null) browserSignIn.invoke() else signIn()
         }
+    }
+    private val alternate = DashboardTheme.button(context,UiText.text("ENTRAR COM QR CODE")) {
+        if(!connecting) { if(preferBrowser) signIn() else browserSignIn?.invoke() }
     }
     private val secondary = DashboardTheme.button(context,UiText.text("VOLTAR")) { back() }
     private val language = DashboardTheme.button(context,UiText.text("Idioma / Language")) { LanguageMenu.show(context) {} }
@@ -73,7 +78,7 @@ class ConsoleLoginView(context: Context, private val signIn: () -> Unit, private
     init {
         background=DashboardBackground()
         listOf(brand,eyebrow,headline,description,card,footer,language,bypass).forEach(::addView)
-        listOf(cardTitle,qr,code,instructions,status,validity,spinner,primary,secondary).forEach(card::addView)
+        listOf(cardTitle,qr,code,instructions,status,validity,spinner,primary,secondary,alternate).forEach(card::addView)
         headline.text=SpannableString(UiText.text("SEUS JOGOS.\nNA SUA TELA.")).apply {
             setSpan(ForegroundColorSpan(DashboardTheme.accent),toString().indexOf('\n')+1,length,Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
@@ -92,14 +97,17 @@ class ConsoleLoginView(context: Context, private val signIn: () -> Unit, private
         headline.visibility=VISIBLE; description.visibility=VISIBLE
         cardTitle.text=UiText.text("ENTRE PARA JOGAR")
         instructions.text=UiText.text("Conecte sua conta Microsoft para acessar seus jogos.")
-        status.text=UiText.text("Use o celular para conectar a sua conta."); status.setTextColor(DashboardTheme.muted)
-        primary.text=UiText.text("ENTRAR COM QR CODE"); primary.isEnabled=true
+        status.text=if(browserSignIn!=null) UiText.text("Login na página oficial da Microsoft, sem escanear código.") else UiText.text("Use o celular para conectar a sua conta."); status.setTextColor(DashboardTheme.muted)
+        primary.text=if(preferBrowser && browserSignIn!=null) UiText.text("ENTRAR COM MICROSOFT") else UiText.text("ENTRAR COM QR CODE"); primary.isEnabled=true
+        alternate.text=if(preferBrowser) UiText.text("ENTRAR COM QR CODE") else UiText.text("ENTRAR COM MICROSOFT")
+        alternate.visibility=if(browserSignIn!=null) VISIBLE else GONE;alternate.isEnabled=true
         listOf(qr,code,secondary,validity,spinner).forEach { it.visibility=GONE }
         geometry=0; requestLayout(); post { primary.requestFocus() }
     }
     fun beginQr() {
         ticker?.cancel(); info=null; failed=false; connecting=false; isQr=true
         bypass.isEnabled=true
+        alternate.visibility=GONE
         headline.visibility=GONE; description.visibility=GONE
         cardTitle.text=UiText.text("CONECTE SUA CONTA")
         instructions.text=UiText.text("Escaneie o QR Code com seu celular ou acesse a página de login da Microsoft.")
@@ -128,6 +136,7 @@ class ConsoleLoginView(context: Context, private val signIn: () -> Unit, private
         connecting=true; ticker?.cancel()
         bypass.isEnabled=false
         spinner.visibility=VISIBLE; primary.isEnabled=false
+        alternate.isEnabled=false
         status.text=message; status.setTextColor(DashboardTheme.accent)
         validity.text=if (isQr) UiText.text("Conta aprovada. Finalizando sua conexão…") else ""
     }
@@ -137,6 +146,7 @@ class ConsoleLoginView(context: Context, private val signIn: () -> Unit, private
         status.text=message; status.setTextColor(0xffffa59a.toInt())
         primary.text=if (isQr) UiText.text("GERAR NOVO CÓDIGO") else UiText.text("TENTAR NOVAMENTE")
         primary.isEnabled=true; validity.text=""
+        alternate.isEnabled=true
         post { primary.requestFocus() }
     }
     fun handleKey(event: KeyEvent): Boolean = when (event.keyCode) {
@@ -174,18 +184,19 @@ class ConsoleLoginView(context: Context, private val signIn: () -> Unit, private
                 item(spinner,325,284,25,25)
             } else {
                 root(headline,80,193,570,168); root(description,80,398,520,110)
-                root(card,684,176,516,402)
+                root(card,684,if(browserSignIn!=null) 154 else 176,516,if(browserSignIn!=null) 448 else 402)
                 item(cardTitle,34,35,448,48); item(instructions,34,108,448,90)
                 item(primary,29,229,458,66); item(status,34,321,448,65)
+                if(browserSignIn!=null) { item(primary,29,213,458,60);item(alternate,29,283,458,54);item(status,34,360,448,64) }
                 item(spinner,460,41,25,25)
             }
             listOf(eyebrow to 29, headline to 65, description to 24, cardTitle to 34, instructions to 22,
-                code to 44, status to 20, validity to 18, primary to 23, secondary to 23, footer to 18).forEach { (view,size) ->
+                code to 44, status to 20, validity to 18, primary to 23, secondary to 23, alternate to 21, footer to 18).forEach { (view,size) ->
                 view.setTextSize(TypedValue.COMPLEX_UNIT_PX,size*s)
             }
             if(android.os.Build.VERSION.SDK_INT>=26) headline.setAutoSizeTextTypeUniformWithConfiguration(
                 (38*s).roundToInt().coerceAtLeast(1),(65*s).roundToInt().coerceAtLeast(2),1,TypedValue.COMPLEX_UNIT_PX)
-            if(android.os.Build.VERSION.SDK_INT>=26) listOf(primary,secondary,language,bypass).forEach { button ->
+            if(android.os.Build.VERSION.SDK_INT>=26) listOf(primary,secondary,alternate,language,bypass).forEach { button ->
                 button.setAutoSizeTextTypeUniformWithConfiguration((14*s).roundToInt().coerceAtLeast(1),
                     (23*s).roundToInt().coerceAtLeast(2),1,TypedValue.COMPLEX_UNIT_PX)
             }

@@ -1007,4 +1007,26 @@
     <string name="ui_38d375dfc7df0844">"音声プロファイル"</string>
     <string name="ui_2197cdc9c936bdca">"Android 8 以降で低遅延の音声出力を要求します。システムが要求を無視する場合があります。「標準」は現在の動作を維持します。次のゲームセッションから適用されます。ノイズや音切れが出る場合は「標準」に戻してください。"</string>
     <string name="ui_174ac251a8802c41">"タッチ検出: TV {0} | 対応情報 {1} | 設定 {2} | 入力デバイス検出 {3}"</string>
+    <string name="ui_85d186019ffc923e">"再現アニメーション"</string>
+    <string name="ui_1ecefcb09872be5c">"再現"</string>
+    <string name="ui_cb96feb3fd4683e9">"再現 • {0}"</string>
+    <string name="ui_0b080f80f2c5f53b">"粒子と光"</string>
+    <string name="ui_83989f5480374461">"霧と輝き"</string>
+    <string name="ui_8e316ca9e54cacb2">"水と波"</string>
+    <string name="ui_2959fda6b68b27d1">"炎と火花"</string>
+    <string name="ui_e23292547150875a">"部分的な変形"</string>
+    <string name="ui_99744522ac56609e">"この画像をアニメーション化"</string>
+    <string name="ui_e798be81d813bb74">"効果を変更"</string>
+    <string name="ui_af8b8e11fc02b256">"再現の効果"</string>
+    <string name="ui_187006c97ce4c96e">"元の画像にアプリ独自のアニメーションを加えています。本体のオリジナルアニメーションではありません。"</string>
+    <string name="ui_b2ea065e15417925">"アプリ独自の再現です。本体の元ファイルではありません。A: 選択 · X: お気に入り · B: 戻る"</string>
+    <string name="ui_b9468fe4dd8946f4">"MICROSOFT でサインイン"</string>
+    <string name="ui_ebbde28d382d76af">"Microsoft のサインインを開いています…"</string>
+    <string name="ui_be6a66eb4a39d0b0">"コードを読み取らずに Microsoft の公式ページでサインインできます。"</string>
+    <string name="ui_8381a1c58341129f">"ゲームに接続するには再度サインインしてください。"</string>
+    <string name="ui_0354ebab5ce134d9">"認証が必要です。アカウントに再度サインインしてください。"</string>
+    <string name="ui_a119018c0d50b23a">"セッションの更新が必要です。再度サインインしてください。"</string>
+    <string name="ui_a91c238e7813616f">"Microsoft のサインインを開けませんでした。再試行するか QR コードを使ってください。"</string>
+    <string name="ui_5db502c20af69da9">"サインインを完了できませんでした。再試行するか QR コードを使ってください。"</string>
+    <string name="ui_a236429ae2c5a26d">"サインインが期限切れか、検証できませんでした。再試行してください。"</string>
 </resources>

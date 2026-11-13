@@ -94,6 +94,13 @@ when displayed; the catalog contains static images, not console animation
 packages. Their copyrights remain with Microsoft and the respective artists
 and publishers. The project's MIT license does not license those images.
 
+The optional **Recreations** collection adds app-authored Canvas animations and
+localized image deformation to public artwork. These effects and procedural
+interpretations are labelled as recreations, not official console animation
+files. Adding an effect does not change the underlying artwork's ownership or
+licence. Named references and their public announcement URLs are retained in
+`RecreatedXboxBackgrounds.kt`.
+
 The unchanged Xbox 360 and Xbox Series image fixtures under
 `app/src/test/resources/wallpapers/` are used only by automated interface tests
 and are not packaged in the application. Their public source URLs and hashes

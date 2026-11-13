@@ -1007,4 +1007,26 @@
     <string name="ui_38d375dfc7df0844">"Perfil de áudio"</string>
     <string name="ui_2197cdc9c936bdca">"Solicita saída de áudio de baixa latência no Android 8 ou superior. O sistema pode ignorar o pedido. Padrão mantém o comportamento atual. Vale na próxima partida; volte ao padrão se houver estalos ou cortes."</string>
     <string name="ui_174ac251a8802c41">"Detecção de toque: TV {0} | anunciado {1} | configurado {2} | entrada detectada {3}"</string>
+    <string name="ui_85d186019ffc923e">"Recriações"</string>
+    <string name="ui_1ecefcb09872be5c">"Recriação"</string>
+    <string name="ui_cb96feb3fd4683e9">"Recriação • {0}"</string>
+    <string name="ui_0b080f80f2c5f53b">"Partículas e luz"</string>
+    <string name="ui_83989f5480374461">"Névoa e brilho"</string>
+    <string name="ui_8e316ca9e54cacb2">"Água e ondas"</string>
+    <string name="ui_2959fda6b68b27d1">"Fogo e faíscas"</string>
+    <string name="ui_e23292547150875a">"Deformação localizada"</string>
+    <string name="ui_99744522ac56609e">"Animar esta arte"</string>
+    <string name="ui_e798be81d813bb74">"Trocar efeito"</string>
+    <string name="ui_af8b8e11fc02b256">"Efeito da recriação"</string>
+    <string name="ui_187006c97ce4c96e">"Arte original com animação própria do app. Não é a animação original do console."</string>
+    <string name="ui_b2ea065e15417925">"Recriação própria: elementos animados pelo app; não é o arquivo original do console. A: escolher · X: favoritar · B: voltar"</string>
+    <string name="ui_b9468fe4dd8946f4">"ENTRAR COM MICROSOFT"</string>
+    <string name="ui_ebbde28d382d76af">"Abrindo o login da Microsoft…"</string>
+    <string name="ui_be6a66eb4a39d0b0">"Login na página oficial da Microsoft, sem escanear código."</string>
+    <string name="ui_8381a1c58341129f">"Atualize seu login para conectar os jogos."</string>
+    <string name="ui_0354ebab5ce134d9">"Autenticação necessária. Entre novamente na sua conta."</string>
+    <string name="ui_a119018c0d50b23a">"Sua sessão precisa ser renovada. Entre novamente na sua conta."</string>
+    <string name="ui_a91c238e7813616f">"Não foi possível abrir o login da Microsoft. Tente novamente ou use o QR Code."</string>
+    <string name="ui_5db502c20af69da9">"Não foi possível concluir o login. Tente novamente ou use o QR Code."</string>
+    <string name="ui_a236429ae2c5a26d">"O login expirou ou não pôde ser validado. Tente novamente."</string>
 </resources>

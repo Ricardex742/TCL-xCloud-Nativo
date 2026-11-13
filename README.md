@@ -21,7 +21,7 @@ A galeria reúne capturas reais dos menus, das filas e de partidas, além de tel
 
 ## Conta e biblioteca
 
-- Login Microsoft por QR Code e restauração da sessão salva.
+- Login direto na página oficial da Microsoft pelo próprio aparelho, com QR Code como alternativa e restauração da sessão salva. Celulares priorizam o login direto; TVs e boxes mantêm o QR Code em primeiro lugar.
 - Perfil Xbox com avatar e identificação da assinatura, quando informados pelo serviço.
 - **Voltar a jogar** com o histórico da conta no Xbox Cloud Gaming.
 - Favoritos separados por conta e salvos no aparelho.
@@ -58,7 +58,9 @@ A galeria reúne capturas reais dos menus, das filas e de partidas, além de tel
 - Pesquisa e configurações com painéis, fontes, campos e foco próprios para cada dashboard; One, Series e Metro organizam as categorias de configuração em blocos.
 - **Fundo dinâmico** opcional nesses seis temas: Automático, Ativado ou Desativado. Automático respeita economia de energia, animações do sistema, pouca memória e interfaces acima de 1440p. Ativado mantém um movimento leve e reduz a frequência em aparelhos modestos ou em economia de energia. O movimento pausa durante partidas e enquanto o catálogo não está visível. No Series, a própria arte panorâmica do jogo se move quando disponível.
 - **Personalização do Series X|S** em Aparência e temas: galeria com seis fundos vetoriais próprios, artes panorâmicas disponíveis no catálogo, categorias, prévia e favoritos de fundos independentes dos jogos favoritos.
-- **Oficiais Xbox:** imagens estáticas da galeria pública do Xbox, nas versões disponibilizadas para console, com pesquisa, páginas e carregamento somente das miniaturas visíveis. A coleção participa dos favoritos e da troca automática. O movimento leve do app pode ser aplicado às imagens; os arquivos de animação nativos do console não estão incluídos.
+- **Oficiais Xbox:** artes da galeria pública do Xbox, nas versões disponibilizadas para console, com pesquisa, páginas e carregamento somente das miniaturas visíveis. A coleção participa dos favoritos e da troca automática.
+- **Recriações animadas:** efeitos próprios de partículas, luz, névoa, ondas, fogo e deformação localizada sobre as artes reais. Escolha **Animar esta arte** para testar um efeito na prévia antes de aplicar. A galeria também reúne interpretações procedurais de fundos Xbox, com núcleos orgânicos, nebulosas e outros motivos. As recriações ficam identificadas; os arquivos de animação originais do console não estão incluídos.
+- A arte permanece fixa nos efeitos de partículas, luz e névoa; água e deformação localizada podem alterar regiões da imagem. Apenas a prévia e o fundo visível são animados. Em aparelhos com pouca memória, Automático mantém o fundo estático; a ativação manual usa menos elementos e uma frequência reduzida. As animações pausam durante partidas.
 - **Troca automática de fundos** ao abrir o aplicativo, a cada hora, diariamente ou semanalmente, usando favoritos ou uma coleção. A escolha permanece salva; a troca pausa durante a partida e é atualizada no retorno ao menu.
 - **Guia lateral opcional** à esquerda ou à direita, com perfil e atalhos do aplicativo. Na partida, reúne os ajustes e diagnósticos disponíveis. O menu central continua como padrão.
 - **Biblioteca completa em grade**, opcional no Series X|S, mantendo a Home em faixa horizontal. Os selos Game Pass e Series podem ser exibidos ou ocultados separadamente nesse tema.

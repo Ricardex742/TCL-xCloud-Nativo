@@ -14,7 +14,7 @@ enum class WallpaperShuffle(private val source: String,val periodMs: Long=0) {
     val label get()=UiText.text(source)
 }
 enum class WallpaperCategory(private val source: String) {
-    ALL("Todos os fundos"), OFFICIAL("Oficiais Xbox"), XBOX("Do aplicativo"), ABSTRACT("Abstratos"), GAMES("Jogos"), FAVORITES("Favoritos");
+    ALL("Todos os fundos"), OFFICIAL("Oficiais Xbox"), RECREATIONS("Recriações"), XBOX("Do aplicativo"), ABSTRACT("Abstratos"), GAMES("Jogos"), FAVORITES("Favoritos");
     val label get()=UiText.text(source)
 }
 enum class WallpaperStyle { FLOW, HORIZON, AURORA, ORBIT, SUNSET, PLATINUM }
@@ -24,7 +24,8 @@ data class SeriesWallpaper(val id: String,val name: String,val style: WallpaperS
                            val artUrl: String?=null,val category: WallpaperCategory=WallpaperCategory.ABSTRACT,
                            val previewUrl: String?=null) {
     val official get()=category==WallpaperCategory.OFFICIAL && id.startsWith("official:")
-    val label get()=if(artUrl==null) UiText.text(name) else name
+    val recreation get()=RecreatedXboxBackgrounds.find(id) ?: RecreatedXboxBackgrounds.artworkDesign(this)
+    val label get()=if(recreation!=null) UiText.text("Recriação • {0}",UiText.nested(name)) else if(artUrl==null) UiText.text(name) else name
     fun json(): String=JSONObject().put("id",id).put("name",name).put("style",style.name)
         .put("url",artUrl).put("category",category.name).put("preview",previewUrl).toString()
     companion object {
@@ -39,7 +40,16 @@ data class SeriesWallpaper(val id: String,val name: String,val style: WallpaperS
             val o=JSONObject(raw ?: "")
             val id=o.getString("id");val name=o.getString("name")
             val builtIn=builtIns.firstOrNull { it.id==id }
-            if(builtIn!=null) builtIn else {
+            if(builtIn!=null) builtIn else if(id.startsWith("recreation-art:")) {
+                val candidate=SeriesWallpaper(id,name,artUrl=o.optString("url"),category=WallpaperCategory.RECREATIONS,
+                    previewUrl=o.optString("preview").takeIf { it.isNotBlank() })
+                val original=RecreatedXboxBackgrounds.originalArtwork(candidate)
+                val effect=RecreatedXboxBackgrounds.artworkEffect(candidate)
+                if(original!=null && effect!=null) RecreatedXboxBackgrounds.animatedArtwork(original,effect) else null
+            } else if(id.startsWith("recreation:")) {
+                val url=o.optString("url").takeIf { it.isNotBlank() && OfficialXboxWallpapers.trustedAsset(it) }
+                RecreatedXboxBackgrounds.find(id)?.wallpaper(url)
+            } else {
                 val url=o.optString("url")
                 if(id.startsWith("official:")) OfficialXboxWallpapers.entry(name,url,o.optString("preview").takeIf { it.isNotBlank() })?.takeIf { it.id==id }
                 else if(!id.startsWith("game:") || id.length>180 || name.isBlank() || name.length>240 ||
@@ -124,5 +134,5 @@ class SeriesPersonalizationStore(context: Context) {
         if(!read().gallery || period==0L || pool().size<2) return null
         return (prefs.getLong("series_rotation_time",now)+period-now).coerceIn(1000L,period)
     }
-    companion object { const val MAX_ITEMS=80;const val MAX_ROTATION_ITEMS=1024 }
+    companion object { const val MAX_ITEMS=80;const val MAX_ROTATION_ITEMS=2048 }
 }

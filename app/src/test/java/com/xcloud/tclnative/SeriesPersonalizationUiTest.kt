@@ -56,7 +56,7 @@ class SeriesPersonalizationUiTest {
         val c=Robolectric.buildActivity(Activity::class.java).setup();val a=c.get();a.setContentView(FrameLayout(a));layout(a.window.decorView)
         val store=SeriesPersonalizationStore(a);val before=PlaybackSettingsStore(a).read();var back=0
         try {
-            val gallery=SeriesWallpaperGallery(a,emptyList(),officialItems=emptyList()) { back++ }.show();capture(gallery,"wallpaper-gallery")
+            val gallery=SeriesWallpaperGallery(a,emptyList(),officialItems=emptyList(),recreatedItems=emptyList()) { back++ }.show();capture(gallery,"wallpaper-gallery")
             assertFalse(store.read().gallery)
             val scroll=all(gallery.panel).filterIsInstance<HorizontalScrollView>().single()
             val tiles=all(scroll).filterIsInstance<FrameLayout>().filter { it.isClickable }
@@ -237,7 +237,7 @@ class SeriesPersonalizationUiTest {
             val scroll=all(gallery.panel).filterIsInstance<HorizontalScrollView>().single()
             val first=all(scroll).filterIsInstance<FrameLayout>().first { it.isClickable }
             first.requestFocus()
-            await { all(gallery.panel).filterIsInstance<FixedArtworkView>().first().drawable is BitmapDrawable }
+            await { all(gallery.panel).filterIsInstance<MotionArtworkView>().single().drawable is BitmapDrawable }
             capture(gallery,"gallery-artwork")
             click(gallery,"USAR FUNDO")
             assertEquals("game:ART-0",store.selected().id)

@@ -57,7 +57,9 @@ internal class SeriesPersonalizationPanel(private val context: Context,
         else chooseCollection(mode)
     }
     private fun chooseCollection(mode: WallpaperShuffle): ConsoleDialog {
-        val all=(SeriesWallpaper.builtIns+OfficialXboxWallpapers.read(context)+backgrounds()+store.favorites()).distinctBy { it.id }
+        val official=OfficialXboxWallpapers.read(context)
+        val animated=official.mapNotNull { RecreatedXboxBackgrounds.animatedArtwork(it) }
+        val all=(SeriesWallpaper.builtIns+RecreatedXboxBackgrounds.wallpapers(context)+animated+official+backgrounds()+store.favorites()).distinctBy { it.id }
         return ConsoleDialog(context,UiText.text("Coleção para troca automática")).apply {
             body.addView(text(UiText.text("Escolha uma coleção com pelo menos dois fundos. A troca pausa durante a partida e é atualizada ao voltar ao menu."),19,color=DashboardTheme.muted))
             WallpaperCategory.entries.forEach { category ->

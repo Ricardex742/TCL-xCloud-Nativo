@@ -1007,4 +1007,26 @@
     <string name="ui_38d375dfc7df0844">"音频配置"</string>
     <string name="ui_2197cdc9c936bdca">"在 Android 8 或更高版本上请求低延迟音频输出。系统可能忽略此请求。标准模式保持现有行为。下次游戏会话生效；若出现爆音或断音，请恢复标准模式。"</string>
     <string name="ui_174ac251a8802c41">"触控检测：电视 {0} | 声明支持 {1} | 已配置 {2} | 检测到输入 {3}"</string>
+    <string name="ui_85d186019ffc923e">"自制再现"</string>
+    <string name="ui_1ecefcb09872be5c">"自制再现"</string>
+    <string name="ui_cb96feb3fd4683e9">"自制再现 • {0}"</string>
+    <string name="ui_0b080f80f2c5f53b">"粒子与光效"</string>
+    <string name="ui_83989f5480374461">"雾气与微光"</string>
+    <string name="ui_8e316ca9e54cacb2">"水与波浪"</string>
+    <string name="ui_2959fda6b68b27d1">"火焰与火花"</string>
+    <string name="ui_e23292547150875a">"局部形变"</string>
+    <string name="ui_99744522ac56609e">"为此画面添加动画"</string>
+    <string name="ui_e798be81d813bb74">"更换效果"</string>
+    <string name="ui_af8b8e11fc02b256">"自制动画效果"</string>
+    <string name="ui_187006c97ce4c96e">"原始画面配上应用自制动画，并非主机原版动画。"</string>
+    <string name="ui_b2ea065e15417925">"应用自制再现：由应用为元素添加动画，并非主机原始文件。A：选择 · X：收藏 · B：返回"</string>
+    <string name="ui_b9468fe4dd8946f4">"使用 MICROSOFT 登录"</string>
+    <string name="ui_ebbde28d382d76af">"正在打开 Microsoft 登录…"</string>
+    <string name="ui_be6a66eb4a39d0b0">"在 Microsoft 官方页面登录，无需扫描代码。"</string>
+    <string name="ui_8381a1c58341129f">"请重新登录以连接游戏。"</string>
+    <string name="ui_0354ebab5ce134d9">"需要身份验证。请重新登录账户。"</string>
+    <string name="ui_a119018c0d50b23a">"会话需要更新。请重新登录账户。"</string>
+    <string name="ui_a91c238e7813616f">"无法打开 Microsoft 登录。请重试或使用二维码。"</string>
+    <string name="ui_5db502c20af69da9">"无法完成登录。请重试或使用二维码。"</string>
+    <string name="ui_a236429ae2c5a26d">"登录已过期或无法验证。请重试。"</string>
 </resources>

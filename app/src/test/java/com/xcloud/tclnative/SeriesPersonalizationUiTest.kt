@@ -244,4 +244,21 @@ class SeriesPersonalizationUiTest {
             await { backdrop.hasGalleryArtwork }
         } finally { view.close();c.pause().stop().destroy();server.shutdown() }
     }
+    @Test fun openingShuffleSurvivesCatalogRecreationAndChangesWhenTheAppActivityReopens() {
+        SeriesPersonalizationStore(app).configureShuffle(WallpaperShuffle.OPEN,WallpaperCategory.XBOX,SeriesWallpaper.builtIns.take(2))
+        fun render(a: Activity): Int {
+            val background=ConsoleThemeBackdrop(a)
+            return try {
+                a.setContentView(background);layout(background);background.onWindowFocusChanged(true)
+                val b=Bitmap.createBitmap(1280,720,Bitmap.Config.ARGB_8888);background.draw(Canvas(b))
+                val pixels=IntArray(1280*720);b.getPixels(pixels,0,1280,0,0,1280,720);b.recycle();pixels.contentHashCode()
+            } finally { background.close() }
+        }
+        val first=Robolectric.buildActivity(Activity::class.java).setup()
+        val initial=try {
+            val signature=render(first.get());assertEquals(signature,render(first.get()));signature
+        } finally { first.pause().stop().destroy() }
+        val reopened=Robolectric.buildActivity(Activity::class.java).setup()
+        try { assertNotEquals(initial,render(reopened.get())) } finally { reopened.pause().stop().destroy() }
+    }
 }

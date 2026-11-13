@@ -17,6 +17,7 @@ import android.view.View
 import com.xcloud.tclnative.settings.*
 import kotlinx.coroutines.*
 import java.util.UUID
+import java.util.WeakHashMap
 
 /** No timer for the seven color palettes, hidden screens or gameplay. AUTO is conservative. */
 internal object BackgroundMotionPolicy {
@@ -34,7 +35,7 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
     private var chrome: ConsoleDashboardChrome?=null
     private var artwork: Bitmap?=null
     private val series=SeriesPersonalizationStore(context)
-    private val opening=processOpening
+    private val opening=openingFor(context)
     private val wallpaperScope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
     private val wallpaperLoader=lazy { PosterLoader(context,wallpaperScope) }
     private val wallpaperTarget=FixedArtworkView(context)
@@ -191,5 +192,8 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
         if(wallpaperLoader.isInitialized()) wallpaperLoader.value.close()
         wallpaperScope.cancel()
     }
-    companion object { private val processOpening=UUID.randomUUID().toString() }
+    companion object {
+        private val openings=WeakHashMap<Context,String>()
+        private fun openingFor(context: Context)=synchronized(openings) { openings.getOrPut(context) { UUID.randomUUID().toString() } }
+    }
 }

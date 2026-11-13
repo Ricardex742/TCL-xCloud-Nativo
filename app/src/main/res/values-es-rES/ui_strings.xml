@@ -976,4 +976,14 @@
     <string name="ui_cd55a9d95751fb9b">"{0} · {1}"</string>
     <string name="ui_d6b58ac9653741d8">"{0}, {1}. Abrir Guía"</string>
     <string name="ui_7bbaef08782fd177">"Órbita"</string>
+    <string name="ui_c7ad73ae4ace0e6e">"Cargando imagen…"</string>
+    <string name="ui_4f851461c1cff542">"De la aplicación"</string>
+    <string name="ui_bc22cb00a4d66f2c">"Encuentra un fondo por su nombre."</string>
+    <string name="ui_39278abd1b378f03">"Imagen no disponible. Inténtalo de nuevo."</string>
+    <string name="ui_439affc952fe9c27">"Nombre del fondo"</string>
+    <string name="ui_c597cd5f25cfa618">"Oficiales de Xbox"</string>
+    <string name="ui_d62772e737ecb65a">"Oficiales de Xbox: imágenes estáticas. A: elegir · X: favorito · B: volver"</string>
+    <string name="ui_7d2f3ce39e840f57">"Buscar fondos"</string>
+    <string name="ui_d537f9b442ea6fa2">"Página siguiente"</string>
+    <string name="ui_9bcad734827a849a">"Página anterior"</string>
 </resources>

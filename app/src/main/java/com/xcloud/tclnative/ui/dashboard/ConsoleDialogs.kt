@@ -177,11 +177,15 @@ class ConsoleDialog(context: Context, heading: String,private val purpose: Conso
 }
 
 object ConsoleDialogs {
-    fun search(context: Context, query: String, onSearch: (String) -> Unit): ConsoleDialog {
-        val dialog = ConsoleDialog(context, UiText.text("Pesquisar jogos"),ConsolePanelPurpose.SEARCH)
+    fun search(context: Context, query: String, onSearch: (String) -> Unit): ConsoleDialog = searchField(context,query,
+        UiText.text("Pesquisar jogos"),UiText.text("Nome do jogo"),UiText.text("Encontre um jogo pelo nome."),onSearch)
+    fun searchWallpapers(context: Context,query: String,onSearch: (String) -> Unit): ConsoleDialog = searchField(context,query,
+        UiText.text("Pesquisar fundos"),UiText.text("Nome do fundo"),UiText.text("Encontre um fundo pelo nome."),onSearch)
+    private fun searchField(context: Context,query: String,title: String,placeholder: String,help: String,onSearch: (String) -> Unit): ConsoleDialog {
+        val dialog = ConsoleDialog(context,title,ConsolePanelPurpose.SEARCH)
         val skin=ConsolePanelSkin()
         val field = EditText(dialog.context).apply {
-            setText(query); hint=UiText.text("Nome do jogo"); isSingleLine=true
+            setText(query); hint=placeholder; isSingleLine=true
             typeface=if(skin.enabled) skin.font() else DashboardTheme.font(context, false)
             setTextColor(if(skin.enabled) skin.ink else Color.WHITE); setHintTextColor(if(skin.enabled) skin.muted else DashboardTheme.muted)
             setTextSize(TypedValue.COMPLEX_UNIT_PX, 28*dialog.scale)
@@ -200,7 +204,7 @@ object ConsoleDialogs {
             }
             selectAll()
         }
-        dialog.body.addView(dialog.text(UiText.text("Encontre um jogo pelo nome."), 21, color=DashboardTheme.muted), LinearLayout.LayoutParams(-1,-2)
+        dialog.body.addView(dialog.text(help, 21, color=DashboardTheme.muted), LinearLayout.LayoutParams(-1,-2)
             .apply { bottomMargin=dialog.px(17) })
         dialog.body.addView(field, LinearLayout.LayoutParams(-1,dialog.px(65)))
         dialog.addAction(UiText.text("Limpar busca")) { onSearch("") }

@@ -976,4 +976,14 @@
     <string name="ui_cd55a9d95751fb9b">"{0} · {1}"</string>
     <string name="ui_d6b58ac9653741d8">"{0}, {1}. Open guide"</string>
     <string name="ui_7bbaef08782fd177">"Orbit"</string>
+    <string name="ui_c7ad73ae4ace0e6e">"Loading image…"</string>
+    <string name="ui_4f851461c1cff542">"App backgrounds"</string>
+    <string name="ui_bc22cb00a4d66f2c">"Find a background by name."</string>
+    <string name="ui_39278abd1b378f03">"Image unavailable. Try again."</string>
+    <string name="ui_439affc952fe9c27">"Background name"</string>
+    <string name="ui_c597cd5f25cfa618">"Official Xbox"</string>
+    <string name="ui_d62772e737ecb65a">"Official Xbox: still images. A: choose · X: favorite · B: back"</string>
+    <string name="ui_7d2f3ce39e840f57">"Search backgrounds"</string>
+    <string name="ui_d537f9b442ea6fa2">"Next page"</string>
+    <string name="ui_9bcad734827a849a">"Previous page"</string>
 </resources>

@@ -14,8 +14,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 62
-        versionName = "0.33.10-series-personalization"
+        versionCode = 63
+        versionName = "0.33.11-official-wallpapers"
     }
 
     signingConfigs {

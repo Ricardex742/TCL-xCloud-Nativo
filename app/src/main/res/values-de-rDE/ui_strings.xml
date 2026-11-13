@@ -976,4 +976,14 @@
     <string name="ui_cd55a9d95751fb9b">"{0} · {1}"</string>
     <string name="ui_d6b58ac9653741d8">"{0}, {1}. Guide öffnen"</string>
     <string name="ui_7bbaef08782fd177">"Umlaufbahn"</string>
+    <string name="ui_c7ad73ae4ace0e6e">"Bild wird geladen…"</string>
+    <string name="ui_4f851461c1cff542">"Aus der App"</string>
+    <string name="ui_bc22cb00a4d66f2c">"Suche einen Hintergrund nach Namen."</string>
+    <string name="ui_39278abd1b378f03">"Bild nicht verfügbar. Versuche es erneut."</string>
+    <string name="ui_439affc952fe9c27">"Name des Hintergrunds"</string>
+    <string name="ui_c597cd5f25cfa618">"Offizielle Xbox"</string>
+    <string name="ui_d62772e737ecb65a">"Offizielle Xbox: Standbilder. A: wählen · X: Favorit · B: zurück"</string>
+    <string name="ui_7d2f3ce39e840f57">"Hintergründe suchen"</string>
+    <string name="ui_d537f9b442ea6fa2">"Nächste Seite"</string>
+    <string name="ui_9bcad734827a849a">"Vorherige Seite"</string>
 </resources>

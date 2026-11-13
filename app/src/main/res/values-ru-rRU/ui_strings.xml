@@ -976,4 +976,14 @@
     <string name="ui_cd55a9d95751fb9b">"{0} · {1}"</string>
     <string name="ui_d6b58ac9653741d8">"{0}, {1}. Открыть гид"</string>
     <string name="ui_7bbaef08782fd177">"Орбита"</string>
+    <string name="ui_c7ad73ae4ace0e6e">"Загрузка изображения…"</string>
+    <string name="ui_4f851461c1cff542">"Фоны приложения"</string>
+    <string name="ui_bc22cb00a4d66f2c">"Найдите фон по названию."</string>
+    <string name="ui_39278abd1b378f03">"Изображение недоступно. Попробуйте ещё раз."</string>
+    <string name="ui_439affc952fe9c27">"Название фона"</string>
+    <string name="ui_c597cd5f25cfa618">"Официальные Xbox"</string>
+    <string name="ui_d62772e737ecb65a">"Официальные Xbox: статичные изображения. A: выбрать · X: в избранное · B: назад"</string>
+    <string name="ui_7d2f3ce39e840f57">"Поиск фонов"</string>
+    <string name="ui_d537f9b442ea6fa2">"Следующая страница"</string>
+    <string name="ui_9bcad734827a849a">"Предыдущая страница"</string>
 </resources>

@@ -19,7 +19,7 @@ internal class SeriesPersonalizationPanel(private val context: Context,
             ConsoleAction(UiText.text("Selos nas capas")) { badges() }
         ),back)
     }
-    fun gallery(): ConsoleDialog = SeriesWallpaperGallery(context,backgrounds(),::show).show()
+    fun gallery(): ConsoleDialog = SeriesWallpaperGallery(context,backgrounds(),back={ show() }).show()
     private fun choices(title: String,entries: List<Pair<String,Boolean>>,choose: (Int) -> Unit)=ConsoleDialog(context,title).apply {
         entries.forEachIndexed { i,(label,selected) ->
             val row=addMenuItem(UiText.text("{0}  {1}",UiText.nested(if(selected) "✓" else "○"),UiText.nested(label))) { choose(i) }
@@ -57,7 +57,7 @@ internal class SeriesPersonalizationPanel(private val context: Context,
         else chooseCollection(mode)
     }
     private fun chooseCollection(mode: WallpaperShuffle): ConsoleDialog {
-        val all=(SeriesWallpaper.builtIns+backgrounds()+store.favorites()).distinctBy { it.id }
+        val all=(SeriesWallpaper.builtIns+OfficialXboxWallpapers.read(context)+backgrounds()+store.favorites()).distinctBy { it.id }
         return ConsoleDialog(context,UiText.text("Coleção para troca automática")).apply {
             body.addView(text(UiText.text("Escolha uma coleção com pelo menos dois fundos. A troca pausa durante a partida e é atualizada ao voltar ao menu."),19,color=DashboardTheme.muted))
             WallpaperCategory.entries.forEach { category ->
@@ -65,7 +65,7 @@ internal class SeriesPersonalizationPanel(private val context: Context,
                     WallpaperCategory.ALL -> all
                     WallpaperCategory.FAVORITES -> store.favorites()
                     else -> all.filter { it.category==category }
-                }).take(SeriesPersonalizationStore.MAX_ITEMS)
+                }).take(SeriesPersonalizationStore.MAX_ROTATION_ITEMS)
                 val row=addMenuItem(UiText.text("{0} · {1}",UiText.nested(category.label),UiText.nested(pool.size))) {
                     store.configureShuffle(mode,category,pool);show()
                 }

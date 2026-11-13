@@ -13,21 +13,39 @@ import com.xcloud.tclnative.settings.*
 import com.xcloud.tclnative.signaling.GameTitle
 import kotlinx.coroutines.*
 
-/** Native gallery with one preview and a visible-only thumbnail window, bounded independently of the catalog. */
-internal class SeriesWallpaperGallery(private val context: Context,items: List<SeriesWallpaper>,private val back: () -> Unit) {
+/** A bounded page of views and visible-only thumbnail requests, including large official collections. */
+internal class SeriesWallpaperGallery(private val context: Context,items: List<SeriesWallpaper>,
+    private val officialItems: List<SeriesWallpaper> = OfficialXboxWallpapers.read(context),
+    backend: ArtworkBackend?=null,private val back: () -> Unit) {
     private val store=SeriesPersonalizationStore(context)
     private val entries=items.take(SeriesPersonalizationStore.MAX_ITEMS)
     private val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
-    private val posters=PosterLoader(context,scope)
+    private val posters=PosterLoader(context,scope,backend ?: ArtworkBackend.get(context))
     private val dialog=ConsoleDialog(context,UiText.text("Galeria de fundos"))
     private var category=WallpaperCategory.ALL
+    private var page=0
+    private var query=""
+    private var pages=1
+    private var filteredEntries=emptyList<SeriesWallpaper>()
+    private var focusedId: String?=null
+    private var pendingFocusId: String?=null
+    private var focusGeneration=0
     private var previewed=store.selected()
+    private var previewReady=false
     private val preview=FixedArtworkView(context).apply { scaleType=ImageView.ScaleType.CENTER_CROP }
+    private val previewNotice=dialog.text("",19).apply { gravity=Gravity.CENTER;maxLines=2 }
     private val previewLabel=dialog.text("",21,true).apply {
-        gravity=Gravity.BOTTOM or Gravity.START;setPadding(dialog.px(14),0,dialog.px(14),dialog.px(9))
+        gravity=Gravity.BOTTOM or Gravity.START;maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END
+        setPadding(dialog.px(14),0,dialog.px(14),dialog.px(9))
         background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,intArrayOf(Color.TRANSPARENT,0xe0101518.toInt()))
     }
+    private val help=dialog.text("",16,color=DashboardTheme.muted)
     private val categories=LinearLayout(context).apply { orientation=LinearLayout.HORIZONTAL }
+    private val pager=LinearLayout(context).apply { orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL }
+    private val pageLabel=dialog.text("",17).apply { gravity=Gravity.CENTER }
+    private lateinit var previous: TextView
+    private lateinit var next: TextView
+    private lateinit var search: TextView
     private val strip=LinearLayout(context).apply { orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL }
     private val scroll=HorizontalScrollView(context).apply {
         isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;clipToPadding=false
@@ -41,61 +59,130 @@ internal class SeriesWallpaperGallery(private val context: Context,items: List<S
 
     fun show(): ConsoleDialog {
         val previewFrame=FrameLayout(context).apply {
-            background=SeriesWallpaperArt(previewed.style)
-            addView(preview,FrameLayout.LayoutParams(-1,-1))
-            addView(previewLabel,FrameLayout.LayoutParams(-1,dialog.px(49),Gravity.BOTTOM))
+            setBackgroundColor(0xff10191e.toInt())
+            addView(preview,FrameLayout.LayoutParams(-1,-1));addView(previewNotice,FrameLayout.LayoutParams(-1,-1))
+            addView(previewLabel,FrameLayout.LayoutParams(-1,dialog.px(43),Gravity.BOTTOM))
         }
-        dialog.body.addView(previewFrame,LinearLayout.LayoutParams(-1,dialog.px(192)))
+        dialog.body.addView(previewFrame,LinearLayout.LayoutParams(-1,dialog.px(170)))
         WallpaperCategory.entries.forEach { value ->
             val button=DashboardTheme.button(context,value.label,dialog.scale) { changeCategory(value) }.apply {
-                id=View.generateViewId();setPadding(dialog.px(6),0,dialog.px(6),0)
+                id=View.generateViewId();setPadding(dialog.px(5),0,dialog.px(5),0)
                 typeface=android.graphics.Typeface.create("sans-serif-medium",android.graphics.Typeface.NORMAL)
                 setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,dialog.px(17).toFloat())
                 setOnKeyListener { _,key,event ->
                     if(key==KeyEvent.KEYCODE_DPAD_DOWN && tiles.isNotEmpty()) {
-                        if(event.action==KeyEvent.ACTION_DOWN) tiles.first().view.requestFocus();true
+                        if(event.action==KeyEvent.ACTION_DOWN) focusPage(false);true
                     } else false
                 }
             }
-            categories.addView(button,LinearLayout.LayoutParams(0,-1,1f).apply { marginEnd=dialog.px(6) })
+            categories.addView(button,LinearLayout.LayoutParams(0,-1,1f).apply { marginEnd=dialog.px(5) })
             categoryButtons[value]=button
         }
-        dialog.body.addView(categories,LinearLayout.LayoutParams(-1,dialog.px(42)).apply { topMargin=dialog.px(10);bottomMargin=dialog.px(7) })
+        dialog.body.addView(categories,LinearLayout.LayoutParams(-1,dialog.px(42)).apply { topMargin=dialog.px(8);bottomMargin=dialog.px(5) })
+        previous=pageButton("‹",UiText.text("Página anterior")) { movePage(-1,true) }
+        next=pageButton("›",UiText.text("Próxima página")) { movePage(1,true) }
+        search=pageButton(UiText.text("Pesquisar fundos"),UiText.text("Pesquisar fundos")) {
+            ConsoleDialogs.searchWallpapers(context,query) { value ->
+                query=value.trim().take(120);page=0;clearPendingFocus();renderPage();focusPage(false)
+            }
+        }
+        pager.addView(previous,LinearLayout.LayoutParams(dialog.px(48),-1))
+        pager.addView(pageLabel,LinearLayout.LayoutParams(dialog.px(120),-1))
+        pager.addView(next,LinearLayout.LayoutParams(dialog.px(48),-1))
+        pager.addView(search,LinearLayout.LayoutParams(dialog.px(250),-1).apply { marginStart=dialog.px(14) })
+        dialog.body.addView(pager,LinearLayout.LayoutParams(-1,dialog.px(34)).apply { bottomMargin=dialog.px(4) })
         dialog.body.addView(scroll,LinearLayout.LayoutParams(-1,dialog.px(119)))
-        dialog.body.addView(dialog.text(UiText.text("A: escolher fundo · X: favoritar · B: voltar"),17,color=DashboardTheme.muted),LinearLayout.LayoutParams(-1,-2))
+        dialog.body.addView(help,LinearLayout.LayoutParams(-1,-2))
         favoriteButton=dialog.addPersistentAction(UiText.text("Favoritar fundo")) { toggleFavorite() }.apply {
             maxLines=1
             if(android.os.Build.VERSION.SDK_INT>=26) setAutoSizeTextTypeUniformWithConfiguration(
                 dialog.px(13).coerceAtLeast(1),dialog.px(22).coerceAtLeast(2),1,android.util.TypedValue.COMPLEX_UNIT_PX)
             else setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,dialog.px(16).toFloat())
         }
-        applyButton=dialog.addAction(UiText.text("Usar fundo")) { store.select(previewed);back() }.apply { id=View.generateViewId() }
+        applyButton=dialog.addPersistentAction(UiText.text("Usar fundo")) { choose(previewed) }.apply { id=View.generateViewId() }
         dialog.addAction(UiText.text("Voltar"),back)
         dialog.shortcut={ event ->
-            if(event.keyCode==KeyEvent.KEYCODE_BUTTON_X) {
+            if(handleHorizontal(event)) true else if(event.keyCode==KeyEvent.KEYCODE_BUTTON_A && pendingFocusId!=null) {
+                // A detached tile must never apply the previous page's image.
+                true
+            } else if(event.keyCode==KeyEvent.KEYCODE_BUTTON_X) {
+                pendingFocusId?.let { id -> filteredEntries.firstOrNull { it.id==id }?.let(::showPreview) }
                 if(event.action==KeyEvent.ACTION_DOWN && event.repeatCount==0) toggleFavorite();true
             } else false
         }
         scroll.setOnScrollChangeListener { _,_,_,_,_ -> loadVisible() }
-        dialog.addCleanup { posters.close();scope.cancel() }
-        dialog.setOnCancelListener { back() }
-        changeCategory(category);showPreview(previewed)
+        dialog.addCleanup { posters.close();scope.cancel() };dialog.setOnCancelListener { back() }
+        page=(all().indexOfFirst { it.id==previewed.id }.coerceAtLeast(0))/PAGE_SIZE
+        renderPage();showPreview(previewed)
         dialog.focusFirst(tiles.firstOrNull { it.entry.id==previewed.id }?.view ?: categoryButtons.getValue(category))
         dialog.show();scroll.doOnLayout { loadVisible() }
         return dialog
     }
-    private fun all()=(SeriesWallpaper.builtIns+entries+store.favorites()+store.selected()).distinctBy { it.id }
-    private fun changeCategory(value: WallpaperCategory) {
-        category=value;tiles.forEach { posters.cancel(it.image) };tiles.clear();strip.removeAllViews()
-        val items=when(value) {
-            WallpaperCategory.ALL -> all()
-            WallpaperCategory.FAVORITES -> store.favorites()
-            else -> all().filter { it.category==value }
+    private fun pageButton(label: String,description: String,action: () -> Unit)=DashboardTheme.button(context,label,dialog.scale,action).apply {
+        id=View.generateViewId();contentDescription=description;setPadding(dialog.px(5),0,dialog.px(5),0)
+        typeface=android.graphics.Typeface.create("sans-serif-medium",android.graphics.Typeface.NORMAL)
+        setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,dialog.px(17).toFloat())
+    }
+    private fun all()=(SeriesWallpaper.builtIns+officialItems+entries+store.favorites()+store.selected()).distinctBy { it.id }
+    private fun collection()=when(category) {
+        WallpaperCategory.ALL -> all();WallpaperCategory.FAVORITES -> store.favorites()
+        else -> all().filter { it.category==category }
+    }
+    private fun clearPendingFocus() { ++focusGeneration;pendingFocusId=null;focusedId=null }
+    private fun changeCategory(value: WallpaperCategory) { clearPendingFocus();category=value;query="";page=0;renderPage() }
+    private fun movePage(step: Int,focus: Boolean) {
+        val target=page+step;if(target !in 0 until pages) return
+        page=target;renderPage();if(focus) focusPage(step<0)
+    }
+    private fun focusPage(last: Boolean) {
+        val tile=if(last) tiles.lastOrNull() else tiles.firstOrNull()
+        if(tile==null) { clearPendingFocus();search.requestFocus() } else focusTile(tile.entry.id)
+    }
+    private fun focusTile(id: String) {
+        pendingFocusId=id;focusedId=id;val request=++focusGeneration
+        fun focus(attempt: Int) {
+            if(!dialog.isShowing || request!=focusGeneration) return
+            val target=tiles.firstOrNull { it.entry.id==id }?.view ?: return
+            if(target.width>0 && target.height>0 && target.requestFocus()) {
+                pendingFocusId=null
+                target.requestRectangleOnScreen(android.graphics.Rect(0,0,target.width,target.height),true)
+            } else if(attempt<4) {
+                scroll.doOnLayout { focus(attempt+1) };scroll.requestLayout()
+            }
         }
-        categoryButtons.forEach { (key,button) -> button.isSelected=key==value;button.background=tilePlate(key==value) }
+        focus(0)
+    }
+    private fun handleHorizontal(event: KeyEvent): Boolean {
+        if(event.keyCode!=KeyEvent.KEYCODE_DPAD_LEFT && event.keyCode!=KeyEvent.KEYCODE_DPAD_RIGHT) return false
+        val current=tiles.firstOrNull { it.view.hasFocus() }
+        if(current==null && pendingFocusId==null) return false
+        if(event.action==KeyEvent.ACTION_DOWN) {
+            val at=filteredEntries.indexOfFirst { it.id==(pendingFocusId ?: current?.entry?.id ?: focusedId) }
+            val target=at+if(event.keyCode==KeyEvent.KEYCODE_DPAD_RIGHT) 1 else -1
+            if(at>=0 && target in filteredEntries.indices) {
+                val id=filteredEntries[target].id
+                pendingFocusId=id;focusedId=id
+                if(page!=target/PAGE_SIZE) { page=target/PAGE_SIZE;renderPage() }
+                focusTile(id)
+            }
+        }
+        return true
+    }
+    private fun renderPage() {
+        tiles.forEach { posters.cancel(it.image) };tiles.clear();strip.removeAllViews()
+        val source=collection();val filtered=if(query.isBlank()) source else source.filter { it.label.contains(query,true) }
+        filteredEntries=filtered
+        pages=((filtered.size+PAGE_SIZE-1)/PAGE_SIZE).coerceAtLeast(1);page=page.coerceIn(0,pages-1)
+        val items=filtered.drop(page*PAGE_SIZE).take(PAGE_SIZE)
+        pager.visibility=if(source.size>PAGE_SIZE || query.isNotBlank()) View.VISIBLE else View.GONE
+        previous.isEnabled=page>0;next.isEnabled=page<pages-1
+        previous.alpha=if(previous.isEnabled) 1f else .4f;next.alpha=if(next.isEnabled) 1f else .4f
+        pageLabel.text="${page+1} / $pages"
+        search.text=UiText.text("Pesquisar fundos")
+        categoryButtons.forEach { (key,button) -> button.isSelected=key==category;button.background=tilePlate(key==category) }
         if(items.isEmpty()) strip.addView(dialog.text(UiText.text("Nenhum fundo nesta categoria."),20),LinearLayout.LayoutParams(-2,-2))
         items.forEach { entry ->
-            val image=FixedArtworkView(context).apply { scaleType=ImageView.ScaleType.CENTER_CROP }
+            val image=FixedArtworkView(context).apply { scaleType=ImageView.ScaleType.CENTER_CROP;setBackgroundColor(0xff10191e.toInt()) }
             if(entry.artUrl==null) image.setImageDrawable(SeriesWallpaperArt(entry.style))
             val label=dialog.text(entry.label,16).apply { maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END;gravity=Gravity.CENTER_VERTICAL;setPadding(dialog.px(5),0,dialog.px(5),0) }
             val tile=FrameLayout(context).apply {
@@ -104,26 +191,24 @@ internal class SeriesWallpaperGallery(private val context: Context,items: List<S
                 addView(image,FrameLayout.LayoutParams(-1,dialog.px(78)))
                 addView(label,FrameLayout.LayoutParams(-1,dialog.px(28),Gravity.BOTTOM))
                 setOnFocusChangeListener { _,focused ->
-                    background=tilePlate(focused);if(focused) showPreview(entry)
+                    background=tilePlate(focused)
+                    if(focused && (pendingFocusId==null || pendingFocusId==entry.id)) {
+                        pendingFocusId=null;focusedId=entry.id;showPreview(entry)
+                    }
                 }
-                setOnClickListener { store.select(entry);dialog.dismiss();back() }
+                setOnClickListener {
+                    clearPendingFocus();focusedId=entry.id
+                    if(previewed.id==entry.id && previewReady) choose(entry) else showPreview(entry)
+                }
             }
-            tile.background=tilePlate(false)
-            tiles+=Tile(entry,tile,image,label)
+            tile.background=tilePlate(false);tiles+=Tile(entry,tile,image,label)
             strip.addView(tile,LinearLayout.LayoutParams(dialog.px(151),dialog.px(111)).apply { marginEnd=dialog.px(10) })
         }
         tiles.forEachIndexed { i,tile ->
             tile.view.nextFocusLeftId=tiles[(i-1).coerceAtLeast(0)].view.id
             tile.view.nextFocusRightId=tiles[(i+1).coerceAtMost(tiles.lastIndex)].view.id
-            tile.view.nextFocusUpId=categoryButtons.getValue(value).id
-            tile.view.nextFocusDownId=applyButton.id
-            tile.view.setOnKeyListener { _,key,event ->
-                if(key==KeyEvent.KEYCODE_DPAD_LEFT || key==KeyEvent.KEYCODE_DPAD_RIGHT) {
-                    if(event.action==KeyEvent.ACTION_DOWN) {
-                        tiles[(i+if(key==KeyEvent.KEYCODE_DPAD_RIGHT) 1 else -1).coerceIn(0,tiles.lastIndex)].view.requestFocus()
-                    };true
-                } else false
-            }
+            tile.view.nextFocusUpId=categoryButtons.getValue(category).id;tile.view.nextFocusDownId=applyButton.id
+            tile.view.setOnKeyListener { _,_,event -> handleHorizontal(event) }
         }
         updateFavorites();scroll.scrollTo(0,0);scroll.doOnLayout { loadVisible() }
     }
@@ -131,28 +216,37 @@ internal class SeriesWallpaperGallery(private val context: Context,items: List<S
         setColor(0xff171e22.toInt());cornerRadius=dialog.px(4).toFloat()
         if(focused) setStroke(dialog.px(2).coerceAtLeast(1),DashboardTheme.accent)
     }
+    private fun choose(entry: SeriesWallpaper) {
+        if(!previewReady || previewed.id!=entry.id) return
+        store.select(entry);dialog.dismiss();back()
+    }
     private fun showPreview(entry: SeriesWallpaper) {
-        previewed=entry
-        preview.background=SeriesWallpaperArt(entry.style)
-        if(entry.artUrl!=null) posters.load(preview,entry.artUrl,768,432) else {
-            posters.cancel(preview);preview.setImageDrawable(SeriesWallpaperArt(entry.style))
-        }
-        previewLabel.text=entry.label;updateFavoriteButton()
+        previewed=entry;previewReady=entry.artUrl==null
+        preview.setBackgroundColor(0xff10191e.toInt());previewNotice.visibility=if(previewReady) View.GONE else View.VISIBLE
+        previewNotice.text=UiText.text("Carregando imagem…")
+        applyButton.isEnabled=previewReady;applyButton.alpha=if(previewReady) 1f else .45f
+        if(entry.artUrl!=null) posters.load(preview,entry.artUrl,768,432,notifyPlaceholder=false) { ready ->
+            if(previewed.id==entry.id) {
+                previewReady=ready;previewNotice.visibility=if(ready) View.GONE else View.VISIBLE
+                if(!ready) previewNotice.text=UiText.text("Imagem indisponível. Tente novamente.")
+                applyButton.isEnabled=ready;applyButton.alpha=if(ready) 1f else .45f
+            }
+        } else { posters.cancel(preview);preview.setImageDrawable(SeriesWallpaperArt(entry.style)) }
+        previewLabel.text=entry.label
+        help.text=if(entry.official) UiText.text("Oficiais Xbox: imagens estáticas. A: escolher · X: favoritar · B: voltar")
+            else UiText.text("A: escolher fundo · X: favoritar · B: voltar")
+        updateFavoriteButton()
     }
     private fun toggleFavorite() {
         store.toggleFavorite(previewed)
-        if(category==WallpaperCategory.FAVORITES) {
-            changeCategory(category)
-            (tiles.firstOrNull()?.view ?: categoryButtons.getValue(category)).requestFocus()
-        }
+        if(category==WallpaperCategory.FAVORITES) { renderPage();focusPage(false) }
         updateFavorites()
     }
     private fun updateFavoriteButton() {
         if(::favoriteButton.isInitialized) favoriteButton.text=UiText.uppercase(if(store.isFavorite(previewed.id)) UiText.text("Remover dos fundos favoritos") else UiText.text("Favoritar fundo"))
     }
     private fun updateFavorites() {
-        updateFavoriteButton()
-        val favorites=store.favorites().map { it.id }.toSet()
+        updateFavoriteButton();val favorites=store.favorites().map { it.id }.toSet()
         tiles.forEach { tile ->
             val favorite=tile.entry.id in favorites
             tile.label.text=UiText.text("{0}{1}",UiText.nested(if(favorite) "★ " else ""),UiText.nested(tile.entry.label))
@@ -163,11 +257,12 @@ internal class SeriesWallpaperGallery(private val context: Context,items: List<S
         if(scroll.width<=0 || !dialog.isShowing) return
         tiles.forEach { tile -> if(tile.entry.artUrl!=null) {
             if(tile.view.right>=scroll.scrollX-dialog.px(151) && tile.view.left<=scroll.scrollX+scroll.width+dialog.px(151))
-                posters.load(tile.image,tile.entry.artUrl,256,144)
+                posters.load(tile.image,tile.entry.previewUrl ?: tile.entry.artUrl,256,144)
             else posters.cancel(tile.image)
         } }
     }
     companion object {
+        const val PAGE_SIZE=24
         fun fromGames(games: List<GameTitle>,preferred: List<GameTitle> = emptyList())=(preferred.asSequence()+games.asSequence()).filter { !it.heroUrl.isNullOrBlank() }
             .distinctBy { it.titleId }.take(SeriesPersonalizationStore.MAX_ITEMS).map {
                 SeriesWallpaper("game:${it.titleId}",it.name,artUrl=it.heroUrl,category=WallpaperCategory.GAMES)

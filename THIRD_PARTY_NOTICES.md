@@ -74,3 +74,19 @@ The original SVG artwork, source URLs and hashes are retained in
 The APK uses proportion-preserving raster renderings of those SVGs, with
 monochrome display variants where needed for contrast. Game Pass and Series
 catalog symbols use scalable Android vector outlines instead of bitmap crops.
+
+## Official Xbox wallpapers
+
+The optional **Official Xbox** wallpaper collection uses the public
+[Xbox wallpaper gallery](https://www.xbox.com/en-US/wallpapers) and its
+[published catalog](https://www.xbox.com/en-US/wallpapers/JS/wallpapers-Sheet.js).
+`assets/wallpapers/xbox-official.json` retains titles, preview URLs and the
+publisher's console-size image URLs. Images are fetched from Microsoft's CDN
+when displayed; the catalog contains static images, not console animation
+packages. Their copyrights remain with Microsoft and the respective artists
+and publishers. The project's MIT license does not license those images.
+
+The unchanged Xbox 360 and Xbox Series image fixtures under
+`app/src/test/resources/wallpapers/` are used only by automated interface tests
+and are not packaged in the application. Their public source URLs and hashes
+are recorded in `third_party/xbox-wallpapers/FIXTURES.json`.

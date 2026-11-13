@@ -56,7 +56,7 @@ class SeriesPersonalizationUiTest {
         val c=Robolectric.buildActivity(Activity::class.java).setup();val a=c.get();a.setContentView(FrameLayout(a));layout(a.window.decorView)
         val store=SeriesPersonalizationStore(a);val before=PlaybackSettingsStore(a).read();var back=0
         try {
-            val gallery=SeriesWallpaperGallery(a,emptyList()) { back++ }.show();capture(gallery,"wallpaper-gallery")
+            val gallery=SeriesWallpaperGallery(a,emptyList(),officialItems=emptyList()) { back++ }.show();capture(gallery,"wallpaper-gallery")
             assertFalse(store.read().gallery)
             val scroll=all(gallery.panel).filterIsInstance<HorizontalScrollView>().single()
             val tiles=all(scroll).filterIsInstance<FrameLayout>().filter { it.isClickable }
@@ -70,7 +70,7 @@ class SeriesPersonalizationUiTest {
             click(gallery,"USAR FUNDO")
             assertTrue(store.read().gallery);assertEquals("platinum",store.selected().id);assertEquals(1,back)
             assertEquals(before,PlaybackSettingsStore(a).read())
-            val favorites=SeriesWallpaperGallery(a,emptyList()) {}.show()
+            val favorites=SeriesWallpaperGallery(a,emptyList(),officialItems=emptyList()) {}.show()
             click(favorites,"Favoritos");capture(favorites,"wallpaper-favorites")
             val remove=all(favorites.panel).filterIsInstance<TextView>().single { it.isClickable && it.text.contains("REMOVER DOS FUNDOS") }
             assertEquals("Favorite action must fit a single visible line",1,remove.layout.lineCount)
@@ -232,7 +232,7 @@ class SeriesPersonalizationUiTest {
             val grid=all(view).filterIsInstance<RecyclerView>().single()
             await { grid.childCount==6 && all(grid).filterIsInstance<FixedArtworkView>().all { it.drawable is BitmapDrawable } }
             capture(view,"library-artwork")
-            val gallery=SeriesWallpaperGallery(a,view.wallpaperChoices()) {}.show()
+            val gallery=SeriesWallpaperGallery(a,view.wallpaperChoices(),officialItems=emptyList()) {}.show()
             click(gallery,"Jogos");capture(gallery,"gallery-artwork")
             val scroll=all(gallery.panel).filterIsInstance<HorizontalScrollView>().single()
             val first=all(scroll).filterIsInstance<FrameLayout>().first { it.isClickable }

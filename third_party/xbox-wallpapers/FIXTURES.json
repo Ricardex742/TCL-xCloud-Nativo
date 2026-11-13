@@ -1,0 +1,16 @@
+[
+  {
+    "title": "XBOX 360 Logo",
+    "file": "app/src/test/resources/wallpapers/xbox-360.png",
+    "source": "https://assets.xboxservices.com/assets/15/26/1526d4b4-1a90-40bf-8f88-b1e5e5eafa56.png?n=5269945_BoM_Wallpaper-Xbox_Xbox-360_1920x1080.png",
+    "sha256": "13dcf53b6950d4296e8b6daf12fcd03ec3a74b3c49fa26ad97518da6760930aa",
+    "usage": "Unmodified automated UI test fixture; not bundled in APK."
+  },
+  {
+    "title": "XBOX Series Logo",
+    "file": "app/src/test/resources/wallpapers/xbox-series.png",
+    "source": "https://assets.xboxservices.com/assets/68/e5/68e58171-2dde-4c7b-8359-fee0e19b643c.png?n=5269945_BoM_Wallpaper-Xbox_Xbox-Series-X_1920x1080.png",
+    "sha256": "0d3d7155291f7fe83a8fd1b928ecc70281acd6612ef42c9c85d4245b8794f2f5",
+    "usage": "Unmodified automated UI test fixture; not bundled in APK."
+  }
+]

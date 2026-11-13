@@ -976,4 +976,14 @@
     <string name="ui_cd55a9d95751fb9b">"{0} · {1}"</string>
     <string name="ui_d6b58ac9653741d8">"{0}, {1}. Kılavuzu aç"</string>
     <string name="ui_7bbaef08782fd177">"Yörünge"</string>
+    <string name="ui_c7ad73ae4ace0e6e">"Görsel yükleniyor…"</string>
+    <string name="ui_4f851461c1cff542">"Uygulama arka planları"</string>
+    <string name="ui_bc22cb00a4d66f2c">"Ada göre arka plan bulun."</string>
+    <string name="ui_39278abd1b378f03">"Görsel kullanılamıyor. Yeniden deneyin."</string>
+    <string name="ui_439affc952fe9c27">"Arka plan adı"</string>
+    <string name="ui_c597cd5f25cfa618">"Resmî Xbox"</string>
+    <string name="ui_d62772e737ecb65a">"Resmî Xbox: sabit görseller. A: seç · X: favori · B: geri"</string>
+    <string name="ui_7d2f3ce39e840f57">"Arka plan ara"</string>
+    <string name="ui_d537f9b442ea6fa2">"Sonraki sayfa"</string>
+    <string name="ui_9bcad734827a849a">"Önceki sayfa"</string>
 </resources>

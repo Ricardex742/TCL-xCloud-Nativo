@@ -14,17 +14,19 @@ enum class WallpaperShuffle(private val source: String,val periodMs: Long=0) {
     val label get()=UiText.text(source)
 }
 enum class WallpaperCategory(private val source: String) {
-    ALL("Todos os fundos"), XBOX("Xbox"), ABSTRACT("Abstratos"), GAMES("Jogos"), FAVORITES("Favoritos");
+    ALL("Todos os fundos"), OFFICIAL("Oficiais Xbox"), XBOX("Do aplicativo"), ABSTRACT("Abstratos"), GAMES("Jogos"), FAVORITES("Favoritos");
     val label get()=UiText.text(source)
 }
 enum class WallpaperStyle { FLOW, HORIZON, AURORA, ORBIT, SUNSET, PLATINUM }
 
 /** Public artwork metadata only. A wallpaper never represents ownership or changes a cloud title. */
 data class SeriesWallpaper(val id: String,val name: String,val style: WallpaperStyle=WallpaperStyle.FLOW,
-                           val artUrl: String?=null,val category: WallpaperCategory=WallpaperCategory.ABSTRACT) {
+                           val artUrl: String?=null,val category: WallpaperCategory=WallpaperCategory.ABSTRACT,
+                           val previewUrl: String?=null) {
+    val official get()=category==WallpaperCategory.OFFICIAL && id.startsWith("official:")
     val label get()=if(artUrl==null) UiText.text(name) else name
     fun json(): String=JSONObject().put("id",id).put("name",name).put("style",style.name)
-        .put("url",artUrl).put("category",category.name).toString()
+        .put("url",artUrl).put("category",category.name).put("preview",previewUrl).toString()
     companion object {
         val builtIns=listOf(
             SeriesWallpaper("flow","Fluxo Xbox",WallpaperStyle.FLOW,category=WallpaperCategory.XBOX),
@@ -39,7 +41,8 @@ data class SeriesWallpaper(val id: String,val name: String,val style: WallpaperS
             val builtIn=builtIns.firstOrNull { it.id==id }
             if(builtIn!=null) builtIn else {
                 val url=o.optString("url")
-                if(!id.startsWith("game:") || id.length>180 || name.isBlank() || name.length>240 ||
+                if(id.startsWith("official:")) OfficialXboxWallpapers.entry(name,url,o.optString("preview").takeIf { it.isNotBlank() })?.takeIf { it.id==id }
+                else if(!id.startsWith("game:") || id.length>180 || name.isBlank() || name.length>240 ||
                     url.length>4096 || !(url.startsWith("https://") || url.startsWith("http://"))) null
                 else SeriesWallpaper(id,name,artUrl=url,category=WallpaperCategory.GAMES)
             }
@@ -53,6 +56,8 @@ data class SeriesPreferences(val gallery: Boolean=false,val guide: SeriesGuideSi
 /** Separate device preferences; no playback, account or entitlement settings are written here. */
 class SeriesPersonalizationStore(context: Context) {
     private val prefs=context.getSharedPreferences("app_appearance",Context.MODE_PRIVATE)
+    private var poolSnapshot: Set<String>?=null
+    private var decodedPool=emptyList<SeriesWallpaper>()
     fun read()=SeriesPreferences(prefs.getBoolean("series_gallery",false),
         SeriesGuideSide.entries.firstOrNull { it.name==prefs.getString("series_guide",null) } ?: SeriesGuideSide.OFF,
         prefs.getBoolean("series_library_grid",false),prefs.getBoolean("series_badge_pass",true),prefs.getBoolean("series_badge_xs",true))
@@ -81,7 +86,7 @@ class SeriesPersonalizationStore(context: Context) {
         val current=if(wasGallery && shuffle()!=WallpaperShuffle.OFF) SeriesWallpaper.parse(prefs.getString("series_rotation_item",null)) else null
         val editor=prefs.edit().putBoolean("series_gallery",wasGallery || mode!=WallpaperShuffle.OFF).putString("series_shuffle",mode.name)
             .putString("series_shuffle_category",category.name)
-            .putStringSet("series_shuffle_items",items.distinctBy { it.id }.take(MAX_ITEMS).map { it.json() }.toSet())
+            .putStringSet("series_shuffle_items",items.distinctBy { it.id }.take(MAX_ROTATION_ITEMS).map { it.json() }.toSet())
             .remove("series_rotation_slot")
         if(mode==WallpaperShuffle.OFF) {
             current?.let { editor.putString("series_wallpaper",it.json()) }
@@ -89,9 +94,13 @@ class SeriesPersonalizationStore(context: Context) {
         } else if(!wasGallery) editor.remove("series_rotation_item").remove("series_rotation_time")
         editor.apply()
     }
-    private fun decode(items: Set<String>)=items.asSequence().take(MAX_ITEMS).mapNotNull(SeriesWallpaper::parse).distinctBy { it.id }.sortedBy { it.id }.toList()
-    private fun pool(): List<SeriesWallpaper> = if(category()==WallpaperCategory.FAVORITES) favorites()
-        else decode(prefs.getStringSet("series_shuffle_items",emptySet()) ?: emptySet())
+    private fun decode(items: Set<String>,limit: Int=MAX_ITEMS)=items.asSequence().take(limit).mapNotNull(SeriesWallpaper::parse).distinctBy { it.id }.sortedBy { it.id }.toList()
+    private fun pool(): List<SeriesWallpaper> {
+        if(category()==WallpaperCategory.FAVORITES) return favorites()
+        val raw=prefs.getStringSet("series_shuffle_items",emptySet()) ?: emptySet()
+        if(raw!==poolSnapshot) { decodedPool=decode(raw,MAX_ROTATION_ITEMS);poolSnapshot=raw }
+        return decodedPool
+    }
 
     /** Resolve once per opening/period, persist across process death, and avoid immediate repeats. */
     @Synchronized fun resolve(now: Long,opening: String): SeriesWallpaper? {
@@ -115,5 +124,5 @@ class SeriesPersonalizationStore(context: Context) {
         if(!read().gallery || period==0L || pool().size<2) return null
         return (prefs.getLong("series_rotation_time",now)+period-now).coerceIn(1000L,period)
     }
-    companion object { const val MAX_ITEMS=80 }
+    companion object { const val MAX_ITEMS=80;const val MAX_ROTATION_ITEMS=1024 }
 }

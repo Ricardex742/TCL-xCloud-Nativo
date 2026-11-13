@@ -481,6 +481,12 @@ class PlaybackSettingsPanel(
         enter(SettingsPage.AUDIO)
         val current=store.read()
         return ConsoleDialogs.menu(context,UiText.text("Áudio e microfone"),listOf(
+            ConsoleAction(UiText.text("Perfil de áudio: {0}", UiText.nested(current.audioMode.label))) {
+                choices(UiText.text("Perfil de áudio"), UiText.text("Solicita saída de áudio de baixa latência no Android 8 ou superior. O sistema pode ignorar o pedido. Padrão mantém o comportamento atual. Vale na próxima partida; volte ao padrão se houver estalos ou cortes."),
+                    AudioPlaybackMode.entries.map { it.label to (it==current.audioMode) }, { showAudio(onBack) }) {
+                    save(current.copy(audioMode=AudioPlaybackMode.entries[it])) { showAudio(onBack) }
+                }
+            },
             ConsoleAction(UiText.text("Ganho de áudio: {0}%",UiText.nested(current.audioGain))) {
                 val values=listOf(0,50,75,100,125,150,175,200,250,300)
                 choices(UiText.text("Ganho de áudio"),UiText.text("100% preserva o volume. Acima disso, o app aumenta gradualmente e reduz o ganho ao detectar picos no áudio. Transientes ainda podem distorcer. Comece em 125%. O foco e o volume do Android continuam ativos."),

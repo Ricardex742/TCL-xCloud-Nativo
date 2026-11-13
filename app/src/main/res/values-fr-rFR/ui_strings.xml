@@ -995,4 +995,15 @@
     <string name="ui_9d281f72d3373f8c">"Contournement régional : {0}"</string>
     <string name="ui_aa906b2908f8daa1">"Contournement régional demandé à la connexion : {0}"</string>
     <string name="ui_2b0e063afdb272b2">"Tente d’accéder à xCloud avec un pays de référence à la connexion. Ce n’est pas un VPN et votre adresse IP réelle ne change pas. Xbox peut refuser la demande. Le changement s’applique à la reconnexion du compte ou à la réouverture de l’application ; la connexion enregistrée est conservée."</string>
+    <string name="ui_0758c00e6ea0ca61">"Standard"</string>
+    <string name="ui_4253893f5051c439">"Faible latence — expérimental"</string>
+    <string name="ui_b946ef5c5fe755ae">"indisponible avec cette API"</string>
+    <string name="ui_e849deb259052254">"demandée"</string>
+    <string name="ui_88ac27b213eb7c22">"non demandée"</string>
+    <string name="ui_3bc8e7c5b0b1cf51">"Profil audio : {0} | Faible latence Android : {1} | Mode effectif : non exposé par la bibliothèque"</string>
+    <string name="ui_8a5bf43af64a19a2">"Audio RTP (dernier échantillon) : {0} | gigue {1} ms | tampon WebRTC {2} ms | cible {3} ms | pertes {4}"</string>
+    <string name="ui_d73e3fbd25515dbc">"Le tampon audio WebRTC ne mesure ni le retard des haut-parleurs ni la synchronisation audiovisuelle complète."</string>
+    <string name="ui_1ef0501e1ba5598b">"Profil audio : {0}"</string>
+    <string name="ui_38d375dfc7df0844">"Profil audio"</string>
+    <string name="ui_2197cdc9c936bdca">"Demande une sortie audio à faible latence sous Android 8 ou ultérieur. Le système peut ignorer la demande. Standard conserve le comportement actuel. S’applique à la prochaine partie ; revenez à Standard en cas de grésillements ou de coupures."</string>
 </resources>

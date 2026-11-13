@@ -995,4 +995,15 @@
     <string name="ui_9d281f72d3373f8c">"Bölge kısıtlamasını aşma: {0}"</string>
     <string name="ui_aa906b2908f8daa1">"Girişte istenen bölge kısıtlamasını aşma: {0}"</string>
     <string name="ui_2b0e063afdb272b2">"Girişte bir referans ülke kullanarak xCloud’a erişmeyi dener. VPN değildir ve gerçek IP adresinizi değiştirmez. Xbox isteği reddedebilir. Değişiklik, hesabı yeniden bağlayınca veya uygulamayı yeniden açınca uygulanır; kayıtlı girişiniz korunur."</string>
+    <string name="ui_0758c00e6ea0ca61">"Standart"</string>
+    <string name="ui_4253893f5051c439">"Düşük gecikme — deneysel"</string>
+    <string name="ui_b946ef5c5fe755ae">"bu API’de kullanılamıyor"</string>
+    <string name="ui_e849deb259052254">"istendi"</string>
+    <string name="ui_88ac27b213eb7c22">"istenmedi"</string>
+    <string name="ui_3bc8e7c5b0b1cf51">"Ses profili: {0} | Android düşük gecikme: {1} | Gerçek mod: kütüphane tarafından sunulmuyor"</string>
+    <string name="ui_8a5bf43af64a19a2">"Ses RTP (son örnek): {0} | titreşim {1} ms | WebRTC arabelleği {2} ms | hedef {3} ms | kayıp {4}"</string>
+    <string name="ui_d73e3fbd25515dbc">"WebRTC ses arabelleği, hoparlör gecikmesini veya tam ses ve görüntü senkronizasyonunu ölçmez."</string>
+    <string name="ui_1ef0501e1ba5598b">"Ses profili: {0}"</string>
+    <string name="ui_38d375dfc7df0844">"Ses profili"</string>
+    <string name="ui_2197cdc9c936bdca">"Android 8 ve üzerinde düşük gecikmeli ses çıkışı ister. Sistem isteği yok sayabilir. Standart, mevcut davranışı korur. Sonraki oyun oturumunda uygulanır; çıtırtı veya kesilme olursa Standart’a dönün."</string>
 </resources>

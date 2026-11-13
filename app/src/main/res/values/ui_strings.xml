@@ -995,4 +995,15 @@
     <string name="ui_9d281f72d3373f8c">"Bypass de região: {0}"</string>
     <string name="ui_aa906b2908f8daa1">"Bypass de região solicitado no login: {0}"</string>
     <string name="ui_2b0e063afdb272b2">"Tenta acessar o xCloud usando um país de referência no login. Não é VPN e não altera seu IP real. O Xbox pode recusar o pedido. A mudança vale ao reconectar a conta ou reabrir o app; seu login salvo é preservado."</string>
+    <string name="ui_0758c00e6ea0ca61">"Padrão"</string>
+    <string name="ui_4253893f5051c439">"Baixa latência — experimental"</string>
+    <string name="ui_b946ef5c5fe755ae">"indisponível nesta API"</string>
+    <string name="ui_e849deb259052254">"solicitada"</string>
+    <string name="ui_88ac27b213eb7c22">"não solicitada"</string>
+    <string name="ui_3bc8e7c5b0b1cf51">"Perfil de áudio: {0} | Baixa latência Android: {1} | Modo efetivo: não exposto pela biblioteca"</string>
+    <string name="ui_8a5bf43af64a19a2">"Áudio RTP (última amostra): {0} | jitter {1} ms | buffer WebRTC {2} ms | alvo {3} ms | perdas {4}"</string>
+    <string name="ui_d73e3fbd25515dbc">"O buffer de áudio WebRTC não mede o atraso dos alto-falantes nem o sincronismo completo."</string>
+    <string name="ui_1ef0501e1ba5598b">"Perfil de áudio: {0}"</string>
+    <string name="ui_38d375dfc7df0844">"Perfil de áudio"</string>
+    <string name="ui_2197cdc9c936bdca">"Solicita saída de áudio de baixa latência no Android 8 ou superior. O sistema pode ignorar o pedido. Padrão mantém o comportamento atual. Vale na próxima partida; volte ao padrão se houver estalos ou cortes."</string>
 </resources>

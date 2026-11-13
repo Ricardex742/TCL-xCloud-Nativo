@@ -5,6 +5,11 @@ import com.xcloud.tclnative.i18n.UiText
 import android.content.Context
 import com.xcloud.tclnative.webrtc.StreamResolution
 
+enum class AudioPlaybackMode(private val source: String) {
+    STANDARD("Padrão"), LOW_LATENCY("Baixa latência — experimental");
+    val label get() = UiText.text(source)
+}
+
 enum class VideoMode(private val sourceLabel: String, val lowLatency: Boolean) {
     LOW_LATENCY("Menor atraso", true), ADAPTIVE("Adaptativo", false),
     COMPATIBILITY("Compatibilidade — TVs mais fracas", false);
@@ -64,7 +69,8 @@ data class PlaybackSettings(
     val fsrOutput: FsrOutput = FsrOutput.AUTO,
     val imageTreatment: ImageTreatmentSettings = ImageTreatmentSettings(),
     val presentationPacing: PresentationPacing = PresentationPacing.OFF,
-    val reconstruction: ReconstructionSettings = ReconstructionSettings()
+    val reconstruction: ReconstructionSettings = ReconstructionSettings(),
+    val audioMode: AudioPlaybackMode = AudioPlaybackMode.STANDARD
 ) {
     fun forSession(): PlaybackSettings {
         val selected=if(videoCodec==VideoCodecMode.H264_BASELINE || videoMode==VideoMode.COMPATIBILITY)
@@ -120,7 +126,8 @@ class PlaybackSettingsStore(context: Context) {
             ReconstructionSettings(
                 ReconstructionQuality.entries.firstOrNull { it.name==prefs.getString("reconstruction_quality",null) } ?: ReconstructionQuality.AUTO,
                 prefs.getInt("reconstruction_strength",50),
-                ImageComparison.entries.firstOrNull { it.name==prefs.getString("image_comparison",null) } ?: ImageComparison.PROCESSED).bounded())
+                ImageComparison.entries.firstOrNull { it.name==prefs.getString("image_comparison",null) } ?: ImageComparison.PROCESSED).bounded(),
+            audioMode = AudioPlaybackMode.entries.firstOrNull { it.name==prefs.getString("audio_mode",null) } ?: AudioPlaybackMode.STANDARD)
     }
     fun save(settings: PlaybackSettings) {
         prefs.edit().putString("video_mode",settings.videoMode.name).putBoolean("low_latency_video",settings.videoMode.lowLatency)
@@ -147,7 +154,8 @@ class PlaybackSettingsStore(context: Context) {
             .putString("presentation_pacing",settings.presentationPacing.name)
             .putString("reconstruction_quality",settings.reconstruction.quality.name)
             .putInt("reconstruction_strength",settings.reconstruction.strength.coerceIn(0,100))
-            .putString("image_comparison",settings.reconstruction.comparison.name).apply()
+            .putString("image_comparison",settings.reconstruction.comparison.name)
+            .putString("audio_mode",settings.audioMode.name).apply()
     }
 }
 

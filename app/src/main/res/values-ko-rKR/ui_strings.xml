@@ -995,4 +995,15 @@
     <string name="ui_9d281f72d3373f8c">"지역 제한 우회: {0}"</string>
     <string name="ui_aa906b2908f8daa1">"로그인 시 요청한 지역 제한 우회: {0}"</string>
     <string name="ui_2b0e063afdb272b2">"로그인 시 기준 국가를 사용하여 xCloud 접속을 시도합니다. VPN이 아니며 실제 IP 주소는 바뀌지 않습니다. Xbox가 요청을 거부할 수 있습니다. 계정을 다시 연결하거나 앱을 다시 열면 적용되며 저장된 로그인 정보는 유지됩니다."</string>
+    <string name="ui_0758c00e6ea0ca61">"표준"</string>
+    <string name="ui_4253893f5051c439">"낮은 지연 시간 — 실험 기능"</string>
+    <string name="ui_b946ef5c5fe755ae">"이 API에서 사용 불가"</string>
+    <string name="ui_e849deb259052254">"요청됨"</string>
+    <string name="ui_88ac27b213eb7c22">"요청하지 않음"</string>
+    <string name="ui_3bc8e7c5b0b1cf51">"오디오 프로필: {0} | Android 낮은 지연 시간: {1} | 실제 모드: 라이브러리에서 제공하지 않음"</string>
+    <string name="ui_8a5bf43af64a19a2">"오디오 RTP(최근 샘플): {0} | 지터 {1} ms | WebRTC 버퍼 {2} ms | 목표 {3} ms | 손실 {4}"</string>
+    <string name="ui_d73e3fbd25515dbc">"WebRTC 오디오 버퍼는 스피커 지연이나 전체 영상·음성 동기화를 측정하지 않습니다."</string>
+    <string name="ui_1ef0501e1ba5598b">"오디오 프로필: {0}"</string>
+    <string name="ui_38d375dfc7df0844">"오디오 프로필"</string>
+    <string name="ui_2197cdc9c936bdca">"Android 8 이상에서 낮은 지연 시간의 오디오 출력을 요청합니다. 시스템이 요청을 무시할 수 있습니다. 표준은 기존 동작을 유지합니다. 다음 게임 세션부터 적용되며 잡음이나 끊김이 있으면 표준으로 되돌리세요."</string>
 </resources>

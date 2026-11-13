@@ -995,4 +995,15 @@
     <string name="ui_9d281f72d3373f8c">"地域制限の回避: {0}"</string>
     <string name="ui_aa906b2908f8daa1">"ログイン時に要求した地域制限の回避: {0}"</string>
     <string name="ui_2b0e063afdb272b2">"ログイン時に参照用の国を指定して xCloud へのアクセスを試みます。VPN ではなく、実際の IP アドレスは変わりません。Xbox が要求を拒否する場合があります。変更はアカウントの再接続時、またはアプリを開き直したときに適用され、保存済みのログイン情報は保持されます。"</string>
+    <string name="ui_0758c00e6ea0ca61">"標準"</string>
+    <string name="ui_4253893f5051c439">"低遅延 — 試験的機能"</string>
+    <string name="ui_b946ef5c5fe755ae">"この API では利用不可"</string>
+    <string name="ui_e849deb259052254">"要求済み"</string>
+    <string name="ui_88ac27b213eb7c22">"要求なし"</string>
+    <string name="ui_3bc8e7c5b0b1cf51">"音声プロファイル: {0} | Android 低遅延: {1} | 実際のモード: ライブラリから取得不可"</string>
+    <string name="ui_8a5bf43af64a19a2">"音声 RTP（最新サンプル）: {0} | ジッター {1} ms | WebRTC バッファー {2} ms | 目標 {3} ms | 損失 {4}"</string>
+    <string name="ui_d73e3fbd25515dbc">"WebRTC の音声バッファーは、スピーカーの遅延や音声と映像の同期全体を測定するものではありません。"</string>
+    <string name="ui_1ef0501e1ba5598b">"音声プロファイル: {0}"</string>
+    <string name="ui_38d375dfc7df0844">"音声プロファイル"</string>
+    <string name="ui_2197cdc9c936bdca">"Android 8 以降で低遅延の音声出力を要求します。システムが要求を無視する場合があります。「標準」は現在の動作を維持します。次のゲームセッションから適用されます。ノイズや音切れが出る場合は「標準」に戻してください。"</string>
 </resources>

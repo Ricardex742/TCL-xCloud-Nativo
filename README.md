@@ -307,6 +307,7 @@ As posições, tamanhos, ações e gestos podem ser ajustados por jogo. No futeb
 ## Áudio e microfone
 
 - Reprodução estéreo com gerenciamento de foco de áudio do Android.
+- **Perfil de áudio opcional:** Padrão ou Baixa latência experimental, independente do modo de vídeo e aplicado na próxima partida. A opção solicita baixa latência à saída do Android 8 ou superior; o sistema pode ignorar o pedido. Padrão preserva o comportamento anterior.
 - Ganho ajustável até 300%, com redução adaptativa de picos.
 - Microfone opcional com permissão ao ativar e início em mudo.
 - Controle de mudo durante a sessão.
@@ -353,6 +354,7 @@ As posições, tamanhos, ações e gestos podem ser ajustados por jogo. No futeb
 - Resumo local pós-partida com médias, picos, pausas observadas e recuperações.
 - Motivo do encerramento em destaque, quando identificado.
 - Diagnóstico do HUD com idade dos toques, opções do layout e último controle identificado.
+- Perfil de áudio solicitado e última amostra de codec, jitter, buffer WebRTC, alvo e perdas do áudio, separados das métricas de vídeo. Esses valores não medem o atraso dos alto-falantes nem o sincronismo completo.
 - Último diagnóstico salvo no aparelho e exibição automática opcional.
 
 <table>

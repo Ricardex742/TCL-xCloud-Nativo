@@ -995,4 +995,15 @@
     <string name="ui_9d281f72d3373f8c">"Regionsumgehung: {0}"</string>
     <string name="ui_aa906b2908f8daa1">"Bei der Anmeldung angeforderte Regionsumgehung: {0}"</string>
     <string name="ui_2b0e063afdb272b2">"Versucht, mit einem Referenzland bei der Anmeldung auf xCloud zuzugreifen. Dies ist kein VPN und ändert deine echte IP-Adresse nicht. Xbox kann die Anfrage ablehnen. Die Änderung gilt nach erneuter Kontoverbindung oder erneutem Öffnen der App; die gespeicherte Anmeldung bleibt erhalten."</string>
+    <string name="ui_0758c00e6ea0ca61">"Standard"</string>
+    <string name="ui_4253893f5051c439">"Niedrige Latenz — experimentell"</string>
+    <string name="ui_b946ef5c5fe755ae">"mit dieser API nicht verfügbar"</string>
+    <string name="ui_e849deb259052254">"angefordert"</string>
+    <string name="ui_88ac27b213eb7c22">"nicht angefordert"</string>
+    <string name="ui_3bc8e7c5b0b1cf51">"Audioprofil: {0} | Niedrige Android-Latenz: {1} | Tatsächlicher Modus: von der Bibliothek nicht offengelegt"</string>
+    <string name="ui_8a5bf43af64a19a2">"Audio-RTP (letzte Messung): {0} | Jitter {1} ms | WebRTC-Puffer {2} ms | Ziel {3} ms | Verluste {4}"</string>
+    <string name="ui_d73e3fbd25515dbc">"Der WebRTC-Audiopuffer misst weder die Lautsprecherverzögerung noch die vollständige audiovisuelle Synchronität."</string>
+    <string name="ui_1ef0501e1ba5598b">"Audioprofil: {0}"</string>
+    <string name="ui_38d375dfc7df0844">"Audioprofil"</string>
+    <string name="ui_2197cdc9c936bdca">"Fordert eine Audioausgabe mit niedriger Latenz ab Android 8 an. Das System kann die Anfrage ignorieren. Standard behält das bisherige Verhalten bei. Gilt ab der nächsten Spielsitzung; bei Knacken oder Aussetzern zu Standard zurückkehren."</string>
 </resources>

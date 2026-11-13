@@ -5,6 +5,7 @@ import com.xcloud.tclnative.i18n.UiText
 import android.content.Context
 import com.xcloud.tclnative.settings.VideoCodecMode
 import com.xcloud.tclnative.settings.IpPreference
+import com.xcloud.tclnative.settings.AudioPlaybackMode
 import kotlinx.coroutines.*
 import org.json.JSONObject
 import org.webrtc.*
@@ -27,7 +28,8 @@ class XCloudWebRtcClient(
     private val compatibility: Boolean = false,
     private val videoCodec: VideoCodecMode = VideoCodecMode.H264,
     private val maxBitrateKbps: Int = 0,private val ipPreference: IpPreference = IpPreference.AUTO,
-    private val nativeKeyboardMouse: Boolean = false,private val microphoneAllowed: Boolean = false,outputGain: Int = 100
+    private val nativeKeyboardMouse: Boolean = false,private val microphoneAllowed: Boolean = false,outputGain: Int = 100,
+    private val audioMode: AudioPlaybackMode = AudioPlaybackMode.STANDARD
 ) : StreamingPeer {
     private val appContext=context.applicationContext
     private val factory: PeerConnectionFactory
@@ -54,6 +56,8 @@ class XCloudWebRtcClient(
     @Volatile private var touchEnabled = nativeTouch
     @Volatile private var inputPump: RealtimeInputPump? = null
     private val statsCollector = StreamStatsCollector()
+    private val audioStatsCollector = AudioStreamStatsCollector()
+    @Volatile private var audioMetrics = AudioStreamMetrics()
     private val statisticsLock = Any()
     private var statsJob: Job? = null
     private val decoderRecovery = DecoderRecoveryController()
@@ -86,7 +90,7 @@ class XCloudWebRtcClient(
         if(!closed.get()) audioTracks.forEach { it.setVolume(gain*peakGuard.effective) }
     } }
     fun currentInputMetrics(): InputMetrics = inputPump?.metrics ?: InputMetrics()
-    fun audioDiagnostics()=audioSession.diagnostics()+UiText.text("\n{0}\n{1} • chatStream anunciado: {2} • áudio enviado: {3} B",UiText.nested(peakGuard.diagnostics()),UiText.nested(microphoneStatus),UiText.nested(chatSupported),UiText.nested(micBytes))
+    fun audioDiagnostics()=audioSession.diagnostics()+"\n"+AudioPlaybackPolicy.diagnostics(audioMode)+"\n"+audioMetrics.diagnostics()+UiText.text("\n{0}\n{1} • chatStream anunciado: {2} • áudio enviado: {3} B",UiText.nested(peakGuard.diagnostics()),UiText.nested(microphoneStatus),UiText.nested(chatSupported),UiText.nested(micBytes))
     fun setOutputGain(percent: Int) { peakGuard.set(percent);applyAudioGain() }
     private fun applyAudioGain() { synchronized(audioLock) { if(!closed.get()) audioTracks.forEach { it.setVolume(audioSession.gain*peakGuard.effective) } } }
     fun microphoneLabel()=if(microphoneActive) "Silenciar microfone" else "Ativar microfone"
@@ -202,8 +206,7 @@ class XCloudWebRtcClient(
             .setEnableInternalTracer(false).createInitializationOptions())
         decoderFactory=ExperimentalVideoDecoderFactory(eglBase.eglBaseContext,lowLatencyVideo,decoderRecovery,
             { decoderLatency.set(it) },effectiveCodec.name,streamResolution.width,streamResolution.height)
-        val audio=JavaAudioDeviceModule.builder(context.applicationContext)
-            .setAudioAttributes(GameAudioSession.attributes()).setUseStereoOutput(true).setEnableVolumeLogger(false)
+        val audio=AudioPlaybackPolicy.configure(JavaAudioDeviceModule.builder(context.applicationContext), audioMode)
             .setPlaybackSamplesReadyCallback { samples ->
                 if(!closed.get() && peakGuard.observe(samples.data,samples.audioFormat,android.os.SystemClock.elapsedRealtime()))
                     mainHandler.post { applyAudioGain() }
@@ -414,6 +417,7 @@ class XCloudWebRtcClient(
                                     .sumOf { (it.members["bytesSent"] as? Number)?.toLong() ?: 0L }
                                 networkRoutes.collect(samples)
                                 val metrics = statsCollector.collect(samples)
+                                audioMetrics = audioStatsCollector.collect(samples)
                                 if (!closed.get()) onStatistics(metrics, inputPump?.metrics ?: InputMetrics())
                             }
                         }

@@ -995,4 +995,15 @@
     <string name="ui_9d281f72d3373f8c">"地区限制绕过：{0}"</string>
     <string name="ui_aa906b2908f8daa1">"登录时请求的地区限制绕过：{0}"</string>
     <string name="ui_2b0e063afdb272b2">"登录时使用参考国家尝试访问 xCloud。这不是 VPN，也不会更改真实 IP 地址。Xbox 可能拒绝请求。重新连接账户或重新打开应用后生效，已保存的登录信息会保留。"</string>
+    <string name="ui_0758c00e6ea0ca61">"标准"</string>
+    <string name="ui_4253893f5051c439">"低延迟 — 实验性功能"</string>
+    <string name="ui_b946ef5c5fe755ae">"此 API 不支持"</string>
+    <string name="ui_e849deb259052254">"已请求"</string>
+    <string name="ui_88ac27b213eb7c22">"未请求"</string>
+    <string name="ui_3bc8e7c5b0b1cf51">"音频配置：{0} | Android 低延迟：{1} | 实际模式：音频库未提供"</string>
+    <string name="ui_8a5bf43af64a19a2">"音频 RTP（最近一次采样）：{0} | 抖动 {1} ms | WebRTC 缓冲 {2} ms | 目标 {3} ms | 丢失 {4}"</string>
+    <string name="ui_d73e3fbd25515dbc">"WebRTC 音频缓冲并不测量扬声器延迟或完整的音画同步。"</string>
+    <string name="ui_1ef0501e1ba5598b">"音频配置：{0}"</string>
+    <string name="ui_38d375dfc7df0844">"音频配置"</string>
+    <string name="ui_2197cdc9c936bdca">"在 Android 8 或更高版本上请求低延迟音频输出。系统可能忽略此请求。标准模式保持现有行为。下次游戏会话生效；若出现爆音或断音，请恢复标准模式。"</string>
 </resources>

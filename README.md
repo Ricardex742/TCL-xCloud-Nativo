@@ -326,6 +326,7 @@ As posições, tamanhos, ações e gestos podem ser ajustados por jogo. No futeb
 - Configurações organizadas por categoria.
 - Teto de bitrate solicitado em Automático ou entre 1 e 50 Mbps, salvo por jogo.
 - Escolha entre as regiões oferecidas à conta.
+- **Bypass de região experimental**, opcional e desativado por padrão, disponível antes do login e em **Rede e sessão**. Oferece Brasil, Estados Unidos, Japão, Coreia do Sul e Polônia como referência no login do xCloud. Não é VPN e não altera o IP real; o acesso continua sujeito à resposta do Xbox. A escolha é salva e vale ao reconectar a conta ou reabrir o app, sem apagar o login Microsoft.
 - Idioma solicitado à sessão configurável por jogo.
 - Modo automático IPv4/IPv6 e opções de preferência por uma família de rede.
 

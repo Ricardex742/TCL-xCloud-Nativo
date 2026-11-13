@@ -986,4 +986,13 @@
     <string name="ui_7d2f3ce39e840f57">"Search backgrounds"</string>
     <string name="ui_d537f9b442ea6fa2">"Next page"</string>
     <string name="ui_9bcad734827a849a">"Previous page"</string>
+    <string name="ui_6641c5a7ff9f56ef">"Brazil"</string>
+    <string name="ui_20d1a5eb0b1a7bc0">"United States"</string>
+    <string name="ui_07bad15b3468bf76">"Japan"</string>
+    <string name="ui_22c9628e28596db1">"South Korea"</string>
+    <string name="ui_d4dcf869b6adc503">"Poland"</string>
+    <string name="ui_1283346a223469be">"Region bypass — experimental"</string>
+    <string name="ui_9d281f72d3373f8c">"Region bypass: {0}"</string>
+    <string name="ui_aa906b2908f8daa1">"Region bypass requested at sign-in: {0}"</string>
+    <string name="ui_2b0e063afdb272b2">"Tries to access xCloud using a reference country at sign-in. This is not a VPN and does not change your real IP. Xbox may reject the request. Changes apply when reconnecting your account or reopening the app; your saved sign-in is kept."</string>
 </resources>

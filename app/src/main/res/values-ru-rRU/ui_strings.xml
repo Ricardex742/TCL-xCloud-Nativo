@@ -986,4 +986,13 @@
     <string name="ui_7d2f3ce39e840f57">"Поиск фонов"</string>
     <string name="ui_d537f9b442ea6fa2">"Следующая страница"</string>
     <string name="ui_9bcad734827a849a">"Предыдущая страница"</string>
+    <string name="ui_6641c5a7ff9f56ef">"Бразилия"</string>
+    <string name="ui_20d1a5eb0b1a7bc0">"США"</string>
+    <string name="ui_07bad15b3468bf76">"Япония"</string>
+    <string name="ui_22c9628e28596db1">"Южная Корея"</string>
+    <string name="ui_d4dcf869b6adc503">"Польша"</string>
+    <string name="ui_1283346a223469be">"Обход региональных ограничений — экспериментально"</string>
+    <string name="ui_9d281f72d3373f8c">"Обход региональных ограничений: {0}"</string>
+    <string name="ui_aa906b2908f8daa1">"Обход региона, запрошенный при входе: {0}"</string>
+    <string name="ui_2b0e063afdb272b2">"Пытается подключиться к xCloud с указанием страны при входе. Это не VPN, ваш реальный IP не меняется. Xbox может отклонить запрос. Изменение применяется при повторном подключении аккаунта или открытии приложения; сохранённые данные входа остаются."</string>
 </resources>

@@ -3,6 +3,14 @@
 The project's original code is licensed under the [MIT license](LICENSE).
 Third-party components retain their respective copyrights and licenses.
 
+## Better xCloud regional access reference
+
+The optional experimental region bypass adapts Better xCloud's fixed country/IP
+reference table and login-header technique, under the MIT license. The source
+revision, attribution and full license are retained in
+[third_party/better-xcloud-region](third_party/better-xcloud-region/SOURCE.md).
+The complete notice is shipped as `assets/region-bypass/LICENSE.txt`.
+
 ## AMD FidelityFX Super Resolution
 
 The experimental FSR renderer incorporates an OpenGL ES adaptation of AMD

@@ -67,7 +67,8 @@ class XCloudSignalingClient(
     private var mobileTouchSession=false
     // Quality and input are independent: NativeTouch must not replace a selected HD profile with Android/720p.
     private val activeOsName: String get()=activeResolution.osName
-    fun profileDiagnostics()=UiText.text("Perfil de vídeo solicitado: {0}×{1} • {2}\nRegião solicitada: {3} | Idioma solicitado: {4}",UiText.nested(activeResolution.width),UiText.nested(activeResolution.height),UiText.nested(activeOsName),UiText.nested(activeRegion),UiText.nested(activeLocale))
+    fun profileDiagnostics()=UiText.text("Perfil de vídeo solicitado: {0}×{1} • {2}\nRegião solicitada: {3} | Idioma solicitado: {4}",UiText.nested(activeResolution.width),UiText.nested(activeResolution.height),UiText.nested(activeOsName),UiText.nested(activeRegion),UiText.nested(activeLocale))+"\n"+
+        UiText.text("Bypass de região solicitado no login: {0}", UiText.nested(session.regionBypass.label))
     private fun deviceInfo() = JSONObject().put("appInfo", JSONObject().put("env", JSONObject()
         .put("clientAppId", "www.xbox.com").put("clientAppType", "browser").put("clientAppVersion", "26.1.0")))
         .put("dev", JSONObject().put("hw", JSONObject().put("make", if(mobileTouchSession) "Android" else "Microsoft")

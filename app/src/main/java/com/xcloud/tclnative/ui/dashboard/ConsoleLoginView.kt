@@ -18,6 +18,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.content.res.ColorStateList
 import com.xcloud.tclnative.auth.DeviceCodeInfo
+import com.xcloud.tclnative.settings.RegionBypassStore
 import kotlinx.coroutines.*
 import kotlin.math.roundToInt
 
@@ -63,10 +64,15 @@ class ConsoleLoginView(context: Context, private val signIn: () -> Unit, private
     }
     private val secondary = DashboardTheme.button(context,UiText.text("VOLTAR")) { back() }
     private val language = DashboardTheme.button(context,UiText.text("Idioma / Language")) { LanguageMenu.show(context) {} }
+    private val bypass = DashboardTheme.button(context, UiText.text("Bypass de região: {0}", UiText.nested(RegionBypassStore(context).read().label))) {
+        if (!connecting) RegionBypassPanel.show(context) {
+            bypassLabel()
+        }
+    }
     private val footer = label(UiText.text("A  SELECIONAR       B  VOLTAR"),18,false).apply { setTextColor(DashboardTheme.muted) }
     init {
         background=DashboardBackground()
-        listOf(brand,eyebrow,headline,description,card,footer,language).forEach(::addView)
+        listOf(brand,eyebrow,headline,description,card,footer,language,bypass).forEach(::addView)
         listOf(cardTitle,qr,code,instructions,status,validity,spinner,primary,secondary).forEach(card::addView)
         headline.text=SpannableString(UiText.text("SEUS JOGOS.\nNA SUA TELA.")).apply {
             setSpan(ForegroundColorSpan(DashboardTheme.accent),toString().indexOf('\n')+1,length,Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -77,8 +83,12 @@ class ConsoleLoginView(context: Context, private val signIn: () -> Unit, private
         text=value; typeface=DashboardTheme.font(context,heavy); includeFontPadding=false
         setTextColor(Color.WHITE); setTextSize(TypedValue.COMPLEX_UNIT_PX,size.toFloat()); maxLines=1
     }
+    private fun bypassLabel() {
+        bypass.text = UiText.uppercase(UiText.text("Bypass de região: {0}", UiText.nested(RegionBypassStore(context).read().label)))
+    }
     fun landing() {
         ticker?.cancel(); info=null; failed=false; connecting=false; isQr=false
+        bypass.isEnabled=true; bypassLabel()
         headline.visibility=VISIBLE; description.visibility=VISIBLE
         cardTitle.text=UiText.text("ENTRE PARA JOGAR")
         instructions.text=UiText.text("Conecte sua conta Microsoft para acessar seus jogos.")
@@ -89,6 +99,7 @@ class ConsoleLoginView(context: Context, private val signIn: () -> Unit, private
     }
     fun beginQr() {
         ticker?.cancel(); info=null; failed=false; connecting=false; isQr=true
+        bypass.isEnabled=true
         headline.visibility=GONE; description.visibility=GONE
         cardTitle.text=UiText.text("CONECTE SUA CONTA")
         instructions.text=UiText.text("Escaneie o QR Code com seu celular ou acesse a página de login da Microsoft.")
@@ -115,12 +126,14 @@ class ConsoleLoginView(context: Context, private val signIn: () -> Unit, private
     }
     fun showConnecting(message: String) {
         connecting=true; ticker?.cancel()
+        bypass.isEnabled=false
         spinner.visibility=VISIBLE; primary.isEnabled=false
         status.text=message; status.setTextColor(DashboardTheme.accent)
         validity.text=if (isQr) UiText.text("Conta aprovada. Finalizando sua conexão…") else ""
     }
     fun showError(message: String) {
         connecting=false; failed=true; ticker?.cancel(); spinner.visibility=GONE
+        bypass.isEnabled=true
         status.text=message; status.setTextColor(0xffffa59a.toInt())
         primary.text=if (isQr) UiText.text("GERAR NOVO CÓDIGO") else UiText.text("TENTAR NOVAMENTE")
         primary.isEnabled=true; validity.text=""
@@ -150,6 +163,7 @@ class ConsoleLoginView(context: Context, private val signIn: () -> Unit, private
             fun item(view: View,x: Int,y: Int,vw: Int,vh: Int) = place(view,x*s,y*s,vw*s,vh*s)
             root(brand,80,24,80,80); root(eyebrow,180,49,1020,42); root(footer,80,660,1120,30)
             root(language,930,43,270,54)
+            root(bypass,610,43,300,54)
             if (isQr) {
                 root(card,80,130,1120,480)
                 item(cardTitle,40,28,1040,48); item(qr,48,111,264,264)
@@ -171,7 +185,7 @@ class ConsoleLoginView(context: Context, private val signIn: () -> Unit, private
             }
             if(android.os.Build.VERSION.SDK_INT>=26) headline.setAutoSizeTextTypeUniformWithConfiguration(
                 (38*s).roundToInt().coerceAtLeast(1),(65*s).roundToInt().coerceAtLeast(2),1,TypedValue.COMPLEX_UNIT_PX)
-            if(android.os.Build.VERSION.SDK_INT>=26) listOf(primary,secondary,language).forEach { button ->
+            if(android.os.Build.VERSION.SDK_INT>=26) listOf(primary,secondary,language,bypass).forEach { button ->
                 button.setAutoSizeTextTypeUniformWithConfiguration((14*s).roundToInt().coerceAtLeast(1),
                     (23*s).roundToInt().coerceAtLeast(2),1,TypedValue.COMPLEX_UNIT_PX)
             }

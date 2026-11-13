@@ -986,4 +986,13 @@
     <string name="ui_7d2f3ce39e840f57">"Hintergründe suchen"</string>
     <string name="ui_d537f9b442ea6fa2">"Nächste Seite"</string>
     <string name="ui_9bcad734827a849a">"Vorherige Seite"</string>
+    <string name="ui_6641c5a7ff9f56ef">"Brasilien"</string>
+    <string name="ui_20d1a5eb0b1a7bc0">"Vereinigte Staaten"</string>
+    <string name="ui_07bad15b3468bf76">"Japan"</string>
+    <string name="ui_22c9628e28596db1">"Südkorea"</string>
+    <string name="ui_d4dcf869b6adc503">"Polen"</string>
+    <string name="ui_1283346a223469be">"Regionsumgehung — experimentell"</string>
+    <string name="ui_9d281f72d3373f8c">"Regionsumgehung: {0}"</string>
+    <string name="ui_aa906b2908f8daa1">"Bei der Anmeldung angeforderte Regionsumgehung: {0}"</string>
+    <string name="ui_2b0e063afdb272b2">"Versucht, mit einem Referenzland bei der Anmeldung auf xCloud zuzugreifen. Dies ist kein VPN und ändert deine echte IP-Adresse nicht. Xbox kann die Anfrage ablehnen. Die Änderung gilt nach erneuter Kontoverbindung oder erneutem Öffnen der App; die gespeicherte Anmeldung bleibt erhalten."</string>
 </resources>

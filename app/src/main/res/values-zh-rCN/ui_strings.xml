@@ -986,4 +986,13 @@
     <string name="ui_7d2f3ce39e840f57">"搜索背景"</string>
     <string name="ui_d537f9b442ea6fa2">"下一页"</string>
     <string name="ui_9bcad734827a849a">"上一页"</string>
+    <string name="ui_6641c5a7ff9f56ef">"巴西"</string>
+    <string name="ui_20d1a5eb0b1a7bc0">"美国"</string>
+    <string name="ui_07bad15b3468bf76">"日本"</string>
+    <string name="ui_22c9628e28596db1">"韩国"</string>
+    <string name="ui_d4dcf869b6adc503">"波兰"</string>
+    <string name="ui_1283346a223469be">"地区限制绕过 — 实验性功能"</string>
+    <string name="ui_9d281f72d3373f8c">"地区限制绕过：{0}"</string>
+    <string name="ui_aa906b2908f8daa1">"登录时请求的地区限制绕过：{0}"</string>
+    <string name="ui_2b0e063afdb272b2">"登录时使用参考国家尝试访问 xCloud。这不是 VPN，也不会更改真实 IP 地址。Xbox 可能拒绝请求。重新连接账户或重新打开应用后生效，已保存的登录信息会保留。"</string>
 </resources>

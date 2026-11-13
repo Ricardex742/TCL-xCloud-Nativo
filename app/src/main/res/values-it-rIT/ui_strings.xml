@@ -986,4 +986,13 @@
     <string name="ui_7d2f3ce39e840f57">"Cerca sfondi"</string>
     <string name="ui_d537f9b442ea6fa2">"Pagina successiva"</string>
     <string name="ui_9bcad734827a849a">"Pagina precedente"</string>
+    <string name="ui_6641c5a7ff9f56ef">"Brasile"</string>
+    <string name="ui_20d1a5eb0b1a7bc0">"Stati Uniti"</string>
+    <string name="ui_07bad15b3468bf76">"Giappone"</string>
+    <string name="ui_22c9628e28596db1">"Corea del Sud"</string>
+    <string name="ui_d4dcf869b6adc503">"Polonia"</string>
+    <string name="ui_1283346a223469be">"Bypass regionale — sperimentale"</string>
+    <string name="ui_9d281f72d3373f8c">"Bypass regionale: {0}"</string>
+    <string name="ui_aa906b2908f8daa1">"Bypass regionale richiesto all’accesso: {0}"</string>
+    <string name="ui_2b0e063afdb272b2">"Prova ad accedere a xCloud usando un paese di riferimento all’accesso. Non è una VPN e non cambia il tuo IP reale. Xbox può rifiutare la richiesta. La modifica si applica riconnettendo l’account o riaprendo l’app; l’accesso salvato viene mantenuto."</string>
 </resources>

@@ -11,6 +11,8 @@ import com.xcloud.tclnative.net.CloudHttpException
 import com.xcloud.tclnative.net.awaitResponse
 import com.xcloud.tclnative.net.checkedBody
 import com.xcloud.tclnative.catalog.XboxProfile
+import com.xcloud.tclnative.settings.RegionBypass
+import com.xcloud.tclnative.settings.RegionBypassStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -30,7 +32,8 @@ data class CloudRegion(val name: String,val baseUri: String,val isDefault: Boole
 data class XCloudSession(
     val gssvToken: String, val baseUri: String, val userHash: String,
     val expiresAtMs: Long = System.currentTimeMillis() + 3600_000L, val transferToken: String = "",
-    val xuid: String? = null,val regions: List<CloudRegion> = emptyList()
+    val xuid: String? = null,val regions: List<CloudRegion> = emptyList(),
+    val regionBypass: RegionBypass = RegionBypass.OFF
 ) {
     val libraryAccountId: String get() = xuid?.let { "xuid:$it" } ?: userHash
 }
@@ -55,12 +58,14 @@ class XalAuthenticator(
     private val httpClient: OkHttpClient,
     private val endpoints: AuthEndpoints = AuthEndpoints(),
     private val clockMs: () -> Long = { System.currentTimeMillis() },
-    private val pause: suspend (Long) -> Unit = { delay(it) }
+    private val pause: suspend (Long) -> Unit = { delay(it) },
+    private val regionBypass: () -> RegionBypass = { RegionBypass.OFF }
 ) {
+    private val bypassLoginClient = httpClient.newBuilder().followRedirects(false).followSslRedirects(false).build()
     private var profileUserToken: String? = null
     private var profileUserHash: String? = null
     constructor(context: Context) : this(PreferencesTokenStore(context),
-        OkHttpClient.Builder().callTimeout(25, TimeUnit.SECONDS).build())
+        OkHttpClient.Builder().callTimeout(25, TimeUnit.SECONDS).build(), regionBypass = RegionBypassStore(context)::read)
 
     companion object {
         const val BROWSER_CLIENT_ID = "000000004c12ae6f"
@@ -75,9 +80,10 @@ class XalAuthenticator(
     }
     private val jsonType = "application/json; charset=utf-8".toMediaType()
     private fun json(value: JSONObject) = value.toString().toRequestBody(jsonType)
-    private suspend fun post(url: String, stage: String, body: RequestBody): String =
-        httpClient.newCall(Request.Builder().url(url).header("Accept", "application/json")
+    private suspend fun post(url: String, stage: String, body: RequestBody, forwardedFor: String? = null): String =
+        (if (forwardedFor == null) httpClient else bypassLoginClient).newCall(Request.Builder().url(url).header("Accept", "application/json")
             .header("x-xbl-contract-version", "1").header("X-Gssv-Client", "XboxComBrowser")
+            .apply { forwardedFor?.let { header("X-Forwarded-For", it) } }
             .post(body).build()).awaitResponse().use { it.checkedBody(stage) }
 
     private suspend fun <T> result(block: suspend () -> T): Result<T> = withContext(Dispatchers.IO) {
@@ -154,6 +160,7 @@ class XalAuthenticator(
     }
 
     suspend fun authenticateToXCloud(rpsTicketInput: String? = null, onProgress: (String) -> Unit = {}): Result<XCloudSession> = result {
+        val bypass = regionBypass()
         profileUserToken = null
         profileUserHash = null
         var token = store.read()
@@ -188,14 +195,14 @@ class XalAuthenticator(
         }
         onProgress("AUTH_GSSV: Conectando ao xCloud...")
         val cloud = JSONObject(post(endpoints.xcloudLoginUrl, "AUTH_GSSV", json(JSONObject()
-            .put("token", xsts.getString("Token")).put("offeringId", "xgpuweb"))))
+            .put("token", xsts.getString("Token")).put("offeringId", "xgpuweb")), forwardedFor = bypass.forwardedFor))
         val regions = cloud.getJSONObject("offeringSettings").getJSONArray("regions")
         val region = (0 until regions.length()).map { regions.getJSONObject(it) }.firstOrNull { it.optBoolean("isDefault") }
             ?: throw java.io.IOException("AUTH_GSSV: o serviço não informou uma região padrão")
         profileUserToken = user.getString("Token")
         profileUserHash = hash
         XCloudSession(cloud.getString("gsToken"), region.getString("baseUri").trimEnd('/'), hash,
-            clockMs() + cloud.optLong("durationInSeconds", 3600) * 1000, xuid = xuid,
+            clockMs() + cloud.optLong("durationInSeconds", 3600) * 1000, xuid = xuid, regionBypass = bypass,
             regions=(0 until regions.length()).mapNotNull { index ->
                 val item=regions.getJSONObject(index)
                 val uri=item.optString("baseUri").trimEnd('/')

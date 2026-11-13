@@ -206,6 +206,9 @@ class PlaybackSettingsPanel(
     }
     fun showNetwork(): ConsoleDialog = category(SettingsPage.NETWORK,UiText.text("Rede e sessão"),listOf(
         ConsoleAction(UiText.text("IPv4 / IPv6: {0}",UiText.nested(store.read().ipPreference.label))) { chooseNetwork() },
+        ConsoleAction(UiText.text("Bypass de região: {0}", UiText.nested(RegionBypassStore(context).read().label))) {
+            RegionBypassPanel.show(context) { showNetwork() }
+        },
         ConsoleAction(UiText.text("Bitrate, região e idioma por jogo"),sessionOptions)
     ))
     fun showDiagnostics(): ConsoleDialog {

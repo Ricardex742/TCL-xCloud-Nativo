@@ -147,7 +147,7 @@ class RecreatedBackgroundTest {
             assertTrue(all(gallery.panel).filterIsInstance<TextView>().any { it.text.contains("Arte original com animação") })
             val image=Bitmap.createBitmap(gallery.window!!.decorView.width,648,Bitmap.Config.ARGB_8888)
             gallery.window!!.decorView.draw(Canvas(image))
-            File("build/reports/recreations/gallery-real-art.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG,100,it) };image.recycle()
+            File("build/reports/recreations/gallery-real-art.png").apply { parentFile!!.mkdirs() }.outputStream().use { image.compress(Bitmap.CompressFormat.PNG,100,it) };image.recycle()
             if(demo.isFile) {
                 for(effect in listOf(ArtAnimationEffect.WATER,ArtAnimationEffect.FIRE,ArtAnimationEffect.MIST)) {
                     val art=RecreatedWallpaperArt(RecreatedXboxBackgrounds.animatedArtwork(original,effect)!!.recreation!!).apply { hasArtwork=true;setBounds(0,0,960,540) }

@@ -1006,4 +1006,5 @@
     <string name="ui_1ef0501e1ba5598b">"오디오 프로필: {0}"</string>
     <string name="ui_38d375dfc7df0844">"오디오 프로필"</string>
     <string name="ui_2197cdc9c936bdca">"Android 8 이상에서 낮은 지연 시간의 오디오 출력을 요청합니다. 시스템이 요청을 무시할 수 있습니다. 표준은 기존 동작을 유지합니다. 다음 게임 세션부터 적용되며 잡음이나 끊김이 있으면 표준으로 되돌리세요."</string>
+    <string name="ui_174ac251a8802c41">"터치 감지: TV {0} | 지원 표시 {1} | 구성 {2} | 입력 감지 {3}"</string>
 </resources>

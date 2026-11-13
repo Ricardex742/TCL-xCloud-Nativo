@@ -1006,4 +1006,5 @@
     <string name="ui_1ef0501e1ba5598b">"音频配置：{0}"</string>
     <string name="ui_38d375dfc7df0844">"音频配置"</string>
     <string name="ui_2197cdc9c936bdca">"在 Android 8 或更高版本上请求低延迟音频输出。系统可能忽略此请求。标准模式保持现有行为。下次游戏会话生效；若出现爆音或断音，请恢复标准模式。"</string>
+    <string name="ui_174ac251a8802c41">"触控检测：电视 {0} | 声明支持 {1} | 已配置 {2} | 检测到输入 {3}"</string>
 </resources>

@@ -1006,4 +1006,5 @@
     <string name="ui_1ef0501e1ba5598b">"Perfil de audio: {0}"</string>
     <string name="ui_38d375dfc7df0844">"Perfil de audio"</string>
     <string name="ui_2197cdc9c936bdca">"Solicita salida de audio de baja latencia en Android 8 o superior. El sistema puede ignorar la solicitud. Estándar mantiene el comportamiento actual. Se aplica a la próxima partida; vuelve a Estándar si hay chasquidos o cortes."</string>
+    <string name="ui_174ac251a8802c41">"Detección táctil: TV {0} | anunciado {1} | configurado {2} | entrada detectada {3}"</string>
 </resources>

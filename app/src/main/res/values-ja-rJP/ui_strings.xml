@@ -1006,4 +1006,5 @@
     <string name="ui_1ef0501e1ba5598b">"音声プロファイル: {0}"</string>
     <string name="ui_38d375dfc7df0844">"音声プロファイル"</string>
     <string name="ui_2197cdc9c936bdca">"Android 8 以降で低遅延の音声出力を要求します。システムが要求を無視する場合があります。「標準」は現在の動作を維持します。次のゲームセッションから適用されます。ノイズや音切れが出る場合は「標準」に戻してください。"</string>
+    <string name="ui_174ac251a8802c41">"タッチ検出: TV {0} | 対応情報 {1} | 設定 {2} | 入力デバイス検出 {3}"</string>
 </resources>

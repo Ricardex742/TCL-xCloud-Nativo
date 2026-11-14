@@ -11,6 +11,9 @@ import android.view.InputDevice
 
 /** Addresses the gamepad's actuator, never the phone's or TV remote's vibrator. */
 class ControllerRumble(private val deviceFor: (Int) -> Int?, private val usb: UsbControllerRumble?=null,private val phoneVibrator: () -> Vibrator?={ null }) {
+    var directRumble: ((RumbleCommand) -> Boolean)?=null
+    var stopDirect: (() -> Unit)?=null
+    var directDiagnostics: (() -> String?)?=null
     private val handler=Handler(Looper.getMainLooper())
     private val generation=IntArray(4)
     private val running=mutableMapOf<Int,Vibrator>()
@@ -23,6 +26,11 @@ class ControllerRumble(private val deviceFor: (Int) -> Int?, private val usb: Us
     fun play(command: RumbleCommand) {
         handler.post {
             if(!enabled) return@post
+            if(directRumble?.invoke(command)==true) {
+                commands++;usbCommands++
+                running.remove(command.player)?.cancel();generation[command.player]++
+                return@post
+            }
             val id=deviceFor(command.player)
             if(id==null && (command.player!=0 || !touchRumble)) return@post
             commands++
@@ -56,8 +64,9 @@ class ControllerRumble(private val deviceFor: (Int) -> Int?, private val usb: Us
         handler.removeCallbacksAndMessages(null)
         running.values.forEach { runCatching { it.cancel() } }; running.clear()
         usb?.stop()
+        stopDirect?.invoke()
     }
-    fun diagnostics(): String = UiText.join(UiText.text("Vibração: {0} comandos com destino associado desde a abertura do app; {1} via Android; {2} encaminhados para USB.\n",UiText.nested(commands),UiText.nested(androidCommands),UiText.nested(usbCommands)),(usb?.status ?: "USB/XInput: desativado."))
+    fun diagnostics(): String = UiText.join(UiText.text("Vibração: {0} comandos com destino associado desde a abertura do app; {1} via Android; {2} encaminhados para USB.\n",UiText.nested(commands),UiText.nested(androidCommands),UiText.nested(usbCommands)),(directDiagnostics?.invoke() ?: usb?.status ?: "USB/XInput: desativado."))
     fun describe(): String {
         val devices=InputDevice.getDeviceIds().map { InputDevice.getDevice(it) }.filterNotNull().filter {
             it.sources and InputDevice.SOURCE_GAMEPAD==InputDevice.SOURCE_GAMEPAD ||

@@ -4,17 +4,25 @@ import kotlin.math.abs
 
 /** Slots remain stable until a device disconnects; input from different players is never merged. */
 class ControllerRouter {
-    private val devices=mutableMapOf<Int,Int>()
+    private val devices=mutableMapOf<ControllerSource,Int>()
     private val states=Array(4) { GamepadState() }
     var coOp=false
         private set
     private var virtual=GamepadState()
     private var reserveTouch=false
     fun beginSession(enabled: Boolean, touchPlayerOne: Boolean = false) { devices.clear(); coOp=enabled; reserveTouch=enabled && touchPlayerOne; reset() }
-    fun slot(deviceId: Int): Int? = devices[deviceId] ?: ((if(reserveTouch) 1 else 0) until (if(coOp) 4 else 1))
-        .firstOrNull { it !in devices.values }?.also { devices[deviceId]=it }
-    fun deviceFor(slot: Int): Int? = devices.entries.firstOrNull { it.value==slot }?.key
-    fun remove(deviceId: Int): Int? = devices.remove(deviceId)?.also { states[it]=GamepadState() }
+    fun slot(deviceId: Int): Int? = slot(ControllerSource.Android(deviceId))
+    fun slot(source: ControllerSource): Int? = devices[source] ?: ((if(reserveTouch) 1 else 0) until (if(coOp) 4 else 1))
+        .firstOrNull { it !in devices.values }?.also { devices[source]=it }
+    fun sourceFor(slot: Int): ControllerSource? = devices.entries.firstOrNull { it.value==slot }?.key
+    fun deviceFor(slot: Int): Int? = (sourceFor(slot) as? ControllerSource.Android)?.deviceId
+    fun remove(deviceId: Int): Int? = remove(ControllerSource.Android(deviceId))
+    fun remove(source: ControllerSource): Int? = devices.remove(source)?.also { states[it]=GamepadState() }
+    fun attachUsb(source: ControllerSource.Usb,androidId: Int?): Int? {
+        val previous=androidId?.let { remove(it) }
+        if(previous!=null) { devices[source]=previous;return previous }
+        return slot(source)
+    }
     fun physical(slot: Int) = states[slot]
     fun update(slot: Int, state: GamepadState) { states[slot]=state }
     fun virtual(state: GamepadState) { virtual=state }

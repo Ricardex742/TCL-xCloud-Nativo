@@ -240,6 +240,8 @@ Pesquisa e configurações acompanham a identidade de cada console:
 - Giroscópio opcional para mira, com sensibilidade e ativação por LT, LB ou contínua.
 - Opção experimental de giroscópio junto ao toque nativo Xbox.
 - Vibração nos dispositivos compatíveis, teste USB/XInput opcional e vibração do celular no toque.
+- **USB direto — experimental:** leitura de botões, analógicos e gatilhos Xbox 360/XInput no próprio app, com navegação, perfis e vibração na mesma conexão. Requer Android 8 ou posterior e autorização USB; começa desativado. Inclui painel de teste e captura curta de pacotes para diagnóstico. A compatibilidade depende do protocolo do receptor.
+- Pesquisa com teclado dentro do aplicativo quando o USB direto está ativo, sem precisar injetar comandos no sistema Android.
 
 <table>
   <tr>

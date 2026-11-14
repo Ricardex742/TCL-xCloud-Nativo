@@ -67,6 +67,7 @@ class ConsoleDialog(context: Context, heading: String,private val purpose: Conso
     private val cleanups=mutableListOf<() -> Unit>()
     fun addCleanup(action: () -> Unit) { cleanups+=action }
     override fun onStop() {
+        window?.let(AppControllerWindows::detach)
         val pending=cleanups.toList();cleanups.clear();pending.forEach { it() }
         super.onStop()
     }
@@ -119,6 +120,9 @@ class ConsoleDialog(context: Context, heading: String,private val purpose: Conso
         setTextColor(if(skin.enabled) skin.textColor(color) else color); setTextSize(TypedValue.COMPLEX_UNIT_PX, size*scale)
     }
     fun focusFirst(view: View) { initialFocus = view }
+    internal fun keyButton(label: String,action: () -> Unit): TextView = DashboardTheme.button(context,label,scale,action).apply {
+        if(skin.enabled) { background=skin.row();setTextColor(skin.textColors());typeface=skin.font() }
+    }
     fun addAction(label: String, action: () -> Unit): TextView = actionButton(label,true,action)
     fun addPersistentAction(label: String, action: () -> Unit): TextView = actionButton(label,false,action)
     private fun actionButton(label: String,dismissOnClick: Boolean,action: () -> Unit): TextView {
@@ -156,6 +160,7 @@ class ConsoleDialog(context: Context, heading: String,private val purpose: Conso
     }
     override fun show() {
         super.show()
+        activity?.let { owner -> window?.let { AppControllerWindows.attach(owner,it) } }
         window?.apply {
             setBackgroundDrawableResource(android.R.color.transparent)
             decorView.setPadding(0,0,0,0)
@@ -174,6 +179,16 @@ class ConsoleDialog(context: Context, heading: String,private val purpose: Conso
         }
         initialFocus?.requestFocus()
     }
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        com.xcloud.tclnative.webrtc.AndroidControllerMonitor.key(event)
+        if(AppControllerWindows.suppressed(activity,event.deviceId)) return true
+        return super.dispatchKeyEvent(event)
+    }
+    override fun dispatchGenericMotionEvent(event: android.view.MotionEvent): Boolean {
+        com.xcloud.tclnative.webrtc.AndroidControllerMonitor.motion(event)
+        if(AppControllerWindows.suppressed(activity,event.deviceId)) return true
+        return super.dispatchGenericMotionEvent(event)
+    }
 }
 
 object ConsoleDialogs {
@@ -183,6 +198,7 @@ object ConsoleDialogs {
         UiText.text("Pesquisar fundos"),UiText.text("Nome do fundo"),UiText.text("Encontre um fundo pelo nome."),onSearch)
     private fun searchField(context: Context,query: String,title: String,placeholder: String,help: String,onSearch: (String) -> Unit): ConsoleDialog {
         val dialog = ConsoleDialog(context,title,ConsolePanelPurpose.SEARCH)
+        val localKeyboard=AppControllerWindows.usbActive(context as? Activity)
         val skin=ConsolePanelSkin()
         val field = EditText(dialog.context).apply {
             setText(query); hint=placeholder; isSingleLine=true
@@ -199,6 +215,7 @@ object ConsoleDialogs {
             }
             if(skin.enabled) background=skin.input(dialog.scale)
             imeOptions=EditorInfo.IME_ACTION_SEARCH
+            if(localKeyboard) showSoftInputOnFocus=false
             setOnEditorActionListener { _, action, _ ->
                 if (action == EditorInfo.IME_ACTION_SEARCH) { dialog.dismiss(); onSearch(text.toString()); true } else false
             }
@@ -207,12 +224,13 @@ object ConsoleDialogs {
         dialog.body.addView(dialog.text(help, 21, color=DashboardTheme.muted), LinearLayout.LayoutParams(-1,-2)
             .apply { bottomMargin=dialog.px(17) })
         dialog.body.addView(field, LinearLayout.LayoutParams(-1,dialog.px(65)))
+        val keyboard=if(localKeyboard) ControllerSearchKeyboard.attach(dialog,field) else null
         dialog.addAction(UiText.text("Limpar busca")) { onSearch("") }
         dialog.addAction(UiText.text("Voltar")) {}
         dialog.addAction(UiText.text("Buscar")) { onSearch(field.text.toString()) }
-        dialog.focusFirst(field)
+        dialog.focusFirst(keyboard ?: field)
         dialog.show()
-        if(context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN)) {
+        if(!localKeyboard && context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN)) {
             dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
             field.post {
                 if(dialog.isShowing) (context.getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager)

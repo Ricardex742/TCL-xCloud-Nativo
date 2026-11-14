@@ -9,24 +9,29 @@ import com.xcloud.tclnative.settings.ControllerProfileStore
 import com.xcloud.tclnative.settings.StickCurve
 import com.xcloud.tclnative.webrtc.UsbControllerRumble
 
-class ControllerProfilePanel(private val context: Context,private val store: ControllerProfileStore,private val changed: () -> Unit={}) {
+class ControllerProfilePanel(private val context: Context,private val store: ControllerProfileStore,private val usbSources: () -> List<com.xcloud.tclnative.webrtc.ControllerSource.Usb> = { emptyList() },
+    private val hiddenAndroid: (Int) -> Boolean={ false },private val changed: () -> Unit={}) {
     fun show(back: () -> Unit): ConsoleDialog {
-        val devices=InputDevice.getDeviceIds().map(InputDevice::getDevice).filterNotNull().filter(UsbControllerRumble::isGamepad)
-        if(devices.isEmpty()) return ConsoleDialogs.message(context,UiText.text("Perfis de controle"),UiText.text("Conecte um controle e pressione um botão para o Android identificá-lo."),
+        val devices=InputDevice.getDeviceIds().map(InputDevice::getDevice).filterNotNull().filter(UsbControllerRumble::isGamepad).filterNot { hiddenAndroid(it.id) }
+        if(devices.isEmpty() && usbSources().isEmpty()) return ConsoleDialogs.message(context,UiText.text("Perfis de controle"),UiText.text("Conecte um controle e pressione um botão para o Android identificá-lo."),
             listOf(ConsoleAction(UiText.text("Voltar"),back)),onCancel=back)
-        return ConsoleDialogs.menu(context,UiText.text("Perfis de controle"),devices.map { device -> ConsoleAction(device.name) { edit(device,back) } },onBack=back)
+        return ConsoleDialogs.menu(context,UiText.text("Perfis de controle"),devices.map { device -> ConsoleAction(device.name) { edit(device,back) } }+
+            usbSources().map { source -> ConsoleAction(source.name+" • USB") { edit(source.name,source.profileKey,back) } },onBack=back)
     }
     fun edit(device: InputDevice,back: () -> Unit): ConsoleDialog {
-        val key=store.key(device);val value=store.read(key)
-        fun save(profile: ControllerProfile) { store.save(key,profile);changed();edit(device,back) }
+        return edit(device.name,store.key(device),back)
+    }
+    private fun edit(name: String,key: String,back: () -> Unit): ConsoleDialog {
+        val value=store.read(key)
+        fun save(profile: ControllerProfile) { store.save(key,profile);changed();edit(name,key,back) }
         fun choices(title: String,values: List<Pair<String,Boolean>>,apply: (Int)->Unit) {
             ConsoleDialog(context,title).apply {
                 values.forEachIndexed { i,(label,selected) -> val row=addMenuItem(UiText.text("{0}  {1}",UiText.nested(if(selected) "✓" else "○"),UiText.nested(label))) { apply(i) };if(selected) focusFirst(row) }
-                addAction(UiText.text("Voltar")) { edit(device,back) };setOnCancelListener { edit(device,back) };show()
+                addAction(UiText.text("Voltar")) { edit(name,key,back) };setOnCancelListener { edit(name,key,back) };show()
             }
         }
         val deadzones=listOf(0,2,5,10,15,20,30,40);val sensitivity=listOf(25,50,75,100,125,150,175,200)
-        return ConsoleDialogs.menu(context,UiText.text("Ajustar {0}",UiText.nested(device.name)),listOf(
+        return ConsoleDialogs.menu(context,UiText.text("Ajustar {0}",UiText.nested(name)),listOf(
             ConsoleAction(UiText.text("Zona morta esquerda: {0}%",UiText.nested(value.leftDeadzone))) { choices(UiText.text("Zona morta esquerda"),deadzones.map { "$it%" to (it==value.leftDeadzone) }) { save(value.copy(leftDeadzone=deadzones[it])) } },
             ConsoleAction(UiText.text("Zona morta direita: {0}%",UiText.nested(value.rightDeadzone))) { choices(UiText.text("Zona morta direita"),deadzones.map { "$it%" to (it==value.rightDeadzone) }) { save(value.copy(rightDeadzone=deadzones[it])) } },
             ConsoleAction(UiText.text("Sensibilidade esquerda: {0}%",UiText.nested(value.leftSensitivity))) { choices(UiText.text("Sensibilidade esquerda"),sensitivity.map { "$it%" to (it==value.leftSensitivity) }) { save(value.copy(leftSensitivity=sensitivity[it])) } },
@@ -44,9 +49,9 @@ class ControllerProfilePanel(private val context: Context,private val store: Con
                             save(value.copy(mapping=value.mapping+(source to targets[it].first)))
                         }
                     }
-                },onBack={ edit(device,back) })
+                },onBack={ edit(name,key,back) })
             },
-            ConsoleAction(UiText.text("Restaurar este controle")) { store.reset(key);changed();edit(device,back) }
+            ConsoleAction(UiText.text("Restaurar este controle")) { store.reset(key);changed();edit(name,key,back) }
         ),onBack={ show(back) })
     }
     companion object {

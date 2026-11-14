@@ -111,10 +111,27 @@ open class MainActivity : Activity() {
     private var gamepadState: GamepadState
         get()=controllers.physical(0)
         set(value) { controllers.update(0,value) }
+    private val usbNavigation by lazy { com.xcloud.tclnative.ui.dashboard.UsbMenuNavigation(this) }
+    private var usbBlockedButtons=0
+    private var usbShortcutHeld=0
+    private val usbDirect by lazy { UsbDirectController(this,
+        connected={ source,androidId ->
+            controllers.attachUsb(source,androidId)?.let { if(gameplayInputEnabled()) publishGamepad(it) }
+        },input=::handleUsbInput,disconnected=::removeUsbController).also {
+            com.xcloud.tclnative.ui.dashboard.AppControllerWindows.usb(this,it)
+        }
+    }
     private val usbRumble by lazy { com.xcloud.tclnative.webrtc.UsbControllerRumble(this) }
     private val rumble by lazy { ControllerRumble(controllers::deviceFor,usbRumble) {
         if(InputDeviceProfile.read(this).touchDevice && currentTouchMode!=TouchMode.OFF)
             getSystemService(Context.VIBRATOR_SERVICE) as? android.os.Vibrator else null
+    }.apply {
+        directRumble={ command ->
+            val source=controllers.sourceFor(command.player) as? ControllerSource.Usb
+            if(source==null) false else { usbDirect.play(command,source);true }
+        }
+        stopDirect=usbDirect::stopRumble
+        directDiagnostics={ if(usbDirect.source!=null) usbDirect.snapshot().status.label else null }
     } }
     private lateinit var touchView: GameTouchView
     private var currentTouchMode=TouchMode.OFF
@@ -175,6 +192,7 @@ open class MainActivity : Activity() {
         com.xcloud.tclnative.i18n.UiText.install(this)
         com.xcloud.tclnative.ui.dashboard.DashboardTheme.install(this)
         super.onCreate(savedInstanceState)
+        AndroidControllerMonitor.clear()
         volumeControlStream=android.media.AudioManager.STREAM_MUSIC
         pendingLaunch = PendingGameLaunch(savedInstanceState?.getString("pending_game"))
         lastShortcutRequest=savedInstanceState?.getString("last_shortcut_request")
@@ -650,7 +668,8 @@ open class MainActivity : Activity() {
             backgrounds={ dashboard?.wallpaperChoices() ?: com.xcloud.tclnative.ui.dashboard.SeriesWallpaperGallery.fromGames(currentGames,listOfNotNull(activeGame)) }).open(startPage)
     }
     private fun showControllerProfiles(back: () -> Unit) {
-        com.xcloud.tclnative.ui.dashboard.ControllerProfilePanel(this,controllerProfiles) { if(webrtcClient!=null) (0..3).filter { controllers.deviceFor(it)!=null }.forEach(::publishGamepad) }.show(back)
+        com.xcloud.tclnative.ui.dashboard.ControllerProfilePanel(this,controllerProfiles,
+            usbSources={ listOfNotNull(usbDirect.source) },hiddenAndroid=usbDirect::ownsAndroid) { if(webrtcClient!=null) (0..3).filter { controllers.sourceFor(it)!=null }.forEach(::publishGamepad) }.show(back)
     }
     private fun showSessionOptionsMenu(session: XCloudSession,onBack: () -> Unit={ if(webrtcClient!=null) showGameMenu() else showSettings(session,SettingsPage.NETWORK) }) {
         val game=activeGame ?: dashboard?.selectedGame
@@ -818,15 +837,31 @@ open class MainActivity : Activity() {
         webrtcClient?.setOutputGain(settings.audioGain)
     }
     private fun showRumbleDiagnostics(back: () -> Unit) {
-        val actions=mutableListOf(ConsoleAction(UiText.text("Testar via Android")) { rumble.test();showRumbleDiagnostics(back) })
-        usbRumble.candidates().forEach { candidate ->
-            actions.add(ConsoleAction(UiText.text("Testar USB/XInput — {0}",UiText.nested(candidate.label))) {
-                usbRumble.enableAndTest(candidate) { if(!isFinishing && !isDestroyed) showRumbleDiagnostics(back) }
-            })
+        val active=usbDirect.snapshot().status==UsbControllerStatus.READY
+        val actions=mutableListOf(ConsoleAction(UiText.text("USB direto e teste de comandos")) {
+            com.xcloud.tclnative.ui.dashboard.UsbControllerPanel(this,usbDirect,activate={ candidate,exclusive ->
+                usbRumble.disable { if(!isFinishing && !isDestroyed) usbDirect.enable(candidate,exclusive) }
+            }).show { showRumbleDiagnostics(back) }
+        })
+        if(active) {
+            actions+=ConsoleAction(UiText.text("Testar vibração")) { usbDirect.test();showRumbleDiagnostics(back) }
+            actions+=ConsoleAction(UiText.text("Desativar")) { usbDirect.disable { if(!isFinishing && !isDestroyed) showRumbleDiagnostics(back) } }
+        } else {
+            actions+=ConsoleAction(UiText.text("Testar via Android")) { rumble.test();showRumbleDiagnostics(back) }
+            usbRumble.candidates().forEach { candidate ->
+                actions+=ConsoleAction(UiText.text("Testar USB/XInput — {0}",UiText.nested(candidate.label))) {
+                    usbDirect.disable { if(!isFinishing && !isDestroyed)
+                        usbRumble.enableAndTest(candidate) { if(!isFinishing && !isDestroyed) showRumbleDiagnostics(back) }
+                    }
+                }
+            }
+            actions+=ConsoleAction(UiText.text("Desativar teste USB")) { usbRumble.disable();showRumbleDiagnostics(back) }
         }
-        actions.add(ConsoleAction(UiText.text("Desativar teste USB")) { usbRumble.disable();showRumbleDiagnostics(back) })
-        actions.add(ConsoleAction(UiText.text("Voltar"),back))
-        ConsoleDialogs.message(this,UiText.text("Vibração do controle"),rumble.describe()+"\n\n"+usbRumble.describe(),actions,onCancel=back)
+        actions+=ConsoleAction(UiText.text("Voltar"),back)
+        val description=if(active) usbDirect.snapshot().status.label+"\n"+
+            com.xcloud.tclnative.ui.dashboard.UsbControllerPanel.describe(usbDirect.snapshot(),AndroidControllerMonitor.snapshot())
+            else rumble.describe()+"\n\n"+usbRumble.describe()
+        ConsoleDialogs.message(this,UiText.text("Vibração do controle"),description,actions,onCancel=back)
     }
     private fun showGameMenu() {
         if (transitionPanel.visibility==View.VISIBLE || gameMenuDialog?.isShowing == true || (webrtcClient == null && reloadTransmission==null) || queuePanel.visibility == View.VISIBLE) return
@@ -927,6 +962,8 @@ open class MainActivity : Activity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        AndroidControllerMonitor.key(event)
+        if(usbDirect.ownsAndroid(event.deviceId)) return true
         if(sessionDesktopMode!=DesktopInputMode.OFF && gameplayInputEnabled() &&
             event.device?.keyboardType==InputDevice.KEYBOARD_TYPE_ALPHABETIC) {
             if(event.keyCode==KeyEvent.KEYCODE_F7) {
@@ -967,7 +1004,7 @@ open class MainActivity : Activity() {
         if (login != null && controlPanel.visibility == View.VISIBLE && login.handleKey(event)) return true
         val view = dashboard
         if (view != null && controlPanel.visibility == View.VISIBLE && queuePanel.visibility != View.VISIBLE) {
-            if(event.action==KeyEvent.ACTION_DOWN && (event.source and InputDevice.SOURCE_GAMEPAD==InputDevice.SOURCE_GAMEPAD ||
+            if(event.deviceId>=0 && event.action==KeyEvent.ACTION_DOWN && (event.source and InputDevice.SOURCE_GAMEPAD==InputDevice.SOURCE_GAMEPAD ||
                 event.source and InputDevice.SOURCE_JOYSTICK==InputDevice.SOURCE_JOYSTICK)) preferredControllerId=event.deviceId
             if (event.keyCode == KeyEvent.KEYCODE_BACK) {
                 if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) view.back()
@@ -1037,7 +1074,8 @@ open class MainActivity : Activity() {
             val playbackScope=this
             resetController()
             controllers.beginSession(settings.localCoOp,touchMode!=TouchMode.OFF || sessionDesktopMode!=DesktopInputMode.OFF)
-            InputDevice.getDeviceIds().map { InputDevice.getDevice(it) }.filterNotNull().filter {
+            usbDirect.source?.let { controllers.slot(it) }
+            InputDevice.getDeviceIds().map { InputDevice.getDevice(it) }.filterNotNull().filter { !usbDirect.ownsAndroid(it.id) }.filter {
                 it.sources and InputDevice.SOURCE_GAMEPAD==InputDevice.SOURCE_GAMEPAD || it.sources and InputDevice.SOURCE_JOYSTICK==InputDevice.SOURCE_JOYSTICK
             }.sortedWith(compareBy<InputDevice> { it.id!=preferredControllerId }.thenBy { it.id }).forEach { controllers.slot(it.id) }
             rumble.enabled=settings.rumble
@@ -1065,7 +1103,7 @@ open class MainActivity : Activity() {
                     gameLibrary?.recordPlayed(titleId)
                     hudTextView.text = UiText.text("Vídeo nativo ativo [{0}]",UiText.nested(gameName))
                     hudTextView.setTextColor(Color.GREEN)
-                    transmissionReady=true;renderStatistics()
+                    transmissionReady=true;renderStatistics();resynchronizeUsbInput()
                 }
             }
             surfaceRenderer.onRenderError = { error -> transportFailure.complete(RenderFailureException(error)) }
@@ -1110,9 +1148,9 @@ open class MainActivity : Activity() {
                 var rtc=buildRtc()
                 webrtcClient = rtc
                 val appVersion=packageManager.getPackageInfo(packageName,0).versionName ?: "n/d"
-                tracker.inputDetails = { UiText.join(UiText.text("xCLOUD {0} • Entrada inicial: {1} • {2}",UiText.nested(appVersion),UiText.nested(touchMode.label),UiText.nested(rtc.inputDiagnostics())),"\n${inputDevice.diagnostics()}",(when(touchMode) { TouchMode.NATIVE -> "\n${touchView.nativeDiagnostics()}";TouchMode.VIRTUAL -> "\n${touchView.hudDiagnostics()}";else -> "" }),UiText.text("\n{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10} | Mouse/teclado: {11} | Entrada MKB ativa: {12} | Captura Android: {13}",UiText.nested(joystickDispatch.diagnostics()),UiText.nested(signaling.profileDiagnostics()),UiText.nested(signaling.keepAliveDiagnostics()),UiText.nested(surfaceRenderer.diagnostics()),UiText.nested(playbackDisplay.diagnostics(window.decorView.display)),UiText.nested(rtc.audioDiagnostics()),UiText.nested(rtc.latencyDiagnostics()),UiText.nested(rtc.iceDiagnostics()),UiText.nested(rtc.codecDiagnostics()),UiText.nested(rumble.diagnostics()),UiText.nested(gyro.status),UiText.nested(sessionDesktopMode.label),UiText.nested(desktopCaptured),UiText.nested(if(Build.VERSION.SDK_INT>=26) window.decorView.hasPointerCapture() else false)))+"\n"+recoveryState.diagnostics() }
+                tracker.inputDetails = { UiText.join(UiText.text("xCLOUD {0} • Entrada inicial: {1} • {2}",UiText.nested(appVersion),UiText.nested(touchMode.label),UiText.nested(rtc.inputDiagnostics())),"\nUSB direto: ${usbDirect.snapshot().status.label} • ${usbDirect.snapshot().valid}/${usbDirect.snapshot().packets} • OUT ${usbDirect.snapshot().writes}","\n${inputDevice.diagnostics()}",(when(touchMode) { TouchMode.NATIVE -> "\n${touchView.nativeDiagnostics()}";TouchMode.VIRTUAL -> "\n${touchView.hudDiagnostics()}";else -> "" }),UiText.text("\n{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10} | Mouse/teclado: {11} | Entrada MKB ativa: {12} | Captura Android: {13}",UiText.nested(joystickDispatch.diagnostics()),UiText.nested(signaling.profileDiagnostics()),UiText.nested(signaling.keepAliveDiagnostics()),UiText.nested(surfaceRenderer.diagnostics()),UiText.nested(playbackDisplay.diagnostics(window.decorView.display)),UiText.nested(rtc.audioDiagnostics()),UiText.nested(rtc.latencyDiagnostics()),UiText.nested(rtc.iceDiagnostics()),UiText.nested(rtc.codecDiagnostics()),UiText.nested(rumble.diagnostics()),UiText.nested(gyro.status),UiText.nested(sessionDesktopMode.label),UiText.nested(desktopCaptured),UiText.nested(if(Build.VERSION.SDK_INT>=26) window.decorView.hasPointerCapture() else false)))+"\n"+recoveryState.diagnostics() }
                 surfaceRenderer.displayDimensions()?.let(rtc::updateDisplayDimensions)
-                if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
+                if(touchMode!=TouchMode.NATIVE) (0..3).filter { controllers.sourceFor(it)!=null }.forEach { publishGamepad(it) }
                 signaling.startAndConnectWebRtcSession(titleId, rtc, resolution = settings.resolution, nativeTouch=touchMode==TouchMode.NATIVE,options=sessionOptions,microphone=settings.microphone, onQueueStatus = { status -> runOnUiThread {
                     if (generation == playbackGeneration) showQueue(status)
                 } }) { progress -> runOnUiThread {
@@ -1143,7 +1181,7 @@ open class MainActivity : Activity() {
                             resetController();recovery.retry(android.os.SystemClock.elapsedRealtime());recoveryState.repaired()
                             surfaceRenderer.rebuildSurface()
                             val requested=rtc.recoverVideoDecoder()
-                            rumble.enabled=settings.rumble;resumeAuxiliaryInput()
+                            rumble.enabled=settings.rumble;resumeAuxiliaryInput();resynchronizeUsbInput()
                             Toast.makeText(this@MainActivity,if(requested) UiText.text("Recuperação de imagem solicitada.")
                                 else UiText.text("Use Recarregar transmissão para tentar reconectar."),Toast.LENGTH_SHORT).show()
                         } catch(error: Exception) {
@@ -1191,8 +1229,8 @@ open class MainActivity : Activity() {
                                 currentTouchMode=savedTouch;touchView.configure(savedTouch,game,hudStore.read(titleId))
                                 pendingRecoveryTouch=null
                                 rumble.enabled=settings.rumble
-                                (0..3).filter { controllers.deviceFor(it)!=null }.forEach { publishGamepad(it) }
-                                transmissionReady=true;updateJoystickDispatch();resumeAuxiliaryInput();renderStatistics()
+                                (0..3).filter { controllers.sourceFor(it)!=null }.forEach { publishGamepad(it) }
+                                transmissionReady=true;updateJoystickDispatch();resumeAuxiliaryInput();renderStatistics();resynchronizeUsbInput()
                                 hudTextView.visibility=View.GONE
                             }
                         } catch(cancelled: CancellationException) { throw cancelled }
@@ -1442,12 +1480,18 @@ open class MainActivity : Activity() {
     private fun combinedInput(slot: Int,physicalOverride: GamepadState?=null): GamepadState {
         val raw=physicalOverride ?: controllers.physical(slot)
         val device=controllers.deviceFor(slot)?.let(InputDevice::getDevice)
-        val physical=if(device==null) raw else controllerProfiles.read(controllerProfiles.key(device)).apply(raw)
+        val source=controllers.sourceFor(slot)
+        val profile=when {
+            source is ControllerSource.Usb -> controllerProfiles.read(source.profileKey)
+            device!=null -> controllerProfiles.read(controllerProfiles.key(device))
+            else -> null
+        }
+        val physical=profile?.apply(raw) ?: raw
         val base=controllers.combined(slot,physical)
         return if(slot==0) gyro.apply(if(sessionDesktopMode==DesktopInputMode.EMULATED) ControllerRouter.merge(base,desktopGamepad.state()) else base) else base
     }
     private fun publishGamepad(slot: Int) {
-        val auxiliary=slot==0 && currentTouchMode==TouchMode.NATIVE && sessionSettings?.gyroNativeTouch==true && controllers.deviceFor(0)==null
+        val auxiliary=slot==0 && currentTouchMode==TouchMode.NATIVE && sessionSettings?.gyroNativeTouch==true && controllers.sourceFor(0)==null
         webrtcClient?.updateGamepad(combinedInput(slot),slot,auxiliary)
     }
     private fun setDesktopCapture(enabled: Boolean) {
@@ -1496,6 +1540,41 @@ open class MainActivity : Activity() {
         webrtcClient?.removeGamepad(slot)
         if(slot==0 && currentTouchMode==TouchMode.VIRTUAL) publishGamepad(0)
         rumble.stop()
+    }
+
+    private fun resynchronizeUsbInput() {
+        if(!gameplayInputEnabled()) return
+        val source=usbDirect.source ?: return
+        val state=usbDirect.currentInput()
+        usbBlockedButtons=usbBlockedButtons or state.buttons
+        handleUsbInput(source,state)
+    }
+    private fun handleUsbInput(source: ControllerSource.Usb,state: GamepadState) {
+        if(usbDirect.source!=source || !activityVisible) return
+        if(!gameplayInputEnabled()) {
+            usbBlockedButtons=state.buttons
+            usbNavigation.update(state)
+            return
+        }
+        usbNavigation.clear()
+        val slot=controllers.slot(source) ?: return
+        usbBlockedButtons=usbBlockedButtons and state.buttons
+        val filtered=state.copy(buttons=state.buttons and usbBlockedButtons.inv())
+        if(slot!=0) { controllers.update(slot,filtered);publishGamepad(slot);return }
+        val held=filtered.buttons and ControllerShortcut.BOTH
+        val old=usbShortcutHeld;usbShortcutHeld=held
+        val forwarded=controllers.physical(0).buttons and ControllerShortcut.BOTH
+        controllers.update(0,filtered.copy(buttons=(filtered.buttons and ControllerShortcut.BOTH.inv()) or forwarded))
+        publishGamepad(0)
+        for(mask in intArrayOf(ControllerShortcut.START,ControllerShortcut.SELECT))
+            if((held xor old) and mask!=0) handleControllerShortcut(mask,held and mask!=0)
+    }
+    private fun removeUsbController(source: ControllerSource.Usb) {
+        val slot=controllers.remove(source) ?: return
+        usbNavigation.clear();usbBlockedButtons=0;usbShortcutHeld=0
+        if(slot==0) { shortcutFlushJob?.cancel();controllerShortcut.reset() }
+        webrtcClient?.removeGamepad(slot)
+        if(slot==0 && currentTouchMode==TouchMode.VIRTUAL) publishGamepad(0)
     }
 
     private fun toggleStatistics() {
@@ -1556,13 +1635,19 @@ open class MainActivity : Activity() {
         gyro.stop();setDesktopCapture(false)
         shortcutFlushJob?.cancel()
         shortcutFlushJob = null
-        controllerShortcut.reset()
+        controllerShortcut.reset();usbShortcutHeld=0
+        usbNavigation.clear();usbBlockedButtons=usbDirect.currentInput().buttons
         if(::touchView.isInitialized) touchView.releaseInputs()
         controllers.reset()
         webrtcClient?.resetInput()
         rumble.enabled=false; rumble.stop()
     }
 
+    override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+        AndroidControllerMonitor.motion(event)
+        if(usbDirect.ownsAndroid(event.deviceId)) return true
+        return super.dispatchGenericMotionEvent(event)
+    }
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
         if(event.isFromSource(InputDevice.SOURCE_MOUSE) && handleDesktopMouse(event)) return true
         if (gameplayInputEnabled() &&
@@ -1641,7 +1726,7 @@ open class MainActivity : Activity() {
         if (!hasFocus) resetController()
         else {
             rumble.enabled=playbackSettings.rumble && webrtcClient!=null
-            resumeAuxiliaryInput()
+            resumeAuxiliaryInput();resynchronizeUsbInput()
             window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
                 View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
         }
@@ -1681,7 +1766,7 @@ open class MainActivity : Activity() {
 
     override fun onStart() {
         super.onStart(); activityVisible=true; reportTracker?.setVisible(true); webrtcClient?.resumeAudio();webrtcClient?.setAudioForeground(true)
-        usbRumble.setForeground(true)
+        usbRumble.setForeground(true);usbDirect.setForeground(true)
         rumble.enabled=playbackSettings.rumble && webrtcClient!=null
         updateJoystickDispatch()
         if(activeGame==null && dashboard!=null && controlPanel.visibility==View.VISIBLE && transitionPanel.visibility!=View.VISIBLE) {
@@ -1689,7 +1774,14 @@ open class MainActivity : Activity() {
             if(signaling!=null && library!=null) refreshCloudHistory(dashboard!!,signaling,library)
         }
     }
-    override fun onStop() { joystickDispatch.request(false);rumble.enabled=false;rumble.stop();usbRumble.setForeground(false);resetController();microphoneJob?.cancel();webrtcClient?.setAudioForeground(false);activityVisible=false; reportTracker?.setVisible(false); super.onStop() }
+    override fun onStop() {
+        val heldUsb=usbDirect.currentInput().buttons
+        joystickDispatch.request(false);rumble.enabled=false;rumble.stop()
+        usbRumble.setForeground(false);usbDirect.setForeground(false);usbNavigation.clear();resetController()
+        usbBlockedButtons=heldUsb
+        microphoneJob?.cancel();webrtcClient?.setAudioForeground(false);activityVisible=false
+        reportTracker?.setVisible(false);super.onStop()
+    }
 
     override fun onDestroy() {
         transmissionRecovery?.close()
@@ -1703,7 +1795,8 @@ open class MainActivity : Activity() {
         mainScope.cancel()
         (getSystemService(Context.INPUT_SERVICE) as InputManager).unregisterInputDeviceListener(deviceListener)
         rumble.enabled=false; rumble.stop()
-        usbRumble.close()
+        usbRumble.close();usbDirect.close();usbNavigation.clear()
+        com.xcloud.tclnative.ui.dashboard.AppControllerWindows.clear(this)
         dashboard?.close()
         shortcutPosters.close()
         gameMenuDialog?.dismiss()

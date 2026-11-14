@@ -200,13 +200,13 @@ class UsbControllerRumble(context: Context) : AutoCloseable {
         foreground=value
         if(!value) stop()
     }
-    fun disable() {
+    fun disable(done: () -> Unit={}) {
         generation.incrementAndGet();pending=null;completion=null
         activeName=null;activeInputId=null
         if(workerDelegate.isInitialized()) {
             worker.queue.clear()
-            if(!closed) worker.execute { disconnect() }
-        }
+            if(!closed) worker.execute { disconnect();main.post(done) } else done()
+        } else done()
         status="USB/XInput: desativado."
     }
     private fun disconnect() {

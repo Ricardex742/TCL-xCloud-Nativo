@@ -74,10 +74,12 @@ internal class MicrosoftLoginDialog(activity: Activity,private val authorization
     private fun finishError(message: String) { finished=true;dismiss();failed(message) }
     override fun show() {
         super.show();window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT)
+        ownerActivity?.let { owner -> window?.let { AppControllerWindows.attach(owner,it) } }
         window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         browser.loadUrl(authorization.url)
     }
     fun close() { finished=true;dismiss() }
+    override fun onStop() { window?.let(AppControllerWindows::detach);super.onStop() }
     private fun release() {
         if(released) return
         released=true

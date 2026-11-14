@@ -119,12 +119,14 @@ object RecreatedXboxBackgrounds {
     fun find(id: String)=byId[id]
     @Volatile private var cachedArtwork: List<SeriesWallpaper>?=null
     fun wallpapers(context: android.content.Context): List<SeriesWallpaper> = cachedArtwork ?: synchronized(this) {
-        cachedArtwork ?: run {
+        cachedArtwork ?: wallpapers(OfficialXboxWallpapers.read(context)).also { cachedArtwork=it }
+    }
+    internal fun wallpapers(items: List<SeriesWallpaper>): List<SeriesWallpaper> {
             val characters=Regex("[^\\p{L}\\p{N} ]")
             val spaces=Regex("\\s+")
             fun clean(value: String)=value.lowercase().replace(characters,"").replace(spaces," ").trim()
-            val official=OfficialXboxWallpapers.read(context).map { clean(it.name) to it }
-            entries.map { entry ->
+            val official=items.map { clean(it.name) to it }
+            return entries.map { entry ->
                 val token=clean(entry.name.substringBefore(" — "))
                 val base=clean(entry.name.substringBefore(":").substringBefore(" — "))
                 val alias=when {
@@ -141,7 +143,6 @@ object RecreatedXboxBackgrounds {
                         ?: official.firstOrNull { it.first.contains(token) && token.length>=5 }
                         ?: official.firstOrNull { it.first.contains(base) && base.length>=5 })?.second?.artUrl
                 entry.wallpaper(picture)
-            }.also { cachedArtwork=it }
-        }
+            }
     }
 }

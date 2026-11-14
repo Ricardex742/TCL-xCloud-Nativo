@@ -19,8 +19,14 @@ object OfficialXboxWallpapers {
         if(name.isBlank() || name.length>240 || !trustedAsset(url) || preview?.let { !trustedAsset(it) }==true) return null
         val uri=URI(url)
         val identity="https://${uri.host}${uri.rawPath}"
-        val id="official:"+MessageDigest.getInstance("SHA-256").digest(identity.toByteArray(Charsets.UTF_8))
-            .take(12).joinToString("") { "%02x".format(it.toInt() and 255) }
+        val digest=MessageDigest.getInstance("SHA-256").digest(identity.toByteArray(Charsets.UTF_8))
+        val hex="0123456789abcdef"
+        val id="official:"+buildString(24) {
+            repeat(12) { index ->
+                val byte=digest[index].toInt() and 255
+                append(hex[byte ushr 4]);append(hex[byte and 15])
+            }
+        }
         return SeriesWallpaper(id,name,artUrl=url,category=WallpaperCategory.OFFICIAL,previewUrl=preview)
     }
     fun read(context: Context): List<SeriesWallpaper> = cached ?: synchronized(this) {

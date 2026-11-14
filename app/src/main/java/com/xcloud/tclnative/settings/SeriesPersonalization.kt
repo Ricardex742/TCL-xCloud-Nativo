@@ -24,7 +24,10 @@ data class SeriesWallpaper(val id: String,val name: String,val style: WallpaperS
                            val artUrl: String?=null,val category: WallpaperCategory=WallpaperCategory.ABSTRACT,
                            val previewUrl: String?=null) {
     val official get()=category==WallpaperCategory.OFFICIAL && id.startsWith("official:")
-    val recreation get()=RecreatedXboxBackgrounds.find(id) ?: RecreatedXboxBackgrounds.artworkDesign(this)
+    // Wallpaper metadata is immutable. Validation/palette selection must never run on each animation frame.
+    val recreation by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        RecreatedXboxBackgrounds.find(id) ?: RecreatedXboxBackgrounds.artworkDesign(this)
+    }
     val label get()=if(recreation!=null) UiText.text("Recriação • {0}",UiText.nested(name)) else if(artUrl==null) UiText.text(name) else name
     fun json(): String=JSONObject().put("id",id).put("name",name).put("style",style.name)
         .put("url",artUrl).put("category",category.name).put("preview",previewUrl).toString()

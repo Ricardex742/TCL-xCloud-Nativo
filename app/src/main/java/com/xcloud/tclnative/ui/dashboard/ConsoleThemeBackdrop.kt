@@ -21,12 +21,16 @@ import java.util.WeakHashMap
 /** No timer for the seven color palettes, hidden screens or gameplay. AUTO is conservative. */
 internal object BackgroundMotionPolicy {
     fun interval(mode: BackgroundMotion,scene: ConsoleScene,lowRam: Boolean,largeUi: Boolean,
-                 powerSave: Boolean,animations: Boolean,presented: Boolean,independentAnimation: Boolean=false): Long? {
+                 powerSave: Boolean,animations: Boolean,presented: Boolean,independentAnimation: Boolean=false,
+                 television: Boolean=false): Long? {
         if(!presented || scene==ConsoleScene.NONE || mode==BackgroundMotion.OFF) return null
         if(mode==BackgroundMotion.AUTO && (powerSave || !animations || lowRam || largeUi)) return null
-        return if(powerSave) 250L else if(independentAnimation) { if(lowRam || largeUi) 100L else 33L }
+        return if(powerSave) 250L else if(independentAnimation) { if(lowRam || largeUi) 100L else if(television) 67L else 33L }
             else if(lowRam || largeUi) 167L else 84L
     }
+    fun television(context: Context)=
+        context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_TYPE_MASK==android.content.res.Configuration.UI_MODE_TYPE_TELEVISION ||
+            context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_LEANBACK)
 }
 
 /** A separate render node avoids invalidating/rebinding catalogue cards for background motion. */
@@ -66,6 +70,7 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
     private var phase=0f
     private var lastTick=0L
     private var lowRam=false
+    private val television=BackgroundMotionPolicy.television(context)
     private var powerSave=false
     private var animations=true
     private val tick=object: Runnable {
@@ -109,9 +114,9 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
         val recreation=wallpaper?.recreation!=null && DashboardTheme.palette.theme.scene==ConsoleScene.XBOX_SERIES
         if(recreation) {
             if(picture!=null && !picture.isRecycled) {
-                wallpaperArt?.let { it.phase=phase;it.lowDetail=lowRam;it.drawArtwork(canvas,picture,width,height) }
+                wallpaperArt?.let { it.phase=phase;it.lowDetail=lowRam || television;it.drawArtwork(canvas,picture,width,height) }
             }
-            wallpaperArt?.let { it.hasArtwork=picture?.isRecycled==false;it.lowDetail=lowRam;it.phase=phase;it.draw(canvas) }
+            wallpaperArt?.let { it.hasArtwork=picture?.isRecycled==false;it.lowDetail=lowRam || television;it.phase=phase;it.draw(canvas) }
         } else if(picture!=null && !picture.isRecycled && DashboardTheme.palette.theme.scene==ConsoleScene.XBOX_SERIES) {
             val wave=kotlin.math.sin(phase*2*Math.PI).toFloat()
             val moving=interval!=null || phase!=0f
@@ -149,16 +154,16 @@ internal class ConsoleThemeBackdrop(context: Context): View(context) {
     private fun refreshScheduling() {
         // Services/settings are sampled on lifecycle/preference changes, never on each frame.
         lowRam=DevicePerformancePolicy.read(context).constrainedMemory
-        painter.lowDetail=lowRam
+        painter.lowDetail=lowRam || television
         powerSave=context.getSystemService(PowerManager::class.java)?.isPowerSaveMode ?: false
         animations=if(Build.VERSION.SDK_INT>=26) ValueAnimator.areAnimatorsEnabled()
             else Settings.Global.getFloat(context.contentResolver,Settings.Global.ANIMATOR_DURATION_SCALE,1f)>0f
         val mode=AppearanceSettingsStore(context).motion();explicitMotion=mode==BackgroundMotion.ON
         refreshWallpaper()
         wallpaperArt?.animationEnabled=BackgroundMotionPolicy.interval(mode,DashboardTheme.palette.theme.scene,
-            lowRam,width.toLong()*height>2560L*1440L,powerSave,animations,true,true)!=null
+            lowRam,width.toLong()*height>2560L*1440L,powerSave,animations,true,true,television)!=null
         val next=BackgroundMotionPolicy.interval(mode,DashboardTheme.palette.theme.scene,
-            lowRam,width.toLong()*height>2560L*1440L,powerSave,animations,canPresent(),wallpaper?.recreation!=null || DashboardTheme.palette.theme.scene==ConsoleScene.XBOX_ORIGINAL)
+            lowRam,width.toLong()*height>2560L*1440L,powerSave,animations,canPresent(),wallpaper?.recreation!=null || DashboardTheme.palette.theme.scene==ConsoleScene.XBOX_ORIGINAL,television)
         if(next==interval && framePending) return
         stop();interval=next
         if(mode==BackgroundMotion.OFF) { phase=0f;invalidate() }

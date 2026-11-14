@@ -9,6 +9,7 @@ import android.widget.ImageView
 import com.xcloud.tclnative.ui.dashboard.PosterLoader
 import com.xcloud.tclnative.ui.dashboard.ArtworkBackend
 import com.xcloud.tclnative.ui.dashboard.ArtworkPolicy
+import com.xcloud.tclnative.ui.dashboard.ArtworkImageDecoder
 import kotlinx.coroutines.*
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -34,6 +35,91 @@ import java.util.concurrent.CountDownLatch
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @LooperMode(LooperMode.Mode.PAUSED)
 class ArtworkLoadingTest {
+    @Test fun imageAllocationFailureKeepsTheUiAliveAndTheNextImageCanLoad() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup();val activity=controller.get()
+        val server=MockWebServer().apply { start() }
+        repeat(2) { server.enqueue(MockResponse().setBody(Buffer().write(png(Color.BLUE,1920,1080)))) }
+        val attempts=java.util.concurrent.atomic.AtomicInteger()
+        val backend=ArtworkBackend(activity,ArtworkPolicy(4*1024*1024,1),OkHttpClient()) { file,size ->
+            if(attempts.incrementAndGet()==1) throw OutOfMemoryError("Synthetic decoder allocation failure")
+            ArtworkImageDecoder.decode(file,size)
+        }
+        val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate);val loader=PosterLoader(activity,scope,backend)
+        try {
+            val image=ImageView(activity);var failed=false
+            loader.load(image,server.url("/failed.png").toString(),768,432,notifyPlaceholder=false) { failed=!it }
+            await { failed }
+            assertNull(image.drawable);assertEquals(0,backend.cache.size())
+            assertTrue(java.io.File(activity.cacheDir,"artwork_pending").listFiles()!!.isEmpty())
+            loader.load(image,server.url("/next.png").toString(),768,432)
+            await { image.drawable is BitmapDrawable }
+            val decoded=(image.drawable as BitmapDrawable).bitmap
+            assertTrue(decoded.width<=768 && decoded.height<=432);assertEquals(Color.BLUE,decoded.getPixel(0,0))
+            assertTrue(java.io.File(activity.cacheDir,"artwork_pending").listFiles()!!.isEmpty())
+        } finally { loader.close();scope.cancel();backend.close();server.shutdown();controller.pause().stop().destroy() }
+    }
+
+    @Test fun oversizedKnownAndChunkedResponsesNeverReachTheDecoderAndDeleteTemporaryFiles() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup();val activity=controller.get()
+        val server=MockWebServer().apply { start() }
+        val oversized=Buffer().write(ByteArray(8*1024*1024+1))
+        server.enqueue(MockResponse().setBody(oversized.clone()))
+        server.enqueue(MockResponse().setChunkedBody(oversized,64*1024))
+        val attempts=java.util.concurrent.atomic.AtomicInteger()
+        val backend=ArtworkBackend(activity,ArtworkPolicy(4*1024*1024,1),OkHttpClient()) { _,_ -> attempts.incrementAndGet();null }
+        val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate);val loader=PosterLoader(activity,scope,backend)
+        try {
+            repeat(2) { index ->
+                var finished=false
+                loader.load(ImageView(activity),server.url("/$index.png").toString(),256,144,notifyPlaceholder=false) { finished=true;assertFalse(it) }
+                await { finished }
+            }
+            assertEquals(0,attempts.get())
+            assertTrue(java.io.File(activity.cacheDir,"artwork_pending").listFiles()!!.isEmpty())
+        } finally { loader.close();scope.cancel();backend.close();server.shutdown();controller.pause().stop().destroy() }
+    }
+
+    @Test fun cancellationAfterDecodeRecyclesOnlyTheUnpublishedBitmap() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup();val activity=controller.get()
+        val server=MockWebServer().apply { start() }
+        server.enqueue(MockResponse().setBody(Buffer().write(png(Color.BLUE))))
+        val decoded=Bitmap.createBitmap(64,36,Bitmap.Config.ARGB_8888)
+        val entered=CountDownLatch(1);val release=CountDownLatch(1)
+        val backend=ArtworkBackend(activity,ArtworkPolicy(4*1024*1024,1),OkHttpClient()) { _,_ ->
+            entered.countDown();release.await(5,TimeUnit.SECONDS);decoded
+        }
+        val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate);val loader=PosterLoader(activity,scope,backend)
+        try {
+            val image=ImageView(activity)
+            loader.load(image,server.url("/cancel.png").toString(),256,144)
+            await { entered.count==0L };loader.cancel(image);release.countDown()
+            await { decoded.isRecycled }
+            assertNull(image.drawable);assertEquals(0,backend.cache.size())
+            await { java.io.File(activity.cacheDir,"artwork_pending").listFiles()!!.isEmpty() }
+        } finally { release.countDown();loader.close();scope.cancel();backend.close();server.shutdown();controller.pause().stop().destroy() }
+    }
+
+    @Test fun galleryBudgetSerializesImagesEvenWhenTheSharedBackendHasMoreWorkers() {
+        val controller=Robolectric.buildActivity(Activity::class.java).setup();val activity=controller.get()
+        val server=MockWebServer().apply { start() };val release=CountDownLatch(1)
+        val bytes=png(Color.BLUE)
+        server.dispatcher=object: Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                release.await(5,TimeUnit.SECONDS);return MockResponse().setBody(Buffer().write(bytes))
+            }
+        }
+        val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
+        val backend=ArtworkBackend(activity,ArtworkPolicy(4*1024*1024,3),OkHttpClient())
+        val loader=PosterLoader(activity,scope,backend,maxConcurrent=1);val images=List(3) { ImageView(activity) }
+        try {
+            images.forEachIndexed { index,image -> loader.load(image,server.url("/$index.png").toString(),256,144) }
+            await { server.requestCount==1 }
+            assertNotNull(server.takeRequest(1,TimeUnit.SECONDS));assertNull(server.takeRequest(200,TimeUnit.MILLISECONDS))
+            release.countDown();await { images.all { it.drawable is BitmapDrawable } }
+            assertEquals(3,server.requestCount)
+        } finally { release.countDown();loader.close();scope.cancel();backend.close();server.shutdown();controller.pause().stop().destroy() }
+    }
+
     @Test fun memoryPressureReleasesTheCacheWithoutRecyclingDisplayedArtAndLowEndDecodesStayBounded() {
         val controller=Robolectric.buildActivity(Activity::class.java).setup();val activity=controller.get()
         val server=MockWebServer().apply { start() }

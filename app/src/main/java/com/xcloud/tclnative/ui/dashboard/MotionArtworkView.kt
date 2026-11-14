@@ -15,6 +15,8 @@ import com.xcloud.tclnative.settings.*
 /** One animated gallery preview; thumbnails do not each start a timer. */
 internal class MotionArtworkView(context: Context): ImageView(context) {
     private var attached=false;private var focused=false;private var aggregated=true;private var closed=false
+    private var presented=true
+    private val television=BackgroundMotionPolicy.television(context)
     private var last=0L;private var step: Long?=null;private var phase=0f
     private var backdrop: Bitmap?=null
     internal var framePending=false;private set
@@ -32,6 +34,7 @@ internal class MotionArtworkView(context: Context): ImageView(context) {
         }
     }
     fun showArt(art: MotionWallpaperArt) { setBackdrop(null);setImageDrawable(art);phase=0f;refreshMotion() }
+    fun setPresentationEnabled(value: Boolean) { presented=value;refreshMotion() }
     fun setBackdrop(value: Drawable?) {
         backdrop=(value as? BitmapDrawable)?.bitmap
         (drawable as? MotionWallpaperArt)?.hasArtwork=backdrop?.isRecycled==false
@@ -44,17 +47,17 @@ internal class MotionArtworkView(context: Context): ImageView(context) {
         }
         super.onDraw(canvas)
     }
-    private fun visibleForMotion()=attached && !closed && focused && aggregated && isShown && windowVisibility==VISIBLE && drawable is MotionWallpaperArt
+    private fun visibleForMotion()=attached && !closed && presented && focused && aggregated && isShown && windowVisibility==VISIBLE && drawable is MotionWallpaperArt
     private fun refreshMotion() {
         removeCallbacks(tick);framePending=false
         val art=drawable as? MotionWallpaperArt ?: return
-        val low=DevicePerformancePolicy.read(context).constrainedMemory;art.lowDetail=low
+        val low=DevicePerformancePolicy.read(context).constrainedMemory;art.lowDetail=low || television
         val power=context.getSystemService(PowerManager::class.java)?.isPowerSaveMode ?: false
         val animations=if(Build.VERSION.SDK_INT>=26) ValueAnimator.areAnimatorsEnabled()
             else Settings.Global.getFloat(context.contentResolver,Settings.Global.ANIMATOR_DURATION_SCALE,1f)>0
         val motion=AppearanceSettingsStore(context).motion()
-        art.animationEnabled=BackgroundMotionPolicy.interval(motion,ConsoleScene.XBOX_SERIES,low,false,power,animations,true,art is RecreatedWallpaperArt)!=null
-        step=BackgroundMotionPolicy.interval(motion,ConsoleScene.XBOX_SERIES,low,false,power,animations,visibleForMotion(),art is RecreatedWallpaperArt)
+        art.animationEnabled=BackgroundMotionPolicy.interval(motion,ConsoleScene.XBOX_SERIES,low,false,power,animations,true,art is RecreatedWallpaperArt,television)!=null
+        step=BackgroundMotionPolicy.interval(motion,ConsoleScene.XBOX_SERIES,low,false,power,animations,visibleForMotion(),art is RecreatedWallpaperArt,television)
         if(motion==BackgroundMotion.OFF) { phase=0f;art.phase=0f;invalidate() }
         step?.let { last=SystemClock.uptimeMillis();framePending=postDelayed(tick,it) }
     }

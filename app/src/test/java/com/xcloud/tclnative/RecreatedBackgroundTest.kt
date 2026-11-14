@@ -30,6 +30,22 @@ class RecreatedBackgroundTest {
         UiText.apply(app,AppLanguage.PORTUGUESE);DashboardTheme.apply(app,UiTheme.XBOX_SERIES)
     }
     @After fun cleanup() { ShadowDialog.getLatestDialog()?.dismiss();DashboardTheme.apply(app,UiTheme.GREEN) }
+    @Test @Config(sdk=[31],qualifiers="w1280dp-h720dp-land-television-mdpi")
+    fun televisionKeepsExplicitAnimationsWithAConservativeBudgetAndStopsThemWhenHidden() {
+        val c=Robolectric.buildActivity(Activity::class.java).setup();val a=c.get()
+        AppearanceSettingsStore(a).saveMotion(BackgroundMotion.ON)
+        val selected=RecreatedXboxBackgrounds.entries.first { it.family==RecreationFamily.CORE }.wallpaper()
+        SeriesPersonalizationStore(a).select(selected)
+        val backdrop=ConsoleThemeBackdrop(a)
+        try {
+            assertTrue(BackgroundMotionPolicy.television(a))
+            assertEquals(67L,BackgroundMotionPolicy.interval(BackgroundMotion.ON,ConsoleScene.XBOX_SERIES,false,false,false,true,true,true,true))
+            a.setContentView(backdrop);layout(backdrop);backdrop.onWindowFocusChanged(true);backdrop.onVisibilityAggregated(true)
+            advance(1000);assertTrue(backdrop.renderedTicks in 13..16);assertTrue(backdrop.framePending)
+            backdrop.setPresentationEnabled(false);val ticks=backdrop.renderedTicks;advance(500)
+            assertEquals(ticks,backdrop.renderedTicks);assertFalse(backdrop.framePending)
+        } finally { backdrop.close();c.pause().stop().destroy() }
+    }
     private fun all(v: View): List<View> = listOf(v)+if(v is ViewGroup) (0 until v.childCount).flatMap { all(v.getChildAt(it)) } else emptyList()
     private fun layout(v: View,w: Int=1280,h: Int=720) {
         repeat(3) { v.measure(View.MeasureSpec.makeMeasureSpec(w,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(h,View.MeasureSpec.EXACTLY));v.layout(0,0,w,h);shadowOf(Looper.getMainLooper()).idle() }

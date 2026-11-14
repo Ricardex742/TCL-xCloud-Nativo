@@ -8,6 +8,8 @@ import android.widget.*
 import com.xcloud.tclnative.i18n.*
 import com.xcloud.tclnative.settings.*
 import com.xcloud.tclnative.ui.dashboard.*
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
 import okhttp3.*
 import org.junit.*
 import org.junit.Assert.*
@@ -58,6 +60,64 @@ class OfficialWallpaperGalleryUiTest {
                 .body((if(fail) byteArrayOf() else png).toResponseBody("image/png".toMediaType())).build()
         }.build()
         return ArtworkBackend(a,client=client)
+    }
+    @Test fun coldCatalogIsPreparedOffMainAndKeepsTheCategorySelectedDuringLoading() {
+        val c=Robolectric.buildActivity(Activity::class.java).setup();val a=c.get();a.setContentView(FrameLayout(a));layout(a.window.decorView)
+        val images=backend(a,ConcurrentLinkedQueue());val gate=CompletableDeferred<Unit>()
+        val started=java.util.concurrent.atomic.AtomicBoolean();val onMain=java.util.concurrent.atomic.AtomicBoolean(true)
+        val catalog=OfficialXboxWallpapers.read(a)
+        try {
+            val model=SeriesWallpaperGallery(a,emptyList(),backend=images,catalogSource={
+                onMain.set(Looper.myLooper()==Looper.getMainLooper());started.set(true);gate.await()
+                WallpaperGalleryCatalog.create(catalog,RecreatedXboxBackgrounds.wallpapers(catalog))
+            },back={})
+            val gallery=model.show();layout(gallery.window!!.decorView,gallery.window!!.attributes.width,648)
+            await { started.get() };assertTrue(gallery.isShowing);assertFalse(model.catalogReady);assertFalse(onMain.get())
+            click(gallery,"Oficiais Xbox");assertTrue(tiles(gallery).isEmpty())
+            gate.complete(Unit);await { model.catalogReady };layout(gallery.window!!.decorView,gallery.window!!.attributes.width,648)
+            assertEquals(24,tiles(gallery).size)
+            assertEquals(catalog.first().label,tiles(gallery).first().contentDescription)
+            assertTrue(all(gallery.panel).filterIsInstance<TextView>().single { it.isClickable && it.text.toString().equals("Oficiais Xbox",true) }.isSelected)
+            capture(gallery,"async-catalog");gallery.dismiss()
+        } finally { gate.complete(Unit);images.close();c.pause().stop().destroy() }
+    }
+
+    @Test fun repeatedlyClosingAColdGalleryCancelsDeliveryAndAllPreviewTimers() {
+        val c=Robolectric.buildActivity(Activity::class.java).setup();val a=c.get();a.setContentView(FrameLayout(a));layout(a.window.decorView)
+        AppearanceSettingsStore(a).saveMotion(BackgroundMotion.ON)
+        val images=backend(a,ConcurrentLinkedQueue())
+        try {
+            repeat(5) {
+                val gate=CompletableDeferred<Unit>();val started=java.util.concurrent.atomic.AtomicBoolean();val cancelled=java.util.concurrent.atomic.AtomicBoolean()
+                val model=SeriesWallpaperGallery(a,emptyList(),backend=images,catalogSource={
+                    started.set(true)
+                    try { gate.await();WallpaperGalleryCatalog.create(emptyList(),emptyList()) }
+                    catch(error: CancellationException) { cancelled.set(true);throw error }
+                },back={})
+                val gallery=model.show();layout(gallery.window!!.decorView,gallery.window!!.attributes.width,648)
+                val preview=all(gallery.panel).filterIsInstance<MotionArtworkView>().single()
+                preview.onWindowFocusChanged(true);await { started.get() }
+                gallery.dismiss();await { cancelled.get() };gate.complete(Unit)
+                shadowOf(Looper.getMainLooper()).idleFor(300,TimeUnit.MILLISECONDS)
+                assertFalse(model.catalogReady);assertFalse(preview.framePending);assertFalse(gallery.isShowing)
+            }
+        } finally { images.close();c.pause().stop().destroy() }
+    }
+
+    @Test fun animatedPhotoPreviewWaitsForTheImageBeforeSchedulingFrames() {
+        val c=Robolectric.buildActivity(Activity::class.java).setup();val a=c.get();a.setContentView(FrameLayout(a));layout(a.window.decorView)
+        AppearanceSettingsStore(a).saveMotion(BackgroundMotion.ON)
+        val original=OfficialXboxWallpapers.read(a).first();val selected=RecreatedXboxBackgrounds.animatedArtwork(original)!!
+        SeriesPersonalizationStore(a).select(selected)
+        val gate=java.util.concurrent.CountDownLatch(1);val images=backend(a,ConcurrentLinkedQueue(),gate=gate)
+        try {
+            val gallery=SeriesWallpaperGallery(a,emptyList(),listOf(original),images,recreatedItems=emptyList(),back={}).show()
+            layout(gallery.window!!.decorView,gallery.window!!.attributes.width,648)
+            val preview=all(gallery.panel).filterIsInstance<MotionArtworkView>().single();preview.onWindowFocusChanged(true)
+            assertTrue(preview.drawable is RecreatedWallpaperArt);assertFalse(preview.framePending)
+            gate.countDown();await { preview.framePending }
+            gallery.dismiss();assertFalse(preview.framePending)
+        } finally { gate.countDown();images.close();c.pause().stop().destroy() }
     }
     @Test fun officialCategoryLoadsOnlyVisibleArtAndKeepsSourceWhenFavoritedAndSelected() {
         val c=Robolectric.buildActivity(Activity::class.java).setup();val a=c.get();a.setContentView(FrameLayout(a));layout(a.window.decorView)

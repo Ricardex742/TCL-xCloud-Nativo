@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.ComponentCallbacks2
 import android.content.res.Configuration
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.util.LruCache
 import android.widget.ImageView
 import com.xcloud.tclnative.net.awaitResponse
@@ -24,7 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 /** UI bindings reuse identical requests; background work is shared and cancelled after the last consumer. */
 internal class PosterLoader(context: Context, private val scope: CoroutineScope,
-                            private val backend: ArtworkBackend = ArtworkBackend.get(context), frameBound: Boolean=false) {
+                            private val backend: ArtworkBackend = ArtworkBackend.get(context), frameBound: Boolean=false,
+                            maxConcurrent: Int?=null) {
     private class Binding(val request: ArtworkRequest, var onReady: (Boolean) -> Unit) {
         var job: Job? = null
         var ready=false
@@ -32,6 +32,7 @@ internal class PosterLoader(context: Context, private val scope: CoroutineScope,
     }
     private val bindings=WeakHashMap<ImageView,Binding>()
     private var paused=false
+    private val loads=maxConcurrent?.let { Semaphore(it.coerceAtLeast(1)) }
     private val deliveries=if(frameBound) ArtworkFrameQueue() else null
     fun pause() {
         paused=true
@@ -59,16 +60,19 @@ internal class PosterLoader(context: Context, private val scope: CoroutineScope,
         view.setImageDrawable(null)
         if(notifyPlaceholder) onReady(false)
         binding.job=scope.launch {
-            val shared=backend.acquire(request)
-            try {
-                val bitmap=shared.result.await()
-                if(isActive && bindings[view]===binding) {
-                    if(bitmap!=null) deliver(view,binding,bitmap) else binding.onReady(false)
+            suspend fun receive() {
+                val shared=backend.acquire(request)
+                try {
+                    val bitmap=shared.result.await()
+                    if(isActive && bindings[view]===binding) {
+                        if(bitmap!=null) deliver(view,binding,bitmap) else binding.onReady(false)
+                    }
+                } finally {
+                    backend.release(request,shared)
                 }
-            } finally {
-                backend.release(request,shared)
-                binding.job=null
             }
+            try { loads?.withPermit { receive() } ?: receive() }
+            finally { binding.job=null }
         }
     }
     private fun deliver(view: ImageView,binding: Binding,bitmap: Bitmap) {
@@ -81,6 +85,12 @@ internal class PosterLoader(context: Context, private val scope: CoroutineScope,
         deliveries?.post(view,action) ?: action()
     }
     fun cancel(view: ImageView) { bindings.remove(view)?.job?.cancel(); deliveries?.remove(view); view.setImageDrawable(null) }
+    /** Drop queued/in-flight placeholders so a newly focused preview can take the next slot. */
+    fun cancelPending() {
+        bindings.entries.toList().filter { !it.value.ready }.forEach { (view,binding) ->
+            bindings.remove(view);binding.job?.cancel();deliveries?.remove(view)
+        }
+    }
     fun close() { bindings.values.toList().forEach { it.job?.cancel() }; bindings.clear(); deliveries?.clear() }
 }
 
@@ -89,7 +99,8 @@ internal class ArtworkBackend(context: Context,
                               val policy: ArtworkPolicy = devicePolicy(context),
                               private val client: OkHttpClient = OkHttpClient.Builder()
                                   .cache(Cache(File(context.cacheDir,"game_art"),64L*1024*1024))
-                                  .callTimeout(12,TimeUnit.SECONDS).build()) : ComponentCallbacks2 {
+                                  .callTimeout(12,TimeUnit.SECONDS).build(),
+                              private val decode: (File,ArtworkSize) -> Bitmap?=ArtworkImageDecoder::decode) : ComponentCallbacks2 {
     private val application=context.applicationContext
     val cache=object : LruCache<ArtworkRequest,Bitmap>(policy.memoryCacheBytes) {
         override fun sizeOf(key: ArtworkRequest,value: Bitmap)=value.allocationByteCount
@@ -133,37 +144,43 @@ internal class ArtworkBackend(context: Context,
             shared.call?.cancel() // Also interrupts body reads after awaitResponse has returned headers.
         }
     }
-    private suspend fun fetch(request: ArtworkRequest,shared: Shared): Bitmap? = try {
+    private suspend fun fetch(request: ArtworkRequest,shared: Shared): Bitmap? {
+      var temporary: File?=null
+      var owned: Bitmap?=null
+      return try {
         val call=client.newCall(Request.Builder().url(request.url).build())
         shared.call=call
         currentCoroutineContext().ensureActive()
-        call.awaitResponse().use { response ->
-            if(!response.isSuccessful) return@use null
-            val source=response.body?.source() ?: return@use null
-            source.request(MAX_IMAGE_BYTES+1)
-            if(source.buffer.size>MAX_IMAGE_BYTES) return@use null
-            val bytes=source.readByteArray()
+        call.awaitResponse().use responseBody@ { response ->
+            if(!response.isSuccessful) return@responseBody null
+            val body=response.body ?: return@responseBody null
+            if(body.contentLength()>MAX_IMAGE_BYTES) return@responseBody null
+            val directory=File(application.cacheDir,"artwork_pending").apply { mkdirs() }
+            val file=File.createTempFile("image-",".tmp",directory).also { temporary=it }
+            body.byteStream().use { input -> file.outputStream().use { output ->
+                val buffer=ByteArray(64*1024)
+                var total=0L
+                while(true) {
+                    currentCoroutineContext().ensureActive()
+                    val count=input.read(buffer)
+                    if(count<0) break
+                    total+=count
+                    if(total>MAX_IMAGE_BYTES) return@responseBody null
+                    output.write(buffer,0,count)
+                }
+            } }
             currentCoroutineContext().ensureActive()
-            val bounds=BitmapFactory.Options().apply { inJustDecodeBounds=true }
-            BitmapFactory.decodeByteArray(bytes,0,bytes.size,bounds)
-            if(bounds.outWidth<=0 || bounds.outHeight<=0) return@use null
-            val target=request.size.fit(bounds.outWidth,bounds.outHeight)
-            var sample=1
-            while(bounds.outWidth/(sample*2)>=target.width && bounds.outHeight/(sample*2)>=target.height) sample*=2
-            val decoded=BitmapFactory.decodeByteArray(bytes,0,bytes.size,BitmapFactory.Options().apply {
-                inSampleSize=sample; inPreferredConfig=Bitmap.Config.RGB_565
-            }) ?: return@use null
-            val fitted=if(decoded.width>request.size.width || decoded.height>request.size.height) {
-                val size=request.size.fit(decoded.width,decoded.height)
-                Bitmap.createScaledBitmap(decoded,size.width,size.height,true).also { if(it!==decoded) decoded.recycle() }
-            } else decoded
+            val fitted=decode(file,request.size)?.also { owned=it } ?: return@responseBody null
             currentCoroutineContext().ensureActive()
             cache.put(request,fitted)
+            owned=null // Cache and visible consumers now own this bitmap; never recycle it below.
             fitted
         }
     } catch(cancelled: CancellationException) { throw cancelled }
+      catch(_: OutOfMemoryError) { cache.evictAll();null }
       catch(_: Exception) { null }
-      finally { shared.call?.cancel(); shared.call=null }
+      finally { owned?.recycle();temporary?.delete();shared.call?.cancel();shared.call=null }
+    }
 
     @Synchronized internal fun close() {
         application.unregisterComponentCallbacks(this)

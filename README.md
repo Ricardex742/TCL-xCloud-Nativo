@@ -352,7 +352,11 @@ As posições, tamanhos, ações e gestos podem ser ajustados por jogo. No futeb
 
 - Resolução e codec recebidos, FPS decodificados e bitrate.
 - RTT, jitter, perda de pacotes, buffer, descartes e tempo de decodificação.
-- Estatísticas durante a partida com ativação manual.
+- Estatísticas durante a partida com ativação manual pelo menu ou INFO/F10, alternando diretamente entre mostrar e ocultar.
+- **Estatísticas personalizáveis:** escolha individual de FPS do vídeo, ping/RTT, bitrate, resolução recebida, codec, decodificação, jitter, perda, buffer, descartes e agendador de input. O padrão mostra apenas FPS, ping e bitrate; o modo completo continua disponível.
+- Posição nos quatro cantos, tamanho do texto e opacidade do fundo ajustáveis. As escolhas ficam salvas e cada partida começa com o painel oculto.
+- **Recuperar imagem** pelo menu da partida: recria a exibição e solicita a recuperação do decodificador sem encerrar a sessão Xbox.
+- **Recarregar transmissão — experimental:** tenta reconstruir áudio, vídeo e controles na mesma sessão Xbox, mantendo sua manutenção ativa e sem solicitar outra partida ou nova fila. A reconexão depende da sessão ainda estar disponível e da resposta do serviço. O microfone retorna mudo; uma tentativa malsucedida oferece nova tentativa e saída explícita.
 - Resumo local pós-partida com médias, picos, pausas observadas e recuperações.
 - Motivo do encerramento em destaque, quando identificado.
 - Diagnóstico do HUD com idade dos toques, opções do layout e último controle identificado.

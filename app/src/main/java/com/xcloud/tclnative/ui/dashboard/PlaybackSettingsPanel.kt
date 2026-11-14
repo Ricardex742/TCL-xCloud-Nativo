@@ -214,6 +214,9 @@ class PlaybackSettingsPanel(
     fun showDiagnostics(): ConsoleDialog {
         val value=store.read()
         return category(SettingsPage.DIAGNOSTICS,UiText.text("Diagnósticos"),listOf(
+            ConsoleAction(UiText.text("Estatísticas durante a partida")) {
+                StatisticsSettingsPanel(context,StatisticsSettingsStore(context),back={ showDiagnostics() }).show()
+            },
             ConsoleAction(UiText.text("Diagnóstico pós-partida: {0}",UiText.nested(if(value.sessionReport) UiText.text("Ativado") else UiText.text("Desativado")))) {
                 choices(UiText.text("Diagnóstico pós-partida"),UiText.text("Guarda o último resumo local. As estatísticas da partida continuam ocultas até você ativá-las."),
                     listOf(UiText.text("Ativado — abrir ao sair do jogo") to value.sessionReport,UiText.text("Desativado — consultar nas configurações") to !value.sessionReport)) {

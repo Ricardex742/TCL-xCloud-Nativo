@@ -114,6 +114,71 @@ class SignalingTest {
         OkHttpClient.Builder().proxy(Proxy.NO_PROXY).callTimeout(3, TimeUnit.SECONDS).build(),
         { now += it }, { now }, queueTimeout)
 
+    @Test fun reconnectReusesTheAllocationAndDoesNotProvisionOrEnterAnotherQueue() = runBlocking {
+        val client=signaling()
+        client.startAndConnectWebRtcSession("real-id",peer) {}.getOrThrow()
+        val marker=requests.size
+        client.reconnectExistingSession(peer).getOrThrow()
+        val reload=requests.drop(marker)
+        assertEquals(listOf("/session/keepalive","/session/sdp","/session/sdp","/session/ice","/session/ice"),reload.map { it.path })
+        assertEquals("2",JSONObject(reload.single { it.method=="POST" && it.path=="/session/sdp" }.body.clone().readUtf8()).getString("requestId"))
+        assertEquals(1,requests.count { it.path=="/v5/sessions/cloud/play" })
+        assertEquals(1,requests.count { it.path=="/session/connect" })
+        assertFalse(requests.any { it.method=="DELETE" })
+        client.stop();assertEquals(1,requests.count { it.method=="DELETE" })
+    }
+    @Test fun rejectedReconnectLeavesKeepaliveAndAnotherAttemptAvailable() = runBlocking {
+        val client=signaling();client.startAndConnectWebRtcSession("real-id",peer) {}.getOrThrow()
+        rejectSdp=true;assertTrue(client.reconnectExistingSession(peer).isFailure)
+        client.keepAlive();assertFalse(requests.any { it.method=="DELETE" })
+        rejectSdp=false;client.reconnectExistingSession(peer).getOrThrow()
+        val ids=requests.filter { it.method=="POST" && it.path=="/session/sdp" }.map { JSONObject(it.body.clone().readUtf8()).getString("requestId") }
+        assertEquals(listOf("1","2","3"),ids);assertEquals(1,requests.count { it.path=="/v5/sessions/cloud/play" })
+        client.stop()
+    }
+    @Test fun cancellingReconnectDoesNotDeleteTheHeldSession() = runBlocking {
+        val client=signaling();client.startAndConnectWebRtcSession("real-id",peer) {}.getOrThrow()
+        val entered=CompletableDeferred<Unit>()
+        val blocked=object: StreamingPeer by peer {
+            override suspend fun createOfferSdp(): Pair<String,List<IceCandidate>> { entered.complete(Unit);awaitCancellation() }
+        }
+        val job=launch { client.reconnectExistingSession(blocked) }
+        withTimeout(5000) { entered.await() };job.cancelAndJoin()
+        client.keepAlive();assertFalse(requests.any { it.method=="DELETE" })
+        client.reconnectExistingSession(peer).getOrThrow();client.stop()
+    }
+    @Test fun stoppedOrMissingSessionNeverFallsBackToStartingAGame() = runBlocking {
+        val client=signaling();assertTrue(client.reconnectExistingSession(peer).isFailure);assertTrue(requests.isEmpty())
+        client.startAndConnectWebRtcSession("real-id",peer) {}.getOrThrow();client.stop()
+        val marker=requests.size
+        assertTrue(client.reconnectExistingSession(peer).isFailure);assertEquals(marker,requests.size)
+    }
+    @Test fun closingTheSessionDuringOfferCreationPreventsLateSdpFromBeingPosted() = runBlocking {
+        val client=signaling();client.startAndConnectWebRtcSession("real-id",peer) {}.getOrThrow()
+        val entered=CompletableDeferred<Unit>();val proceed=CompletableDeferred<Unit>()
+        val blocked=object: StreamingPeer by peer {
+            override suspend fun createOfferSdp(): Pair<String,List<IceCandidate>> { entered.complete(Unit);proceed.await();return peer.createOfferSdp() }
+        }
+        val job=async { client.reconnectExistingSession(blocked) }
+        withTimeout(5000) { entered.await() };client.stop();proceed.complete(Unit)
+        assertTrue(job.await().isFailure);assertEquals(1,requests.count { it.method=="POST" && it.path=="/session/sdp" })
+    }
+    @Test fun reconnectSkipsAnAnswerFromThePreviousNegotiation() = runBlocking {
+        val client=signaling();client.startAndConnectWebRtcSession("real-id",peer) {}.getOrThrow()
+        val delegate=server.dispatcher;var answers=0
+        server.dispatcher=object: Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                if(request.method=="GET" && request.path=="/session/sdp") {
+                    requests.add(request);answers++
+                    val id=if(answers==1) "1" else "2"
+                    return response(JSONObject().put("exchangeResponse",JSONObject().put("requestId",id).put("sdp","v=0\r\nanswer").toString()).toString())
+                }
+                return delegate.dispatch(request)
+            }
+        }
+        client.reconnectExistingSession(peer).getOrThrow();assertEquals(2,answers);client.stop()
+    }
+
     @Test fun establishesSdpBeforeIcePreservesOfferAndWaitsForTransportReadiness() = runBlocking {
         val signaling = signaling()
         val result = signaling.startAndConnectWebRtcSession("real-id", peer) {}

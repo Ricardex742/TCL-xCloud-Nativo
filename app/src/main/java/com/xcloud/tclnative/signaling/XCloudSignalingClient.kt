@@ -262,31 +262,8 @@ class XCloudSignalingClient(
             awaitProvisioned(path, titleId, onQueueStatus, onProgress)
 
             onProgress("SDP: Sessão provisionada. Negociando vídeo nativo...")
-            val (offer, candidates) = peer.createOfferSdp()
-            val configuration = JSONObject().put("chatConfiguration", JSONObject().put("bytesPerSample", 2)
-                .put("expectedClipDurationMs", 20).put("format", JSONObject().put("codec", "opus").put("container", "webm"))
-                .put("numChannels", 1).put("sampleFrequencyHz", 24000))
-            listOf("chat" to 1, "control" to 3, "input" to 8, "message" to 1).forEach { (channel, version) ->
-                configuration.put(channel, JSONObject().put("minVersion", 1).put("maxVersion", version))
-            }
-            if(microphone) configuration.put("chatStream",JSONObject().put("minVersion",1).put("maxVersion",1))
-            request("$path/sdp", "SDP_OFFER", "POST", JSONObject().put("messageType", "offer")
-                .put("requestId", "1").put("sdp", offer).put("configuration", configuration))
-            peer.onOfferPosted()
-            val answerObject=exchange("$path/sdp", "SDP_ANSWER") as? JSONObject
-            peer.configureInput(answerObject?.optInt("input",0) ?: 0)
-            peer.configureChat(microphone && (answerObject?.optInt("chatStream",0) ?: 0)>0)
-            val answer = answerObject?.optString("sdp")
-                ?.takeIf { it.isNotBlank() } ?: throw IOException("SDP_ANSWER: resposta sem SDP")
-            peer.setRemoteAnswer(answer)
-            onProgress("ICE: Negociando conectividade com o Xbox...")
-            request("$path/ice", "ICE_LOCAL", "POST", CloudProtocol.icePayload(candidates))
-            val remote = CloudProtocol.remoteCandidates(exchange("$path/ice", "ICE_REMOTE"))
-            if (remote.isEmpty()) throw IOException("ICE_REMOTE: o serviço não retornou candidatos")
-            peer.addRemoteCandidates(remote)
-            onProgress("TRANSPORT: Aguardando ICE e canais de controle...")
-            peer.awaitReady()
-            Result.success(UiText.text("Transporte conectado. Aguardando o primeiro quadro de vídeo..."))
+            val ready=chatLock.withLock { negotiateTransport(path,peer,microphone,sdpRequest.toString(),onProgress) }
+            Result.success(ready)
         } catch (timeout: kotlinx.coroutines.TimeoutCancellationException) {
             kotlinx.coroutines.currentCoroutineContext().ensureActive()
             stop()
@@ -298,6 +275,61 @@ class XCloudSignalingClient(
             stop()
             Result.failure(error)
         }
+    }
+
+    private fun requireActive(path: String) {
+        if(activePath.get()!=path) throw IOException("TRANSPORT: sessão encerrada ou substituída")
+    }
+
+    /** Reuses the allocation. Failure/cancellation must never DELETE it or start another PLAY. */
+    suspend fun reconnectExistingSession(peer: StreamingPeer,microphone: Boolean=false,
+                                        onProgress: (String) -> Unit={}): Result<String> = chatLock.withLock {
+        withContext(Dispatchers.IO) {
+            val path=activePath.get() ?: return@withContext Result.failure(IOException("RECONNECT: sessão Xbox indisponível"))
+            try {
+                request("$path/keepalive","RECONNECT_KEEPALIVE","POST",client=keepAliveClient)
+                val ready=negotiateTransport(path,peer,microphone,(++sdpRequest).toString(),onProgress)
+                Result.success(ready)
+            } catch(timeout: kotlinx.coroutines.TimeoutCancellationException) {
+                kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                Result.failure(IOException("RECONNECT: tempo limite ao reconectar a transmissão"))
+            } catch(cancelled: CancellationException) { throw cancelled }
+            catch(error: Exception) { Result.failure(error) }
+        }
+    }
+
+    private suspend fun negotiateTransport(path: String,peer: StreamingPeer,microphone: Boolean,requestId: String,
+                                          onProgress: (String) -> Unit): String {
+            requireActive(path)
+            val (offer, candidates) = peer.createOfferSdp()
+            requireActive(path)
+            val configuration = JSONObject().put("chatConfiguration", JSONObject().put("bytesPerSample", 2)
+                .put("expectedClipDurationMs", 20).put("format", JSONObject().put("codec", "opus").put("container", "webm"))
+                .put("numChannels", 1).put("sampleFrequencyHz", 24000))
+            listOf("chat" to 1, "control" to 3, "input" to 8, "message" to 1).forEach { (channel, version) ->
+                configuration.put(channel, JSONObject().put("minVersion", 1).put("maxVersion", version))
+            }
+            if(microphone) configuration.put("chatStream",JSONObject().put("minVersion",1).put("maxVersion",1))
+            request("$path/sdp", "SDP_OFFER", "POST", JSONObject().put("messageType", "offer")
+                .put("requestId", requestId).put("sdp", offer).put("configuration", configuration))
+            peer.onOfferPosted()
+            val answerObject=exchange("$path/sdp", "SDP_ANSWER",requestId) as? JSONObject
+            peer.configureInput(answerObject?.optInt("input",0) ?: 0)
+            peer.configureChat(microphone && (answerObject?.optInt("chatStream",0) ?: 0)>0)
+            val answer = answerObject?.optString("sdp")
+                ?.takeIf { it.isNotBlank() } ?: throw IOException("SDP_ANSWER: resposta sem SDP")
+            requireActive(path)
+            peer.setRemoteAnswer(answer)
+            onProgress("ICE: Negociando conectividade com o Xbox...")
+            request("$path/ice", "ICE_LOCAL", "POST", CloudProtocol.icePayload(candidates))
+            val remote = CloudProtocol.remoteCandidates(exchange("$path/ice", "ICE_REMOTE"))
+            if (remote.isEmpty()) throw IOException("ICE_REMOTE: o serviço não retornou candidatos")
+            requireActive(path)
+            peer.addRemoteCandidates(remote)
+            onProgress("TRANSPORT: Aguardando ICE e canais de controle...")
+            peer.awaitReady()
+            requireActive(path)
+            return UiText.text("Transporte conectado. Aguardando o primeiro quadro de vídeo...")
     }
 
     suspend fun renegotiateChat(offer: String): String = chatLock.withLock {

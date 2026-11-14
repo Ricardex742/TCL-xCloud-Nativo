@@ -10,7 +10,8 @@ object GameMenuPanel {
              disconnect: () -> Unit,virtualTouch: (() -> Unit)? = null,hud: (() -> Unit)? = null,sessionOptions: (() -> Unit)? = null,audio: (() -> Unit)? = null,
              microphone: (() -> Unit)? = null,microphoneLabel: String=UiText.text("Ativar microfone"),mouse: (() -> Unit)? = null,controllerProfiles: (() -> Unit)?=null,
              aspect: (() -> Unit)? = null,language: (() -> Unit)? = null,appearance: (() -> Unit)? = null,
-             profile: com.xcloud.tclnative.catalog.XboxProfile? = null): ConsoleDialog {
+             profile: com.xcloud.tclnative.catalog.XboxProfile? = null,statisticsOptions: (() -> Unit)?=null,
+             recovery: (() -> Unit)?=null): ConsoleDialog {
         val actions=mutableListOf<ConsoleAction>()
         if(SeriesGuidePanel.enabled(context)) actions+=ConsoleAction(UiText.text("Retomar partida")) {}
         if(aspect!=null) actions+=ConsoleAction(UiText.text("Proporção da imagem"),aspect)
@@ -25,6 +26,8 @@ object GameMenuPanel {
         if(microphone!=null) actions+=ConsoleAction(microphoneLabel,microphone)
         if(mouse!=null) actions+=ConsoleAction(UiText.text("Capturar / soltar mouse e teclado — F8"),mouse)
         actions+=ConsoleAction(UiText.text("Mostrar / ocultar estatísticas"),statistics)
+        if(statisticsOptions!=null) actions+=ConsoleAction(UiText.text("Personalizar estatísticas"),statisticsOptions)
+        if(recovery!=null) actions+=ConsoleAction(UiText.text("Recuperar / recarregar transmissão"),recovery)
         actions+=ConsoleAction(UiText.text("Diagnóstico da partida"),diagnostics)
         actions+=ConsoleAction(UiText.text("Desconectar sessão e voltar ao catálogo"),disconnect)
         return if(SeriesGuidePanel.enabled(context)) SeriesGuidePanel.show(context,UiText.text("Guia da partida"),profile,actions)

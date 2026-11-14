@@ -170,4 +170,6 @@ class StatisticsVisibility {
         private set
     fun beginSession() { mode = 0 }
     fun cycle(): Int { mode = (mode+1)%3; return mode }
+    fun toggle(detailed: Boolean=false): Int { mode=if(mode==0) { if(detailed) 2 else 1 } else 0;return mode }
+    fun configure(detailed: Boolean) { if(mode!=0) mode=if(detailed) 2 else 1 }
 }

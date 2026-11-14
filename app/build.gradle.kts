@@ -14,8 +14,8 @@ android {
         applicationId = "com.xcloud.tclnative"
         minSdk = 24
         targetSdk = 34
-        versionCode = 68
-        versionName = "0.35.0-animated-login"
+        versionCode = 69
+        versionName = "0.35.0"
     }
 
     signingConfigs {

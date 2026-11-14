@@ -11,6 +11,10 @@ on:
         description: Tag da versão, por exemplo v0.32.0
         required: true
         type: string
+      notes:
+        description: Descreva somente as novidades desta versão
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -31,6 +35,7 @@ jobs:
       GH_REPO: ${{ github.repository }}
       BUILD_RUN: ${{ inputs.run_id }}
       RELEASE_TAG: ${{ inputs.tag }}
+      RELEASE_NOTES: ${{ inputs.notes }}
     steps:
       - name: Verificar origem e resultado da compilação
         shell: bash
@@ -76,7 +81,12 @@ jobs:
           shutil.copyfile(apk, assets / name)
           (assets / 'SHA256SUMS.txt').write_text(f'{digest}  {name}\n')
           PY
-          python3 scripts/release_notes.py --version "${RELEASE_TAG#v}" --output "$RUNNER_TEMP/release-body.md"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          (Path(os.environ['RUNNER_TEMP']) / 'release-additions.md').write_text(os.environ['RELEASE_NOTES'], encoding='utf-8')
+          PY
+          python3 scripts/release_notes.py --version "${RELEASE_TAG#v}" --notes-file "$RUNNER_TEMP/release-additions.md" --output "$RUNNER_TEMP/release-body.md"
       - name: Anexar APK e publicar Release
         shell: bash
         run: |
@@ -87,4 +97,4 @@ jobs:
             gh release create "$RELEASE_TAG" --target "$BUILD_SHA" --title "xCLOUD ${RELEASE_TAG#v}" --notes-file "$RUNNER_TEMP/release-body.md" --draft
           fi
           gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/release-assets/"* --clobber
-          gh release edit "$RELEASE_TAG" --draft=false --latest
+          gh release edit "$RELEASE_TAG" --notes-file "$RUNNER_TEMP/release-body.md" --draft=false --latest
